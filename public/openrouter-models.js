@@ -41,6 +41,34 @@
     });
   }
 
+  /** OpenRouter: pricing.prompt / .completion are USD per token → $ per 1M tokens */
+  function usdPer1M(tokenPriceStr) {
+    var n = parseFloat(tokenPriceStr, 10);
+    if (!isFinite(n) || n < 0) return null;
+    return n * 1e6;
+  }
+
+  function fmtUsdPer1M(x) {
+    if (x === null || !isFinite(x)) return '';
+    if (x === 0) return '0';
+    if (x < 0.0001) return x.toExponential(1);
+    if (x < 0.01) return x.toFixed(4);
+    if (x < 1) return x.toFixed(3);
+    if (x < 100) return x.toFixed(2);
+    return x.toFixed(1);
+  }
+
+  function pricingPer1mLabel(mo) {
+    var p = mo.pricing;
+    if (!p) return '';
+    var in1m = usdPer1M(p.prompt);
+    var out1m = usdPer1M(p.completion);
+    if (in1m === null && out1m === null) return '';
+    var si = in1m !== null ? fmtUsdPer1M(in1m) : '?';
+    var so = out1m !== null ? fmtUsdPer1M(out1m) : '?';
+    return 'in $' + si + ' / out $' + so + ' per 1M tok';
+  }
+
   function buildGroupedOptions(models) {
     var byProv = {};
     for (var i = 0; i < models.length; i++) {
@@ -64,10 +92,17 @@
         var opt = document.createElement('option');
         opt.value = mo.id;
         var label = mo.name || mo.id;
-        if (mo.context_length)
-          label += ' (' + (mo.context_length >= 1000
+        var ctxStr = '';
+        if (mo.context_length) {
+          ctxStr = mo.context_length >= 1000
             ? Math.round(mo.context_length / 1000) + 'k ctx'
-            : mo.context_length + ' ctx') + ')';
+            : mo.context_length + ' ctx';
+        }
+        var priceStr = pricingPer1mLabel(mo);
+        var meta = [];
+        if (ctxStr) meta.push(ctxStr);
+        if (priceStr) meta.push(priceStr);
+        if (meta.length) label += ' (' + meta.join(' · ') + ')';
         opt.textContent = label;
         og.appendChild(opt);
       }
