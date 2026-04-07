@@ -1,0 +1,9 @@
+﻿{
+  "name": "yah-forge-direct",
+  "version": "1.0.0",
+  "description": "YAH Forge Direct - provider-agnostic deployment with your own AI APIs",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  }
+}
