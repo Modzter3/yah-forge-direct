@@ -17,6 +17,7 @@
         content:     content     || '',
         attachments: attachments || [],
         statusText:  statusText  || '',
+        messageId:   'forge-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9),
       }],
     };
   }

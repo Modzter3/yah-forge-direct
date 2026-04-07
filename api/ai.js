@@ -12,12 +12,19 @@ const PROVIDERS = {
 
 const PROVIDER_ALIASES = {
   openrouter: {
-    'Gemini-3-Flash':    'google/gemini-2.5-flash',
-    'Gemini-3-Pro':      'google/gemini-2.5-pro',
-    'Gemini-3.1-Pro':    'google/gemini-2.5-pro',
-    'Claude-Sonnet-4.5': 'anthropic/claude-sonnet-4',
-    'Claude-Opus-4.6':   'anthropic/claude-opus-4',
-    'GPT-5.2':           'openai/gpt-4.1',
+    'Gemini-3-Flash':               'google/gemini-2.5-flash',
+    'Gemini-3-Pro':                 'google/gemini-2.5-pro',
+    'Gemini-3.1-Pro':               'google/gemini-2.5-pro',
+    'Claude-Sonnet-4.5':            'anthropic/claude-sonnet-4',
+    'Claude-Opus-4.6':              'anthropic/claude-opus-4',
+    'GPT-5.2':                      'openai/gpt-4.1',
+    'Grok-4.1-Fast-Non-Reasoning':  'x-ai/grok-4.1-fast',
+    'Grok-4.1-Fast-Reasoning':      'x-ai/grok-4.1-fast',
+    'Grok-Code-Fast-1':             'x-ai/grok-4-fast',
+    'Grok-4':                       'x-ai/grok-4.20',
+    'GLM-5':                        'z-ai/glm-5',
+    'Qwen3-Max':                    'qwen/qwen3-max',
+    'Kimi-K2.5':                    'moonshotai/kimi-k2.5',
   },
   openai: {
     'Gemini-3-Flash':    'gpt-4.1-mini',
