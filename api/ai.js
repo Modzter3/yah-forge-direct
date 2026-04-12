@@ -77,7 +77,7 @@ export default async function handler(req) {
     return jsonError('No model provided. Prefix prompts with @model or set DEFAULT_TEXT_MODEL.', 400);
   }
 
-  const payload = buildPayload({ model: resolvedModel, query, parameters });
+  const payload = buildPayload({ model: resolvedModel, query, parameters, providerName });
 
   let upstream;
   try {
@@ -111,12 +111,27 @@ export default async function handler(req) {
   return jsonFromProviderToSse(parsed, providerName, resolvedModel);
 }
 
-function buildPayload({ model, query, parameters }) {
+function buildPayload({ model, query, parameters, providerName }) {
+  const params = stripUndefined(parameters || {});
+
+  // OpenRouter ignores ad-hoc `web_search`; enable real retrieval via the web plugin
+  // so answers can follow the user's date window instead of the model's training cutoff.
+  if (providerName === 'openrouter' && params.web_search === true) {
+    delete params.web_search;
+    if (!params.plugins) {
+      const max = Math.min(
+        25,
+        Math.max(1, parseInt(process.env.OPENROUTER_WEB_MAX_RESULTS || '10', 10) || 10)
+      );
+      params.plugins = [{ id: 'web', max_results: max }];
+    }
+  }
+
   const payload = {
     model,
     messages: [{ role: 'user', content: query }],
     stream: true,
-    ...stripUndefined(parameters || {}),
+    ...params,
   };
 
   const includeUsage = (process.env.AI_INCLUDE_STREAM_USAGE || 'true').toLowerCase() !== 'false';
