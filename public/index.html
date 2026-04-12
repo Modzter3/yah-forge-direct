@@ -146,6 +146,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .news-card-angle{font-family:'Cinzel Decorative',serif;font-size:0.72rem;color:var(--crimson-glow);margin-bottom:8px;line-height:1.4;font-style:italic;}
 .news-card-summary{font-family:'Bitter',serif;font-size:0.78rem;color:var(--text-muted);line-height:1.5;margin-bottom:10px;}
 .news-card-verse{font-family:'Fira Code',monospace;font-size:0.68rem;color:var(--gold);margin-bottom:10px;}
+.news-card-weave{font-family:'Bitter',serif;font-size:0.72rem;color:var(--accent-teal);line-height:1.45;margin-bottom:10px;padding:8px 10px;background:rgba(45,139,122,0.08);border-left:3px solid var(--accent-teal);border-radius:0 6px 6px 0;}
+.news-card-weave i{margin-right:5px;opacity:0.85;}
 .news-card-actions{display:flex;gap:8px;flex-wrap:wrap;}
 .news-card-btn{padding:7px 14px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);font-family:'Bitter',serif;font-size:0.72rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:5px;}
 .news-card-btn:hover{border-color:var(--gold-dim);color:var(--gold);}
@@ -676,7 +678,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="news-header">
       <div class="news-header-title"><i class="fas fa-satellite-dish"></i> Prophecy Watch</div>
     </div>
-    <div class="news-desc">Scan the headlines for signs of the times. Select a category and hit <strong>Scan</strong> -- the watchman will search current world news for events fulfilling biblical prophecy, then break them down through the theological framework.</div>
+    <div class="news-desc">Scan the headlines for signs of the times. Select a category and hit <strong>Scan</strong> -- the watchman will search current world news for events fulfilling biblical prophecy, curate them as <strong>one harmonized witness</strong> (cross-linked like scripture references), then break them down through the theological framework.</div>
     <div class="news-cat-pills" id="newsCatPills">
       <button class="news-cat-btn active" onclick="setNewsCat('all',this)">All Signs</button>
       <div class="news-cat-divider"><i class="fas fa-fire" style="margin-right:4px;"></i>Topical</div>
@@ -2721,6 +2723,7 @@ p+='HEADLINE: '+(newsItem.headline||'Unknown')+'\n';
 if(newsItem.source_url)p+='ARTICLE URL: '+newsItem.source_url+'\n';
 if(newsItem.summary)p+='SUMMARY: '+newsItem.summary+'\n';
 if(newsItem.prophetic_angle)p+='PROPHETIC ANGLE: '+newsItem.prophetic_angle+'\n';
+if(newsItem.weaves_with)p+='HOW THIS HEADLINE WEAVES WITH OTHERS IN THE SAME SCAN: '+newsItem.weaves_with+'\n';
 if(newsItem.scripture_refs)p+='SCRIPTURE CONNECTIONS: '+newsItem.scripture_refs+'\n';
 if(newsItem.category)p+='CATEGORY: '+newsItem.category+'\n';
 if(newsItem.source)p+='SOURCE: '+newsItem.source+'\n';
@@ -2742,6 +2745,7 @@ p+='HEADLINE: '+(newsItem2.headline||'Unknown')+'\n';
 if(newsItem2.source_url)p+='ARTICLE URL: '+newsItem2.source_url+'\n';
 if(newsItem2.summary)p+='SUMMARY: '+newsItem2.summary+'\n';
 if(newsItem2.prophetic_angle)p+='PROPHETIC ANGLE: '+newsItem2.prophetic_angle+'\n';
+if(newsItem2.weaves_with)p+='HOW THIS HEADLINE WEAVES WITH OTHERS IN THE SAME SCAN: '+newsItem2.weaves_with+'\n';
 if(newsItem2.scripture_refs)p+='SCRIPTURE CONNECTIONS: '+newsItem2.scripture_refs+'\n';
 if(newsItem2.category)p+='CATEGORY: '+newsItem2.category+'\n';
 if(newsItem2.source)p+='SOURCE: '+newsItem2.source+'\n';
@@ -4192,6 +4196,12 @@ p+='- Enoch is DEAD, Elijah is DEAD -- no man ascended to heaven. Any news narra
 p+='- Sabbath = Saturday sunrise to sunset\n';
 p+='- Use Hebrew names: Yod-He-Waw-He, Yod-He-Waw-Shin-Ayin, Mem-Shin-He, etc.\n';
 p+='- Sealed scrolls and apocryphal texts are VALID prophetic sources. When connecting news to prophecy, draw from 1 Enoch (FILTER HARD -- only pre-flood history and flat earth astronomy; heaven tours are serpent seed fabrication, Enoch is DEAD per John 3:13), Book of Jubilees, 2 Esdras, Apocalypse of Elijah (Elijah is also DEAD -- use prophetic content only), Apocalypse of Zephaniah, and other sealed texts where they add depth beyond KJV canon. These connections are the MEAT -- no more milk.\n\n';
+p+='*** CROSS-REFERENCE THE WHOLE BATCH (SCRIPTURE-STYLE HARMONY) ***\n';
+p+='You are returning '+resultCount+' article'+(resultCount!==1?'s':'')+' as ONE unified watch -- not a random list. The batch must read like Bible cross-references: separate witnesses that ILLUMINATE the same prophetic picture.\n';
+p+='- CURATE for COHERENCE: pick stories that CONNECT -- same chain of events (policy then fallout), same geography cluster, cause and effect across days, government angle plus street or economic angle, international echo of one development, or multiple outlets confirming one arc.\n';
+p+='- If two sources CONFLICT on facts, say so honestly in weaves_with (do not paper over contradictions).\n';
+p+='- Each article\'s "connection" field ties the story to SCRIPTURE; the "weaves_with" field ties this story to the OTHER headlines in THIS SAME JSON array (the human news layer).\n';
+p+='- If you can only find loosely related pieces, still explain in weaves_with how they form one thematic arc for this scan.\n\n';
 p+='OUTPUT FORMAT -- You MUST output ONLY valid JSON. No markdown, no commentary, no explanation before or after the JSON. Output a JSON array of objects with these exact keys:\n';
 p+='[\n';
 p+='  {\n';
@@ -4203,7 +4213,8 @@ p+='    "source": "exact name of the news outlet that published this e.g. Reuter
 p+='    "date": "publication date of the article e.g. February 15 2026",\n';
 p+='    "summary": "2-3 sentence summary of what the article ACTUALLY reports -- real names, real places, real facts from the article",\n';
 p+='    "verse": "the most relevant scripture reference e.g. Matthew chapter twenty-four verse six",\n';
-p+='    "connection": "1 sentence explaining HOW this fulfills or echoes the prophecy"\n';
+p+='    "connection": "1 sentence explaining HOW this fulfills or echoes the prophecy",\n';
+p+='    "weaves_with": "Use empty string ONLY when this array has exactly one object. When there are 2+ articles, REQUIRED: 1-2 sentences on how THIS headline harmonizes with OTHER items in THIS SAME array. Quote a SHORT distinctive substring from each related headline (exact text from their headline field) so the reader can match cards. Say if they confirm, extend a timeline, show policy vs human cost, regional echo, etc."\n';
 p+='  }\n';
 p+=']\n\n';
 p+='RULES:\n';
@@ -4215,6 +4226,7 @@ p+='- Put your prophetic interpretation in the "prophetic_angle" field -- that i
 p+='- NEVER return an empty array. If you searched the web, you found articles. Use them.\n';
 p+='- NEVER repeat the same article twice. Each item in the array must be a DIFFERENT article with a DIFFERENT headline from a DIFFERENT URL. If you find the same story covered by multiple outlets, pick the BEST source and move on. No duplicates.\n';
 p+='- Each item must have a genuine scripture connection -- do not force it.\n';
+p+='- weaves_with: when returning 2+ articles, EVERY item MUST have a non-empty weaves_with that explicitly names other headlines in the batch (by substring). No generic filler like "these stories all matter" -- name HOW they interlock.\n';
 p+='- Spell out ALL numbers in verse references as words.\n';
 p+='- CRITICAL OUTPUT RULE: Your ENTIRE response must be ONLY a valid JSON array of articles. Start with [ and end with ]. No preamble text, no markdown code fences (no ```), no explanation before or after, no apologies about not finding results. Just the raw JSON array with the articles you found via web search.\n';
 return p;
@@ -4504,6 +4516,7 @@ if(item.prophetic_angle){html+='<div class="news-card-angle"><i class="fas fa-fi
 html+='<div class="news-card-summary">'+escapeHtml(item.summary||'')+'</div>';
 if(item.verse){html+='<div class="news-card-verse"><i class="fas fa-book-open" style="margin-right:5px;"></i>'+escapeHtml(item.verse)+'</div>';}
 if(item.connection){html+='<div class="news-card-summary" style="font-style:italic;color:var(--gold-dim);">'+escapeHtml(item.connection)+'</div>';}
+if(item.weaves_with){html+='<div class="news-card-weave"><i class="fas fa-link"></i>'+escapeHtml(item.weaves_with)+'</div>';}
 html+='<div class="news-card-actions">';
 html+='<a class="news-card-btn" href="'+escapeAttr(searchUrl)+'" target="_blank" rel="noopener noreferrer" style="border-color:var(--accent-blue);color:var(--accent-blue);text-decoration:none;"><i class="fas fa-newspaper"></i> Find Article</a>';
 html+='<button class="news-card-btn breakdown-btn" onclick="breakdownNewsItem('+idx+')"><i class="fas fa-fire"></i> Full Breakdown</button>';
@@ -4595,6 +4608,7 @@ if(item.prophetic_angle){text+='\nProphetic Angle: '+item.prophetic_angle;}
 text+='\n\n'+(item.summary||'');
 if(item.verse)text+='\n\nScripture: '+item.verse;
 if(item.connection)text+='\n'+item.connection;
+if(item.weaves_with)text+='\n\nWeaves with other headlines in this scan:\n'+item.weaves_with;
 rawCopy(text,btn);
 }
 function breakdownNewsItem(idx){
@@ -4627,6 +4641,16 @@ if(item.date){p+='Published: '+item.date+'\n';}
 p+='Summary: '+(item.summary||'No summary provided')+'\n';
 if(item.prophetic_angle){p+='Prophetic Angle: '+item.prophetic_angle+'\n';}
 if(item.verse||item.connection){p+='Initial Scripture Connection: '+(item.verse||'')+(item.verse&&item.connection?' -- ':'')+(item.connection||'')+'\n';}
+if(item.weaves_with){p+='How this story was woven with others in the user\'s same headline scan: '+item.weaves_with+'\n';}
+if(newsItems&&newsItems.length>1){
+var sibs=[];
+for(var wi=0;wi<newsItems.length;wi++){
+if(wi===idx)continue;
+var h=newsItems[wi].headline;
+if(h)sibs.push('- '+h);
+}
+if(sibs.length){p+='\nOther headlines from that same scan (cross-reference only where it sharpens understanding of THIS article, not a tangent):\n'+sibs.join('\n')+'\n';}
+}
 p+='\n';
 p+='BREAKDOWN STRUCTURE:\n';
 p+='You MUST create 4 sections using ## for the main title and ### for each section header.\n';
