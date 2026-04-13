@@ -769,6 +769,18 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <button class="news-scan-btn" id="newsScanBtn" onclick="scanProphecyNews()" style="margin-left:auto;"><i class="fas fa-satellite-dish"></i> Scan the Headlines</button>
       </div>
     </div>
+    <details class="news-import-details" style="margin-top:12px;">
+      <summary style="cursor:pointer;font-size:0.78rem;color:var(--gold-dim);font-family:'Fira Code',monospace;list-style:none;"><i class="fas fa-code" style="margin-right:6px;"></i>Import / paste JSON <span style="color:var(--text-dim);">(bypass scan)</span></summary>
+      <div style="margin-top:10px;padding:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;">
+        <p style="font-size:0.72rem;color:var(--text-muted);margin:0 0 8px;line-height:1.45;font-family:'Bitter',serif;">Paste the same JSON array a scan returns, or one article object. Each item needs a <strong>headline</strong> or a <strong>summary</strong> (headline is derived from summary if missing). Optional fields match scan output: <code style="font-size:0.68rem;">category, source_url, prophetic_angle, source, date, verse, connection, weaves_with</code>.</p>
+        <textarea id="newsJsonPaste" placeholder='[ { "headline": "...", "summary": "...", "source": "..." } ]' style="width:100%;min-height:100px;font-family:'Fira Code',monospace;font-size:0.7rem;padding:10px;border-radius:6px;border:1px solid var(--border);background:var(--bg-elevated,#111);color:var(--text-primary);resize:vertical;box-sizing:border-box;"></textarea>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center;">
+          <button type="button" class="news-card-btn" onclick="importNewsFromPastedJson()" style="border-color:var(--gold-dim);color:var(--gold);"><i class="fas fa-file-import"></i> Load pasted JSON</button>
+          <button type="button" class="news-card-btn" onclick="triggerNewsJsonFilePick()" style="border-color:var(--accent-teal);color:var(--accent-teal);"><i class="fas fa-folder-open"></i> Import .json file</button>
+          <input type="file" id="newsJsonFileInput" accept=".json,application/json" style="display:none" onchange="importNewsFromJsonFile(this)">
+        </div>
+      </div>
+    </details>
     <div id="newsAggregatorBar" style="display:none;margin-top:12px;padding:12px 16px;background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.25);border-radius:10px;display:none;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
       <div style="font-size:0.8rem;color:#8b5cf6;font-family:'Cinzel Decorative',serif;">
         <i class="fas fa-newspaper" style="margin-right:6px;"></i><span id="newsAggCount">0</span> articles loaded -- forge into sermon
@@ -4407,6 +4419,66 @@ connection:''
 });
 }
 return items;
+}
+function polishImportedNewsItems(items){
+var out=[];
+for(var i=0;i<items.length;i++){
+var o=items[i];
+if(!o||typeof o!=='object')continue;
+var h=String(o.headline||'').trim();
+var s=String(o.summary||'').trim();
+if(!h&&s)h=s.substring(0,120)+(s.length>120?'…':'');
+if(h.length<2)continue;
+o.headline=h;
+out.push(o);
+}
+return dedupeNewsItems(out);
+}
+function importNewsFromPastedJson(){
+var ta=document.getElementById('newsJsonPaste');
+if(!ta)return;
+importNewsFromJsonText(ta.value||'');
+}
+function triggerNewsJsonFilePick(){
+var el=document.getElementById('newsJsonFileInput');
+if(el)el.click();
+}
+function importNewsFromJsonFile(input){
+if(!input||!input.files||!input.files[0])return;
+var f=input.files[0];
+var r=new FileReader();
+r.onload=function(){
+importNewsFromJsonText(r.result||'');
+input.value='';
+};
+r.onerror=function(){showToast('Could not read file.');input.value='';};
+r.readAsText(f);
+}
+function importNewsFromJsonText(raw){
+var container=document.getElementById('newsResults');
+if(!container)return;
+var trimmed=String(raw||'').trim();
+if(!trimmed){showToast('Nothing to import.');return;}
+var prevItems=newsItems.slice();
+var prevHtml=container.innerHTML;
+parseNewsResults(trimmed,container);
+var ok=newsItems.length>0&&container.querySelector('.news-grid');
+if(ok){
+var polished=polishImportedNewsItems(newsItems);
+if(polished.length===0){
+newsItems=prevItems;
+container.innerHTML=prevHtml;
+showToast('No valid articles after import (need headline or summary per item).');
+return;
+}
+newsItems=polished;
+renderNewsCards(container);
+showToast('Loaded '+newsItems.length+' article(s) from JSON.');
+return;
+}
+newsItems=prevItems;
+container.innerHTML=prevHtml;
+showToast('Could not parse. Use a JSON array like scan output, or one object with headline/summary.');
 }
 function dedupeNewsItems(items){
 var seen={};
