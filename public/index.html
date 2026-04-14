@@ -736,10 +736,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <div class="custom-model-hint">Type any OpenRouter model id (e.g. google/gemini-2.5-pro) to override the dropdown</div>
       </div>
       <div class="destroy-one-shot-note" style="flex:1 1 220px;min-width:200px;font-size:0.72rem;color:var(--text-muted);line-height:1.45;font-family:'Bitter',serif;border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:rgba(231,76,60,0.06);">
-        <strong style="color:#e74c3c;">One forge</strong> — a single response, as deep as five stacked parts (~10k+ words target). If it stops short, up to <strong>four</strong> deepen passes may run (same document, capped for credits). No part two replacing part one on screen.
+        <strong style="color:#e74c3c;">One forge</strong> — one API response (long models like Haiku often fill it in one shot). Use <strong>Continue</strong> if you want another pass on your credits. No auto follow-ups.
       </div>
       <div class="destroy-action-btns">
         <button class="dismantle-btn destroy-btn" id="destroyBtn" onclick="startDestroy()"><i class="fas fa-skull-crossbones"></i> Destroy</button>
+        <button type="button" class="sermon-action-btn export-btn" id="destroyContinueBtn" onclick="continueDestroyManually()" disabled title="Append another completion (same document)"><i class="fas fa-forward"></i> Continue</button>
         <button type="button" class="sermon-action-btn copy-all" id="destroyCopyQuickBtn" onclick="copyDestroyResult()" disabled title="Copy forged sermon"><i class="fas fa-copy"></i> Copy</button>
         <button type="button" class="sermon-action-btn export-btn" id="destroySaveLibBtn" onclick="saveDestroyToLibrary()" disabled title="Save to Library"><i class="fas fa-book-bookmark"></i> Save</button>
       </div>
@@ -747,6 +748,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="dismantle-output" id="destroyOutput">
       <div class="sermon-body" id="destroyBody"></div>
       <div class="dismantle-actions" id="destroyActions" style="display:none;">
+        <button type="button" class="sermon-action-btn export-btn" onclick="continueDestroyManually()"><i class="fas fa-forward"></i> Continue</button>
         <button class="sermon-action-btn copy-all" onclick="copyDestroyResult()"><i class="fas fa-copy"></i> Copy</button>
         <button class="sermon-action-btn export-btn" onclick="exportDestroyResult()"><i class="fas fa-download"></i> Export</button>
         <div class="tts-bar" style="width:100%;margin-top:8px;">
@@ -5249,26 +5251,91 @@ doTTS(text,voice,'dismantleTtsAudioWrap',btn);
    ========================================== */
 var selectedDestroyRounds=1;
 var destroyRawResult='';
-var destroyContinueCount=0;
-var destroyExpandAttempts=0;
-var DESTROY_MIN_WORDS_PER_PART=1800;
-var DESTROY_MIN_WORDS_SINGLESHOT=9000;
-var DESTROY_MAX_EXPAND_PER_PART=4;
+var destroyBusy=false;
+var destroySessionCtx=null;
 function countWordsDestroy(s){
 if(!s||!String(s).trim())return 0;
 return String(s).trim().split(/\s+/).filter(Boolean).length;
 }
-/** Word count of the last # Part N: ... block only (current installment) */
-function getDestroyLastPartWordCount(raw){
-var parts=splitDestroyTextIntoParts(raw||'');
-if(!parts.length)return countWordsDestroy(raw||'');
-return countWordsDestroy(parts[parts.length-1]);
-}
 function setDestroyQuickActionsEnabled(on){
 var c=document.getElementById('destroyCopyQuickBtn');
 var s=document.getElementById('destroySaveLibBtn');
+var k=document.getElementById('destroyContinueBtn');
 if(c)c.disabled=!on;
 if(s)s.disabled=!on;
+if(k)k.disabled=!on;
+}
+function sendDestroyMsg(promptText,isContinuation){
+var ctx=destroySessionCtx;
+if(!ctx)return;
+var body=ctx.body,btn=ctx.btn,actions=ctx.actions;
+var model=getDestroyModel();
+var params={web_search:true,max_tokens:16384};
+destroyBusy=true;
+if(btn){btn.disabled=true;}
+setDestroyQuickActionsEnabled(false);
+var handlerName='destroy-'+Date.now();
+window.Poe.registerHandler(handlerName,function(result){
+var msg=result.responses[0];
+if(!msg)return;
+var fullText;
+if(msg.status==='error'){
+if(destroyRawResult){
+body.innerHTML=renderDestroyBodyHtml(destroyRawResult);
+actions.style.display='flex';
+setDestroyQuickActionsEnabled(true);
+}else{
+body.innerHTML='<div style="color:var(--explicit-red);padding:20px;text-align:center;"><i class="fas fa-exclamation-triangle" style="font-size:1.5rem;display:block;margin-bottom:10px;"></i>'+escapeHtml(msg.statusText||'Error generating response.')+'</div>';
+}
+destroyBusy=false;
+if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-skull-crossbones"></i> Destroy';}
+}else if(msg.status==='incomplete'){
+fullText=isContinuation?(destroyRawResult+'\n\n'+msg.content):msg.content;
+body.innerHTML=renderDestroyBodyHtml(stripDestroyUrlsAndSources(fullText));
+}else if(msg.status==='complete'){
+fullText=isContinuation?(destroyRawResult+'\n\n'+msg.content):msg.content;
+destroyRawResult=stripDestroyUrlsAndSources(fullText);
+body.innerHTML=renderDestroyBodyHtml(destroyRawResult);
+actions.style.display='flex';
+setDestroyQuickActionsEnabled(true);
+destroyBusy=false;
+if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-skull-crossbones"></i> Destroy';}
+showToast(isContinuation?'Continued.':'Complete.');
+}
+});
+window.Poe.sendUserMessage('@'+model+' '+promptText,{
+handler:handlerName,
+stream:true,
+openChat:false,
+parameters:params
+}).catch(function(err){
+if(destroyRawResult){
+body.innerHTML=renderDestroyBodyHtml(destroyRawResult);
+actions.style.display='flex';
+setDestroyQuickActionsEnabled(true);
+}else{
+body.innerHTML='<div style="color:var(--explicit-red);padding:20px;text-align:center;"><i class="fas fa-exclamation-triangle" style="font-size:1.5rem;display:block;margin-bottom:10px;"></i>'+escapeHtml(String(err))+'</div>';
+}
+destroyBusy=false;
+if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-skull-crossbones"></i> Destroy';}
+});
+}
+function continueDestroyManually(){
+var title=document.getElementById('destroyTitleInput').value.trim();
+if(!title){showToast('Enter a movie, TV show, or game title first.');return;}
+if(!destroyRawResult||!destroyRawResult.trim()){showToast('Nothing to continue yet. Run Destroy first.');return;}
+if(destroyBusy){showToast('Already working -- wait for this request to finish.');return;}
+var body=document.getElementById('destroyBody');
+var btn=document.getElementById('destroyBtn');
+var actions=document.getElementById('destroyActions');
+var output=document.getElementById('destroyOutput');
+destroySessionCtx={body:body,btn:btn,actions:actions,output:output};
+var mediaType=document.getElementById('destroyMediaType').value;
+var israelite=document.getElementById('destroyIsraelite').checked;
+var wc=countWordsDestroy(destroyRawResult);
+var cont=buildDestroyExpandPrompt(mediaType,1,1,wc,title,israelite);
+cont+='\n\nUSER-REQUESTED CONTINUATION: Append only. Do NOT replace or restart the document. No new "# Part" lines. Pick up after your last character.\n\nLAST THREE HUNDRED CHARACTERS:\n\n"...'+destroyRawResult.slice(-300)+'"\n\nCONTINUE:';
+sendDestroyMsg(cont,true);
 }
 /** Normalize mistaken ## Part N → # Part N on first line only */
 function normalizeDestroyPartHeadingFirstLine(seg){
@@ -5497,7 +5564,6 @@ var mediaType=document.getElementById('destroyMediaType').value;
 var model=getDestroyModel();
 var explicit=document.getElementById('destroyExplicit').checked;
 var israelite=document.getElementById('destroyIsraelite').checked;
-var maxContinues=Math.max(0,selectedDestroyRounds-1);
 var prompt=buildDestroyPrompt(title,mediaType,explicit,israelite,selectedDestroyRounds,1);
 var btn=document.getElementById('destroyBtn');
 var output=document.getElementById('destroyOutput');
@@ -5509,97 +5575,9 @@ output.classList.add('visible');
 actions.style.display='none';
 setDestroyQuickActionsEnabled(false);
 destroyRawResult='';
-destroyContinueCount=0;
-destroyExpandAttempts=0;
+destroySessionCtx={body:body,btn:btn,actions:actions,output:output};
 var typeLabel=mediaType==='tv'?'TV show':mediaType==='game'?'video game':'movie';
 body.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text">Yah is researching and tearing this '+escapeHtml(typeLabel)+' apart...</div></div>';
-var params={web_search:true,max_tokens:16384};
-function sendDestroyMsg(promptText,isContinuation){
-var handlerName='destroy-'+Date.now();
-window.Poe.registerHandler(handlerName,function(result){
-var msg=result.responses[0];
-if(!msg)return;
-var fullText,cleaned;
-if(msg.status==='error'){
-if(destroyRawResult){
-body.innerHTML=renderDestroyBodyHtml(destroyRawResult);
-actions.style.display='flex';
-setDestroyQuickActionsEnabled(true);
-}else{
-body.innerHTML='<div style="color:var(--explicit-red);padding:20px;text-align:center;"><i class="fas fa-exclamation-triangle" style="font-size:1.5rem;display:block;margin-bottom:10px;"></i>'+escapeHtml(msg.statusText||'Error generating response.')+'</div>';
-}
-btn.disabled=false;
-btn.innerHTML='<i class="fas fa-skull-crossbones"></i> Destroy';
-}else if(msg.status==='incomplete'){
-fullText=isContinuation?(destroyRawResult+'\n\n'+msg.content):msg.content;
-body.innerHTML=renderDestroyBodyHtml(stripDestroyUrlsAndSources(fullText));
-}else if(msg.status==='complete'){
-fullText=isContinuation?(destroyRawResult+'\n\n'+msg.content):msg.content;
-destroyRawResult=stripDestroyUrlsAndSources(fullText);
-body.innerHTML=renderDestroyBodyHtml(destroyRawResult);
-var totalRounds=maxContinues+1;
-var lastPartWords=getDestroyLastPartWordCount(destroyRawResult);
-var minWords=totalRounds>1?DESTROY_MIN_WORDS_PER_PART:DESTROY_MIN_WORDS_SINGLESHOT;
-var needExpand=lastPartWords<minWords&&destroyExpandAttempts<DESTROY_MAX_EXPAND_PER_PART;
-if(needExpand){
-destroyExpandAttempts++;
-btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Going deeper '+destroyExpandAttempts+'/'+DESTROY_MAX_EXPAND_PER_PART+'...';
-sendDestroyMsg(buildDestroyExpandPrompt(mediaType,destroyContinueCount+1,totalRounds,lastPartWords,title,israelite),true);
-}else{
-destroyExpandAttempts=0;
-if(destroyContinueCount<maxContinues){
-destroyContinueCount++;
-var currentRound=destroyContinueCount+1;
-btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Round '+currentRound+' of '+totalRounds+'...';
-var contPrompt;
-var isLastRound=(currentRound===totalRounds);
-var roundInfo='THIS IS PART '+currentRound+' OF '+totalRounds+' OF THE SAME FORGED SERMON (not a new topic).\n';
-roundInfo+='NO URLs, hyperlinks, or "Sources/References" lists -- plain prose only.\n';
-roundInfo+=buildDestroyContinuationRules(mediaType,currentRound,totalRounds,isLastRound,israelite,title)+'\n';
-if(isLastRound){
-roundInfo+='FINAL PART INSTRUCTIONS: You MUST bring the sermon to a strong, decisive conclusion. Deliver the final verdict on this media, wrap any remaining beats, and end with power. Do NOT leave anything hanging.\n\n';
-}else{
-roundInfo+='You have '+(totalRounds-currentRound)+' part(s) remaining after this one. Do NOT wrap up the whole series yet. Keep going at full depth.\n\n';
-}
-if(dismantleLooksIncomplete(fullText)){
-contPrompt=roundInfo+'Continue EXACTLY where you left off. Do NOT repeat anything you already wrote. Do NOT add introductions or transitions. Just pick up mid-sentence or mid-section and keep going with the same energy, same voice, same format. Here is the last 300 characters of what you already wrote so you know where you stopped:\n\n"...'+destroyRawResult.slice(-300)+'"\n\nCONTINUE NOW:';
-}else{
-contPrompt=roundInfo+'You finished a section. Now go DEEPER -- find things you missed, expand on points you only touched briefly, pull more threads, expose more hidden symbolism, dig into scripture you did not cite yet, and attack from new angles. Do NOT repeat what you already wrote. Do NOT summarize. Push FURTHER into the media. Here is the last 300 characters of what you wrote so you know where you stopped:\n\n"...'+destroyRawResult.slice(-300)+'"\n\nCONTINUE WITH NEW MATERIAL NOW:';
-}
-sendDestroyMsg(contPrompt,true);
-}else{
-actions.style.display='flex';
-setDestroyQuickActionsEnabled(!!(destroyRawResult&&destroyRawResult.trim()));
-btn.disabled=false;
-btn.innerHTML='<i class="fas fa-skull-crossbones"></i> Destroy';
-if(destroyContinueCount>0){
-showToast('Sermon complete ('+(destroyContinueCount+1)+' parts). Full response assembled.');
-}else if(lastPartWords<minWords){
-showToast('Note: still under target length after auto-expansion. Try a higher-capacity model.');
-}else{
-showToast('Deep installment complete.');
-}
-}
-}
-}
-});
-window.Poe.sendUserMessage('@'+model+' '+promptText,{
-handler:handlerName,
-stream:true,
-openChat:false,
-parameters:params
-}).catch(function(err){
-if(destroyRawResult){
-body.innerHTML=renderDestroyBodyHtml(destroyRawResult);
-actions.style.display='flex';
-setDestroyQuickActionsEnabled(true);
-}else{
-body.innerHTML='<div style="color:var(--explicit-red);padding:20px;text-align:center;"><i class="fas fa-exclamation-triangle" style="font-size:1.5rem;display:block;margin-bottom:10px;"></i>'+escapeHtml(String(err))+'</div>';
-}
-btn.disabled=false;
-btn.innerHTML='<i class="fas fa-skull-crossbones"></i> Destroy';
-});
-}
 sendDestroyMsg(prompt,false);
 }
 function copyDestroyResult(){
