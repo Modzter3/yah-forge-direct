@@ -11,6 +11,7 @@
     'apocFetchModel',
     'sealedFetchModel',
     'dismantleModel',
+    'destroyModel',
     'newsModel',
     'imagePromptModel',
   ];
