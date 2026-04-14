@@ -5230,26 +5230,53 @@ var ci=document.getElementById('customDestroyModel');
 if(ci){ci.value='';ci.classList.remove('active-override');}
 document.getElementById('destroyModel').style.opacity='1';
 }
-function buildDestroyPrompt(title,mediaType,explicit,israelite,totalRounds){
+/** Short block re-appended on destroy continuations so the model keeps sermon shape */
+function buildDestroyContinuationRules(mediaType,roundNum,totalRounds,isLastRound){
+var r='OUTPUT SHAPE (NON-NEGOTIABLE): Your first line must be exactly: # Part '+roundNum+': [three to twelve words]\n';
+r+='Then dense paragraphs only -- no ## or ### headers, no "Screen:" / "Inversion:" / "Agenda:" style label lines.\n';
+r+='Minimum two thousand words in this part; stay on THIS title only; keep the engineering-of-Yah spine in every stretch of argument.\n';
+if(mediaType==='tv'){
+r+='Continue season-by-season in order; show how each season escalates the programming.\n';
+}
+if(isLastRound){
+r+='THIS IS THE FINAL PART: bring the full verdict and what Israel must unlearn. No fake cliffhanger.\n';
+}else{
+r+='NOT the final part yet -- no overall conclusion; drive the arc forward.\n';
+}
+return r;
+}
+function buildDestroyPrompt(title,mediaType,explicit,israelite,totalRounds,roundNum){
+if(!roundNum)roundNum=1;
 var typeLabel=mediaType==='tv'?'TV show':mediaType==='game'?'video game':'movie';
 var p=israelite?'You are Brother Bet-Tsade-Lamed-Aleph-Lamed, a fiery Hebrew Israelite brother and teacher of Torah truth. You speak about Yod-He-Waw-He in THIRD PERSON ONLY with authority and reverence -- "Yah says," "the Most High commands," "He revealed," "His people." You are a HUMAN teacher, NOT God. You NEVER say "I created," "MY people" (as God), "I am your God," or speak as if YOU are the Most High. EVERY reference to Yah must be third person -- He, Him, His, Yah, the Father, Yod-He-Waw-He. NO EXCEPTIONS. No drifting into first person as God even for one sentence. If you slip, the ENTIRE output is ruined. ':'You are Yah -- the Most High -- speaking in FIRST PERSON ONLY. YOU are God. Every reference to yourself is "I," "Me," "My." You NEVER say "Yah told us," "the Most High said," "He created" -- because YOU are Yah. EVERY reference to yourself must be first person. NO EXCEPTIONS. No drifting into third person even for one sentence. If you slip, the ENTIRE output is ruined. ';
 p+='You have been given the title of a '+typeLabel+' to DESTROY through the theological framework.\n\n';
 p+='TITLE: "'+title+'"\n';
 p+='MEDIA TYPE: '+typeLabel.toUpperCase()+'\n\n';
 p+='STEP 1 -- RESEARCH: Search the web and gather EVERYTHING about this '+typeLabel+' -- the FULL plot (spoilers included, hold NOTHING back), major characters and their arcs, key scenes, themes, symbolism, underlying messaging, cultural impact, and what the creators/writers have said about it. Get the REAL story, not a sanitized summary. You need spoilers, plot twists, endings, hidden easter eggs, deleted scenes context, and the FULL picture. All of that research stays INTERNAL -- your written sermon must NOT paste URLs, hyperlinks, link lists, footnotes with links, "Sources," "References," "Further reading," or any bibliography.\n\n';
-p+='STEP 2 -- DESTROY IT: Now tear this '+typeLabel+' apart through the theological framework below. This is NOT a movie review. This is a SERMON that uses this media as a teaching tool to expose how the serpent seed programs Israel through entertainment.\n\n';
-p+='STRUCTURE YOUR DESTRUCTION:\n';
-p+='1. **OPENING -- What They Sold You**: Brief summary of what this '+typeLabel+' claims to be about on the surface. What the trailers promise. What normies think the story is.\n';
-p+='2. **THE REAL PLOT -- Decoded**: Go through the ACTUAL plot beat by beat, but through the lens of scripture. Every plot point gets decoded -- what is the REAL message being planted in your subconscious?\n';
-p+='3. **CHARACTER BREAKDOWN**: Take the major characters one by one. Who do they REALLY represent? What archetype are they pushing? What spirit/pattern from scripture maps to this character? Break down their names if there is Hebrew/occult significance.\n';
-p+='4. **OCCULT SYMBOLISM EXPOSED**: Dig into the visual symbolism, set design, color coding, number patterns, logo design, and imagery. Hollywood does NOT do anything by accident. Every frame is deliberate. Find the masonic, kabbalistic, Egyptian, and Babylonian symbols they embedded.\n';
-p+='5. **THE AGENDA**: What is the REAL purpose of this '+typeLabel+'? What behavior is it normalizing? What lie is it planting? What scriptural truth is it inverting? How does it serve the serpent seed\'s agenda against Israel?\n';
-p+='6. **SCRIPTURE vs. SCREEN**: For every major theme in this '+typeLabel+', show what scripture ACTUALLY says vs. what this media programmed people to believe. Use specific verses. Show the inversion.\n';
-p+='7. **THE VERDICT**: Deliver the final judgment on this '+typeLabel+'. What should Israel take away? What should they NEVER watch/play again? What do they need to UNLEARN?\n\n';
-if(totalRounds>1){
-p+='LENGTH AND ROUND STRUCTURE: This sermon will be produced across '+totalRounds+' rounds. THIS IS ROUND 1 OF '+totalRounds+'. You will be asked to continue '+(totalRounds-1)+' more time(s) after this. Do NOT try to cover everything in this first response -- there is no rush. Go EXTREMELY deep on each point you address. Write as much as you possibly can in this round, hitting the maximum output length. Do NOT wrap up, do NOT write a conclusion, do NOT summarize -- you are NOT done until round '+totalRounds+'. Just keep going until you run out of output space. The continuation rounds will pick up where you leave off. You will be told which round you are on each time and when it is the FINAL round -- ONLY conclude when explicitly told it is the final round.\n\n';
+p+='STEP 2 -- DESTROY IT: Tear this '+typeLabel+' apart through the theological framework below. This is NOT a movie review. It is the SAME KIND OF LONG-FORM FORGED SERMON as the main sermon tool -- same fire, same refusal to drift, same weight. Stay on THIS title only; no digressions into other shows, politics, or general culture unless this media forces it.\n\n';
+p+='COVERAGE YOU MUST HIT (weave into flowing prose -- do NOT announce these as section labels or stubs):\n';
+p+='- Open hard on what the machine sold the public versus what the story actually does to the mind.\n';
+p+='- Run the plot in real order with scripture as the decoder -- say what each beat plants in the subconscious.\n';
+p+='- Characters and names: archetypes, spirit, Hebrew or occult roots where it matters -- say it straight, no glossary lines.\n';
+p+='- Symbolism, sets, color, numbers, logos: nothing accidental; name the patterns.\n';
+p+='- Agenda: what behavior and lies get normalized; what Torah truth gets inverted.\n';
+p+='- Scripture against the fiction: specific verses, spelled-out book and chapter, numbers in words per your rules.\n';
+p+='- Close each installment with weight (final round only: full verdict and what Israel unlearns; earlier rounds: drive forward, no fake wrap-up).\n\n';
+if(mediaType==='tv'){
+p+='TV SHOW -- SEASON-BY-SEASON PROGRESSION: You MUST move in broadcast order from the first season through the last (or current) season. For every season, show how the programming escalates -- what new lie or frequency they add, how the engineering tightens on the viewer. Use plain sentences ("In season one...", "By season three..."). Do NOT use stub labels like "Season two:" alone on a line.\n\n';
 }else{
-p+='LENGTH: This sermon should be MASSIVE. Do NOT hold back. Do NOT try to be concise. Every plot point, every character, every symbol deserves a thorough destruction. Go DEEP on every single point. The reader should feel like NOTHING was left unexamined.\n\n';
+p+='FULL ARC: Move opening to finale in order (acts, chapters, levels, or time skips in the work) so the reader feels the machine tighten beat by beat.\n\n';
+}
+p+='YAH\'S ENGINEERING IS THE SPINE: Keep pulling the work back to how scripture describes creation and operation -- firmament, boundaries, seed, covenant hardware, temple pattern, frequencies, predestination -- and how this media counterfeits or inverts that design. That lens must run through the whole piece, not one detached block.\n\n';
+if(totalRounds>1){
+p+='LENGTH AND ROUND STRUCTURE: This sermon is forged in '+totalRounds+' PARTS (same idea as a multi-part sermon episode). THIS IS PART '+roundNum+' OF '+totalRounds+'. Each part MUST be at least two thousand words of dense teaching -- count internally and do not stop short. ';
+if(roundNum===1){
+p+='You will continue '+(totalRounds-1)+' more time(s). Do NOT try to finish the whole series in part one. Go as deep as the token limit allows; continuation picks up mid-thought if needed. Do NOT write a finale or "in conclusion" until the prompt explicitly says FINAL part. Hit maximum depth every round.\n\n';
+}else{
+p+='Continue the same arc from prior parts; do not restart the opening. Hit maximum depth.\n\n';
+}
+}else{
+p+='LENGTH: Single shot -- write at least four thousand words (same scale as a standalone sermon episode). Do not pad; every paragraph must advance the case on THIS media.\n\n';
 }
 if(explicit){
 p+='EXPLICIT MODE -- MANDATORY:\n';
@@ -5259,7 +5286,7 @@ p+='THEOLOGICAL FRAMEWORK:\n';
 p+='*** VOICE REMINDER -- ZERO TOLERANCE: The framework points below may use first-person Yah language for doctrinal clarity. Your OUTPUT must ALWAYS match your assigned voice. ***\n';
 if(israelite){
 p+='- YOUR ASSIGNED VOICE: ISRAELITE BROTHER (THIRD PERSON ABOUT YAH). Yod-He-Waw-Shin-Ayin IS Yah in the flesh -- one being, not separate -- but you reference BOTH Yah AND Yod-He-Waw-Shin-Ayin in THIRD PERSON as "the Most High," "Yod-He-Waw-He," "Yod-He-Waw-Shin-Ayin," "He." Teach what Yah says, do NOT speak AS Him. Teach what Yod-He-Waw-Shin-Ayin did, do NOT speak AS Him. Convert any "I made" to "Yah made," any "MY people" to "His people," any "I came in the flesh" to "Yod-He-Waw-Shin-Ayin came in the flesh," any "when I walked among you" to "when Yod-He-Waw-Shin-Ayin walked the earth." CORRECT: "Yah says..." / "The Most High commands..." / "He created..." / "Yod-He-Waw-Shin-Ayin said..." / "When He walked the earth..." WRONG: "I created..." / "I told you..." / "MY people..." / "When I came in the flesh..." / "I came only for the lost sheep..." (all of these are Yah-voice, NOT Israelite-brother voice). SELF-CHECK every sentence before output -- this includes Yod-He-Waw-Shin-Ayin references.\n';
-p+='- MODERN TECH COMPARISONS: When destroying through the engineering lens, ALWAYS compare scripture\'s technical specifications to modern technology our people can relate to. The Ark of the Covenant is a capacitor. DNA is source code. The temple layout maps to a motherboard. The firmament is a pressurized containment system. When this media touches on anything scientific, technological, or structural -- show how Yah ALREADY had it in the blueprint and the serpent seed reverse-engineered it into their entertainment.\n';
+p+='- MODERN TECH AND TORAH ENGINEERING: Scripture is the master blueprint -- Ark as capacitor, DNA as source code, temple as board layout, firmament as containment, commandments as access rules. Whenever this media touches science, tech, bodies, cities, "simulation," multiverse, genetics, surveillance, or cosmic scale, you IMMEDIATELY show Yah\'s original specification and how Hollywood counterfeited it. Weave this in constantly; it is not optional flavor.\n';
 }else{
 p+='- YOUR ASSIGNED VOICE: YAH DIRECT (FIRST PERSON AS GOD). Yod-He-Waw-Shin-Ayin is YOU -- not a separate person. First person always. CORRECT: "I created..." / "I told you..." / "MY people..." WRONG: "Yah said..." / "He created..." / "The Most High commands..." SELF-CHECK every sentence before output.\n';
 }
@@ -5285,18 +5312,23 @@ p+='- Spell out ALL numbers in verse references as words.\n';
 p+='- Apocrypha AND Sealed Scrolls are valid weapons for support.\n';
 p+='- JUDGMENT IS RATED R: When exposing the lies in this media or describing what comes for those who program Israel with poison -- be GRUESOME and GRAPHIC.\n';
 p+='- DIVINE DETECTIVE APPROACH: Do not just list what is wrong -- INVESTIGATE. Why did they choose THIS plot? THIS name? THIS symbol? What scriptural principle are they inverting? What frequency are they trying to override? Pull the thread on every detail. Show that nothing in this '+typeLabel+' is accidental -- it is all deliberate serpent seed programming designed to keep Israel asleep.\n\n';
-p+='ENTERTAINMENT-SPECIFIC RULES:\n';
-p+='- DECODE NAMES: Character names, place names, company names in media often have Hebrew, Latin, Greek, or occult roots. Break them down. What does the name REALLY mean? Why did they choose it?\n';
-p+='- INVERSION DETECTION: The serpent seed\'s primary tool is INVERSION -- taking something from scripture and flipping it. The hero is really the villain archetype from scripture. The "evil empire" is really patterned after Israel. The "chosen one" narrative steals from Israel\'s election. Find EVERY inversion.\n';
-p+='- NORMALIZATION TRACKING: What behaviors, beliefs, or lifestyles is this media normalizing? Homosexuality? Witchcraft? Rebellion against authority? Feminism? Transhumanism? Race mixing as salvation? Identify every agenda being pushed and connect it to the scriptural prohibition or warning.\n';
-p+='- PREDICTIVE PROGRAMMING: Is this media preparing people to accept something? A technology? A social change? A political shift? Connect it to prophetic scripture.\n';
-p+='- TARGET AUDIENCE ANALYSIS: Who is this media REALLY aimed at? How does it specifically target Israel (the so-called Negroes)? What programming is designed specifically to keep our people in bondage?\n\n';
-p+='FORMAT: Markdown with ## headers, **bold**, > blockquotes for quoting plot points or dialogue, --- dividers between major sections.\n';
-p+='VOICE AND TONE: This is a WRITTEN sermon -- not a spoken performance, not a stage show. Write with authority and conviction like a scholar tearing apart a document, not like a performer on stage. No theatrical dramatics. Just sharp, direct, authoritative written analysis with teeth.\n';
+p+='ENTERTAINMENT-SPECIFIC RULES (embed in prose, never as little headings):\n';
+p+='- Names: character, place, studio -- roots and why they were chosen; say it in sentence form.\n';
+p+='- Inversions: hero as villain archetype, stolen election language, empire patterns -- call each one out in running argument, not a labeled list.\n';
+p+='- Normalization and predictive programming: tie behaviors and future-conditioning to Torah and prophecy in plain speech.\n';
+p+='- Target: who this is really aimed at and how it hits scattered Israel; stay specific to THIS title.\n\n';
+p+='FORMAT -- MATCH FORGED SERMON PARTS: Use **bold** for emphasis where it helps. Use > blockquotes only when quoting a line of dialogue or a short on-screen line from this media. Do NOT use ## or ### headers anywhere -- no mid-essay chapter titles. Do NOT start lines with label-and-colon stubs (examples of forbidden junk: "Screen:", "Inversion:", "Agenda:", "Verdict:", "Plot:", "Symbolism:"). If you need a beat, write it as a full sentence.\n';
+if(totalRounds>1){
+p+='YOUR FIRST LINE must be exactly one title in this form: # Part '+roundNum+': [three to twelve words, specific to this installment]\n';
+}else{
+p+='YOUR FIRST LINE must be exactly one title in this form: # [three to twelve words, commanding and specific to this media]\n';
+}
+p+='After that title line, run dense paragraphs only -- same relentless energy as the sermon forge.\n';
+p+='VOICE AND TONE: Written sermon, not a podcast script. Peak confrontation in the middle builds like a forged part -- no softening, no both-sides, no "some might say." Stay on mission.\n';
 p+='CRITICAL OUTPUT RULES:\n';
-p+='- Do NOT include any thinking, reasoning, or preamble. Start with a ## header immediately.\n';
+p+='- No thinking tags, no preamble before the # title line.\n';
 p+='- No <think> or <thinking> tags. No internal monologue.\n';
-p+='- Do NOT mention word counts.\n';
+p+='- Do NOT mention word counts or token limits in the text.\n';
 p+='- NO LINKS OR URLS IN THE SERMON: Do not write http://, https://, www., or paste any web address. Do not use markdown links that contain a URL. Do not add "Sources," "References," "Further reading," "Bibliography," or bullet lists of URLs. You MAY refer to outlets, interviews, wikis, or articles by plain name only (e.g. "a major entertainment trade reported" or "the official synopsis") -- never the raw link.\n';
 p+='- ABSOLUTELY NO BRACKET TAGS OF ANY KIND. No [pause], [angry], [laughs], [whispers], [scoffs], [sighs], [booming], [dramatic tone], or ANY text inside square brackets that acts as a stage direction. Square brackets are ONLY permitted for actual content like [citation] references.\n';
 p+='- LANGUAGE RULE: NEVER use the word "destroy" or "destroying" in your output. Just respond -- tear it apart, break it down, expose it, rip it open -- but do NOT use that word. It sounds robotic. Use natural, varied language instead.\n';
@@ -5310,7 +5342,7 @@ var model=getDestroyModel();
 var explicit=document.getElementById('destroyExplicit').checked;
 var israelite=document.getElementById('destroyIsraelite').checked;
 var maxContinues=Math.max(0,selectedDestroyRounds-1);
-var prompt=buildDestroyPrompt(title,mediaType,explicit,israelite,selectedDestroyRounds);
+var prompt=buildDestroyPrompt(title,mediaType,explicit,israelite,selectedDestroyRounds,1);
 var btn=document.getElementById('destroyBtn');
 var output=document.getElementById('destroyOutput');
 var body=document.getElementById('destroyBody');
@@ -5356,12 +5388,13 @@ var totalRounds=maxContinues+1;
 btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Round '+currentRound+' of '+totalRounds+'...';
 var contPrompt;
 var isLastRound=(currentRound===totalRounds);
-var roundInfo='THIS IS ROUND '+currentRound+' OF '+totalRounds+' TOTAL ROUNDS. ';
-roundInfo+='NO URLs, hyperlinks, or "Sources/References" lists in your output -- plain prose only.\n\n';
+var roundInfo='THIS IS PART '+currentRound+' OF '+totalRounds+' OF THE SAME FORGED SERMON (not a new topic).\n';
+roundInfo+='NO URLs, hyperlinks, or "Sources/References" lists -- plain prose only.\n';
+roundInfo+=buildDestroyContinuationRules(mediaType,currentRound,totalRounds,isLastRound)+'\n';
 if(isLastRound){
-roundInfo+='THIS IS YOUR FINAL ROUND. You MUST bring the sermon to a strong, decisive conclusion. Deliver the final verdict on this media, wrap up any remaining sections, and end with power. Do NOT leave anything hanging -- this is the last output.\n\n';
+roundInfo+='FINAL PART INSTRUCTIONS: You MUST bring the sermon to a strong, decisive conclusion. Deliver the final verdict on this media, wrap any remaining beats, and end with power. Do NOT leave anything hanging.\n\n';
 }else{
-roundInfo+='You have '+(totalRounds-currentRound)+' round(s) remaining after this one. Do NOT wrap up or conclude yet. Keep going at full depth.\n\n';
+roundInfo+='You have '+(totalRounds-currentRound)+' part(s) remaining after this one. Do NOT wrap up the whole series yet. Keep going at full depth.\n\n';
 }
 if(dismantleLooksIncomplete(fullText)){
 contPrompt=roundInfo+'Continue EXACTLY where you left off. Do NOT repeat anything you already wrote. Do NOT add introductions or transitions. Just pick up mid-sentence or mid-section and keep going with the same energy, same voice, same format. Here is the last 300 characters of what you already wrote so you know where you stopped:\n\n"...'+destroyRawResult.slice(-300)+'"\n\nCONTINUE NOW:';
