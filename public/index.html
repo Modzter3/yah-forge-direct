@@ -5223,6 +5223,20 @@ doTTS(text,voice,'dismantleTtsAudioWrap',btn);
 var selectedDestroyRounds=5;
 var destroyRawResult='';
 var destroyContinueCount=0;
+var destroyExpandAttempts=0;
+var DESTROY_MIN_WORDS_PER_PART=1800;
+var DESTROY_MIN_WORDS_SINGLESHOT=3500;
+var DESTROY_MAX_EXPAND_PER_PART=4;
+function countWordsDestroy(s){
+if(!s||!String(s).trim())return 0;
+return String(s).trim().split(/\s+/).filter(Boolean).length;
+}
+/** Word count of the last # Part N: ... block only (current installment) */
+function getDestroyLastPartWordCount(raw){
+var parts=splitDestroyTextIntoParts(raw||'');
+if(!parts.length)return countWordsDestroy(raw||'');
+return countWordsDestroy(parts[parts.length-1]);
+}
 function setDestroyQuickActionsEnabled(on){
 var c=document.getElementById('destroyCopyQuickBtn');
 var s=document.getElementById('destroySaveLibBtn');
