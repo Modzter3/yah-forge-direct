@@ -735,20 +735,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         </div>
         <div class="custom-model-hint">Type any OpenRouter model id (e.g. google/gemini-2.5-pro) to override the dropdown</div>
       </div>
-      <div class="part-count-wrap">
-        <span class="pc-label"><i class="fas fa-layer-group"></i> Rounds:</span>
-        <div class="part-count-btns" id="destroyRoundBtns">
-          <button class="part-count-btn" data-count="1" onclick="setDestroyRounds(1)">1</button>
-          <button class="part-count-btn" data-count="2" onclick="setDestroyRounds(2)">2</button>
-          <button class="part-count-btn" data-count="3" onclick="setDestroyRounds(3)">3</button>
-          <button class="part-count-btn" data-count="4" onclick="setDestroyRounds(4)">4</button>
-          <button class="part-count-btn active" data-count="5" onclick="setDestroyRounds(5)">5</button>
-          <button class="part-count-btn" data-count="6" onclick="setDestroyRounds(6)">6</button>
-          <button class="part-count-btn" data-count="7" onclick="setDestroyRounds(7)">7</button>
-          <button class="part-count-btn" data-count="8" onclick="setDestroyRounds(8)">8</button>
-          <button class="part-count-btn" data-count="9" onclick="setDestroyRounds(9)">9</button>
-          <button class="part-count-btn" data-count="10" onclick="setDestroyRounds(10)">10</button>
-        </div>
+      <div class="destroy-one-shot-note" style="flex:1 1 220px;min-width:200px;font-size:0.72rem;color:var(--text-muted);line-height:1.45;font-family:'Bitter',serif;border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:rgba(231,76,60,0.06);">
+        <strong style="color:#e74c3c;">One forge</strong> — a single response, as deep as five stacked parts (~10k+ words target). Auto-expands if the model stops short. No part two replacing part one on screen.
       </div>
       <div class="destroy-action-btns">
         <button class="dismantle-btn destroy-btn" id="destroyBtn" onclick="startDestroy()"><i class="fas fa-skull-crossbones"></i> Destroy</button>
@@ -5259,13 +5247,13 @@ doTTS(text,voice,'dismantleTtsAudioWrap',btn);
 /* ==========================================
    DESTROY -- MEDIA DESTROYER
    ========================================== */
-var selectedDestroyRounds=5;
+var selectedDestroyRounds=1;
 var destroyRawResult='';
 var destroyContinueCount=0;
 var destroyExpandAttempts=0;
 var DESTROY_MIN_WORDS_PER_PART=1800;
-var DESTROY_MIN_WORDS_SINGLESHOT=3500;
-var DESTROY_MAX_EXPAND_PER_PART=4;
+var DESTROY_MIN_WORDS_SINGLESHOT=9000;
+var DESTROY_MAX_EXPAND_PER_PART=8;
 function countWordsDestroy(s){
 if(!s||!String(s).trim())return 0;
 return String(s).trim().split(/\s+/).filter(Boolean).length;
@@ -5319,6 +5307,9 @@ return out;
 function renderDestroyBodyHtml(raw){
 var parts=splitDestroyTextIntoParts(raw||'');
 if(!parts.length)return '';
+if(parts.length===1&&!/^#\s*Part\s+\d+/i.test(parts[0].trim())){
+return '<div class="sermon-body destroy-part-body">'+marked.parse(parts[0])+'</div>';
+}
 var html='';
 for(var i=0;i<parts.length;i++){
 var seg=parts[i];
@@ -5349,18 +5340,11 @@ var titleInput=(document.getElementById('destroyTitleInput').value||'').trim();
 var title=titleInput||'Media sermon';
 var mediaType=document.getElementById('destroyMediaType').value;
 var typeLab=mediaType==='tv'?'TV':mediaType==='game'?'Game':'Film';
-var desc='Media Destroyer — '+typeLab+' — '+selectedDestroyRounds+' round'+(selectedDestroyRounds!==1?'s':'');
+var desc='Media Destroyer — '+typeLab+' — one deep installment (five-part depth)';
 var model=getDestroyModel();
 var titles=[];
 for(var i=0;i<parts.length;i++){titles.push('Part '+(i+1));}
 saveToLibrary(title,desc,'deception','destroy',model,parts,combined,titles);
-}
-function setDestroyRounds(n){
-selectedDestroyRounds=n;
-var btns=document.querySelectorAll('#destroyRoundBtns .part-count-btn');
-for(var i=0;i<btns.length;i++){
-btns[i].classList.toggle('active',parseInt(btns[i].getAttribute('data-count'))===n);
-}
 }
 function getDestroyModel(){
 var custom=(document.getElementById('customDestroyModel').value||'').trim();
@@ -5393,13 +5377,18 @@ r+='NOT the final part yet -- no overall conclusion; drive the arc forward.\n';
 return r;
 }
 function buildDestroyExpandPrompt(mediaType,partNum,totalRounds,approxWords,title,israelite){
-var p='LENGTH RECOVERY -- SAME INSTALLMENT (CRITICAL):\n';
+var p='LENGTH RECOVERY -- SAME DOCUMENT (CRITICAL):\n';
+if(totalRounds>1){
 p+='You are STILL writing PART '+partNum+' OF '+totalRounds+'. Do NOT add a new "# Part" line. Do NOT restart the title line. Pick up at the end of what you already wrote and ADD a huge continuation to THIS SAME PART only.\n';
 p+='The prose after your Part '+partNum+' title is only about '+approxWords+' words -- that is UNACCEPTABLE. The user requires roughly two thousand words MINIMUM per part (dense teaching, not outline).\n\n';
-p+='EXPAND NOW with thousands more words: more plot beats decoded, more characters, more scripture with spelled-out references, more Yah-engineering parallels (blueprint vs counterfeit), more symbols and agenda -- all in flowing paragraphs. No URLs. No ## headers. No label-colon stubs.\n';
+}else{
+p+='This is ONE continuous sermon on "'+title+'" -- no "# Part 2" line, no second title. You already opened with a single # title line; keep that as the only top heading. Append massive new material after your last paragraph.\n';
+p+='The draft is only about '+approxWords+' words -- the user wants roughly ten thousand words MINIMUM total depth (as if five full sermon parts were stacked into one reading). You are far short.\n\n';
+}
+p+='EXPAND NOW with thousands more words: more plot beats decoded, more characters, more scripture with spelled-out references, more Yah-engineering parallels (blueprint vs counterfeit), more symbols and agenda -- all in flowing paragraphs. No URLs. No ## or ### headers. No label-colon stubs.\n';
 p+='SUBJECT LOCK: Stay on "'+title+'" only.\n';
 if(israelite){p+='ISRAELITE LOCK: Brother teaching third person about Yah -- grounded, no drift.\n';}
-if(mediaType==='tv'){p+='TV: only deepen seasons that belong in THIS part\'s band (see season-spread rule) -- do not sprint the whole series.\n';}
+if(mediaType==='tv'){p+='TV: walk seasons in order inside this expansion; show escalation each season.\n';}
 p+='\nLAST FIVE HUNDRED CHARACTERS OF YOUR DRAFT SO FAR (continue immediately after this, no repetition):\n\n"...'+destroyRawResult.slice(-500)+'"\n';
 return p;
 }
@@ -5420,9 +5409,13 @@ p+='- Characters and names: archetypes, spirit, Hebrew or occult roots where it 
 p+='- Symbolism, sets, color, numbers, logos: nothing accidental; name the patterns.\n';
 p+='- Agenda: what behavior and lies get normalized; what Torah truth gets inverted.\n';
 p+='- Scripture against the fiction: specific verses, spelled-out book and chapter, numbers in words per your rules.\n';
-p+='- Close each installment with weight (final round only: full verdict and what Israel unlearns; earlier rounds: drive forward, no fake wrap-up).\n\n';
+p+='- Close with full weight: opening hook through final verdict and what Israel must unlearn -- all in this one document.\n\n';
 if(mediaType==='tv'){
+if(totalRounds>1){
 p+='TV SHOW -- SEASONS SPLIT ACROSS PARTS: Let S be the total season count you know from research. You are writing PART '+roundNum+' OF '+totalRounds+'. Spend MOST of this part on seasons numbered from floor(('+(roundNum-1)+')*S/'+totalRounds+')+1 through floor('+roundNum+'*S/'+totalRounds+') inclusive (if S is tiny, merge bands but never try to narrate every season in one part). Earlier parts already claimed earlier seasons -- do not repeat them. Later parts own later seasons -- do not skip to the finale unless this IS part '+totalRounds+'. Within your band, show escalation: what new lie or frequency each season adds, how the engineering tightens. Use plain sentences ("In season one...", "By season three..."). Do NOT use stub labels like "Season two:" alone on a line.\n\n';
+}else{
+p+='TV SHOW -- FULL SERIES IN ONE DEEP PASS: Walk every season you know in broadcast order from season one through the finale (or current). Spend substantial paragraphs per season -- escalation, new lies, tighter engineering on the viewer each year. Do NOT try to cram everything into a short recap; this is one long manuscript. Use plain sentences ("In season one...", "By season four..."). Do NOT use stub labels like "Season two:" alone on a line.\n\n';
+}
 }else{
 p+='FULL ARC: Move opening to finale in order (acts, chapters, levels, or time skips in the work) so the reader feels the machine tighten beat by beat.\n\n';
 }
@@ -5436,7 +5429,7 @@ p+='You will continue '+(totalRounds-1)+' more time(s) as separate API turns -- 
 p+='Continue the same arc from prior parts; do not restart the opening. This part alone must still hit the two thousand word floor.\n\n';
 }
 }else{
-p+='LENGTH: Single shot -- write at least four thousand words (same scale as a standalone sermon episode). Same density as four two-thousand-word parts stacked -- no thin summary.\n\n';
+p+='LENGTH -- ONE INSTALLMENT, FIVE-PART DEPTH: You output ONE continuous sermon in a single response (the forge may auto-continue you if you stop short). Target roughly TEN THOUSAND WORDS MINIMUM of teaching after the title line -- the same cumulative weight as if five two-thousand-word parts had been forged separately. Walk the full arc: cold open on the lie, plot and characters in depth, season-by-season or act-by-act if applicable, symbols and agenda, scripture warfare, engineering of Yah throughout, then verdict and what the family unplugs. If you stop under that scale you failed the assignment. Use every token.\n\n';
 }
 if(explicit){
 p+='EXPLICIT MODE -- MANDATORY:\n';
@@ -5479,11 +5472,12 @@ p+='- Names: character, place, studio -- roots and why they were chosen; say it 
 p+='- Inversions: hero as villain archetype, stolen election language, empire patterns -- call each one out in running argument, not a labeled list.\n';
 p+='- Normalization and predictive programming: tie behaviors and future-conditioning to Torah and prophecy in plain speech.\n';
 p+='- Target: who this is really aimed at and how it hits scattered Israel; stay specific to THIS title.\n\n';
-p+='FORMAT -- MATCH FORGED SERMON PARTS: Use **bold** for emphasis where it helps. Use > blockquotes only when quoting a line of dialogue or a short on-screen line from this media. Do NOT use ## or ### headers anywhere -- no mid-essay chapter titles. Part titles MUST use a single hash only: "# Part N: ..." -- NEVER "## Part" (double hash breaks the reader layout). Do NOT start lines with label-and-colon stubs (examples of forbidden junk: "Screen:", "Inversion:", "Agenda:", "Verdict:", "Plot:", "Symbolism:"). If you need a beat, write it as a full sentence.\n';
+p+='FORMAT -- MATCH FORGED SERMON PARTS: Use **bold** for emphasis where it helps. Use > blockquotes only when quoting a line of dialogue or a short on-screen line from this media. Do NOT use ## or ### headers anywhere -- no mid-essay chapter titles. Do NOT start lines with label-and-colon stubs (examples of forbidden junk: "Screen:", "Inversion:", "Agenda:", "Verdict:", "Plot:", "Symbolism:"). If you need a beat, write it as a full sentence.\n';
 if(totalRounds>1){
-p+='YOUR FIRST LINE must be exactly one title in this form: # Part '+roundNum+': [three to twelve words, specific to this installment]\n';
+p+='YOUR FIRST LINE must be exactly one title in this form: # Part '+roundNum+': [three to twelve words, specific to this installment] (one # only -- never ## Part)\n';
 }else{
 p+='YOUR FIRST LINE must be exactly one title in this form: # [three to twelve words, commanding and specific to this media]\n';
+p+='SINGLE-DOCUMENT RULE: Do NOT add "# Part 2", "# Part 3", or any second top-level # heading. One # title at the very top only; everything else is paragraphs and blockquotes.\n';
 }
 p+='After that title line, run dense paragraphs only -- same relentless energy as the sermon forge.\n';
 p+='VOICE AND TONE: Written sermon, not a podcast script. Peak confrontation in the middle builds like a forged part -- no softening, no both-sides, no "some might say." Stay on mission.\n';
@@ -5549,7 +5543,7 @@ var minWords=totalRounds>1?DESTROY_MIN_WORDS_PER_PART:DESTROY_MIN_WORDS_SINGLESH
 var needExpand=lastPartWords<minWords&&destroyExpandAttempts<DESTROY_MAX_EXPAND_PER_PART;
 if(needExpand){
 destroyExpandAttempts++;
-btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Deepening part '+destroyExpandAttempts+'/'+DESTROY_MAX_EXPAND_PER_PART+'...';
+btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Going deeper '+destroyExpandAttempts+'/'+DESTROY_MAX_EXPAND_PER_PART+'...';
 sendDestroyMsg(buildDestroyExpandPrompt(mediaType,destroyContinueCount+1,totalRounds,lastPartWords,title,israelite),true);
 }else{
 destroyExpandAttempts=0;
@@ -5581,7 +5575,9 @@ btn.innerHTML='<i class="fas fa-skull-crossbones"></i> Destroy';
 if(destroyContinueCount>0){
 showToast('Sermon complete ('+(destroyContinueCount+1)+' parts). Full response assembled.');
 }else if(lastPartWords<minWords){
-showToast('Note: output was still under target length after auto-expansion. Try a higher-capacity model or fewer parts.');
+showToast('Note: still under target length after auto-expansion. Try a higher-capacity model.');
+}else{
+showToast('Deep installment complete.');
 }
 }
 }
