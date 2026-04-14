@@ -124,6 +124,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .destroy-type-select{padding:10px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);font-family:'Fira Code',monospace;font-size:0.8rem;outline:none;cursor:pointer;min-width:140px;}
 .destroy-btn{background:linear-gradient(135deg,#7b1e1e,#e74c3c) !important;}
 .destroy-btn:hover{box-shadow:0 4px 20px rgba(231,76,60,0.4) !important;}
+.destroy-action-btns{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.destroy-action-btns .sermon-action-btn{padding:11px 16px;font-size:0.78rem;}
+.destroy-action-btns .sermon-action-btn:disabled{opacity:0.45;cursor:not-allowed;}
 
 /* NEWS / PROPHECY WATCH */
 .news-wrap{padding:16px;}
@@ -744,7 +747,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           <button class="part-count-btn" data-count="10" onclick="setDestroyRounds(10)">10</button>
         </div>
       </div>
-      <button class="dismantle-btn destroy-btn" id="destroyBtn" onclick="startDestroy()"><i class="fas fa-skull-crossbones"></i> Destroy</button>
+      <div class="destroy-action-btns">
+        <button class="dismantle-btn destroy-btn" id="destroyBtn" onclick="startDestroy()"><i class="fas fa-skull-crossbones"></i> Destroy</button>
+        <button type="button" class="sermon-action-btn copy-all" id="destroyCopyQuickBtn" onclick="copyDestroyResult()" disabled title="Copy forged sermon"><i class="fas fa-copy"></i> Copy</button>
+        <button type="button" class="sermon-action-btn export-btn" id="destroySaveLibBtn" onclick="saveDestroyToLibrary()" disabled title="Save to Library"><i class="fas fa-book-bookmark"></i> Save</button>
+      </div>
     </div>
     <div class="dismantle-output" id="destroyOutput">
       <div class="sermon-body" id="destroyBody"></div>
@@ -3932,7 +3939,7 @@ var dateStr=d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'nume
 var timeStr=d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
 var catColor=catColors[entry.category]||'var(--text-dim)';
 var preview=entry.combined.replace(/[#*>\-_`]/g,'').substring(0,140);
-var modeLabel=entry.mode==='bible'?'BIBLE':entry.mode==='apocrypha'?'APOCRYPHA':'TOPIC';
+var modeLabel=entry.mode==='bible'?'BIBLE':entry.mode==='apocrypha'?'APOCRYPHA':entry.mode==='destroy'?'DESTROY':'TOPIC';
 html+='<div class="lib-card" onclick="openLibraryEntry('+realIdx+')">';
 html+='<i class="fas fa-book-open lib-open-icon"></i>';
 html+='<div class="lib-title">'+escapeHtml(entry.title)+'</div>';
@@ -3956,8 +3963,9 @@ document.getElementById('libModalTitle').textContent=entry.title;
 var d=new Date(entry.date);
 document.getElementById('libModalMeta').textContent=entry.category.toUpperCase()+' . '+entry.model+' . '+d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+' . ~'+entry.wordCount.toLocaleString()+' words';
 var bodyHtml='';
+var partLabel=(entry.mode==='destroy')?'Part':'Episode';
 entry.parts.forEach(function(partRaw,i){
-bodyHtml+='<div class="part-divider"><span class="part-num"><i class="fas fa-scroll" style="margin-right:6px;font-size:0.65rem;"></i>Episode '+(i+1)+' of '+entry.parts.length+'</span></div>';
+bodyHtml+='<div class="part-divider"><span class="part-num"><i class="fas fa-scroll" style="margin-right:6px;font-size:0.65rem;"></i>'+partLabel+' '+(i+1)+' of '+entry.parts.length+'</span></div>';
 bodyHtml+='<div class="sermon-body">'+marked.parse(partRaw)+'</div>';
 });
 document.getElementById('libModalBody').innerHTML=bodyHtml;
@@ -4009,11 +4017,13 @@ showToast('Sermon deleted from library.');
 function populateTtsPartSelect(selectId,partCount){
 var sel=document.getElementById(selectId);
 if(!sel)return;
-sel.innerHTML='<option value="all">All Episodes</option>';
+var allLabel=(selectId==='libTtsPartSelect'&&activeLibIndex>=0&&sermonLibrary[activeLibIndex]&&sermonLibrary[activeLibIndex].mode==='destroy')?'All Parts':'All Episodes';
+sel.innerHTML='<option value="all">'+allLabel+'</option>';
+var partWord=(selectId==='libTtsPartSelect'&&activeLibIndex>=0&&sermonLibrary[activeLibIndex]&&sermonLibrary[activeLibIndex].mode==='destroy')?'Part':'Episode';
 for(var i=1;i<=partCount;i++){
 var o=document.createElement('option');
 o.value=String(i);
-o.textContent='Episode '+i;
+o.textContent=partWord+' '+i;
 sel.appendChild(o);
 }
 }
@@ -5213,6 +5223,46 @@ doTTS(text,voice,'dismantleTtsAudioWrap',btn);
 var selectedDestroyRounds=5;
 var destroyRawResult='';
 var destroyContinueCount=0;
+function setDestroyQuickActionsEnabled(on){
+var c=document.getElementById('destroyCopyQuickBtn');
+var s=document.getElementById('destroySaveLibBtn');
+if(c)c.disabled=!on;
+if(s)s.disabled=!on;
+}
+/** Split forged destroy output on # Part N: lines so Library matches multi-part sermons */
+function splitDestroyTextIntoParts(raw){
+var t=stripDestroyUrlsAndSources(stripSermonPreamble(raw||''));
+if(!t||!t.trim())return[];
+var lines=t.split('\n');
+var idxs=[];
+for(var i=0;i<lines.length;i++){
+if(/^#\s*Part\s+\d+/i.test(lines[i].trim()))idxs.push(i);
+}
+if(idxs.length<=1)return[t.trim()];
+var out=[];
+for(var j=0;j<idxs.length;j++){
+var a=idxs[j];
+var b=j+1<idxs.length?idxs[j+1]:lines.length;
+out.push(lines.slice(a,b).join('\n').trim());
+}
+return out.filter(Boolean);
+}
+function saveDestroyToLibrary(){
+var raw=(destroyRawResult||'').trim();
+if(!raw){showToast('Nothing to save yet.');return;}
+var parts=splitDestroyTextIntoParts(raw);
+if(!parts.length){showToast('Nothing to save yet.');return;}
+var combined=parts.join('\n\n---\n\n');
+var titleInput=(document.getElementById('destroyTitleInput').value||'').trim();
+var title=titleInput||'Media sermon';
+var mediaType=document.getElementById('destroyMediaType').value;
+var typeLab=mediaType==='tv'?'TV':mediaType==='game'?'Game':'Film';
+var desc='Media Destroyer — '+typeLab+' — '+selectedDestroyRounds+' round'+(selectedDestroyRounds!==1?'s':'');
+var model=getDestroyModel();
+var titles=[];
+for(var i=0;i<parts.length;i++){titles.push('Part '+(i+1));}
+saveToLibrary(title,desc,'deception','destroy',model,parts,combined,titles);
+}
 function setDestroyRounds(n){
 selectedDestroyRounds=n;
 var btns=document.querySelectorAll('#destroyRoundBtns .part-count-btn');
@@ -5351,6 +5401,7 @@ btn.disabled=true;
 btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Working...';
 output.classList.add('visible');
 actions.style.display='none';
+setDestroyQuickActionsEnabled(false);
 destroyRawResult='';
 destroyContinueCount=0;
 var typeLabel=mediaType==='tv'?'TV show':mediaType==='game'?'video game':'movie';
@@ -5367,6 +5418,7 @@ if(destroyRawResult){
 cleaned=stripDestroyUrlsAndSources(stripSermonPreamble(destroyRawResult));
 body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
 actions.style.display='flex';
+setDestroyQuickActionsEnabled(true);
 }else{
 body.innerHTML='<div style="color:var(--explicit-red);padding:20px;text-align:center;"><i class="fas fa-exclamation-triangle" style="font-size:1.5rem;display:block;margin-bottom:10px;"></i>'+escapeHtml(msg.statusText||'Error generating response.')+'</div>';
 }
@@ -5404,6 +5456,7 @@ contPrompt=roundInfo+'You finished a section. Now go DEEPER -- find things you m
 sendDestroyMsg(contPrompt,true);
 }else{
 actions.style.display='flex';
+setDestroyQuickActionsEnabled(!!(destroyRawResult&&destroyRawResult.trim()));
 btn.disabled=false;
 btn.innerHTML='<i class="fas fa-skull-crossbones"></i> Destroy';
 if(destroyContinueCount>0){
@@ -5422,6 +5475,7 @@ if(destroyRawResult){
 var cleaned=stripDestroyUrlsAndSources(stripSermonPreamble(destroyRawResult));
 body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
 actions.style.display='flex';
+setDestroyQuickActionsEnabled(true);
 }else{
 body.innerHTML='<div style="color:var(--explicit-red);padding:20px;text-align:center;"><i class="fas fa-exclamation-triangle" style="font-size:1.5rem;display:block;margin-bottom:10px;"></i>'+escapeHtml(String(err))+'</div>';
 }
