@@ -127,6 +127,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .destroy-action-btns{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
 .destroy-action-btns .sermon-action-btn{padding:11px 16px;font-size:0.78rem;}
 .destroy-action-btns .sermon-action-btn:disabled{opacity:0.45;cursor:not-allowed;}
+.destroy-part-divider{margin-top:18px;}
+.destroy-part-divider:first-child{margin-top:0;}
+.destroy-part-body{margin-bottom:8px;}
 
 /* NEWS / PROPHECY WATCH */
 .news-wrap{padding:16px;}
@@ -5279,23 +5282,62 @@ var s=document.getElementById('destroySaveLibBtn');
 if(c)c.disabled=!on;
 if(s)s.disabled=!on;
 }
-/** Split forged destroy output on # Part N: lines so Library matches multi-part sermons */
+/** Normalize mistaken ## Part N → # Part N on first line only */
+function normalizeDestroyPartHeadingFirstLine(seg){
+if(!seg)return seg;
+var lines=seg.split('\n');
+if(lines.length&&/^#{2,}\s*Part\s+\d+/i.test(lines[0].trim())){
+lines[0]=lines[0].replace(/^#+\s*/,'# ');
+}
+return lines.join('\n');
+}
+/** Split forged destroy output on # / ## Part N: lines (library + stacked UI) */
 function splitDestroyTextIntoParts(raw){
-var t=stripDestroyUrlsAndSources(stripDestroySermonPreamble(raw||''));
+var t=stripDestroyUrlsAndSources(raw||'');
 if(!t||!t.trim())return[];
 var lines=t.split('\n');
 var idxs=[];
 for(var i=0;i<lines.length;i++){
-if(/^#\s*Part\s+\d+/i.test(lines[i].trim()))idxs.push(i);
+var L=lines[i].trim();
+if(/^#{1,6}\s*Part\s+\d+/i.test(L))idxs.push(i);
 }
-if(idxs.length<=1)return[t.trim()];
+if(!idxs.length){
+var one=stripDestroySermonPreamble(t).trim();
+return one?[one]:[];
+}
 var out=[];
 for(var j=0;j<idxs.length;j++){
 var a=idxs[j];
 var b=j+1<idxs.length?idxs[j+1]:lines.length;
-out.push(lines.slice(a,b).join('\n').trim());
+var seg=normalizeDestroyPartHeadingFirstLine(lines.slice(a,b).join('\n').trim());
+seg=stripDestroySermonPreamble(seg).trim();
+if(seg)out.push(seg);
 }
-return out.filter(Boolean);
+return out;
+}
+/** Render full destroy document: each part in its own block so Part 1 never vanishes when Part 2 parses */
+function renderDestroyBodyHtml(raw){
+var parts=splitDestroyTextIntoParts(raw||'');
+if(!parts.length)return '';
+var html='';
+for(var i=0;i<parts.length;i++){
+var seg=parts[i];
+if(!seg||!seg.trim())continue;
+var headMatch=seg.match(/^#\s*Part\s+(\d+)\s*[:\-]?\s*(.*)$/im);
+var bodyMd=seg;
+if(headMatch){
+var pn=headMatch[1];
+var sub=(headMatch[2]||'').trim().replace(/\*+/g,'');
+if(sub.length>90)sub=sub.slice(0,87)+'...';
+html+='<div class="part-divider destroy-part-divider"><span class="part-num"><i class="fas fa-scroll" style="margin-right:6px;font-size:0.65rem;"></i>Part '+escapeHtml(pn)+(sub?(' — '+escapeHtml(sub)):'')+'</span></div>';
+bodyMd=seg.replace(/^#\s*Part\s+\d+[^\n]*\n?/i,'').trim();
+}else{
+html+='<div class="part-divider destroy-part-divider"><span class="part-num"><i class="fas fa-scroll" style="margin-right:6px;font-size:0.65rem;"></i>Part 1</span></div>';
+bodyMd=seg.replace(/^#\s+[^\n]+\n?/,'').trim()||seg;
+}
+html+='<div class="sermon-body destroy-part-body">'+marked.parse(bodyMd||seg)+'</div>';
+}
+return html;
 }
 function saveDestroyToLibrary(){
 var raw=(destroyRawResult||'').trim();
@@ -5332,7 +5374,7 @@ document.getElementById('destroyModel').style.opacity='1';
 }
 /** Short block re-appended on destroy continuations so the model keeps sermon shape */
 function buildDestroyContinuationRules(mediaType,roundNum,totalRounds,isLastRound,israelite,title){
-var r='OUTPUT SHAPE (NON-NEGOTIABLE): Your first line must be exactly: # Part '+roundNum+': [three to twelve words]\n';
+var r='OUTPUT SHAPE (NON-NEGOTIABLE): Your first line must be exactly: # Part '+roundNum+': [three to twelve words] (one # only -- never ## Part)\n';
 r+='Then dense paragraphs only -- no ## or ### headers, no "Screen:" / "Inversion:" / "Agenda:" style label lines.\n';
 r+='VOLUME (HARD): This installment must read like a full sermon part -- roughly two thousand words MINIMUM of body after the title line (think twelve to fifteen dense pages if printed). If you are short, you FAILED the assignment. Pack more scene-by-scene scripture, more engineering parallels, more naming and agenda -- not filler.\n';
 r+='SUBJECT LOCK: Every section must be about the SAME media the user entered: "'+title+'". No other shows, games, films, or random current events unless this media explicitly references them -- and even then, one sentence max then back to THIS title.\n';
@@ -5437,7 +5479,7 @@ p+='- Names: character, place, studio -- roots and why they were chosen; say it 
 p+='- Inversions: hero as villain archetype, stolen election language, empire patterns -- call each one out in running argument, not a labeled list.\n';
 p+='- Normalization and predictive programming: tie behaviors and future-conditioning to Torah and prophecy in plain speech.\n';
 p+='- Target: who this is really aimed at and how it hits scattered Israel; stay specific to THIS title.\n\n';
-p+='FORMAT -- MATCH FORGED SERMON PARTS: Use **bold** for emphasis where it helps. Use > blockquotes only when quoting a line of dialogue or a short on-screen line from this media. Do NOT use ## or ### headers anywhere -- no mid-essay chapter titles. Do NOT start lines with label-and-colon stubs (examples of forbidden junk: "Screen:", "Inversion:", "Agenda:", "Verdict:", "Plot:", "Symbolism:"). If you need a beat, write it as a full sentence.\n';
+p+='FORMAT -- MATCH FORGED SERMON PARTS: Use **bold** for emphasis where it helps. Use > blockquotes only when quoting a line of dialogue or a short on-screen line from this media. Do NOT use ## or ### headers anywhere -- no mid-essay chapter titles. Part titles MUST use a single hash only: "# Part N: ..." -- NEVER "## Part" (double hash breaks the reader layout). Do NOT start lines with label-and-colon stubs (examples of forbidden junk: "Screen:", "Inversion:", "Agenda:", "Verdict:", "Plot:", "Symbolism:"). If you need a beat, write it as a full sentence.\n';
 if(totalRounds>1){
 p+='YOUR FIRST LINE must be exactly one title in this form: # Part '+roundNum+': [three to twelve words, specific to this installment]\n';
 }else{
@@ -5486,8 +5528,7 @@ if(!msg)return;
 var fullText,cleaned;
 if(msg.status==='error'){
 if(destroyRawResult){
-cleaned=stripDestroyUrlsAndSources(stripDestroySermonPreamble(destroyRawResult));
-body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
+body.innerHTML=renderDestroyBodyHtml(destroyRawResult);
 actions.style.display='flex';
 setDestroyQuickActionsEnabled(true);
 }else{
@@ -5497,13 +5538,11 @@ btn.disabled=false;
 btn.innerHTML='<i class="fas fa-skull-crossbones"></i> Destroy';
 }else if(msg.status==='incomplete'){
 fullText=isContinuation?(destroyRawResult+'\n\n'+msg.content):msg.content;
-cleaned=stripDestroyUrlsAndSources(stripDestroySermonPreamble(fullText));
-body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
+body.innerHTML=renderDestroyBodyHtml(stripDestroyUrlsAndSources(fullText));
 }else if(msg.status==='complete'){
 fullText=isContinuation?(destroyRawResult+'\n\n'+msg.content):msg.content;
 destroyRawResult=stripDestroyUrlsAndSources(fullText);
-cleaned=stripDestroySermonPreamble(destroyRawResult);
-body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
+body.innerHTML=renderDestroyBodyHtml(destroyRawResult);
 var totalRounds=maxContinues+1;
 var lastPartWords=getDestroyLastPartWordCount(destroyRawResult);
 var minWords=totalRounds>1?DESTROY_MIN_WORDS_PER_PART:DESTROY_MIN_WORDS_SINGLESHOT;
@@ -5555,8 +5594,7 @@ openChat:false,
 parameters:params
 }).catch(function(err){
 if(destroyRawResult){
-var cleaned=stripDestroyUrlsAndSources(stripDestroySermonPreamble(destroyRawResult));
-body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
+body.innerHTML=renderDestroyBodyHtml(destroyRawResult);
 actions.style.display='flex';
 setDestroyQuickActionsEnabled(true);
 }else{
