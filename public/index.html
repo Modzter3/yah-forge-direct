@@ -736,7 +736,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <div class="custom-model-hint">Type any OpenRouter model id (e.g. google/gemini-2.5-pro) to override the dropdown</div>
       </div>
       <div class="destroy-one-shot-note" style="flex:1 1 220px;min-width:200px;font-size:0.72rem;color:var(--text-muted);line-height:1.45;font-family:'Bitter',serif;border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:rgba(231,76,60,0.06);">
-        <strong style="color:#e74c3c;">One forge</strong> — a single response, as deep as five stacked parts (~10k+ words target). Auto-expands if the model stops short. No part two replacing part one on screen.
+        <strong style="color:#e74c3c;">One forge</strong> — a single response, as deep as five stacked parts (~10k+ words target). If it stops short, up to <strong>four</strong> deepen passes may run (same document, capped for credits). No part two replacing part one on screen.
       </div>
       <div class="destroy-action-btns">
         <button class="dismantle-btn destroy-btn" id="destroyBtn" onclick="startDestroy()"><i class="fas fa-skull-crossbones"></i> Destroy</button>
@@ -5253,7 +5253,7 @@ var destroyContinueCount=0;
 var destroyExpandAttempts=0;
 var DESTROY_MIN_WORDS_PER_PART=1800;
 var DESTROY_MIN_WORDS_SINGLESHOT=9000;
-var DESTROY_MAX_EXPAND_PER_PART=8;
+var DESTROY_MAX_EXPAND_PER_PART=4;
 function countWordsDestroy(s){
 if(!s||!String(s).trim())return 0;
 return String(s).trim().split(/\s+/).filter(Boolean).length;
