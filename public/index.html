@@ -2001,6 +2001,19 @@ break;
 if(startIdx>0)text=lines.slice(startIdx).join('\n');
 return text.replace(/^\s*\n+/,'');
 }
+/** Media Destroyer: remove URLs and link-heavy source dumps; keep plain-word references only */
+function stripDestroyUrlsAndSources(text){
+if(!text)return text;
+text=text.replace(/\[([^\]]*)\]\((?:https?:\/\/|www\.)[^)\s]+[^)]*?\)/gi,function(_,label){return (label||'').trim()||'';});
+text=text.replace(/\[([^\]]*)\]\(\s*\/[^\)\s]*\s*\)/gi,'$1');
+text=text.replace(/<\s*https?:\/\/[^>\s]+>/gi,'');
+text=text.replace(/<\s*www\.[^>\s]+>/gi,'');
+text=text.replace(/\bhttps?:\/\/[^\s\])>'"<]+/gi,'');
+text=text.replace(/\bwww\.[^\s\])>'"<]+/gi,'');
+text=text.replace(/^\s*[-*•]?\s*(?:https?:\/\/|www\.)[^\s]+$/gim,'');
+text=text.replace(/\n{3,}/g,'\n\n');
+return text.replace(/^\s*\n+/,'').replace(/\n{3,}/g,'\n\n');
+}
 /* ==========================================
 7-PART SERMON SERIES ENGINE
 ========================================== */
@@ -5223,7 +5236,7 @@ var p=israelite?'You are Brother Bet-Tsade-Lamed-Aleph-Lamed, a fiery Hebrew Isr
 p+='You have been given the title of a '+typeLabel+' to DESTROY through the theological framework.\n\n';
 p+='TITLE: "'+title+'"\n';
 p+='MEDIA TYPE: '+typeLabel.toUpperCase()+'\n\n';
-p+='STEP 1 -- RESEARCH: Search the web and gather EVERYTHING about this '+typeLabel+' -- the FULL plot (spoilers included, hold NOTHING back), major characters and their arcs, key scenes, themes, symbolism, underlying messaging, cultural impact, and what the creators/writers have said about it. Get the REAL story, not a sanitized summary. You need spoilers, plot twists, endings, hidden easter eggs, deleted scenes context, and the FULL picture.\n\n';
+p+='STEP 1 -- RESEARCH: Search the web and gather EVERYTHING about this '+typeLabel+' -- the FULL plot (spoilers included, hold NOTHING back), major characters and their arcs, key scenes, themes, symbolism, underlying messaging, cultural impact, and what the creators/writers have said about it. Get the REAL story, not a sanitized summary. You need spoilers, plot twists, endings, hidden easter eggs, deleted scenes context, and the FULL picture. All of that research stays INTERNAL -- your written sermon must NOT paste URLs, hyperlinks, link lists, footnotes with links, "Sources," "References," "Further reading," or any bibliography.\n\n';
 p+='STEP 2 -- DESTROY IT: Now tear this '+typeLabel+' apart through the theological framework below. This is NOT a movie review. This is a SERMON that uses this media as a teaching tool to expose how the serpent seed programs Israel through entertainment.\n\n';
 p+='STRUCTURE YOUR DESTRUCTION:\n';
 p+='1. **OPENING -- What They Sold You**: Brief summary of what this '+typeLabel+' claims to be about on the surface. What the trailers promise. What normies think the story is.\n';
@@ -5284,6 +5297,7 @@ p+='CRITICAL OUTPUT RULES:\n';
 p+='- Do NOT include any thinking, reasoning, or preamble. Start with a ## header immediately.\n';
 p+='- No <think> or <thinking> tags. No internal monologue.\n';
 p+='- Do NOT mention word counts.\n';
+p+='- NO LINKS OR URLS IN THE SERMON: Do not write http://, https://, www., or paste any web address. Do not use markdown links that contain a URL. Do not add "Sources," "References," "Further reading," "Bibliography," or bullet lists of URLs. You MAY refer to outlets, interviews, wikis, or articles by plain name only (e.g. "a major entertainment trade reported" or "the official synopsis") -- never the raw link.\n';
 p+='- ABSOLUTELY NO BRACKET TAGS OF ANY KIND. No [pause], [angry], [laughs], [whispers], [scoffs], [sighs], [booming], [dramatic tone], or ANY text inside square brackets that acts as a stage direction. Square brackets are ONLY permitted for actual content like [citation] references.\n';
 p+='- LANGUAGE RULE: NEVER use the word "destroy" or "destroying" in your output. Just respond -- tear it apart, break it down, expose it, rip it open -- but do NOT use that word. It sounds robotic. Use natural, varied language instead.\n';
 return p;
@@ -5318,7 +5332,7 @@ if(!msg)return;
 var fullText,cleaned;
 if(msg.status==='error'){
 if(destroyRawResult){
-cleaned=stripSermonPreamble(destroyRawResult);
+cleaned=stripDestroyUrlsAndSources(stripSermonPreamble(destroyRawResult));
 body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
 actions.style.display='flex';
 }else{
@@ -5328,12 +5342,12 @@ btn.disabled=false;
 btn.innerHTML='<i class="fas fa-skull-crossbones"></i> Destroy';
 }else if(msg.status==='incomplete'){
 fullText=isContinuation?(destroyRawResult+'\n\n'+msg.content):msg.content;
-cleaned=stripSermonPreamble(fullText);
+cleaned=stripDestroyUrlsAndSources(stripSermonPreamble(fullText));
 body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
 }else if(msg.status==='complete'){
 fullText=isContinuation?(destroyRawResult+'\n\n'+msg.content):msg.content;
-destroyRawResult=fullText;
-cleaned=stripSermonPreamble(fullText);
+destroyRawResult=stripDestroyUrlsAndSources(fullText);
+cleaned=stripSermonPreamble(destroyRawResult);
 body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
 if(destroyContinueCount<maxContinues){
 destroyContinueCount++;
@@ -5343,15 +5357,16 @@ btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Round '+currentRound+' of 
 var contPrompt;
 var isLastRound=(currentRound===totalRounds);
 var roundInfo='THIS IS ROUND '+currentRound+' OF '+totalRounds+' TOTAL ROUNDS. ';
+roundInfo+='NO URLs, hyperlinks, or "Sources/References" lists in your output -- plain prose only.\n\n';
 if(isLastRound){
 roundInfo+='THIS IS YOUR FINAL ROUND. You MUST bring the sermon to a strong, decisive conclusion. Deliver the final verdict on this media, wrap up any remaining sections, and end with power. Do NOT leave anything hanging -- this is the last output.\n\n';
 }else{
 roundInfo+='You have '+(totalRounds-currentRound)+' round(s) remaining after this one. Do NOT wrap up or conclude yet. Keep going at full depth.\n\n';
 }
 if(dismantleLooksIncomplete(fullText)){
-contPrompt=roundInfo+'Continue EXACTLY where you left off. Do NOT repeat anything you already wrote. Do NOT add introductions or transitions. Just pick up mid-sentence or mid-section and keep going with the same energy, same voice, same format. Here is the last 300 characters of what you already wrote so you know where you stopped:\n\n"...'+fullText.slice(-300)+'"\n\nCONTINUE NOW:';
+contPrompt=roundInfo+'Continue EXACTLY where you left off. Do NOT repeat anything you already wrote. Do NOT add introductions or transitions. Just pick up mid-sentence or mid-section and keep going with the same energy, same voice, same format. Here is the last 300 characters of what you already wrote so you know where you stopped:\n\n"...'+destroyRawResult.slice(-300)+'"\n\nCONTINUE NOW:';
 }else{
-contPrompt=roundInfo+'You finished a section. Now go DEEPER -- find things you missed, expand on points you only touched briefly, pull more threads, expose more hidden symbolism, dig into scripture you did not cite yet, and attack from new angles. Do NOT repeat what you already wrote. Do NOT summarize. Push FURTHER into the media. Here is the last 300 characters of what you wrote so you know where you stopped:\n\n"...'+fullText.slice(-300)+'"\n\nCONTINUE WITH NEW MATERIAL NOW:';
+contPrompt=roundInfo+'You finished a section. Now go DEEPER -- find things you missed, expand on points you only touched briefly, pull more threads, expose more hidden symbolism, dig into scripture you did not cite yet, and attack from new angles. Do NOT repeat what you already wrote. Do NOT summarize. Push FURTHER into the media. Here is the last 300 characters of what you wrote so you know where you stopped:\n\n"...'+destroyRawResult.slice(-300)+'"\n\nCONTINUE WITH NEW MATERIAL NOW:';
 }
 sendDestroyMsg(contPrompt,true);
 }else{
@@ -5371,7 +5386,7 @@ openChat:false,
 parameters:params
 }).catch(function(err){
 if(destroyRawResult){
-var cleaned=stripSermonPreamble(destroyRawResult);
+var cleaned=stripDestroyUrlsAndSources(stripSermonPreamble(destroyRawResult));
 body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
 actions.style.display='flex';
 }else{
@@ -5385,12 +5400,12 @@ sendDestroyMsg(prompt,false);
 }
 function copyDestroyResult(){
 if(!destroyRawResult){showToast('Nothing to copy.');return;}
-rawCopy(stripSermonPreamble(destroyRawResult));
+rawCopy(stripDestroyUrlsAndSources(stripSermonPreamble(destroyRawResult)));
 showToast('Destroy result copied!');
 }
 function exportDestroyResult(){
 if(!destroyRawResult){showToast('Nothing to export.');return;}
-var text=stripSermonPreamble(destroyRawResult);
+var text=stripDestroyUrlsAndSources(stripSermonPreamble(destroyRawResult));
 var blob=new Blob([text],{type:'text/plain'});
 var url=URL.createObjectURL(blob);
 var a=document.createElement('a');
@@ -5406,7 +5421,7 @@ showToast('Exported!');
 function readDestroyAloud(){
 if(!destroyRawResult){showToast('Nothing to read.');return;}
 var voice=document.getElementById('destroyTtsVoice').value;
-var text=stripSermonPreamble(destroyRawResult);
+var text=stripDestroyUrlsAndSources(stripSermonPreamble(destroyRawResult));
 var btn=document.querySelector('#destroyActions .tts-btn');
 doTTS(text,voice,'destroyTtsAudioWrap',btn);
 }
