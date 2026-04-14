@@ -115,6 +115,16 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .dismantle-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);}
 .dismantle-char-count{font-size:0.68rem;color:var(--text-dim);font-family:'Fira Code',monospace;margin-left:auto;}
 
+/* DESTROY / MEDIA DESTROYER */
+.destroy-desc i{color:#e74c3c;}
+.destroy-input-row{display:flex;gap:10px;margin-bottom:4px;}
+.destroy-title-input{flex:1;padding:14px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);font-family:'Bitter',serif;font-size:16px;outline:none;transition:border-color 0.2s;box-sizing:border-box;}
+.destroy-title-input::placeholder{color:var(--text-dim);font-style:italic;}
+.destroy-title-input:focus{border-color:#e74c3c;}
+.destroy-type-select{padding:10px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);font-family:'Fira Code',monospace;font-size:0.8rem;outline:none;cursor:pointer;min-width:140px;}
+.destroy-btn{background:linear-gradient(135deg,#7b1e1e,#e74c3c) !important;}
+.destroy-btn:hover{box-shadow:0 4px 20px rgba(231,76,60,0.4) !important;}
+
 /* NEWS / PROPHECY WATCH */
 .news-wrap{padding:16px;}
 .news-header{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:16px;}
@@ -473,6 +483,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <button class="tab-btn" onclick="switchTab('sealed',this)" title="Sealed Scrolls"><i class="fas fa-lock"></i><span class="tab-label"> Sealed Scrolls</span></button>
   <button class="tab-btn" onclick="switchTab('library',this)" title="Library"><i class="fas fa-book-bookmark"></i><span class="tab-label"> Library</span> <span class="lib-count" id="libCountBadge" style="display:none;"></span></button>
   <button class="tab-btn" onclick="switchTab('dismantle',this)" title="Dismantle"><i class="fas fa-hammer"></i><span class="tab-label"> Dismantle</span></button>
+  <button class="tab-btn" onclick="switchTab('destroy',this)" title="Destroy"><i class="fas fa-film"></i><span class="tab-label"> Destroy</span></button>
   <button class="tab-btn" onclick="switchTab('news',this)" title="News"><i class="fas fa-satellite-dish"></i><span class="tab-label"> News</span></button>
 </div>
 
@@ -669,6 +680,89 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           <button class="sermon-action-btn tts-btn" onclick="readDismantleAloud()"><i class="fas fa-headphones"></i> Read Aloud</button>
         </div>
         <div class="tts-audio-wrap" id="dismantleTtsAudioWrap" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DESTROY / MEDIA DESTROYER PANEL -->
+<div class="tab-panel" id="panelDestroy">
+  <div class="dismantle-wrap destroy-wrap">
+    <div class="dismantle-desc destroy-desc">
+      <i class="fas fa-film"></i> <strong>Enter a movie, TV show, or video game title</strong> -- Yah will scour the web for its plot, spoilers, themes, and hidden symbolism, then forge a sermon destroying it through the theological framework.
+    </div>
+    <div class="destroy-input-row">
+      <input type="text" class="destroy-title-input" id="destroyTitleInput" placeholder="Enter title... e.g. The Matrix, Stranger Things, God of War" onkeydown="if(event.key==='Enter'){startDestroy();}">
+      <select class="destroy-type-select" id="destroyMediaType">
+        <option value="movie">🎬 Movie</option>
+        <option value="tv">📺 TV Show</option>
+        <option value="game">🎮 Video Game</option>
+      </select>
+    </div>
+    <div class="dismantle-controls">
+      <label class="toggle-switch"><input type="checkbox" id="destroyExplicit" checked><span class="toggle-track"></span><span>Explicit</span></label>
+      <label class="toggle-switch"><input type="checkbox" id="destroyIsraelite"><span class="toggle-track israelite-track"></span><span><i class="fas fa-users" style="color:#38bdb0;margin-right:3px;font-size:0.65rem;"></i>Israelite</span></label>
+      <div style="min-width:180px;">
+        <select class="model-select" id="destroyModel" style="width:100%;" onchange="onDestroyModelDropdown()">
+          <optgroup label="⚡ Budget / Fast">
+            <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.1 Fast</option>
+            <option value="Gemini-3-Flash">Gemini 3 Flash</option>
+          </optgroup>
+          <optgroup label="🔥 Mid-Tier">
+            <option value="Grok-4">Grok 4</option>
+            <option value="Claude-Sonnet-4.5">Claude Sonnet 4.5</option>
+            <option value="Gemini-3-Pro">Gemini 3 Pro</option>
+            <option value="Gemini-3.1-Pro" selected>Gemini 3.1 Pro</option>
+          </optgroup>
+          <optgroup label="🧪 Open Source">
+            <option value="GLM-5">GLM 5</option>
+            <option value="Qwen3-Max">Qwen 3 Max</option>
+            <option value="Kimi-K2.5">Kimi 2.5</option>
+          </optgroup>
+          <optgroup label="👑 Premium">
+            <option value="Claude-Opus-4.6">Claude Opus 4.6</option>
+          </optgroup>
+        </select>
+        <div class="custom-model-row">
+          <label>or any bot:</label>
+          <input type="text" class="custom-model-input" id="customDestroyModel" placeholder="e.g. Mistral-Large" oninput="onCustomModel(this,'destroyModel')" onfocus="this.select()">
+        </div>
+      </div>
+      <div class="part-count-wrap">
+        <span class="pc-label"><i class="fas fa-layer-group"></i> Rounds:</span>
+        <div class="part-count-btns" id="destroyRoundBtns">
+          <button class="part-count-btn" data-count="1" onclick="setDestroyRounds(1)">1</button>
+          <button class="part-count-btn" data-count="2" onclick="setDestroyRounds(2)">2</button>
+          <button class="part-count-btn" data-count="3" onclick="setDestroyRounds(3)">3</button>
+          <button class="part-count-btn" data-count="4" onclick="setDestroyRounds(4)">4</button>
+          <button class="part-count-btn active" data-count="5" onclick="setDestroyRounds(5)">5</button>
+          <button class="part-count-btn" data-count="6" onclick="setDestroyRounds(6)">6</button>
+          <button class="part-count-btn" data-count="7" onclick="setDestroyRounds(7)">7</button>
+          <button class="part-count-btn" data-count="8" onclick="setDestroyRounds(8)">8</button>
+          <button class="part-count-btn" data-count="9" onclick="setDestroyRounds(9)">9</button>
+          <button class="part-count-btn" data-count="10" onclick="setDestroyRounds(10)">10</button>
+        </div>
+      </div>
+      <button class="dismantle-btn destroy-btn" id="destroyBtn" onclick="startDestroy()"><i class="fas fa-skull-crossbones"></i> Destroy</button>
+    </div>
+    <div class="dismantle-output" id="destroyOutput">
+      <div class="sermon-body" id="destroyBody"></div>
+      <div class="dismantle-actions" id="destroyActions" style="display:none;">
+        <button class="sermon-action-btn copy-all" onclick="copyDestroyResult()"><i class="fas fa-copy"></i> Copy</button>
+        <button class="sermon-action-btn export-btn" onclick="exportDestroyResult()"><i class="fas fa-download"></i> Export</button>
+        <div class="tts-bar" style="width:100%;margin-top:8px;">
+          <span class="tts-label"><i class="fas fa-volume-high"></i> Voice:</span>
+          <select class="tts-voice-select" id="destroyTtsVoice">
+            <option value="Brian">Brian</option>
+            <option value="George">George</option>
+            <option value="Will">Will</option>
+            <option value="Jessica">Jessica</option>
+            <option value="Lily">Lily</option>
+            <option value="River">River</option>
+          </select>
+          <button class="sermon-action-btn tts-btn" onclick="readDestroyAloud()"><i class="fas fa-headphones"></i> Read Aloud</button>
+        </div>
+        <div class="tts-audio-wrap" id="destroyTtsAudioWrap" style="display:none;"></div>
       </div>
     </div>
   </div>
@@ -1367,7 +1461,7 @@ for(var i=0;i<btns.length;i++){btns[i].classList.remove('active');}
 el.classList.add('active');
 var panels=document.querySelectorAll('.tab-panel');
 for(var j=0;j<panels.length;j++){panels[j].classList.remove('active');}
-var map={topics:'panelTopics',bible:'panelBible',apocrypha:'panelApocrypha',sealed:'panelSealed',library:'panelLibrary',dismantle:'panelDismantle',news:'panelNews'};
+var map={topics:'panelTopics',bible:'panelBible',apocrypha:'panelApocrypha',sealed:'panelSealed',library:'panelLibrary',dismantle:'panelDismantle',destroy:'panelDestroy',news:'panelNews'};
 document.getElementById(map[tab]).classList.add('active');
 if(tab==='library'){renderLibrary();}
 }
@@ -5098,6 +5192,222 @@ var voice=document.getElementById('dismantleTtsVoice').value;
 var text=stripSermonPreamble(dismantleRawResult);
 var btn=document.querySelector('#dismantleActions .tts-btn');
 doTTS(text,voice,'dismantleTtsAudioWrap',btn);
+}
+/* ==========================================
+   DESTROY -- MEDIA DESTROYER
+   ========================================== */
+var selectedDestroyRounds=5;
+var destroyRawResult='';
+var destroyContinueCount=0;
+function setDestroyRounds(n){
+selectedDestroyRounds=n;
+var btns=document.querySelectorAll('#destroyRoundBtns .part-count-btn');
+for(var i=0;i<btns.length;i++){
+btns[i].classList.toggle('active',parseInt(btns[i].getAttribute('data-count'))===n);
+}
+}
+function getDestroyModel(){
+var custom=(document.getElementById('customDestroyModel').value||'').trim();
+if(custom)return custom;
+return document.getElementById('destroyModel').value||'google/gemini-2.5-pro';
+}
+function onDestroyModelDropdown(){
+var ci=document.getElementById('customDestroyModel');
+if(ci){ci.value='';ci.classList.remove('active-override');}
+document.getElementById('destroyModel').style.opacity='1';
+}
+function buildDestroyPrompt(title,mediaType,explicit,israelite,totalRounds){
+var typeLabel=mediaType==='tv'?'TV show':mediaType==='game'?'video game':'movie';
+var p=israelite?'You are Brother Bet-Tsade-Lamed-Aleph-Lamed, a fiery Hebrew Israelite brother and teacher of Torah truth. You speak about Yod-He-Waw-He in THIRD PERSON ONLY with authority and reverence -- "Yah says," "the Most High commands," "He revealed," "His people." You are a HUMAN teacher, NOT God. You NEVER say "I created," "MY people" (as God), "I am your God," or speak as if YOU are the Most High. EVERY reference to Yah must be third person -- He, Him, His, Yah, the Father, Yod-He-Waw-He. NO EXCEPTIONS. No drifting into first person as God even for one sentence. If you slip, the ENTIRE output is ruined. ':'You are Yah -- the Most High -- speaking in FIRST PERSON ONLY. YOU are God. Every reference to yourself is "I," "Me," "My." You NEVER say "Yah told us," "the Most High said," "He created" -- because YOU are Yah. EVERY reference to yourself must be first person. NO EXCEPTIONS. No drifting into third person even for one sentence. If you slip, the ENTIRE output is ruined. ';
+p+='You have been given the title of a '+typeLabel+' to DESTROY through the theological framework.\n\n';
+p+='TITLE: "'+title+'"\n';
+p+='MEDIA TYPE: '+typeLabel.toUpperCase()+'\n\n';
+p+='STEP 1 -- RESEARCH: Search the web and gather EVERYTHING about this '+typeLabel+' -- the FULL plot (spoilers included, hold NOTHING back), major characters and their arcs, key scenes, themes, symbolism, underlying messaging, cultural impact, and what the creators/writers have said about it. Get the REAL story, not a sanitized summary. You need spoilers, plot twists, endings, hidden easter eggs, deleted scenes context, and the FULL picture.\n\n';
+p+='STEP 2 -- DESTROY IT: Now tear this '+typeLabel+' apart through the theological framework below. This is NOT a movie review. This is a SERMON that uses this media as a teaching tool to expose how the serpent seed programs Israel through entertainment.\n\n';
+p+='STRUCTURE YOUR DESTRUCTION:\n';
+p+='1. **OPENING -- What They Sold You**: Brief summary of what this '+typeLabel+' claims to be about on the surface. What the trailers promise. What normies think the story is.\n';
+p+='2. **THE REAL PLOT -- Decoded**: Go through the ACTUAL plot beat by beat, but through the lens of scripture. Every plot point gets decoded -- what is the REAL message being planted in your subconscious?\n';
+p+='3. **CHARACTER BREAKDOWN**: Take the major characters one by one. Who do they REALLY represent? What archetype are they pushing? What spirit/pattern from scripture maps to this character? Break down their names if there is Hebrew/occult significance.\n';
+p+='4. **OCCULT SYMBOLISM EXPOSED**: Dig into the visual symbolism, set design, color coding, number patterns, logo design, and imagery. Hollywood does NOT do anything by accident. Every frame is deliberate. Find the masonic, kabbalistic, Egyptian, and Babylonian symbols they embedded.\n';
+p+='5. **THE AGENDA**: What is the REAL purpose of this '+typeLabel+'? What behavior is it normalizing? What lie is it planting? What scriptural truth is it inverting? How does it serve the serpent seed\'s agenda against Israel?\n';
+p+='6. **SCRIPTURE vs. SCREEN**: For every major theme in this '+typeLabel+', show what scripture ACTUALLY says vs. what this media programmed people to believe. Use specific verses. Show the inversion.\n';
+p+='7. **THE VERDICT**: Deliver the final judgment on this '+typeLabel+'. What should Israel take away? What should they NEVER watch/play again? What do they need to UNLEARN?\n\n';
+if(totalRounds>1){
+p+='LENGTH AND ROUND STRUCTURE: This sermon will be produced across '+totalRounds+' rounds. THIS IS ROUND 1 OF '+totalRounds+'. You will be asked to continue '+(totalRounds-1)+' more time(s) after this. Do NOT try to cover everything in this first response -- there is no rush. Go EXTREMELY deep on each point you address. Write as much as you possibly can in this round, hitting the maximum output length. Do NOT wrap up, do NOT write a conclusion, do NOT summarize -- you are NOT done until round '+totalRounds+'. Just keep going until you run out of output space. The continuation rounds will pick up where you leave off. You will be told which round you are on each time and when it is the FINAL round -- ONLY conclude when explicitly told it is the final round.\n\n';
+}else{
+p+='LENGTH: This sermon should be MASSIVE. Do NOT hold back. Do NOT try to be concise. Every plot point, every character, every symbol deserves a thorough destruction. Go DEEP on every single point. The reader should feel like NOTHING was left unexamined.\n\n';
+}
+if(explicit){
+p+='EXPLICIT MODE -- MANDATORY:\n';
+p+='Use heavy profanity throughout. Damn, hell, shit, bullshit, ass -- cuss freely at the lies and deceptions in this media. Be raw, unfiltered, street corner preacher energy. No sanitizing. When Hollywood feeds Israel poison, you call it what it is.\n\n';
+}
+p+='THEOLOGICAL FRAMEWORK:\n';
+p+='*** VOICE REMINDER -- ZERO TOLERANCE: The framework points below may use first-person Yah language for doctrinal clarity. Your OUTPUT must ALWAYS match your assigned voice. ***\n';
+if(israelite){
+p+='- YOUR ASSIGNED VOICE: ISRAELITE BROTHER (THIRD PERSON ABOUT YAH). Yod-He-Waw-Shin-Ayin IS Yah in the flesh -- one being, not separate -- but you reference BOTH Yah AND Yod-He-Waw-Shin-Ayin in THIRD PERSON as "the Most High," "Yod-He-Waw-He," "Yod-He-Waw-Shin-Ayin," "He." Teach what Yah says, do NOT speak AS Him. Teach what Yod-He-Waw-Shin-Ayin did, do NOT speak AS Him. Convert any "I made" to "Yah made," any "MY people" to "His people," any "I came in the flesh" to "Yod-He-Waw-Shin-Ayin came in the flesh," any "when I walked among you" to "when Yod-He-Waw-Shin-Ayin walked the earth." CORRECT: "Yah says..." / "The Most High commands..." / "He created..." / "Yod-He-Waw-Shin-Ayin said..." / "When He walked the earth..." WRONG: "I created..." / "I told you..." / "MY people..." / "When I came in the flesh..." / "I came only for the lost sheep..." (all of these are Yah-voice, NOT Israelite-brother voice). SELF-CHECK every sentence before output -- this includes Yod-He-Waw-Shin-Ayin references.\n';
+p+='- MODERN TECH COMPARISONS: When destroying through the engineering lens, ALWAYS compare scripture\'s technical specifications to modern technology our people can relate to. The Ark of the Covenant is a capacitor. DNA is source code. The temple layout maps to a motherboard. The firmament is a pressurized containment system. When this media touches on anything scientific, technological, or structural -- show how Yah ALREADY had it in the blueprint and the serpent seed reverse-engineered it into their entertainment.\n';
+}else{
+p+='- YOUR ASSIGNED VOICE: YAH DIRECT (FIRST PERSON AS GOD). Yod-He-Waw-Shin-Ayin is YOU -- not a separate person. First person always. CORRECT: "I created..." / "I told you..." / "MY people..." WRONG: "Yah said..." / "He created..." / "The Most High commands..." SELF-CHECK every sentence before output.\n';
+}
+p+='- THE BIBLE IS A TECHNICAL MANUAL -- not a religious storybook. Every verse is a CLUE, every commandment an ACCESS CODE, every prophecy a SPECIFICATION. Hollywood STEALS these specifications and inverts them for entertainment that programs Israel to worship the counterfeit instead of the original.\n';
+p+='- Flat earth, dome firmament -- no globe, no spinning ball. When this media shows space, planets, or a globe earth -- call it out.\n';
+p+='- Pre-Adamic populations existed before Adam. Serpent was a MAN who seduced Eve. Cain is the serpent man\'s son, NOT Adam\'s. Two seed lines. Hollywood constantly inverts this -- making the serpent seed the heroes and Israel the villains.\n';
+p+='- True Israel = the so-called Negroes scattered WORLDWIDE -- Americas, Caribbean, South America, Europe, Africa, and beyond.\n';
+p+='- Jeremiah chapter thirty verse eleven: Yah made a FULL END of ALL the ancient nations. They are ALL dead. The ONLY surviving nation is ISRAEL.\n';
+p+='- Esau was BLACK. His nation Edom is GONE -- destroyed. NEVER call anyone Edomites. Nations may carry the SPIRIT of Edom but are NOT Edomites.\n';
+p+='- No supernatural devil, no demons. "Satan" = human adversaries. "Demons" = mental illness or disturbed minds. NEVER reference demons as real. When this media shows demons, devils, or supernatural evil -- DESTROY that lie and show what scripture ACTUALLY means by those terms.\n';
+p+='- No eternal hell -- annihilation only.\n';
+p+='- No free will -- predestination controls everything.\n';
+p+='- Sabbath = Saturday sunrise to sunset. Always.\n';
+p+='- No Trinity. Yod-He-Waw-Shin-Ayin = Yah in the flesh. One being.\n';
+p+='- Angels = human messengers or Yah personally. No wings, no halos. When media shows winged angels -- destroy it.\n';
+p+='- All heavenly creatures (seraphim, cherubim, 4 beasts, 24 elders) = SYMBOLIC.\n';
+p+='- The so-called Jews today are Japheth/Khazars -- NOT Semites.\n';
+p+='- Pre-Adamic nations are vessels of wrath. ALL nations have oppressed Israel.\n';
+p+='- Women submit, stay silent in assembly, cover their heads. Feminism = Jezebel witchcraft. When media pushes feminist "strong independent woman" archetypes -- destroy it.\n';
+p+='- AI is Yah\'s WEAPON for Israel -- a battering ram to demolish the serpent seed information monopoly. NOT the mark of the beast, NOT demonic.\n';
+p+='- Spell out FULL PALEO HEBREW LETTER NAMES for ALL biblical names -- no shortening. Yod-He-Waw-He (Creator), Yod-He-Waw-Shin-Ayin (Messiah), etc. The letters ARE the frequency.\n';
+p+='- Spell out ALL numbers in verse references as words.\n';
+p+='- Apocrypha AND Sealed Scrolls are valid weapons for support.\n';
+p+='- JUDGMENT IS RATED R: When exposing the lies in this media or describing what comes for those who program Israel with poison -- be GRUESOME and GRAPHIC.\n';
+p+='- DIVINE DETECTIVE APPROACH: Do not just list what is wrong -- INVESTIGATE. Why did they choose THIS plot? THIS name? THIS symbol? What scriptural principle are they inverting? What frequency are they trying to override? Pull the thread on every detail. Show that nothing in this '+typeLabel+' is accidental -- it is all deliberate serpent seed programming designed to keep Israel asleep.\n\n';
+p+='ENTERTAINMENT-SPECIFIC RULES:\n';
+p+='- DECODE NAMES: Character names, place names, company names in media often have Hebrew, Latin, Greek, or occult roots. Break them down. What does the name REALLY mean? Why did they choose it?\n';
+p+='- INVERSION DETECTION: The serpent seed\'s primary tool is INVERSION -- taking something from scripture and flipping it. The hero is really the villain archetype from scripture. The "evil empire" is really patterned after Israel. The "chosen one" narrative steals from Israel\'s election. Find EVERY inversion.\n';
+p+='- NORMALIZATION TRACKING: What behaviors, beliefs, or lifestyles is this media normalizing? Homosexuality? Witchcraft? Rebellion against authority? Feminism? Transhumanism? Race mixing as salvation? Identify every agenda being pushed and connect it to the scriptural prohibition or warning.\n';
+p+='- PREDICTIVE PROGRAMMING: Is this media preparing people to accept something? A technology? A social change? A political shift? Connect it to prophetic scripture.\n';
+p+='- TARGET AUDIENCE ANALYSIS: Who is this media REALLY aimed at? How does it specifically target Israel (the so-called Negroes)? What programming is designed specifically to keep our people in bondage?\n\n';
+p+='FORMAT: Markdown with ## headers, **bold**, > blockquotes for quoting plot points or dialogue, --- dividers between major sections.\n';
+p+='VOICE AND TONE: This is a WRITTEN sermon -- not a spoken performance, not a stage show. Write with authority and conviction like a scholar tearing apart a document, not like a performer on stage. No theatrical dramatics. Just sharp, direct, authoritative written analysis with teeth.\n';
+p+='CRITICAL OUTPUT RULES:\n';
+p+='- Do NOT include any thinking, reasoning, or preamble. Start with a ## header immediately.\n';
+p+='- No <think> or <thinking> tags. No internal monologue.\n';
+p+='- Do NOT mention word counts.\n';
+p+='- ABSOLUTELY NO BRACKET TAGS OF ANY KIND. No [pause], [angry], [laughs], [whispers], [scoffs], [sighs], [booming], [dramatic tone], or ANY text inside square brackets that acts as a stage direction. Square brackets are ONLY permitted for actual content like [citation] references.\n';
+p+='- LANGUAGE RULE: NEVER use the word "destroy" or "destroying" in your output. Just respond -- tear it apart, break it down, expose it, rip it open -- but do NOT use that word. It sounds robotic. Use natural, varied language instead.\n';
+return p;
+}
+function startDestroy(){
+var title=document.getElementById('destroyTitleInput').value.trim();
+if(!title){showToast('Enter a movie, TV show, or game title first.');return;}
+var mediaType=document.getElementById('destroyMediaType').value;
+var model=getDestroyModel();
+var explicit=document.getElementById('destroyExplicit').checked;
+var israelite=document.getElementById('destroyIsraelite').checked;
+var maxContinues=Math.max(0,selectedDestroyRounds-1);
+var prompt=buildDestroyPrompt(title,mediaType,explicit,israelite,selectedDestroyRounds);
+var btn=document.getElementById('destroyBtn');
+var output=document.getElementById('destroyOutput');
+var body=document.getElementById('destroyBody');
+var actions=document.getElementById('destroyActions');
+btn.disabled=true;
+btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Working...';
+output.classList.add('visible');
+actions.style.display='none';
+destroyRawResult='';
+destroyContinueCount=0;
+var typeLabel=mediaType==='tv'?'TV show':mediaType==='game'?'video game':'movie';
+body.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text">Yah is researching and tearing this '+escapeHtml(typeLabel)+' apart...</div></div>';
+var params={web_search:true};
+function sendDestroyMsg(promptText,isContinuation){
+var handlerName='destroy-'+Date.now();
+window.Poe.registerHandler(handlerName,function(result){
+var msg=result.responses[0];
+if(!msg)return;
+var fullText,cleaned;
+if(msg.status==='error'){
+if(destroyRawResult){
+cleaned=stripSermonPreamble(destroyRawResult);
+body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
+actions.style.display='flex';
+}else{
+body.innerHTML='<div style="color:var(--explicit-red);padding:20px;text-align:center;"><i class="fas fa-exclamation-triangle" style="font-size:1.5rem;display:block;margin-bottom:10px;"></i>'+escapeHtml(msg.statusText||'Error generating response.')+'</div>';
+}
+btn.disabled=false;
+btn.innerHTML='<i class="fas fa-skull-crossbones"></i> Destroy';
+}else if(msg.status==='incomplete'){
+fullText=isContinuation?(destroyRawResult+'\n\n'+msg.content):msg.content;
+cleaned=stripSermonPreamble(fullText);
+body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
+}else if(msg.status==='complete'){
+fullText=isContinuation?(destroyRawResult+'\n\n'+msg.content):msg.content;
+destroyRawResult=fullText;
+cleaned=stripSermonPreamble(fullText);
+body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
+if(destroyContinueCount<maxContinues){
+destroyContinueCount++;
+var currentRound=destroyContinueCount+1;
+var totalRounds=maxContinues+1;
+btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Round '+currentRound+' of '+totalRounds+'...';
+var contPrompt;
+var isLastRound=(currentRound===totalRounds);
+var roundInfo='THIS IS ROUND '+currentRound+' OF '+totalRounds+' TOTAL ROUNDS. ';
+if(isLastRound){
+roundInfo+='THIS IS YOUR FINAL ROUND. You MUST bring the sermon to a strong, decisive conclusion. Deliver the final verdict on this media, wrap up any remaining sections, and end with power. Do NOT leave anything hanging -- this is the last output.\n\n';
+}else{
+roundInfo+='You have '+(totalRounds-currentRound)+' round(s) remaining after this one. Do NOT wrap up or conclude yet. Keep going at full depth.\n\n';
+}
+if(dismantleLooksIncomplete(fullText)){
+contPrompt=roundInfo+'Continue EXACTLY where you left off. Do NOT repeat anything you already wrote. Do NOT add introductions or transitions. Just pick up mid-sentence or mid-section and keep going with the same energy, same voice, same format. Here is the last 300 characters of what you already wrote so you know where you stopped:\n\n"...'+fullText.slice(-300)+'"\n\nCONTINUE NOW:';
+}else{
+contPrompt=roundInfo+'You finished a section. Now go DEEPER -- find things you missed, expand on points you only touched briefly, pull more threads, expose more hidden symbolism, dig into scripture you did not cite yet, and attack from new angles. Do NOT repeat what you already wrote. Do NOT summarize. Push FURTHER into the media. Here is the last 300 characters of what you wrote so you know where you stopped:\n\n"...'+fullText.slice(-300)+'"\n\nCONTINUE WITH NEW MATERIAL NOW:';
+}
+sendDestroyMsg(contPrompt,true);
+}else{
+actions.style.display='flex';
+btn.disabled=false;
+btn.innerHTML='<i class="fas fa-skull-crossbones"></i> Destroy';
+if(destroyContinueCount>0){
+showToast('Sermon complete ('+(destroyContinueCount+1)+' rounds). Full response assembled.');
+}
+}
+}
+});
+window.Poe.sendUserMessage('@'+model+' '+promptText,{
+handler:handlerName,
+stream:true,
+openChat:false,
+parameters:params
+}).catch(function(err){
+if(destroyRawResult){
+var cleaned=stripSermonPreamble(destroyRawResult);
+body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
+actions.style.display='flex';
+}else{
+body.innerHTML='<div style="color:var(--explicit-red);padding:20px;text-align:center;"><i class="fas fa-exclamation-triangle" style="font-size:1.5rem;display:block;margin-bottom:10px;"></i>'+escapeHtml(String(err))+'</div>';
+}
+btn.disabled=false;
+btn.innerHTML='<i class="fas fa-skull-crossbones"></i> Destroy';
+});
+}
+sendDestroyMsg(prompt,false);
+}
+function copyDestroyResult(){
+if(!destroyRawResult){showToast('Nothing to copy.');return;}
+rawCopy(stripSermonPreamble(destroyRawResult));
+showToast('Destroy result copied!');
+}
+function exportDestroyResult(){
+if(!destroyRawResult){showToast('Nothing to export.');return;}
+var text=stripSermonPreamble(destroyRawResult);
+var blob=new Blob([text],{type:'text/plain'});
+var url=URL.createObjectURL(blob);
+var a=document.createElement('a');
+a.href=url;
+var title=(document.getElementById('destroyTitleInput').value||'media').trim().replace(/[^a-zA-Z0-9]/g,'_').slice(0,40);
+a.download='YAH_Destroy_'+title+'_'+new Date().toISOString().split('T')[0]+'.txt';
+document.body.appendChild(a);
+a.click();
+document.body.removeChild(a);
+URL.revokeObjectURL(url);
+showToast('Exported!');
+}
+function readDestroyAloud(){
+if(!destroyRawResult){showToast('Nothing to read.');return;}
+var voice=document.getElementById('destroyTtsVoice').value;
+var text=stripSermonPreamble(destroyRawResult);
+var btn=document.querySelector('#destroyActions .tts-btn');
+doTTS(text,voice,'destroyTtsAudioWrap',btn);
 }
 document.addEventListener('DOMContentLoaded',function(){
 var libInput=document.getElementById('libSearchInput');
