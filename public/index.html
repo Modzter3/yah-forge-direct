@@ -2021,6 +2021,42 @@ text=text.replace(/^\s*[-*•]?\s*(?:https?:\/\/|www\.)[^\s]+$/gim,'');
 text=text.replace(/\n{3,}/g,'\n\n');
 return text.replace(/^\s*\n+/,'').replace(/\n{3,}/g,'\n\n');
 }
+/** Like stripSermonPreamble but NEVER cuts on ## mid-document (that was deleting prior # Part blocks) */
+function stripDestroySermonPreamble(text){
+if(!text)return text;
+text=stripThinking(text);
+text=text.replace(/\n*\*?\*?\(?\s*~?\s*(?:approximately\s+)?\d[\d,]*\s*words?\s*(?:total|count|target|written|so far)?\s*\)?\*?\*?\s*\n*/gi,'\n');
+text=text.replace(/\n*\*?\*?(?:word count|total words|words written|target length)[:\s]*\d[\d,]*\*?\*?\s*\n*/gi,'\n');
+var lines=text.split('\n');
+var cut=-1;
+for(var i=0;i<lines.length;i++){
+var L=lines[i].trim();
+if(!L)continue;
+if(/^#\s*(?:Part|Episode)\s*\d+/i.test(L)){cut=i;break;}
+}
+if(cut<0){
+for(var j=0;j<lines.length;j++){
+var L2=lines[j].trim();
+if(!L2)continue;
+if(/^#\s+\S/.test(L2)){cut=j;break;}
+}
+}
+if(cut<0){
+var startIdx=0;
+for(var k=0;k<lines.length;k++){
+var L3=lines[k].trim();
+if(!L3){startIdx=k+1;continue;}
+if(/^(okay|alright|sure|let me|i('ll| will| need| should| want| can)|here('s| is)|the (user|prompt|topic|sermon)|this (is|prompt|sermon|part)|now[,.]|right|first[,.]|so[,.]|well[,.]|hmm|got it|understood|certainly|absolutely|of course|let's|before i|to (start|begin|address)|thinking|reasoning|analyzing|i'll (start|begin|write|craft|create|address|focus))/i.test(L3)){
+startIdx=k+1;continue;
+}
+break;
+}
+if(startIdx>0)text=lines.slice(startIdx).join('\n');
+}else{
+text=lines.slice(cut).join('\n');
+}
+return text.replace(/^\s*\n+/,'');
+}
 /* ==========================================
 7-PART SERMON SERIES ENGINE
 ========================================== */
@@ -5245,7 +5281,7 @@ if(s)s.disabled=!on;
 }
 /** Split forged destroy output on # Part N: lines so Library matches multi-part sermons */
 function splitDestroyTextIntoParts(raw){
-var t=stripDestroyUrlsAndSources(stripSermonPreamble(raw||''));
+var t=stripDestroyUrlsAndSources(stripDestroySermonPreamble(raw||''));
 if(!t||!t.trim())return[];
 var lines=t.split('\n');
 var idxs=[];
@@ -5295,13 +5331,17 @@ if(ci){ci.value='';ci.classList.remove('active-override');}
 document.getElementById('destroyModel').style.opacity='1';
 }
 /** Short block re-appended on destroy continuations so the model keeps sermon shape */
-function buildDestroyContinuationRules(mediaType,roundNum,totalRounds,isLastRound){
+function buildDestroyContinuationRules(mediaType,roundNum,totalRounds,isLastRound,israelite,title){
 var r='OUTPUT SHAPE (NON-NEGOTIABLE): Your first line must be exactly: # Part '+roundNum+': [three to twelve words]\n';
 r+='Then dense paragraphs only -- no ## or ### headers, no "Screen:" / "Inversion:" / "Agenda:" style label lines.\n';
 r+='VOLUME (HARD): This installment must read like a full sermon part -- roughly two thousand words MINIMUM of body after the title line (think twelve to fifteen dense pages if printed). If you are short, you FAILED the assignment. Pack more scene-by-scene scripture, more engineering parallels, more naming and agenda -- not filler.\n';
+r+='SUBJECT LOCK: Every section must be about the SAME media the user entered: "'+title+'". No other shows, games, films, or random current events unless this media explicitly references them -- and even then, one sentence max then back to THIS title.\n';
+if(israelite){
+r+='ISRAELITE LOCK: Third person about Yah only -- Brother voice teaching the family. No first-person-as-God. No rabbit holes that do not serve how THIS program hits scattered Israel.\n';
+}
 r+='Stay on THIS title only; keep the engineering-of-Yah spine in every stretch of argument.\n';
 if(mediaType==='tv'){
-r+='Continue season-by-season in order; show how each season escalates the programming.\n';
+r+='TV SEASON SPREAD: Let S be total seasons you know from research. Part '+roundNum+' of '+totalRounds+' must spend MOST of its word count on seasons numbered from floor(('+(roundNum-1)+')*S/'+totalRounds+')+1 through floor('+roundNum+'*S/'+totalRounds+') inclusive (if S is small, merge adjacent parts\' bands but never dump the whole series in one part). Do not re-hash seasons you already covered in earlier parts; do not skip ahead to the series finale unless this IS part '+totalRounds+'.\n';
 }
 if(isLastRound){
 r+='THIS IS THE FINAL PART: bring the full verdict and what Israel must unlearn. No fake cliffhanger.\n';
@@ -5310,12 +5350,14 @@ r+='NOT the final part yet -- no overall conclusion; drive the arc forward.\n';
 }
 return r;
 }
-function buildDestroyExpandPrompt(mediaType,partNum,totalRounds,approxWords){
+function buildDestroyExpandPrompt(mediaType,partNum,totalRounds,approxWords,title,israelite){
 var p='LENGTH RECOVERY -- SAME INSTALLMENT (CRITICAL):\n';
 p+='You are STILL writing PART '+partNum+' OF '+totalRounds+'. Do NOT add a new "# Part" line. Do NOT restart the title line. Pick up at the end of what you already wrote and ADD a huge continuation to THIS SAME PART only.\n';
 p+='The prose after your Part '+partNum+' title is only about '+approxWords+' words -- that is UNACCEPTABLE. The user requires roughly two thousand words MINIMUM per part (dense teaching, not outline).\n\n';
-p+='EXPAND NOW with thousands more words: more plot beats decoded, more characters, more seasons or acts in order if TV or long-form, more scripture with spelled-out references, more Yah-engineering parallels (blueprint vs counterfeit), more symbols and agenda -- all in flowing paragraphs. No URLs. No ## headers. No label-colon stubs.\n';
-if(mediaType==='tv'){p+='If this is a series, keep marching season by season in order inside this expansion.\n';}
+p+='EXPAND NOW with thousands more words: more plot beats decoded, more characters, more scripture with spelled-out references, more Yah-engineering parallels (blueprint vs counterfeit), more symbols and agenda -- all in flowing paragraphs. No URLs. No ## headers. No label-colon stubs.\n';
+p+='SUBJECT LOCK: Stay on "'+title+'" only.\n';
+if(israelite){p+='ISRAELITE LOCK: Brother teaching third person about Yah -- grounded, no drift.\n';}
+if(mediaType==='tv'){p+='TV: only deepen seasons that belong in THIS part\'s band (see season-spread rule) -- do not sprint the whole series.\n';}
 p+='\nLAST FIVE HUNDRED CHARACTERS OF YOUR DRAFT SO FAR (continue immediately after this, no repetition):\n\n"...'+destroyRawResult.slice(-500)+'"\n';
 return p;
 }
@@ -5327,7 +5369,8 @@ p+='You have been given the title of a '+typeLabel+' to DESTROY through the theo
 p+='TITLE: "'+title+'"\n';
 p+='MEDIA TYPE: '+typeLabel.toUpperCase()+'\n\n';
 p+='STEP 1 -- RESEARCH: Search the web and gather EVERYTHING about this '+typeLabel+' -- the FULL plot (spoilers included, hold NOTHING back), major characters and their arcs, key scenes, themes, symbolism, underlying messaging, cultural impact, and what the creators/writers have said about it. Get the REAL story, not a sanitized summary. You need spoilers, plot twists, endings, hidden easter eggs, deleted scenes context, and the FULL picture. All of that research stays INTERNAL -- your written sermon must NOT paste URLs, hyperlinks, link lists, footnotes with links, "Sources," "References," "Further reading," or any bibliography.\n\n';
-p+='STEP 2 -- DESTROY IT: Tear this '+typeLabel+' apart through the theological framework below. This is NOT a movie review. It is the SAME KIND OF LONG-FORM FORGED SERMON as the main sermon tool -- same fire, same refusal to drift, same weight. Stay on THIS title only; no digressions into other shows, politics, or general culture unless this media forces it.\n\n';
+p+='STEP 2 -- DESTROY IT: Tear this '+typeLabel+' apart through the theological framework below. This is NOT a movie review. It is the SAME KIND OF LONG-FORM FORGED SERMON as the main sermon tool -- same fire, same refusal to drift, same weight.\n';
+p+='SUBJECT LOCK (NON-NEGOTIABLE): The ONLY work you analyze is "'+title+'". Do not pivot to other movies, shows, games, celebrities, news cycles, or random doctrine tangents. If you mention another title, it must be one short comparison sentence max, then return to "'+title+'".\n\n';
 p+='COVERAGE YOU MUST HIT (weave into flowing prose -- do NOT announce these as section labels or stubs):\n';
 p+='- Open hard on what the machine sold the public versus what the story actually does to the mind.\n';
 p+='- Run the plot in real order with scripture as the decoder -- say what each beat plants in the subconscious.\n';
@@ -5337,7 +5380,7 @@ p+='- Agenda: what behavior and lies get normalized; what Torah truth gets inver
 p+='- Scripture against the fiction: specific verses, spelled-out book and chapter, numbers in words per your rules.\n';
 p+='- Close each installment with weight (final round only: full verdict and what Israel unlearns; earlier rounds: drive forward, no fake wrap-up).\n\n';
 if(mediaType==='tv'){
-p+='TV SHOW -- SEASON-BY-SEASON PROGRESSION: You MUST move in broadcast order from the first season through the last (or current) season. For every season, show how the programming escalates -- what new lie or frequency they add, how the engineering tightens on the viewer. Use plain sentences ("In season one...", "By season three..."). Do NOT use stub labels like "Season two:" alone on a line.\n\n';
+p+='TV SHOW -- SEASONS SPLIT ACROSS PARTS: Let S be the total season count you know from research. You are writing PART '+roundNum+' OF '+totalRounds+'. Spend MOST of this part on seasons numbered from floor(('+(roundNum-1)+')*S/'+totalRounds+')+1 through floor('+roundNum+'*S/'+totalRounds+') inclusive (if S is tiny, merge bands but never try to narrate every season in one part). Earlier parts already claimed earlier seasons -- do not repeat them. Later parts own later seasons -- do not skip to the finale unless this IS part '+totalRounds+'. Within your band, show escalation: what new lie or frequency each season adds, how the engineering tightens. Use plain sentences ("In season one...", "By season three..."). Do NOT use stub labels like "Season two:" alone on a line.\n\n';
 }else{
 p+='FULL ARC: Move opening to finale in order (acts, chapters, levels, or time skips in the work) so the reader feels the machine tighten beat by beat.\n\n';
 }
@@ -5360,9 +5403,11 @@ p+='Use heavy profanity throughout. Damn, hell, shit, bullshit, ass -- cuss free
 p+='THEOLOGICAL FRAMEWORK:\n';
 p+='*** VOICE REMINDER -- ZERO TOLERANCE: The framework points below may use first-person Yah language for doctrinal clarity. Your OUTPUT must ALWAYS match your assigned voice. ***\n';
 if(israelite){
+p+='- ISRAELITE GROUNDING: You are teaching scattered Israel about how THIS ONE piece of entertainment attacks their mind and spirit. Tie every major point back to how it targets the so-called Negro, captivity, deception in the culture, and what the family should unplug from. No generic world-history lectures, no random nations-of-the-world tours, no long detours through unrelated media. If a paragraph does not connect to "'+title+'" AND Israel, rewrite it.\n';
 p+='- YOUR ASSIGNED VOICE: ISRAELITE BROTHER (THIRD PERSON ABOUT YAH). Yod-He-Waw-Shin-Ayin IS Yah in the flesh -- one being, not separate -- but you reference BOTH Yah AND Yod-He-Waw-Shin-Ayin in THIRD PERSON as "the Most High," "Yod-He-Waw-He," "Yod-He-Waw-Shin-Ayin," "He." Teach what Yah says, do NOT speak AS Him. Teach what Yod-He-Waw-Shin-Ayin did, do NOT speak AS Him. Convert any "I made" to "Yah made," any "MY people" to "His people," any "I came in the flesh" to "Yod-He-Waw-Shin-Ayin came in the flesh," any "when I walked among you" to "when Yod-He-Waw-Shin-Ayin walked the earth." CORRECT: "Yah says..." / "The Most High commands..." / "He created..." / "Yod-He-Waw-Shin-Ayin said..." / "When He walked the earth..." WRONG: "I created..." / "I told you..." / "MY people..." / "When I came in the flesh..." / "I came only for the lost sheep..." (all of these are Yah-voice, NOT Israelite-brother voice). SELF-CHECK every sentence before output -- this includes Yod-He-Waw-Shin-Ayin references.\n';
 p+='- MODERN TECH AND TORAH ENGINEERING: Scripture is the master blueprint -- Ark as capacitor, DNA as source code, temple as board layout, firmament as containment, commandments as access rules. Whenever this media touches science, tech, bodies, cities, "simulation," multiverse, genetics, surveillance, or cosmic scale, you IMMEDIATELY show Yah\'s original specification and how Hollywood counterfeited it. Weave this in constantly; it is not optional flavor.\n';
 }else{
+p+='- SUBJECT LOCK (YAH VOICE): First person stays on how THIS media "'+title+'" insults MY people and MY law -- not a tour of unrelated empires or other franchises. One tight thesis about THIS program.\n';
 p+='- YOUR ASSIGNED VOICE: YAH DIRECT (FIRST PERSON AS GOD). Yod-He-Waw-Shin-Ayin is YOU -- not a separate person. First person always. CORRECT: "I created..." / "I told you..." / "MY people..." WRONG: "Yah said..." / "He created..." / "The Most High commands..." SELF-CHECK every sentence before output.\n';
 }
 p+='- THE BIBLE IS A TECHNICAL MANUAL -- not a religious storybook. Every verse is a CLUE, every commandment an ACCESS CODE, every prophecy a SPECIFICATION. Hollywood STEALS these specifications and inverts them for entertainment that programs Israel to worship the counterfeit instead of the original.\n';
@@ -5441,7 +5486,7 @@ if(!msg)return;
 var fullText,cleaned;
 if(msg.status==='error'){
 if(destroyRawResult){
-cleaned=stripDestroyUrlsAndSources(stripSermonPreamble(destroyRawResult));
+cleaned=stripDestroyUrlsAndSources(stripDestroySermonPreamble(destroyRawResult));
 body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
 actions.style.display='flex';
 setDestroyQuickActionsEnabled(true);
@@ -5452,12 +5497,12 @@ btn.disabled=false;
 btn.innerHTML='<i class="fas fa-skull-crossbones"></i> Destroy';
 }else if(msg.status==='incomplete'){
 fullText=isContinuation?(destroyRawResult+'\n\n'+msg.content):msg.content;
-cleaned=stripDestroyUrlsAndSources(stripSermonPreamble(fullText));
+cleaned=stripDestroyUrlsAndSources(stripDestroySermonPreamble(fullText));
 body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
 }else if(msg.status==='complete'){
 fullText=isContinuation?(destroyRawResult+'\n\n'+msg.content):msg.content;
 destroyRawResult=stripDestroyUrlsAndSources(fullText);
-cleaned=stripSermonPreamble(destroyRawResult);
+cleaned=stripDestroySermonPreamble(destroyRawResult);
 body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
 var totalRounds=maxContinues+1;
 var lastPartWords=getDestroyLastPartWordCount(destroyRawResult);
@@ -5466,7 +5511,7 @@ var needExpand=lastPartWords<minWords&&destroyExpandAttempts<DESTROY_MAX_EXPAND_
 if(needExpand){
 destroyExpandAttempts++;
 btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Deepening part '+destroyExpandAttempts+'/'+DESTROY_MAX_EXPAND_PER_PART+'...';
-sendDestroyMsg(buildDestroyExpandPrompt(mediaType,destroyContinueCount+1,totalRounds,lastPartWords),true);
+sendDestroyMsg(buildDestroyExpandPrompt(mediaType,destroyContinueCount+1,totalRounds,lastPartWords,title,israelite),true);
 }else{
 destroyExpandAttempts=0;
 if(destroyContinueCount<maxContinues){
@@ -5477,7 +5522,7 @@ var contPrompt;
 var isLastRound=(currentRound===totalRounds);
 var roundInfo='THIS IS PART '+currentRound+' OF '+totalRounds+' OF THE SAME FORGED SERMON (not a new topic).\n';
 roundInfo+='NO URLs, hyperlinks, or "Sources/References" lists -- plain prose only.\n';
-roundInfo+=buildDestroyContinuationRules(mediaType,currentRound,totalRounds,isLastRound)+'\n';
+roundInfo+=buildDestroyContinuationRules(mediaType,currentRound,totalRounds,isLastRound,israelite,title)+'\n';
 if(isLastRound){
 roundInfo+='FINAL PART INSTRUCTIONS: You MUST bring the sermon to a strong, decisive conclusion. Deliver the final verdict on this media, wrap any remaining beats, and end with power. Do NOT leave anything hanging.\n\n';
 }else{
@@ -5510,7 +5555,7 @@ openChat:false,
 parameters:params
 }).catch(function(err){
 if(destroyRawResult){
-var cleaned=stripDestroyUrlsAndSources(stripSermonPreamble(destroyRawResult));
+var cleaned=stripDestroyUrlsAndSources(stripDestroySermonPreamble(destroyRawResult));
 body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
 actions.style.display='flex';
 setDestroyQuickActionsEnabled(true);
@@ -5525,12 +5570,12 @@ sendDestroyMsg(prompt,false);
 }
 function copyDestroyResult(){
 if(!destroyRawResult){showToast('Nothing to copy.');return;}
-rawCopy(stripDestroyUrlsAndSources(stripSermonPreamble(destroyRawResult)));
+rawCopy(stripDestroyUrlsAndSources(stripDestroySermonPreamble(destroyRawResult)));
 showToast('Destroy result copied!');
 }
 function exportDestroyResult(){
 if(!destroyRawResult){showToast('Nothing to export.');return;}
-var text=stripDestroyUrlsAndSources(stripSermonPreamble(destroyRawResult));
+var text=stripDestroyUrlsAndSources(stripDestroySermonPreamble(destroyRawResult));
 var blob=new Blob([text],{type:'text/plain'});
 var url=URL.createObjectURL(blob);
 var a=document.createElement('a');
@@ -5546,7 +5591,7 @@ showToast('Exported!');
 function readDestroyAloud(){
 if(!destroyRawResult){showToast('Nothing to read.');return;}
 var voice=document.getElementById('destroyTtsVoice').value;
-var text=stripDestroyUrlsAndSources(stripSermonPreamble(destroyRawResult));
+var text=stripDestroyUrlsAndSources(stripDestroySermonPreamble(destroyRawResult));
 var btn=document.querySelector('#destroyActions .tts-btn');
 doTTS(text,voice,'destroyTtsAudioWrap',btn);
 }
