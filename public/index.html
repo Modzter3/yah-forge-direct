@@ -725,8 +725,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         </select>
         <div class="custom-model-row">
           <label>or any bot:</label>
-          <input type="text" class="custom-model-input" id="customDestroyModel" placeholder="e.g. Mistral-Large" oninput="onCustomModel(this,'destroyModel')" onfocus="this.select()">
+          <input type="text" class="custom-model-input" id="customDestroyModel" placeholder="e.g. anthropic/claude-sonnet-4" oninput="onCustomModel(this,'destroyModel')" onfocus="this.select()">
         </div>
+        <div class="custom-model-hint">Type any OpenRouter model id (e.g. google/gemini-2.5-pro) to override the dropdown</div>
       </div>
       <div class="part-count-wrap">
         <span class="pc-label"><i class="fas fa-layer-group"></i> Rounds:</span>
