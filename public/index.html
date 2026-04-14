@@ -5284,7 +5284,8 @@ document.getElementById('destroyModel').style.opacity='1';
 function buildDestroyContinuationRules(mediaType,roundNum,totalRounds,isLastRound){
 var r='OUTPUT SHAPE (NON-NEGOTIABLE): Your first line must be exactly: # Part '+roundNum+': [three to twelve words]\n';
 r+='Then dense paragraphs only -- no ## or ### headers, no "Screen:" / "Inversion:" / "Agenda:" style label lines.\n';
-r+='Minimum two thousand words in this part; stay on THIS title only; keep the engineering-of-Yah spine in every stretch of argument.\n';
+r+='VOLUME (HARD): This installment must read like a full sermon part -- roughly two thousand words MINIMUM of body after the title line (think twelve to fifteen dense pages if printed). If you are short, you FAILED the assignment. Pack more scene-by-scene scripture, more engineering parallels, more naming and agenda -- not filler.\n';
+r+='Stay on THIS title only; keep the engineering-of-Yah spine in every stretch of argument.\n';
 if(mediaType==='tv'){
 r+='Continue season-by-season in order; show how each season escalates the programming.\n';
 }
@@ -5294,6 +5295,15 @@ r+='THIS IS THE FINAL PART: bring the full verdict and what Israel must unlearn.
 r+='NOT the final part yet -- no overall conclusion; drive the arc forward.\n';
 }
 return r;
+}
+function buildDestroyExpandPrompt(mediaType,partNum,totalRounds,approxWords){
+var p='LENGTH RECOVERY -- SAME INSTALLMENT (CRITICAL):\n';
+p+='You are STILL writing PART '+partNum+' OF '+totalRounds+'. Do NOT add a new "# Part" line. Do NOT restart the title line. Pick up at the end of what you already wrote and ADD a huge continuation to THIS SAME PART only.\n';
+p+='The prose after your Part '+partNum+' title is only about '+approxWords+' words -- that is UNACCEPTABLE. The user requires roughly two thousand words MINIMUM per part (dense teaching, not outline).\n\n';
+p+='EXPAND NOW with thousands more words: more plot beats decoded, more characters, more seasons or acts in order if TV or long-form, more scripture with spelled-out references, more Yah-engineering parallels (blueprint vs counterfeit), more symbols and agenda -- all in flowing paragraphs. No URLs. No ## headers. No label-colon stubs.\n';
+if(mediaType==='tv'){p+='If this is a series, keep marching season by season in order inside this expansion.\n';}
+p+='\nLAST FIVE HUNDRED CHARACTERS OF YOUR DRAFT SO FAR (continue immediately after this, no repetition):\n\n"...'+destroyRawResult.slice(-500)+'"\n';
+return p;
 }
 function buildDestroyPrompt(title,mediaType,explicit,israelite,totalRounds,roundNum){
 if(!roundNum)roundNum=1;
@@ -5319,14 +5329,15 @@ p+='FULL ARC: Move opening to finale in order (acts, chapters, levels, or time s
 }
 p+='YAH\'S ENGINEERING IS THE SPINE: Keep pulling the work back to how scripture describes creation and operation -- firmament, boundaries, seed, covenant hardware, temple pattern, frequencies, predestination -- and how this media counterfeits or inverts that design. That lens must run through the whole piece, not one detached block.\n\n';
 if(totalRounds>1){
-p+='LENGTH AND ROUND STRUCTURE: This sermon is forged in '+totalRounds+' PARTS (same idea as a multi-part sermon episode). THIS IS PART '+roundNum+' OF '+totalRounds+'. Each part MUST be at least two thousand words of dense teaching -- count internally and do not stop short. ';
+p+='LENGTH AND ROUND STRUCTURE: This sermon is forged in '+totalRounds+' PARTS (same idea as a multi-part sermon episode). THIS IS PART '+roundNum+' OF '+totalRounds+'.\n';
+p+='VOLUME (HARD REQUIREMENT): Each part MUST land around two thousand words MINIMUM of body text after the single "# Part ..." title line -- roughly twelve to fifteen dense manuscript pages of teaching per part. That is MORE than a blog post; it is a full installment. If you stop early you break the forge.\n';
 if(roundNum===1){
-p+='You will continue '+(totalRounds-1)+' more time(s). Do NOT try to finish the whole series in part one. Go as deep as the token limit allows; continuation picks up mid-thought if needed. Do NOT write a finale or "in conclusion" until the prompt explicitly says FINAL part. Hit maximum depth every round.\n\n';
+p+='You will continue '+(totalRounds-1)+' more time(s) as separate API turns -- each turn is ONE part only with its own "# Part N:" line. Do NOT compress multiple parts into one response. Do NOT try to finish the whole series in part one. Write ONLY part one this turn, but make it MASSIVE. Do NOT write a finale until the FINAL part prompt. Use every token you are given.\n\n';
 }else{
-p+='Continue the same arc from prior parts; do not restart the opening. Hit maximum depth.\n\n';
+p+='Continue the same arc from prior parts; do not restart the opening. This part alone must still hit the two thousand word floor.\n\n';
 }
 }else{
-p+='LENGTH: Single shot -- write at least four thousand words (same scale as a standalone sermon episode). Do not pad; every paragraph must advance the case on THIS media.\n\n';
+p+='LENGTH: Single shot -- write at least four thousand words (same scale as a standalone sermon episode). Same density as four two-thousand-word parts stacked -- no thin summary.\n\n';
 }
 if(explicit){
 p+='EXPLICIT MODE -- MANDATORY:\n';
@@ -5404,9 +5415,10 @@ actions.style.display='none';
 setDestroyQuickActionsEnabled(false);
 destroyRawResult='';
 destroyContinueCount=0;
+destroyExpandAttempts=0;
 var typeLabel=mediaType==='tv'?'TV show':mediaType==='game'?'video game':'movie';
 body.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text">Yah is researching and tearing this '+escapeHtml(typeLabel)+' apart...</div></div>';
-var params={web_search:true};
+var params={web_search:true,max_tokens:16384};
 function sendDestroyMsg(promptText,isContinuation){
 var handlerName='destroy-'+Date.now();
 window.Poe.registerHandler(handlerName,function(result){
@@ -5433,10 +5445,19 @@ fullText=isContinuation?(destroyRawResult+'\n\n'+msg.content):msg.content;
 destroyRawResult=stripDestroyUrlsAndSources(fullText);
 cleaned=stripSermonPreamble(destroyRawResult);
 body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
+var totalRounds=maxContinues+1;
+var lastPartWords=getDestroyLastPartWordCount(destroyRawResult);
+var minWords=totalRounds>1?DESTROY_MIN_WORDS_PER_PART:DESTROY_MIN_WORDS_SINGLESHOT;
+var needExpand=lastPartWords<minWords&&destroyExpandAttempts<DESTROY_MAX_EXPAND_PER_PART;
+if(needExpand){
+destroyExpandAttempts++;
+btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Deepening part '+destroyExpandAttempts+'/'+DESTROY_MAX_EXPAND_PER_PART+'...';
+sendDestroyMsg(buildDestroyExpandPrompt(mediaType,destroyContinueCount+1,totalRounds,lastPartWords),true);
+}else{
+destroyExpandAttempts=0;
 if(destroyContinueCount<maxContinues){
 destroyContinueCount++;
 var currentRound=destroyContinueCount+1;
-var totalRounds=maxContinues+1;
 btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Round '+currentRound+' of '+totalRounds+'...';
 var contPrompt;
 var isLastRound=(currentRound===totalRounds);
@@ -5460,7 +5481,10 @@ setDestroyQuickActionsEnabled(!!(destroyRawResult&&destroyRawResult.trim()));
 btn.disabled=false;
 btn.innerHTML='<i class="fas fa-skull-crossbones"></i> Destroy';
 if(destroyContinueCount>0){
-showToast('Sermon complete ('+(destroyContinueCount+1)+' rounds). Full response assembled.');
+showToast('Sermon complete ('+(destroyContinueCount+1)+' parts). Full response assembled.');
+}else if(lastPartWords<minWords){
+showToast('Note: output was still under target length after auto-expansion. Try a higher-capacity model or fewer parts.');
+}
 }
 }
 }
