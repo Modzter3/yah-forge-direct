@@ -1328,6 +1328,61 @@ var currentChapterText=null;
 var currentChapterVerseCount=0;
 var currentNewsContext=null;
 var currentThreadsContext=null;
+function detectMediaWorkFromTopic(topic){
+if(!topic)return null;
+var raw=((''+(topic.title||''))+'\n'+(''+(topic.desc||''))).toLowerCase();
+if(!/\S/.test(raw))return null;
+var scores={tv:0,movie:0,game:0,book:0};
+var bump=function(kind,n){if(scores[kind]!==undefined)scores[kind]+=n;};
+[
+[/\bseason\s*\d+/,3,'tv'],[/\bs\d{1,2}\s*e\d{1,2}\b/,4,'tv'],[/\bepisode\s*\d+/,2,'tv'],
+[/\b(tv|television)\s+series\b/,3,'tv'],[/\blimited\s+series\b/,2,'tv'],[/\bminiseries\b/,2,'tv'],
+[/\bshowrunner\b/,2,'tv'],[/\bstreaming\s+series\b/,2,'tv'],[/\bnetflix\b|\bhulu\b|\bdisney\+\b|\bhbomax\b|\bprime\s+video\b/,1,'tv'],
+[/\bvideo\s+game\b|\bgameplay\b/,4,'game'],[/\bplaystation\b|\bxbox\b|\bnintendo\b|\bswitch\b|\bsteam\b|\bpc\s+port\b/,3,'game'],
+[/\bmmorpg\b|\bfps\b|\brpg\b|\bopen\s+world\b|\bboss\s+fight\b|\blevel\s+design\b|\bspeedrun\b/,2,'game'],
+[/\bmovie\b|\bfilm\b|\bcinematic\b/,3,'movie'],[/\bsequel\b|\bprequel\b|\bfranchise\b|\bbox\s+office\b|\btrailer\b/,2,'movie'],
+[/\bnovel\b|\bnovella\b|\btrilogy\b|\bprequel\s+novel\b/,3,'book'],[/\bhardcover\b|\bpaperback\b|\baudiobook\b/,2,'book'],
+[/\bauthor\b|\bbestseller\b|\bmemoir\b/,2,'book']
+].forEach(function(rule){if(rule[0].test(raw))bump(rule[2],rule[1]);});
+if(/\bbook\s+of\s+/i.test(raw))scores.book-=6;
+var best=null;var bestScore=0;
+['tv','movie','game','book'].forEach(function(k){if(scores[k]>bestScore){bestScore=scores[k];best=k;}});
+if(bestScore<2){
+if(/\(\s*(19|20)\d{2}\s*\)/.test(topic.title||'')&&scores.movie>=0)bump('movie',2);
+best=null;bestScore=0;
+['tv','movie','game','book'].forEach(function(k){if(scores[k]>bestScore){bestScore=scores[k];best=k;}});
+}
+if(!best||bestScore<2)return null;
+var label={tv:'a television series or streaming show',movie:'a film or cinematic work',game:'a video game or interactive work',book:'a book, novel, or literary work'}[best];
+return {kind:best,label:label,score:bestScore};
+}
+function buildMediaWorkPromptExtension(topic,media,partNum,totalParts){
+if(!topic||!media)return '';
+var kind=media.kind;
+var isTv=kind==='tv';
+var out='';
+out+='*** POP-CULTURE / MEDIA WORK -- THIS SERMON\'S PRIMARY SUBJECT (AUTO-DETECTED) ***\n';
+out+='CLASSIFICATION: The topic reads like it names or centers on '+media.label+'.\n';
+out+='YOUR JOB: Treat this work as the MAIN TEXT you are exegeting -- with the SAME depth, length, and fire as scripture-heavy sermons. The story, characters, systems, and imagery are not decoration; they carry the lesson.\n';
+out+='IDENTIFY THE WORK: From the title and core message, infer the exact franchise, installment, and medium. Name it plainly in the welcome/backdrop (or opening) so the listener knows which work you mean.\n';
+if(isTv&&totalParts>1){
+out+='TV / SERIES PACING: Spread the series across parts in REAL ORDER -- early seasons in earlier parts, later seasons in later parts. Do NOT jump randomly. Part '+partNum+' should focus on the chunk of the show that belongs in this section of the timeline (and say which season(s) and major arcs you are covering).\n';
+}else if(isTv){
+out+='TV / SERIES PACING: Move season by season (or arc by arc) in order -- do not skip around without reason.\n';
+}
+if(kind==='movie'){
+out+='FILM PACING: Walk the plot in STORY ORDER (setup, rising action, turns, climax, resolution). Dissect key scenes, motifs, and dialogue that expose doctrine -- not a loose montage.\n';
+}
+if(kind==='game'){
+out+='GAME PACING: Cover narrative, mechanics, and world-building where they serve the message (quests, lore, player agency, design choices) -- still in coherent order, not a random list of features.\n';
+}
+if(kind==='book'){
+out+='BOOK PACING: Follow the book\'s structure -- major parts, arcs, and turning points in reading order. Exegete chapters and themes the way you would a long scroll.\n';
+}
+out+='VERBOSITY LOCK: Match the usual sermon density: approximately '+((totalParts===1)?'four thousand':'two thousand')+' words for THIS part, full modern-tech / Master Engineer weaving where it fits, provocations and rabbit holes, and SPECIFIC references to named characters, places, set-pieces, and plot beats (no vague "the movie" talk).\n';
+out+='ANTI-HALLUCINATION: If you are not sure of a detail (exact quote, minor character name, scene order), say you are speaking from general memory and keep claims bounded -- do NOT invent precise quotes, episodes, or chapter numbers.\n\n';
+return out;
+}
 function recommendPartCount(topic,mode){
 if(!topic)return 3;
 if(mode==='threads'&&currentThreadsContext){
@@ -1352,6 +1407,13 @@ var bookName=currentChapterSource?currentChapterSource.book:'';
 for(var h=0;h<heavy.length;h++){if(bookName.indexOf(heavy[h])!==-1)return 4;}
 for(var l=0;l<light.length;l++){if(bookName.indexOf(light[l])!==-1)return 2;}
 return 3;
+}
+if(mode==='standard'){
+var mwTopic=detectMediaWorkFromTopic(topic);
+if(mwTopic){
+if(mwTopic.kind==='tv')return 5;
+return 4;
+}
 }
 var cat=topic.cat||'doctrine';
 var deepCats={eschatology:5,prophecy:4,adversary:4,cosmology:3,deception:4};
@@ -3001,6 +3063,10 @@ p+='8. STAY ON YOUR THREADS. Do NOT discuss threads assigned to other parts. You
 }
 p+='\n';
 }else{
+var mwTopic=detectMediaWorkFromTopic(topic);
+if(mwTopic){
+p+=buildMediaWorkPromptExtension(topic,mwTopic,partNum,totalParts);
+}
 p+='TOPIC: '+topic.title+'\nCORE MESSAGE: '+topic.desc+'\n\n';
 }
 // Give FULL context of all previous parts so the bot knows exactly what was already said
