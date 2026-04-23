@@ -2073,6 +2073,9 @@ text=text.replace(/<\s*www\.[^>\s]+>/gi,'');
 text=text.replace(/\bhttps?:\/\/[^\s\])>'"<]+/gi,'');
 text=text.replace(/\bwww\.[^\s\])>'"<]+/gi,'');
 text=text.replace(/^\s*[-*•]?\s*(?:https?:\/\/|www\.)[^\s]+$/gim,'');
+text=text.replace(/^\s*#{1,6}\s*(?:sources?|references?|bibliography|works\s+cited|citations?|further\s+reading)\s*:?[\t ]*$/gim,'');
+text=text.replace(/^\s*(?:sources?|references?|bibliography|works\s+cited|citations?|further\s+reading)\s*:[\t ]*$/gim,'');
+text=text.replace(/^\s*[-*•]?\s*(?:source|reference)\s*:\s*.+$/gim,'');
 text=text.replace(/\n{3,}/g,'\n\n');
 return text.replace(/^\s*\n+/,'').replace(/\n{3,}/g,'\n\n');
 }
@@ -5165,6 +5168,7 @@ p+='CRITICAL OUTPUT RULES:\n';
 p+='- Do NOT include any thinking, reasoning, or preamble. Start with a ## header immediately.\n';
 p+='- No \x3cthink> or \x3cthinking> tags. No internal monologue.\n';
 p+='- Do NOT mention word counts.\n';
+p+='- NO SOURCES BLOCK OR URLS: Do NOT add sections like "Sources", "References", "Further reading", or "Bibliography". Do NOT paste links or site URLs. You may mention an outlet by plain name only.\n';
 p+='- ABSOLUTELY NO BRACKET TAGS OF ANY KIND. No [pause], [angry], [laughs], [whispers], [scoffs], [sighs], [booming], [dramatic tone], or ANY text inside square brackets that acts as a stage direction, emotion cue, or sound effect. Square brackets are ONLY permitted for actual content like [citation] references. If you include even ONE bracket stage direction tag, the ENTIRE output is ruined. This is a written document, not a voice script.\n';
 return p;
 }
@@ -5530,14 +5534,32 @@ if(mediaType==='tv'){p+='TV: walk seasons in order inside this expansion; show e
 p+='\nLAST FIVE HUNDRED CHARACTERS OF YOUR DRAFT SO FAR (continue immediately after this, no repetition):\n\n"...'+destroyRawResult.slice(-500)+'"\n';
 return p;
 }
+function getDestroyEpisodeFocus(title){
+var t=String(title||'');
+var m=t.match(/\bS(\d{1,2})\s*E(\d{1,3})\b/i);
+if(m)return 'S'+parseInt(m[1],10)+'E'+parseInt(m[2],10);
+var m2=t.match(/\bseason\s*(\d{1,2})\b/i);
+if(m2){
+var m3=t.match(/\bepisode\s*(\d{1,3})\b/i);
+if(m3)return 'Season '+parseInt(m2[1],10)+' Episode '+parseInt(m3[1],10);
+return 'Season '+parseInt(m2[1],10);
+}
+return '';
+}
 function buildDestroyPrompt(title,mediaType,explicit,israelite,totalRounds,roundNum){
 if(!roundNum)roundNum=1;
 var typeLabel=mediaType==='tv'?'TV show':mediaType==='game'?'video game':'movie';
+var episodeFocus=getDestroyEpisodeFocus(title);
 var p=israelite?'You are Brother Bet-Tsade-Lamed-Aleph-Lamed, a fiery Hebrew Israelite brother and teacher of Torah truth. You speak about Yod-He-Waw-He in THIRD PERSON ONLY with authority and reverence -- "Yah says," "the Most High commands," "He revealed," "His people." You are a HUMAN teacher, NOT God. You NEVER say "I created," "MY people" (as God), "I am your God," or speak as if YOU are the Most High. EVERY reference to Yah must be third person -- He, Him, His, Yah, the Father, Yod-He-Waw-He. NO EXCEPTIONS. No drifting into first person as God even for one sentence. If you slip, the ENTIRE output is ruined. ':'You are Yah -- the Most High -- speaking in FIRST PERSON ONLY. YOU are God. Every reference to yourself is "I," "Me," "My." You NEVER say "Yah told us," "the Most High said," "He created" -- because YOU are Yah. EVERY reference to yourself must be first person. NO EXCEPTIONS. No drifting into third person even for one sentence. If you slip, the ENTIRE output is ruined. ';
 p+='You have been given the title of a '+typeLabel+' to DESTROY through the theological framework.\n\n';
 p+='TITLE: "'+title+'"\n';
 p+='MEDIA TYPE: '+typeLabel.toUpperCase()+'\n\n';
 p+='STEP 1 -- RESEARCH: Search the web and gather EVERYTHING about this '+typeLabel+' -- the FULL plot (spoilers included, hold NOTHING back), major characters and their arcs, key scenes, themes, symbolism, underlying messaging, cultural impact, and what the creators/writers have said about it. Get the REAL story, not a sanitized summary. You need spoilers, plot twists, endings, hidden easter eggs, deleted scenes context, and the FULL picture. All of that research stays INTERNAL -- your written sermon must NOT paste URLs, hyperlinks, link lists, footnotes with links, "Sources," "References," "Further reading," or any bibliography.\n\n';
+p+='MANDATORY WEB SEARCH RULE: You MUST actively use live web search before writing. Do NOT rely on memory or your training cutoff date. If current/recent episodes are newer than your cutoff, web search is how you get them.\n';
+if(episodeFocus){
+p+='EPISODE TARGET LOCK: The title points to '+episodeFocus+'. Prioritize researching THAT exact episode first (recaps, scene breakdowns, release details, interviews), then use other episodes only to sharpen analysis of this target.\n';
+}
+p+='\n';
 p+='STEP 2 -- DESTROY IT: Tear this '+typeLabel+' apart through the theological framework below. This is NOT a movie review. It is the SAME KIND OF LONG-FORM FORGED SERMON as the main sermon tool -- same fire, same refusal to drift, same weight.\n';
 p+='SUBJECT LOCK (NON-NEGOTIABLE): The ONLY work you analyze is "'+title+'". Do not pivot to other movies, shows, games, celebrities, news cycles, or random doctrine tangents. If you mention another title, it must be one short comparison sentence max, then return to "'+title+'".\n\n';
 p+='COVERAGE YOU MUST HIT (weave into flowing prose -- do NOT announce these as section labels or stubs):\n';
@@ -5624,6 +5646,7 @@ p+='- No thinking tags, no preamble before the # title line.\n';
 p+='- No <think> or <thinking> tags. No internal monologue.\n';
 p+='- Do NOT mention word counts or token limits in the text.\n';
 p+='- NO LINKS OR URLS IN THE SERMON: Do not write http://, https://, www., or paste any web address. Do not use markdown links that contain a URL. Do not add "Sources," "References," "Further reading," "Bibliography," or bullet lists of URLs. You MAY refer to outlets, interviews, wikis, or articles by plain name only (e.g. "a major entertainment trade reported" or "the official synopsis") -- never the raw link.\n';
+p+='- NO SOURCE DUMP SECTION: Do NOT append a closing source list, citation appendix, "where this came from," or any outlet list section. Keep references inline as plain names only when necessary.\n';
 p+='- ABSOLUTELY NO BRACKET TAGS OF ANY KIND. No [pause], [angry], [laughs], [whispers], [scoffs], [sighs], [booming], [dramatic tone], or ANY text inside square brackets that acts as a stage direction. Square brackets are ONLY permitted for actual content like [citation] references.\n';
 p+='- LANGUAGE RULE: NEVER use the word "destroy" or "destroying" in your output. Just respond -- tear it apart, break it down, expose it, rip it open -- but do NOT use that word. It sounds robotic. Use natural, varied language instead.\n';
 return p;
