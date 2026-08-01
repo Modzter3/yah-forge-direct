@@ -1922,7 +1922,8 @@ function buildCombinedText(){
 var combined='';
 for(var i=0;i<sermonPartsRaw.length;i++){
 var pTitle=sermonPartsTitles[i]||('Part '+(i+1));
-combined+=sermonPartsRaw.length===1?'# '+pTitle+'\n\n'+sermonPartsRaw[i]+'\n\n---\n\n':'# PART '+(i+1)+' -- '+pTitle+'\n\n'+sermonPartsRaw[i]+'\n\n---\n\n';
+var body=stripLeadingPartHeading(sermonPartsRaw[i]);
+combined+=sermonPartsRaw.length===1?'# '+pTitle+'\n\n'+body+'\n\n---\n\n':'# PART '+(i+1)+' -- '+pTitle+'\n\n'+body+'\n\n---\n\n';
 }
 return combined;
 }
@@ -2309,12 +2310,22 @@ document.getElementById('progressLabel').textContent=partNum>=total?'Complete --
 }
 function extractPartTitle(text,partNum){
 // Try to find "# Episode X: Title" or "# Part X: Title" pattern
-var m=text.match(/^#\s*(?:Episode|Part)\s*\d+\s*[:\-]\s*(.+)/im);
+var m=text.match(/^#\s*(?:Episode|Part|PART|EPISODE)\s*\d+\s*[:\-–—]+\s*(.+)/im);
 if(m)return m[1].trim().replace(/^#+\s*/,'');
 // Try any first heading
 var h=text.match(/^#+\s+(.+)/m);
-if(h){var t=h[1].replace(/^(?:Episode|Part)\s*\d+\s*[:\-]\s*/i,'').trim();if(t.length>2)return t;}
+if(h){var t=h[1].replace(/^(?:Episode|Part|PART|EPISODE)\s*\d+\s*[:\-–—]+\s*/i,'').trim();if(t.length>2)return t;}
 return (selectedPartCount===1?'Episode':'Part '+partNum);
+}
+/** Remove the model's own # Part / # Episode title so we do not double-prefix when assembling */
+function stripLeadingPartHeading(text){
+if(!text)return text;
+var out=String(text).replace(/^\uFEFF?\s*/,'');
+// Drop one or more leading part/episode H1 lines (model sometimes emits two styles)
+out=out.replace(/^(?:#+\s*(?:PART|Part|EPISODE|Episode)\s*\d+\s*[:\-–—]+\s*.+\n+)+/,'');
+// Standalone first H1 that matches the extracted title pattern without Part label
+out=out.replace(/^#\s+(?!#).+\n+/,'');
+return out.replace(/^\s*\n+/,'');
 }
 function generatePart(partNum){
 if(partNum>selectedPartCount){seriesComplete();return;}
@@ -2611,7 +2622,8 @@ document.getElementById('ttsAudioWrap').innerHTML='';
 sermonPartsCombined='';
 for(var i=0;i<sermonPartsRaw.length;i++){
 var pTitle=sermonPartsTitles[i]||('Part '+(i+1));
-sermonPartsCombined+=sermonPartsRaw.length===1?'# '+pTitle+'\n\n'+sermonPartsRaw[i]+'\n\n---\n\n':'# PART '+(i+1)+' -- '+pTitle+'\n\n'+sermonPartsRaw[i]+'\n\n---\n\n';
+var body=stripLeadingPartHeading(sermonPartsRaw[i]);
+sermonPartsCombined+=sermonPartsRaw.length===1?'# '+pTitle+'\n\n'+body+'\n\n---\n\n':'# PART '+(i+1)+' -- '+pTitle+'\n\n'+body+'\n\n---\n\n';
 }
 // Auto-save to library
 if(currentTopic&&sermonPartsRaw.length===selectedPartCount){
@@ -2724,7 +2736,8 @@ p+='AFTER the title, dive STRAIGHT into the rebuke. NO welcome. NO greeting. NO 
 }else{
 p+='ROUGH STREET SERMON FORMAT -- THIS IS MANDATORY:\n';
 p+='This is ONE street sermon split into '+totalParts+' parts. YOUR FIRST LINE must be a PART TITLE in the format: # Part '+partNum+': [Your Title Here]\n';
-p+='The title should be blunt, severe, and specific to what THIS part exposes.\n\n';
+p+='The title should be blunt, severe, and specific to what THIS part exposes.\n';
+p+='TITLE RULE: Exactly ONE title line. Do NOT also write "# PART '+partNum+' -- ..." or a second heading that repeats the same part number/title.\n\n';
 if(partNum===1){
 p+='Since this is Part 1, open immediately after the title with a hard rebuke or scripture strike. NO welcome. NO greeting. NO "Peace, family." NO "Yah First Ministries." NO "episode." NO listener comfort. Make the first paragraph sound like a warning shouted on a corner while people are still laughing at the danger.\n\n';
 }else{
@@ -2745,7 +2758,8 @@ p+='3. THEN transition naturally into the lesson body. The transition should fee
 }else{
 p+='EPISODE FORMAT -- THIS IS MANDATORY:\n';
 p+='This is ONE episode split into '+totalParts+' parts. YOUR FIRST LINE must be a PART TITLE in the format: # Part '+partNum+': [Your Title Here]\n';
-p+='The title should be a CATCHY, PROVOCATIVE title (3-10 words) specific to what THIS part covers. Examples: "# Part '+partNum+': The Blueprint They Burned at Nicaea", "# Part '+partNum+': Why Your Pastor Skips This Chapter". Make it punchy and SPECIFIC.\n\n';
+p+='The title should be a CATCHY, PROVOCATIVE title (3-10 words) specific to what THIS part covers. Examples: "# Part '+partNum+': The Blueprint They Burned at Nicaea", "# Part '+partNum+': Why Your Pastor Skips This Chapter". Make it punchy and SPECIFIC.\n';
+p+='TITLE RULE: Exactly ONE title line. Do NOT also write "# PART '+partNum+' -- ..." or repeat the part heading twice.\n\n';
 if(partNum===1){
 p+='AFTER the title, you MUST open with a WELCOME AND BACKDROP. This is NON-NEGOTIABLE:\n';
 p+='Since this is Part 1 (the BEGINNING of the episode):\n';
@@ -2769,7 +2783,8 @@ p+='AFTER the title, dive STRAIGHT into the teaching. There is NO welcome, NO gr
 }else{
 p+='FORMAT:\n';
 p+='This is ONE declaration split into '+totalParts+' parts. YOUR FIRST LINE must be a TITLE in the format: # Part '+partNum+': [Your Title Here]\n';
-p+='The title should be a COMMANDING declaration specific to this part. It should sound like a decree from the throne.\n\n';
+p+='The title should be a COMMANDING declaration specific to this part. It should sound like a decree from the throne.\n';
+p+='TITLE RULE: Exactly ONE title line. Do NOT write a second PART heading.\n\n';
 if(partNum===1){
 p+='Since this is Part 1, open with a powerful declaration that sets the stage. There is NO welcome, NO greeting, NO ministry name, NO broadcast framing. You are GOD. Open with divine authority -- a statement, a question, or a revelation that shakes the listener from the first word.\n\n';
 }else{
