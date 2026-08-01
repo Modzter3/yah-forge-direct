@@ -908,6 +908,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="sermon-output" id="libModalBody"></div>
     <div class="sermon-actions" style="display:flex;">
       <button class="sermon-action-btn copy-all" onclick="copyLibrarySermon()"><i class="fas fa-copy"></i> Copy All</button>
+      <button class="sermon-action-btn copy-all" onclick="copyLibrarySermonPlain()" style="border-color:var(--gold-dim);color:var(--gold-dim);background:transparent;"><i class="fas fa-align-left"></i> Copy Plain</button>
       <button class="sermon-action-btn export-btn" onclick="exportLibrarySermon()"><i class="fas fa-download"></i> Export to File</button>
       <button class="sermon-action-btn export-btn" style="border-color:var(--crimson-glow);color:var(--crimson-glow);" onclick="deleteLibrarySermon()"><i class="fas fa-trash"></i> Delete</button>
       <div class="tts-bar">
@@ -1003,6 +1004,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     </div>
     <div class="sermon-actions" id="sermonActions" style="display:none;">
       <button class="sermon-action-btn copy-all" onclick="copyAllSermon()"><i class="fas fa-copy"></i> Copy All</button>
+      <button class="sermon-action-btn copy-all" onclick="copyAllSermonPlain()" style="border-color:var(--gold-dim);color:var(--gold-dim);background:transparent;"><i class="fas fa-align-left"></i> Copy Plain</button>
       <button class="sermon-action-btn export-btn" onclick="exportSermon()"><i class="fas fa-download"></i> Export to File</button>
       <div class="tts-bar">
         <span class="tts-label"><i class="fas fa-volume-high"></i> Voice:</span>
@@ -2649,6 +2651,11 @@ if(!sermonPartsCombined){showToast('No sermon to copy.');return;}
 rawCopy(sermonPartsCombined,null);
 showToast('All '+sermonPartsRaw.length+' parts copied to clipboard!');
 }
+function copyAllSermonPlain(){
+if(!sermonPartsCombined){showToast('No sermon to copy.');return;}
+rawCopy(mdToPlainText(sermonPartsCombined),null);
+showToast('All '+sermonPartsRaw.length+' parts copied as plain text!');
+}
 function exportSermon(){
 if(!sermonPartsCombined){showToast('No sermon to export.');return;}
 var title=currentTopic?currentTopic.title.replace(/[^a-zA-Z0-9 ]/g,'').replace(/\s+/g,'_'):'Sermon';
@@ -4177,6 +4184,13 @@ if(activeLibIndex<0)return;
 var entry=sermonLibrary[activeLibIndex];
 rawCopy(entry.combined,null);
 showToast('All '+entry.parts.length+' parts copied to clipboard!');
+}
+function copyLibrarySermonPlain(){
+if(activeLibIndex<0)return;
+var entry=sermonLibrary[activeLibIndex];
+if(!entry||!entry.combined){showToast('No sermon to copy.');return;}
+rawCopy(mdToPlainText(entry.combined),null);
+showToast('All '+entry.parts.length+' parts copied as plain text!');
 }
 function exportLibrarySermon(){
 if(activeLibIndex<0)return;
