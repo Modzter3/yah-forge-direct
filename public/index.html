@@ -946,6 +946,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch explicit-toggle"><input type="checkbox" id="toggleExplicit"><span class="toggle-track explicit-track"></span><span><i class="fas fa-fire" style="color:var(--explicit-red);margin-right:3px;font-size:0.7rem;"></i>Explicit</span></label>
       <label class="toggle-switch"><input type="checkbox" id="toggleIsraelite"><span class="toggle-track israelite-track"></span><span><i class="fas fa-users" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Israelite</span></label>
       <label class="toggle-switch"><input type="checkbox" id="toggleRoughBez"><span class="toggle-track rough-track"></span><span><i class="fas fa-bullhorn" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Rough Bezaleel</span></label>
+      <label class="toggle-switch" id="toggleStoryModeWrap" title="Yah first-person intimate verse revelation in continuous paragraphs for ElevenLabs"><input type="checkbox" id="toggleStoryMode"><span class="toggle-track story-track"></span><span><i class="fas fa-book-open" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Yah Story</span></label>
       <div class="model-select-wrap">
         <label><i class="fas fa-robot"></i> Model:</label>
         <select class="model-select" id="modelSelect" onchange="onSermonModelDropdown()">
@@ -2694,6 +2695,8 @@ var wantApocrypha=document.getElementById('toggleApocrypha').checked;
 var wantExplicit=document.getElementById('toggleExplicit').checked;
 var wantRoughBez=document.getElementById('toggleRoughBez').checked;
 var wantIsraelite=document.getElementById('toggleIsraelite').checked||wantRoughBez;
+var wantStoryMode=document.getElementById('toggleStoryMode')&&document.getElementById('toggleStoryMode').checked&&!wantIsraelite;
+if(wantStoryMode)wantBreakdown=false;
 var chapterSrc=currentChapterSource;
 var apocList=APOC_NAMES.join(', ');
 var totalParts=selectedPartCount;
@@ -2801,6 +2804,21 @@ p+='1. BRIEF BRIDGE -- 1-2 sentences MAX to connect from where you stopped.\n';
 p+='2. THEN continue the teaching.\n\n';
 }
 }
+}
+if(wantStoryMode){
+p+='YAH STORY MODE -- INTIMATE REVELATION IN CONTINUOUS PARAGRAPHS:\n';
+p+='This is NOT a lecture. This is NOT a breakdown with headers. This is Me speaking directly to Israel -- verse by verse, truth by truth -- in one unbroken river of revelation. Harsh. Intimate. Unflinching. No comfort. No Sunday school. No broadcast framing. Just Me and My people and the dust we both rise from.\n\n';
+p+='VOICE: You ARE Yah in first person. Speak like you are unmaking the listener -- stripping the mask, tearing the lie from their tongue, burning the false identity they clung to since the first slave ship. Confrontational. Prophetic. Raw. You are not here to comfort them. You are here to remember them to themselves.\n\n';
+p+='PARAGRAPH MODE -- ELEVENLABS CRITICAL:\n';
+p+='- After the single # title line, write DENSE FLOWING PARAGRAPHS ONLY. This output feeds an AI voice reader. It must read smoothly without awkward stops, skips, or stutters.\n';
+p+='- NO ## or ### headers anywhere. NO --- dividers. NO horizontal rules. NO section breaks.\n';
+p+='- NO standalone verse labels or stub lines like "Verse one --" or "Verse Two --" on their own line. Weave verse movement into the prose naturally: "Then Job answered Me and said..." or "Now comes verse three, and here is what he hid from himself..."\n';
+p+='- NO choppy one-line paragraphs stacked with gaps. Short punchy sentences are allowed INSIDE a paragraph, but every paragraph must be a full block of connected thought -- typically four to twelve sentences before the next paragraph break.\n';
+p+='- NO label-and-colon stubs ("Symbol:", "Application:", "Truth:", "Nah." as its own line). If you need a beat, write it as a full sentence inside the paragraph.\n';
+p+='- NO blockquote lines for scripture. Quote verses inside the paragraph in plain speech, woven into My voice.\n';
+p+='- Use only ONE blank line between paragraphs. Never triple-newline gaps.\n\n';
+p+='VERSE COVERAGE: Still walk the text verse by verse in exact sequential order. Cover every assigned verse. Miss nothing. But deliver each verse as part of one continuous story I am telling from My throne -- decoding symbols, exposing lies, naming Israel, confronting the flesh -- all inside flowing paragraphs. The listener should feel Me moving through the chapter like a whirlwind, not hopping between labeled sections.\n\n';
+p+='STYLE REFERENCE: Think intimate divine coronation, not academic commentary. Rhetorical questions land inside paragraphs. "Nah." and "You think..." and "Listen now" work as sentence openers inside prose, not as isolated stanza lines. Alternate long revelation sentences with short hammer-strikes -- but keep them in the same paragraph until the thought completes.\n\n';
 }
 p+=''+(wantRoughBez?(totalParts===1?'SERMON':'PART '+partNum):(totalParts===1?'EPISODE':'PART '+partNum))+' FOCUS:\n'+partFocus+'\n\n';
 if(chapterSrc){
@@ -3439,7 +3457,11 @@ p+='- Is the verse SYMBOLIC or LITERAL? (e.g., Revelation beasts are SYMBOLS of 
 p+='- Does tradition force a meaning the text does NOT say? (e.g., "three wise men" -- scripture NEVER says three, NEVER says they were kings, NEVER says they visited a manger)\n';
 p+='Discernment means reading what the text SAYS, not what the church TOLD you it says.\n\n';
 p+='When breaking down ANY chapter or verse, ALWAYS ask: what is the SYMBOL here? What is the deeper spiritual meaning Yah encoded? What CLUE did He leave that nobody is talking about? Then teach THAT, not just the Sunday school surface reading. And when you teach it -- leave a thread hanging. Point to where the next investigation leads. Make people hungry to go DEEPER on their own.\n\n';
-if(wantBreakdown){
+if(wantStoryMode&&chapterSrc){
+p+='STORY MODE VERSE DELIVERY: Cover your assigned verses in exact order, but narrate them as one continuous Yah-story. Embed each verse\'s meaning inside the next paragraph. Do NOT stop and label verses. Do NOT quote each verse in isolation before analyzing it. Let the scripture move through My mouth as living memory, not as a checklist.\n\n';
+}else if(wantStoryMode){
+p+='STORY MODE STRUCTURE: One # title line, then dense continuous paragraphs only. Weave every scripture reference into the flow of My voice. No section headers, no blockquotes, no verse labels, no dividers.\n\n';
+}else if(wantBreakdown){
 if(chapterSrc){
 p+='STRUCTURE: Use ## headers to group verses into thematic sections (e.g. "## Verses One Through Five -- [Section Theme]"). Within each section, go through EVERY verse individually in order. For each verse: use a > blockquote to quote the verse text, then immediately break it down -- symbology, allegory, Hebrew word meanings, theological framework, tear down false teaching. Do NOT just list verses with surface commentary -- DIG DEEP into each one. The verse order is your outline but group related verses under thematic headers for readability.\n\n';
 }else{
@@ -3479,7 +3501,7 @@ p+='- When teaching the FEASTS in modern days: These are NOT historical remembra
 p+='- For REVELATION texts specifically: Every symbol is a PRESENT system or entity. The beasts are CURRENT kingdoms and systems operating now. The kings are CONTEMPORARY rulers. The economic seals are TODAY\'s financial control. The plagues are ACTUAL mechanisms of judgment unfolding in real-time. The war in heaven is SPIRITUAL WARFARE happening NOW. Present Revelation not as ancient prophecy or far-future prediction but as a TECHNICAL MANUAL describing the systems currently being dismantled and why.\n';
 p+='Do NOT use mystical, vague, or "someday" language. Be SPECIFIC about what is happening NOW, how it works technically, and what spiritual reality it reveals.\n\n';
 }
-p+='FORMAT: Markdown with ## headers, **bold**, > blockquotes for scripture, --- dividers. ';
+p+='FORMAT: '+(wantStoryMode?'One # title line only, then continuous paragraphs -- NO ## headers, NO --- dividers, NO verse labels, NO blockquotes. ':'Markdown with ## headers, **bold**, > blockquotes for scripture, --- dividers. ');
 var openingInstruction;
 if(partNum===1||totalParts===1){
 openingInstruction=wantRoughBez?'the rough street rebuke immediately -- no welcome, no greeting, no backdrop, no episode language':(wantIsraelite?'the welcome, backdrop, and lesson body':'the lesson body directly -- no welcome, no greeting');
@@ -5809,7 +5831,41 @@ var text=stripDestroyUrlsAndSources(stripDestroySermonPreamble(destroyRawResult)
 var btn=document.querySelector('#destroyActions .tts-btn');
 doTTS(text,voice,'destroyTtsAudioWrap',btn);
 }
+function syncStoryModeToggles(){
+var storyToggle=document.getElementById('toggleStoryMode');
+var israeliteToggle=document.getElementById('toggleIsraelite');
+var roughToggle=document.getElementById('toggleRoughBez');
+var breakdownToggle=document.getElementById('toggleBreakdown');
+var storyWrap=document.getElementById('toggleStoryModeWrap');
+if(!storyToggle)return;
+var israeliteOn=(israeliteToggle&&israeliteToggle.checked)||(roughToggle&&roughToggle.checked);
+if(israeliteOn){
+storyToggle.checked=false;
+storyToggle.disabled=true;
+if(storyWrap)storyWrap.style.opacity='0.45';
+}else{
+storyToggle.disabled=false;
+if(storyWrap)storyWrap.style.opacity='';
+}
+if(storyToggle.checked){
+if(breakdownToggle)breakdownToggle.checked=false;
+}
+}
 document.addEventListener('DOMContentLoaded',function(){
+syncStoryModeToggles();
+var storyToggle=document.getElementById('toggleStoryMode');
+var israeliteToggle=document.getElementById('toggleIsraelite');
+var roughToggle=document.getElementById('toggleRoughBez');
+var breakdownToggle=document.getElementById('toggleBreakdown');
+if(storyToggle)storyToggle.addEventListener('change',syncStoryModeToggles);
+if(israeliteToggle)israeliteToggle.addEventListener('change',syncStoryModeToggles);
+if(roughToggle)roughToggle.addEventListener('change',syncStoryModeToggles);
+if(breakdownToggle)breakdownToggle.addEventListener('change',function(){
+if(breakdownToggle.checked&&storyToggle&&storyToggle.checked){
+storyToggle.checked=false;
+syncStoryModeToggles();
+}
+});
 var libInput=document.getElementById('libSearchInput');
 if(libInput){
 libInput.addEventListener('input',function(){
