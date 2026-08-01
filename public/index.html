@@ -2918,12 +2918,12 @@ p+=currentChapterText+'\n';
 p+='=======================================\n';
 p+='END OF CHAPTER TEXT. The above is the COMPLETE chapter. There are NO additional verses beyond what is shown.\n\n';
 }
-p+='VERSE-BY-VERSE BREAKDOWN -- THIS IS MANDATORY FOR CHAPTER SERMONS:\n';
-p+='You MUST go through '+chapterSrc.book+' Chapter '+chapterSrc.chapter+' VERSE BY VERSE in SEQUENTIAL ORDER. Start at verse one and work through the chapter in order -- do NOT skip verses, do NOT rearrange, do NOT jump around. Every verse gets addressed in the order it appears.\n';
+p+=(wantStoryMode?'VERSE-BY-VERSE REVELATION':'VERSE-BY-VERSE BREAKDOWN')+' -- THIS IS MANDATORY FOR CHAPTER SERMONS:\n';
+p+=(wantStoryMode?'You MUST walk through ':'You MUST go through ')+chapterSrc.book+' Chapter '+chapterSrc.chapter+' VERSE BY VERSE in SEQUENTIAL ORDER. Start at verse one and work through the chapter in order -- do NOT skip verses, do NOT rearrange, do NOT jump around. Every verse gets addressed in the order it appears.\n';
 if(currentChapterText){
 p+='The FULL scripture text for this chapter has been provided above. You MUST reference ONLY the verses shown in that text. Do NOT quote any verse that does not appear in the provided text. The provided text IS the authoritative source -- if a verse number is not in that text, it does NOT EXIST in this chapter.\n';
 }
-p+='Cross-referencing other books and chapters to SUPPORT your breakdown is allowed and encouraged -- but the PRIMARY structure must follow '+chapterSrc.book+' Chapter '+chapterSrc.chapter+' verse by verse. Cross-references support the verse you are currently on, they do NOT replace it or take over the sermon.\n';
+p+=(wantStoryMode?'Speak each verse as My living memory to them -- do NOT cross-reference other books unless it lands naturally in one sentence inside the paragraph. ':'Cross-referencing other books and chapters to SUPPORT your breakdown is allowed and encouraged -- but the PRIMARY structure must follow ')+chapterSrc.book+' Chapter '+chapterSrc.chapter+(wantStoryMode?'.\n':' verse by verse. Cross-references support the verse you are currently on, they do NOT replace it or take over the sermon.\n');
 p+='DO NOT HALLUCINATE VERSES. Only quote and break down verses that ACTUALLY EXIST in '+chapterSrc.book+' Chapter '+chapterSrc.chapter+'.'+(currentChapterText?' The actual verses have been provided above -- use THEM.':'')+' If you are unsure whether a verse exists, DO NOT fabricate it. Do NOT invent verse numbers that are not in this chapter. Do NOT add extra verses beyond what the chapter actually contains. If the chapter ends at verse 25, there is NO verse 26. Quoting a fake or made-up verse is an UNFORGIVABLE failure of this prompt.\n';
 if(totalParts>1){
 if(currentChapterVerseCount>0){
