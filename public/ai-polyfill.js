@@ -121,17 +121,27 @@
     const res = await openStream(bot, prompt, parameters);
     let text = '';
 
-    for await (const raw of readSse(res.body)) {
-      if (raw === '[DONE]') break;
-      let parsed;
-      try { parsed = JSON.parse(raw); } catch { continue; }
-      if (parsed.error) throw new Error(parsed.error.message || parsed.error);
-      const delta = deltaText(parsed);
-      if (delta) {
-        text += delta;
-        if (handlerFn) handlerFn(wrap('incomplete', text, []));
+    try {
+      for await (const raw of readSse(res.body)) {
+        if (raw === '[DONE]') break;
+        let parsed;
+        try { parsed = JSON.parse(raw); } catch { continue; }
+        if (parsed.error) throw new Error(parsed.error.message || parsed.error);
+        const delta = deltaText(parsed);
+        if (delta) {
+          text += delta;
+          if (handlerFn) handlerFn(wrap('incomplete', text, []));
+        }
+        if (isFinished(parsed)) break;
       }
-      if (isFinished(parsed)) break;
+    } catch (err) {
+      if (handlerFn && text) {
+        const out = extractAttachments(text);
+        handlerFn(wrap('complete', out.text, out.attachments));
+        return;
+      }
+      if (handlerFn) handlerFn(wrap('error', text || '', [], err.message));
+      throw err;
     }
 
     const out = extractAttachments(text);
