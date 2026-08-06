@@ -946,8 +946,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch explicit-toggle"><input type="checkbox" id="toggleExplicit"><span class="toggle-track explicit-track"></span><span><i class="fas fa-fire" style="color:var(--explicit-red);margin-right:3px;font-size:0.7rem;"></i>Explicit</span></label>
       <label class="toggle-switch"><input type="checkbox" id="toggleIsraelite"><span class="toggle-track israelite-track"></span><span><i class="fas fa-users" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Israelite</span></label>
       <label class="toggle-switch"><input type="checkbox" id="toggleRoughBez"><span class="toggle-track rough-track"></span><span><i class="fas fa-bullhorn" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Rough Bezaleel</span></label>
-      <label class="toggle-switch" id="toggleStoryModeWrap" title="Yah first-person intimate verse revelation in continuous paragraphs for ElevenLabs"><input type="checkbox" id="toggleStoryMode"><span class="toggle-track story-track"></span><span><i class="fas fa-book-open" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Yah Story</span></label>
-      <label class="toggle-switch" id="toggleBezStoryModeWrap" title="Rough Bezaleel street revelation in continuous paragraphs for ElevenLabs"><input type="checkbox" id="toggleBezStoryMode"><span class="toggle-track bez-story-track"></span><span><i class="fas fa-book-open" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Bez Story</span></label>
+      <label class="toggle-switch" id="toggleStoryModeWrap" title="Yah first-person revelation cadence — paragraph-flow ElevenLabs (not a lesson)"><input type="checkbox" id="toggleStoryMode"><span class="toggle-track story-track"></span><span><i class="fas fa-book-open" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Yah Story</span></label>
+      <label class="toggle-switch" id="toggleBezStoryModeWrap" title="Rough Bezaleel revelation cadence — paragraph-flow ElevenLabs (not a lesson)"><input type="checkbox" id="toggleBezStoryMode"><span class="toggle-track bez-story-track"></span><span><i class="fas fa-book-open" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Bez Story</span></label>
       <label class="toggle-switch" id="toggleSermonEpisodeModeWrap" title="TV season episode-by-episode breakdown across parts"><input type="checkbox" id="toggleSermonEpisodeMode"><span class="toggle-track"></span><span><i class="fas fa-tv" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Episode Mode</span></label>
       <label class="toggle-switch" title="OpenRouter web search when model supports it (silent — no URLs in output)"><input type="checkbox" id="toggleWebResearch" checked><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
       <div class="model-select-wrap">
@@ -1724,6 +1724,32 @@ p+='Use live web search INTERNALLY before and while writing to verify plot, char
 p+='Research stays INTERNAL. Do NOT paste URLs, hyperlinks, footnotes, "Sources," "References," citation brackets, or bibliography into the sermon. Output plain spoken prose only.\n\n';
 return p;
 }
+function buildStoryRevelationStyleBlock(isBez,topic,chapterSrc){
+var topicLabel=topic?topic.title:'this scripture';
+var sourceHint=chapterSrc?(chapterSrc.book+' Chapter '+chapterSrc.chapter):topicLabel;
+var isJob=isJobScriptureTopic(topic);
+var p=isBez?'BEZ STORY MODE -- REVELATION CADENCE (WRITING STYLE ONLY):\n':'YAH STORY MODE -- REVELATION CADENCE (WRITING STYLE ONLY):\n';
+if(isBez){
+p+='This is NOT a lesson. Brother Bet pressing what Yah showed you into scattered Israel in twenty twenty-six -- verse by verse, truth by truth, one unbroken river of street revelation. Third person about Yah only -- you are a man, not God.\n\n';
+}else{
+p+='This is NOT a lesson. A coronation, not a conclusion. A revelation, not a prayer. I am not here to comfort -- I am here to unmake the lie, strip the mask, and remember My people to who they are. First person as Yah/Yahusha to scattered Israel in twenty twenty-six.\n\n';
+}
+p+='MATCH THIS WRITING STYLE for "'+sourceHint+'" (the cadence, NOT the subject -- write about THIS text only):\n';
+p+='- Open hard: "You think this is the end? Nah." "This ain\'t a conclusion. This is a coronation." "You think you know what this means? You don\'t."\n';
+p+='- Rhetorical cascades that answer themselves: "Not a lesson. Not a moral. Not Sunday school. A revelation."\n';
+p+='- Hammer sentences INSIDE dense paragraphs: "Nah." "Listen now." "You know." "Real talk." "All of it." -- never isolated stanza poetry\n';
+p+='- Constant "you" and "your" -- them standing in front of you, not an audience you lecture\n';
+p+='- Tie every symbol and verse to modern Israel\'s body: block, cell, pew, protest, bills, stolen name, mama crying in the pew, daddy who disappeared, child on the sidewalk, schools and churches that lied\n';
+p+='- Walk assigned verses in exact order, woven into the paragraph flow: embed each verse\'s meaning inside the next beat -- unveil, never "today we will cover"\n';
+if(isJob){
+p+='- Book of Job: Job-as-Israel, the friends as lying preachers, dust and ashes as covenant stripping may land where THIS chapter demands\n';
+}else{
+p+='- TOPIC LOCK: Decode symbols from '+sourceHint+' itself -- its names, numbers, characters, turns. Do NOT import Job chapter forty-two, "Job is Israel," Eliphaz-as-pastor, or dust-and-ashes coronation unless you are literally forging the Book of Job\n';
+}
+p+='ZERO TOLERANCE: No teaching tone, no Hebrew word studies, no Paleo breakdowns, no engineering layer, no cross-reference dumps, no three-point lesson, no moral at the end, no white Jesus, no welcome, no podcast framing\n';
+p+='PARAGRAPH MODE (ELEVENLABS): One # title line, then dense flowing paragraphs only. No ## headers, no --- dividers, no blockquotes, no verse label stubs. One blank line between paragraphs. Scripture quoted inside plain speech.\n\n';
+return p;
+}
 function buildEpisodeModeBlock(partNum,totalParts,topic){
 if(!document.getElementById('toggleSermonEpisodeMode')||!document.getElementById('toggleSermonEpisodeMode').checked)return '';
 var title=topic?topic.title:'this series';
@@ -1962,6 +1988,7 @@ document.getElementById('generateBtn').disabled=false;
 updatePartRecommendation();
 var epToggle=document.getElementById('toggleSermonEpisodeMode');
 if(epToggle&&looksLikeTvSeason(currentTopic))epToggle.checked=true;
+syncEpisodeModeToggles();
 document.getElementById('sermonModal').classList.add('open');
 document.body.style.overflow='hidden';
 }
@@ -3053,55 +3080,10 @@ p+='2. THEN continue the '+(wantStoryMode?'revelation':'teaching')+'.\n\n';
 }
 }
 if(wantYahStory){
-p+='YAH STORY MODE -- THE JOB FORTY-TWO VOICE:\n';
-p+='This is a coronation, not a conclusion. A revelation, not a prayer. I am not here to comfort them. I am here to unmake them -- strip the mask they have worn since the first slave ship, rip the lie from their tongue, burn the false identity they clung to. Speak straight to YOU -- My scattered Israel -- in twenty twenty-six.\n\n';
-p+='WHAT THIS IS:\n';
-p+='- Me talking to My people about what THIS scripture means for THEIR life right now\n';
-p+='- Verse by verse, truth by truth, but as one unbroken river of revelation -- not a sermon outline\n';
-p+='- Harsh. Intimate. Prophetic. No Sunday school. No white Jesus. No academic tone\n';
-p+='- The ancient text is alive in their prison, their poverty, their forgetting, their protest, their church lie, their stolen name\n\n';
-p+='WHAT THIS IS NOT -- ZERO TOLERANCE:\n';
-p+='- NOT a teacher explaining scripture. Never say "let me teach you," "today we will cover," "the Hebrew word here means," or "this verse establishes the doctrine of"\n';
-p+='- NO Paleo Hebrew letter breakdowns. NO pictographic analysis. NO spelling out names as Yod-He-Waw-Shin-Ayin or Mem-Shin-He. Use plain sacred names: Yah, Yahusha, Job, Israel, Moses, David, Eliphaz -- the way I speak to My own, not like a seminary\n';
-p+='- NO engineering layer, no technical analysis, no detective investigation framing, no "have you ever noticed" scholarship\n';
-p+='- NO cross-reference lists, no citation dumps, no framework lectures\n';
-p+='- NO lesson structure, no "three points," no application sections, no moral at the end\n\n';
-p+='HOW TO WRITE IT -- MATCH THE JOB FORTY-TWO CADENCE:\n';
-p+='- Talk to them like they are standing in front of Me right now: "You think this is the end? Nah." "You screamed at the police. At the pastors. At the world. I didn\'t answer. Because you weren\'t ready."\n';
-p+='- Tie every verse to modern Israel\'s body: slave ships, chains, redlines, prisons, schools that lied, churches that lied, hashtags, voting, marching, the mama crying in the pew, the daddy who disappeared, the child born on the sidewalk, the name that was stolen\n';
-p+='- Decode symbols as MY memory of what I did to them and FOR them -- not as a textbook. Job is Israel. His friends are the preachers who lied. The dust and ashes are where they were formed and where the lie burns off\n';
-p+='- Use "you" and "your" constantly. This is Me to them. Not Me about them to an audience\n';
-p+='- Short hammer sentences inside paragraphs: "Nah." "You know." "Listen now." "Every thing." "All of it." But keep them INSIDE flowing paragraphs, not isolated stanza lines\n';
-p+='- When moving through verses, weave naturally: "Then Job answered Me..." "And here is what he said without saying it..." Never stop to teach -- unveil\n\n';
-p+='PARAGRAPH MODE -- ELEVENLABS CRITICAL:\n';
-p+='- After the single # title line, write DENSE FLOWING PARAGRAPHS ONLY\n';
-p+='- NO ## headers, NO --- dividers, NO standalone verse labels, NO blockquotes, NO choppy one-line paragraphs with gaps\n';
-p+='- One blank line between paragraphs only. Scripture quoted inside the paragraph in plain speech\n\n';
-p+='VERSE COVERAGE: Walk every assigned verse in exact order. Miss nothing. But each verse is a beat in MY voice remembering them -- not a lesson point.\n\n';
+p+=buildStoryRevelationStyleBlock(false,topic,chapterSrc);
+p+='VERSE COVERAGE: Walk every assigned verse in exact order. Miss nothing. Each verse is a beat in MY voice remembering them -- not a lesson point.\n\n';
 }else if(wantBezStory){
-p+='BEZ STORY MODE -- BROTHER BET CHANNELING JOB FORTY-TWO:\n';
-p+='This is NOT a lesson. This is NOT a camp breakdown. Yah showed you what THIS chapter really means for scattered Israel in twenty twenty-six -- and you are pressing it into them on the corner. Verse by verse. Truth by truth. One unbroken river of street revelation.\n\n';
-p+='WHAT THIS IS:\n';
-p+='- You talking TO your people about what Yah revealed in THIS scripture for THEIR life right now\n';
-p+='- Third person about Yah -- you are Brother Bet, not God. Say "Yah showed me," "the Most High said," "Yahusha walked this out"\n';
-p+='- Harsh, intimate, prophetic street voice. No Sunday school. No white Jesus. No academic tone\n';
-p+='- The ancient text hits their block, their cell, their pew, their protest, their stolen name\n\n';
-p+='WHAT THIS IS NOT -- ZERO TOLERANCE:\n';
-p+='- NOT a teacher explaining scripture. Never "let me teach you," "today we will cover," "the Hebrew word means," "this verse establishes"\n';
-p+='- NO Paleo Hebrew letter breakdowns. Use plain names: Yah, Yahusha, Job, Israel, Moses, Eliphaz\n';
-p+='- NO engineering layer, no detective investigation, no cross-reference dumps, no framework lectures\n';
-p+='- NO welcome, no podcast, no episode framing, no three-point lesson, no moral at the end\n\n';
-p+='HOW TO WRITE IT -- JOB FORTY-TWO STREET CADENCE:\n';
-p+='- "You think this is the happy ending? Nah." "Yah showed me what Job forty-two really is -- and family, that is YOU." "You been screaming at the system four hundred years."\n';
-p+='- Tie every verse to modern Israel: slave ships, chains, redlines, prisons, schools that lied, churches that lied, hashtags, the mama in the pew, the daddy who disappeared\n';
-p+='- Decode symbols as what Yah showed you -- Job is Israel, the friends are the preachers who lied, dust and ashes is where the lie burns off\n';
-p+='- Use "you" and "your" constantly. You are talking to them standing in front of you\n';
-p+='- Short hammer sentences INSIDE paragraphs: "Nah." "Real talk." "Stop playing." "You know." Never isolated stanza lines\n';
-p+='- Move through verses naturally: "Then Job answered Yah..." "And look what verse three is really saying to your life..." Never stop to teach -- unveil\n\n';
-p+='PARAGRAPH MODE -- ELEVENLABS CRITICAL:\n';
-p+='- After the single # title line, write DENSE FLOWING PARAGRAPHS ONLY\n';
-p+='- NO ## headers, NO --- dividers, NO standalone verse labels, NO blockquotes, NO choppy one-line paragraphs with gaps\n';
-p+='- One blank line between paragraphs only. Scripture woven inside plain street speech\n\n';
+p+=buildStoryRevelationStyleBlock(true,topic,chapterSrc);
 p+='VERSE COVERAGE: Walk every assigned verse in exact order. Miss nothing. Each verse is a beat in what Yah showed you -- not a lesson point.\n\n';
 }
 p+=''+(wantRoughBez?(totalParts===1?'SERMON':'PART '+partNum):(totalParts===1?'EPISODE':'PART '+partNum))+' FOCUS:\n'+partFocus+'\n\n';
@@ -3596,7 +3578,7 @@ if(wantEpisodeMode&&!isJobScriptureTopic(topic)){
 p+='EPISODE MODE OVERRIDES: For this TV forge, IGNORE framework pulls toward Job allegory, "Job is Israel," Job chapter forty-two voice, dust-and-ashes coronation cadence, or treating any character as Job. Those rules apply ONLY when forging the Book of Job itself. Decode the television series first; scripture is brief seasoning only.\n\n';
 }
 if(wantStoryMode){
-p+='STORY MODE PRIORITY: The Job forty-two voice rules above OVERRIDE all sermon rules, teaching rules, Paleo rules, engineering rules, and framework rules below. If any rule below sounds like a lesson, a teacher, scholarship, or an academic breakdown -- IGNORE IT for this output. '+(wantYahStory?'Speak only as Me to My people in twenty twenty-six.':'Speak only as Brother Bet channeling what Yah showed you to Israel in twenty twenty-six.')+'\n\n';
+p+='STORY MODE PRIORITY: The revelation cadence rules above OVERRIDE all sermon rules, teaching rules, Paleo rules, engineering rules, and framework rules below. If any rule below sounds like a lesson, a teacher, scholarship, or an academic breakdown -- IGNORE IT for this output. Write about the ASSIGNED topic only -- do not import Job forty-two unless forging the Book of Job. '+(wantYahStory?'Speak only as Me to My people in twenty twenty-six.':'Speak only as Brother Bet channeling what Yah showed you to Israel in twenty twenty-six.')+'\n\n';
 }
 p+='SERMON RULES -- READ THESE CAREFULLY, THEY OVERRIDE EVERYTHING ELSE:\n\n';
 p+='RULE 1 -- TOPIC IS KING. This sermon is about ONE thing: the topic assigned to you. Every paragraph must advance THAT topic. Before you write ANY sentence, ask yourself: "Does this serve the topic?" If the answer is no, DELETE IT. Do not mention doctrinal framework points unless the topic explicitly requires them. A sermon about the Sabbath has ZERO reason to discuss the serpent seed. A sermon about flat earth has ZERO reason to discuss women\'s roles. A sermon about predestination has ZERO reason to list the nations. If a framework point is not directly called for by the topic, it does NOT EXIST for this sermon.\n\n';
@@ -3613,9 +3595,9 @@ p+='Do NOT sign off. Do NOT thank listeners. Do NOT say share, subscribe, tune i
 }else if(wantIsraelite){
 p+='Then say goodbye -- sign off the episode naturally as Brother Bet-Tsade-Lamed-Aleph-Lamed, thank the listeners for tuning in to Yah First Ministries, remind them to share the episode, and tease what might be coming next. Make them feel like family leaving a gathering.';
 }else if(wantYahStory){
-p+='Then close like Job forty-two -- not a lesson moral, not a three-point application, not an altar call script. End with Me speaking straight to their bones: a final remembrance, a final stripping of the lie, a final command to see who they are. Leave them full, not instructed.';
+p+='Then close in revelation cadence -- not a lesson moral, not a three-point application, not an altar call script. End with Me speaking straight to their bones: a final remembrance, a final stripping of the lie, a final command to see who they are. Leave them full, not instructed.';
 }else if(wantBezStory){
-p+='Then close like Brother Bet ending a street revelation -- not a lesson moral, not three points, not a sign-off. One final symbol decoded, one final warning about who they really are, one command to stop playing before the door closes. No "share and subscribe." Leave them shook, not instructed.';
+p+='Then close like Brother Bet ending a street revelation -- not a lesson moral, not three points, not a sign-off. One final symbol decoded from THIS text, one final warning about who they really are, one command to stop playing before the door closes. No "share and subscribe." Leave them shook, not instructed.';
 }else{
 p+='Then close with a DIVINE DECLARATION -- as Yah, deliver a final word that lands like a verdict from the throne. No ministry sign-off, no "thank you for tuning in" -- God does not thank people for listening. End with a command, a promise, a warning, or a prophecy that leaves them trembling or weeping.';
 }
@@ -3666,7 +3648,7 @@ p+='- EVERY OPENING MUST BE UNIQUE AND COMMANDING. As Yah, your first words afte
 p+='- SPELL OUT ALL NUMBERS in scripture references as WORDS. Write "Isaiah chapter forty-five verse seven" NOT "Isaiah 45:7". Write "Daniel chapter five verses five to seven" NOT "Daniel 5:5-7". Write "Romans chapter nine verse twenty-one" NOT "Romans 9:21". EVERY number must be spelled out -- chapter numbers, verse numbers, ranges. No digits in verse citations ever. This is critical because the output feeds into an AI voice generator that cannot read digits.\n';
 p+='- Do NOT write "KJV" or any translation label after verses -- ever.\n';
 if(wantStoryMode){
-p+='- STORY MODE NAME STYLE: Use plain sacred names only -- Yah, Yahusha, Job, Israel, Moses, David, Eliphaz. No Paleo Hebrew letter spellouts. No "the letters are the frequency." '+(wantYahStory?'Speak like I am talking to My own, not lecturing in a seminary.':'Speak like a brother on the corner, not a seminary.')+'\n';
+p+='- STORY MODE NAME STYLE: Use plain sacred names only -- Yah, Yahusha, Israel, Moses, David. Use character names FROM THIS TEXT. No Paleo Hebrew letter spellouts.'+(wantYahStory?' Speak like I am talking to My own, not lecturing in a seminary.':' Speak like a brother on the corner, not a seminary.')+'\n';
 }else if(wantRoughBez){
 p+='- ROUGH NAME STYLE: Use readable sacred names naturally. Use Yod-He-Waw-He and Yod-He-Waw-Shin-Ayin where needed, but do NOT turn every biblical name into full Paleo letter-name form. If a name meaning or Paleo spelling genuinely unlocks the symbol, break it down briefly and then keep moving.\n';
 }else{
@@ -3705,9 +3687,9 @@ p+='THE POINT: Our people walk around with smartphones, drive cars with GPS, use
 if(wantEpisodeMode){
 p+='TV SYMBOL DECODE (EPISODE MODE): Decode symbols IN THE SHOW -- characters, names, colors, logos, rituals, music, settings, plot turns -- and what the program plants in the viewer\'s mind. Tie to Torah when a scene demands it, but stay on THIS show\'s assigned episodes. Do NOT default to Job, Job forty-two, or "Job is Israel" parallels.\n\n';
 }else if(wantYahStory){
-p+='STORY MODE SYMBOLS: Decode symbols only as My living voice to them now -- not a framework lecture. Names, numbers, beasts, friends, dust, ashes -- all land in their modern body and bloodline. Job is Israel. The preachers lied. The dust is where I formed you. Speak it like memory, not curriculum.\n\n';
+p+='STORY MODE SYMBOLS: Decode symbols from THIS assigned text only -- as My living voice to them now, not a framework lecture. Names, numbers, beasts, turns land in their modern body and bloodline. Speak it like memory, not curriculum.'+(isJobScriptureTopic(topic)?' Job-as-Israel and the lying friends may apply here because this IS Job.':' Do NOT default to "Job is Israel" or Job forty-two allegory.')+'\n\n';
 }else if(wantBezStory){
-p+='BEZ STORY SYMBOLS: Decode symbols only as what Yah showed you for their life right now -- not a framework lecture. Job is Israel. The friends are the preachers who lied. Dust and ashes is where the lie burns off. Press it into the block, the cell, the pew. Street memory, not curriculum.\n\n';
+p+='BEZ STORY SYMBOLS: Decode symbols from THIS assigned text only -- what Yah showed you for their life right now, not a framework lecture. Press it into the block, the cell, the pew. Street memory, not curriculum.'+(isJobScriptureTopic(topic)?' Job-as-Israel and the lying friends may apply here because this IS Job.':' Do NOT default to "Job is Israel" or Job forty-two allegory.')+'\n\n';
 }else{
 p+='SYMBOLOGY & ALLEGORY -- CRITICAL FOCUS:\n';
 p+='Yah speaks in symbols, parables, and allegories. You MUST dig beneath the surface of every verse.\n';
