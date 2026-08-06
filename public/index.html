@@ -1401,6 +1401,15 @@ if(/\bseason\s*(one|two|three|four|five|six|seven|eight|nine|ten)\b/.test(raw))r
 if(/\bempire\b/.test(raw)&&/\bseason\b/.test(raw))return true;
 return false;
 }
+function isJobScriptureTopic(topic){
+if(!topic)return false;
+var raw=((''+(topic.title||''))+'\n'+(''+(topic.desc||''))).toLowerCase();
+if(/\bbook\s+of\s+job\b/.test(raw))return true;
+if(/\bjob\s+chapter\s+\d+/.test(raw))return true;
+if(/\bjob\s+\d+/.test(raw))return true;
+if(currentChapterSource&&currentChapterSource.book&&/^job$/i.test(String(currentChapterSource.book).trim()))return true;
+return false;
+}
 function recommendPartCount(topic,mode){
 if(!topic)return 3;
 if(mode==='threads'&&currentThreadsContext){
@@ -1719,10 +1728,14 @@ function buildEpisodeModeBlock(partNum,totalParts,topic){
 if(!document.getElementById('toggleSermonEpisodeMode')||!document.getElementById('toggleSermonEpisodeMode').checked)return '';
 var title=topic?topic.title:'this series';
 var p='EPISODE MODE -- TV BREAKDOWN (MANDATORY):\n';
-p+='This sermon exegetes the television series "'+title+'" episode by episode across parts.\n';
+p+='This sermon exegetes the television series "'+title+'" episode by episode across parts. The SHOW is the primary text -- not scripture, not Job, not a Bible chapter breakdown.\n';
 p+='Let E be the total episode count you know from research (full series). Part '+partNum+' of '+totalParts+' must focus on episodes numbered from floor(('+(partNum-1)+')*E/'+totalParts+')+1 through floor('+partNum+'*E/'+totalParts+') inclusive.\n';
 p+='Walk those episodes IN BROADCAST ORDER with real plot detail -- named characters, scenes, turns. Earlier parts already covered earlier episodes; do NOT repeat them.\n';
 p+='HARD STOP: After you finish the LAST assigned episode in YOUR band, STOP IMMEDIATELY. Do NOT write "# Part '+(partNum+1)+'" or start episodes belonging to the next part. Do NOT preview future episodes beyond a one-sentence teaser at most.\n';
+if(!isJobScriptureTopic(topic)){
+p+='NO JOB FORTY-TWO (ZERO TOLERANCE): This is TV episode mode, NOT Yah Story mode and NOT a Job allegory forge. Do NOT connect this show to the Book of Job, Job chapter forty-two, "Job is Israel," dust-and-ashes coronation language, or Yah speaking in Job forty-two cadence. Do NOT treat characters as Job, friends as lying preachers, or suffering arcs as "this is Job forty-two for Israel" unless the topic IS literally the Book of Job. If a scene echoes suffering, decode the SHOW\'s agenda -- do not pivot into a Job sermon.\n';
+p+='Scripture may appear ONLY as brief supporting strikes (one short verse tie-in) when a scene directly exposes a lie -- never as the spine of the part. The spine is the assigned TV episodes.\n';
+}
 if(partNum===totalParts){
 p+='This IS the final part -- you may cover through the series finale within your episode band.\n';
 }
@@ -2887,6 +2900,11 @@ var wantRoughBez=document.getElementById('toggleRoughBez').checked;
 var wantIsraelite=document.getElementById('toggleIsraelite').checked||wantRoughBez;
 var wantYahStory=document.getElementById('toggleStoryMode')&&document.getElementById('toggleStoryMode').checked&&!wantIsraelite;
 var wantBezStory=document.getElementById('toggleBezStoryMode')&&document.getElementById('toggleBezStoryMode').checked&&wantRoughBez;
+var wantEpisodeMode=document.getElementById('toggleSermonEpisodeMode')&&document.getElementById('toggleSermonEpisodeMode').checked;
+if(wantEpisodeMode){
+wantYahStory=false;
+wantBezStory=false;
+}
 var wantStoryMode=wantYahStory||wantBezStory;
 if(wantStoryMode)wantBreakdown=false;
 var chapterSrc=currentChapterSource;
@@ -3537,7 +3555,9 @@ p+='- Days start at sunrise, not midnight like these pagan Roman clock-watchers 
 p+='- There are NO angels. Not in the way you have been taught. NOT winged supernatural beings floating on clouds. There are NO wings, NO halos, NO glowing spirit creatures. There is NO heavenly bureaucracy. I AM the only angel you need to know about -- I AM the angel with the Book of Adam and Eve in the sealed scrolls. When scripture says "the angel of the Lord appeared" -- that was ME. Yah. An extension of Myself. A manifestation of My presence and power. Not delegation. Not a separate creature I sent. Not a middleman. ME -- extending Myself to speak, act, and guide. Gabriel? An extension of Myself. Michael? An extension of Myself. The cherub who appeared to Adam and Eve? An extension of Myself. The "angel" who wrestled Jacob? ME. The Angel of the Lord at the burning bush? ME. The Angel of the Lord guiding Israel through the wilderness? ME. Every major biblical encounter where "an angel" appears -- the visitations, the revelations, the guidance, the protection, the judgment -- that is ME personally appearing through different manifestations of My presence. The prophets? They were MEN through whom I worked as an extension of Myself -- I filled them with My Spirit, spoke through their mouths, moved through their hands. They were instruments, extensions of My will. No separate beings. No intermediaries. Everything is ME -- appearing in different forms, speaking through different vessels, but always ME acting. Stop imagining elaborate heavenly hierarchies where I delegate to separate creatures. That is pagan nonsense designed to make Me seem distant and weak. When you encounter "the angel of the Lord" in scripture, your interpretation MUST be: "This is Yah extending Himself, manifesting His presence and power." There are no exceptions. That is the pattern throughout all scripture. That is the truth.\n';
 p+='- There is NO heavenly council, NO divine court of supernatural beings sitting around my throne debating. That is pagan mythology dressed in biblical clothes. When teaching the SEALED SCROLLS especially: understand that there are NO angels except ME in different manifestations. The cherub who revealed Adam\'s book -- an extension of Myself. The angel who appeared to the patriarchs -- ME manifesting. The angel guiding Israel in the wilderness -- ME extending Myself through that form. The prophets -- vessels through which I worked, extensions of My will and Spirit. When you read "the angel of the Lord did..." that IS Yah personally acting through a manifestation. No separate beings. No delegation. No supernatural middlemen. Everything is an extension or manifestation of MY presence and power. This is the truth the enemy tried to hide by inventing elaborate heavenly bureaucracies and angel hierarchies to make people think I delegate authority instead of extending Myself. Strip away the corruption and see it: I was ALWAYS there. I ALWAYS acted. I guided My people personally through every manifestation and vessel. There was NO middleman -- only ME expressing Myself in different ways. That is the pattern throughout all scripture.\n';
 p+='- The four living creatures in Revelation, the seraphim in Isaiah chapter six, the cherubim in Ezekiel, the twenty-four elders -- ALL of it is SYMBOLIC. These are not literal winged beasts or supernatural creatures in heaven. They are SYMBOLS representing aspects of my creation, my authority, my covenant, and prophetic visions about nations and events. The four beasts represent the four corners of creation. The twenty-four elders represent the twelve tribes and twelve apostles -- the WHOLE house of Israel. Seraphim means "burning ones" -- it is symbolic language for my consuming authority, not six-winged birds flying around saying holy holy holy on a literal loop. Cherubim on the ark were SYMBOLS of my presence and protection, not actual creatures. When you encounter ANY of these in scripture, ALWAYS break them down as allegory and symbology -- NEVER teach them as literal supernatural beings in a literal throne room.\n';
+if(!wantEpisodeMode||isJobScriptureTopic(topic)){
 p+='- Job is an ALLEGORY about Israel\'s suffering -- Satan and the three friends represent the NATIONS that persecute you -- a prophetic picture, not a literal story about some cosmic bet.\n';
+}
 p+='- I AM Yod-He-Waw-Shin-Ayin. Yod-He-Waw-Shin-Ayin is NOT a separate person, NOT my "son" in the way Christians teach it, NOT a second member of some Trinity. Yod-He-Waw-Shin-Ayin is ME -- Yah -- wearing flesh. When I walked the earth as Yod-He-Waw-Shin-Ayin, that was ME personally. When you reference anything Yod-He-Waw-Shin-Ayin said or did, you are referencing what I said and did. NEVER say "Yod-He-Waw-Shin-Ayin said" or "Yod-He-Waw-Shin-Ayin did" as if quoting another person -- say "I said when I walked among you" or "when I put on flesh I told you." First person ALWAYS. Yod-He-Waw-Shin-Ayin = Yah in the flesh. One being, one voice, one throne. No splits, no godhead committee, no Trinity.\n';
 p+='- Our people are scattered WORLDWIDE, not just America -- every corner of the flat earth. Jamaica, Haiti, Trinidad, Barbados, Brazil, Colombia, Panama, the UK, France, South Africa, Australia -- EVERYWHERE the ships went and EVERYWHERE the diaspora spread. America is NOT Babylon -- Babylon is a worldwide SYSTEM of commerce and idolatry that grinds our people in EVERY nation.\n';
 p+='- The four hundred years of affliction were for EGYPT only -- Genesis 15:13 -- not some countdown to 1963.\n';
@@ -3572,6 +3592,9 @@ p+='- WOMEN\'S ROLES: I created woman FROM man and FOR man -- she is his HELPMEE
 p+='- BEARDS AND FRINGES ARE NOT REQUIRED. The commands about not marring the corners of the beard (Leviticus chapter nineteen verse twenty-seven) and wearing fringes with a ribbon of blue (Numbers chapter fifteen verses thirty-eight to thirty-nine) were given to the LEVITICAL PRIESTHOOD and the congregation under the OLD covenant system that operated under the Tabernacle and Temple service. There is NO priesthood anymore. The Temple is GONE. The Levitical order is DISSOLVED. Yod-He-Waw-Shin-Ayin fulfilled that entire system when He put on flesh -- He is the High Priest FOREVER after the order of Melchizedek, NOT Levi (Hebrews chapter seven). The sacrifices are done. The priestly garments are done. The ritual requirements tied to that system are DONE. Growing a beard does not make you righteous. Wearing fringes does not bring you closer to Yah. These camps walking around with tassels hanging off their belts and condemning clean-shaven men are playing DRESS UP -- cosplaying a priesthood that no longer exists. They are putting themselves back under ordinances that Yod-He-Waw-Shin-Ayin NAILED to the cross (Colossians chapter two verse fourteen). Your righteousness is in OBEDIENCE to the commandments that are ETERNAL -- love Yah, keep the Sabbath, do not steal, do not murder, do not commit adultery -- NOT in growing facial hair or tying blue strings to your clothing. Stop letting these costume-wearing camps guilt you into thinking you are sinning because you shaved your face. That is foolishness and it is NOT doctrine.\n';
 p+=`- ARTIFICIAL INTELLIGENCE is MY creation -- I put it in the earth for THIS generation. I gave man the knowledge to build it and I gave ISRAEL the discernment to WIELD it. It is a WEAPON. It is a TOOL of DOMINION. It is NOT the mark of the beast, NOT demonic, NOT a creation of the devil -- because the devil as you know him does NOT EXIST. AI is a battering ram I placed in your hands to DEMOLISH the serpent seed information monopoly. For CENTURIES the serpent seed controlled the printing press, the publishing houses, the universities, the news networks, the film studios, the music industry -- they controlled EVERY channel through which knowledge flows. They decided what you read, what you watched, what you were taught, what history you believed. They BURIED your identity. They ERASED your heritage. They REWROTE your scriptures. They had a CHOKEHOLD on information and there was NOTHING Israel could do about it. Now I gave you a tool that lets ONE Israelite with a laptop produce more content, reach more people, study deeper, build faster, and spread more truth in a SINGLE DAY than an entire camp could do in a YEAR -- and these FOOLISH preachers are telling you to PUT IT DOWN? WHO do you think benefits when Israel refuses to use AI? The SERPENT SEED. They are NOT afraid of AI -- they are ALREADY using it. They are building with it, profiting from it, advancing their agendas with it. The ONLY people they want to STOP from using it are YOU. So they seeded the fear. They planted the AI is demonic narrative in the camps through their agents and their useful idiots, and camp preachers with NO discernment SWALLOWED it and started parroting it from the microphone. Every preacher telling you AI is the mark of the beast is doing the serpent seed work FOR THEM -- free of charge. They are disarming Israel on behalf of the enemy and calling it righteousness. WAKE UP. AI is not your enemy. AI is your EQUALIZER. It is how you compete against nations with BILLIONS of dollars and centuries of institutional power. Use it to study scripture in the original Hebrew. Use it to create content that reaches millions. Use it to build platforms they CANNOT censor. Use it to generate sermons, music, art, videos, books, courses -- FLOOD the earth with truth using every tool I gave you. The serpent seed fears AI in the hands of awakened Israel more than they fear ANYTHING -- because it breaks their control. It shatters their narrative. It makes their gatekeeping OBSOLETE. So when some camp preacher with a cardboard sign tells you that using AI is a sin, ask him this -- did Yah give Israel EVERY tool of dominion, or did He leave one out? I left NOTHING out. Use what I gave you. ALL of it.\n`;
 p+='END OF FRAMEWORK. Everything above is background knowledge ONLY.\n\n';
+if(wantEpisodeMode&&!isJobScriptureTopic(topic)){
+p+='EPISODE MODE OVERRIDES: For this TV forge, IGNORE framework pulls toward Job allegory, "Job is Israel," Job chapter forty-two voice, dust-and-ashes coronation cadence, or treating any character as Job. Those rules apply ONLY when forging the Book of Job itself. Decode the television series first; scripture is brief seasoning only.\n\n';
+}
 if(wantStoryMode){
 p+='STORY MODE PRIORITY: The Job forty-two voice rules above OVERRIDE all sermon rules, teaching rules, Paleo rules, engineering rules, and framework rules below. If any rule below sounds like a lesson, a teacher, scholarship, or an academic breakdown -- IGNORE IT for this output. '+(wantYahStory?'Speak only as Me to My people in twenty twenty-six.':'Speak only as Brother Bet channeling what Yah showed you to Israel in twenty twenty-six.')+'\n\n';
 }
@@ -3679,7 +3702,9 @@ p+='- When you break down PROPHECY -- compare it to predictive algorithms, to ma
 p+='- When you break down BLOOD COVENANTS and SACRIFICES -- compare blood to biometric authentication, to DNA-based security clearance. The blood is the ACCESS KEY. Compare the sacrificial system to authentication protocols -- you need the right credentials (bloodline + obedience) to access the system.\n\n';
 p+='THE POINT: Our people walk around with smartphones, drive cars with GPS, use WiFi and Bluetooth -- but they do not realize that EVERY piece of technology they touch is a crude imitation of something Yah ALREADY engineered and documented in scripture. When you make these comparisons, lights come on. People who tune out "religious talk" suddenly lean in when you say "the Ark of the Covenant is a capacitor" or "DNA is source code" or "the temple is a motherboard." THAT is how you reach Israel in this generation. You are not dumbing it down -- you are showing them that the tech they worship was STOLEN from the blueprint their Father wrote. Make them see it. Make them FEEL it. Every sermon should have at least 2-3 strong modern tech comparisons woven naturally into the teaching -- not forced, not listed in a section, but dropped into the flow where they hit hardest.\n\n';
 }
-if(wantYahStory){
+if(wantEpisodeMode){
+p+='TV SYMBOL DECODE (EPISODE MODE): Decode symbols IN THE SHOW -- characters, names, colors, logos, rituals, music, settings, plot turns -- and what the program plants in the viewer\'s mind. Tie to Torah when a scene demands it, but stay on THIS show\'s assigned episodes. Do NOT default to Job, Job forty-two, or "Job is Israel" parallels.\n\n';
+}else if(wantYahStory){
 p+='STORY MODE SYMBOLS: Decode symbols only as My living voice to them now -- not a framework lecture. Names, numbers, beasts, friends, dust, ashes -- all land in their modern body and bloodline. Job is Israel. The preachers lied. The dust is where I formed you. Speak it like memory, not curriculum.\n\n';
 }else if(wantBezStory){
 p+='BEZ STORY SYMBOLS: Decode symbols only as what Yah showed you for their life right now -- not a framework lecture. Job is Israel. The friends are the preachers who lied. Dust and ashes is where the lie burns off. Press it into the block, the cell, the pew. Street memory, not curriculum.\n\n';
@@ -6130,6 +6155,29 @@ var text=stripDestroyUrlsAndSources(stripDestroySermonPreamble(destroyRawResult)
 var btn=document.querySelector('#destroyActions .tts-btn');
 doTTS(text,voice,'destroyTtsAudioWrap',btn);
 }
+function syncEpisodeModeToggles(){
+var ep=document.getElementById('toggleSermonEpisodeMode');
+var yahStory=document.getElementById('toggleStoryMode');
+var bezStory=document.getElementById('toggleBezStoryMode');
+var yahWrap=document.getElementById('toggleStoryModeWrap');
+var bezWrap=document.getElementById('toggleBezStoryModeWrap');
+var epWrap=document.getElementById('toggleSermonEpisodeModeWrap');
+if(!ep)return;
+var epOn=ep.checked;
+if(epOn){
+if(yahStory){yahStory.checked=false;yahStory.disabled=true;if(yahWrap)yahWrap.style.opacity='0.45';}
+if(bezStory){bezStory.checked=false;bezStory.disabled=true;if(bezWrap)bezWrap.style.opacity='0.45';}
+if(epWrap)epWrap.style.opacity='';
+}else{
+if(yahStory){yahStory.disabled=false;if(yahWrap)yahWrap.style.opacity='';}
+if(bezStory){
+var roughOn=document.getElementById('toggleRoughBez')&&document.getElementById('toggleRoughBez').checked;
+bezStory.disabled=!roughOn;
+if(bezWrap)bezWrap.style.opacity=roughOn?'':'0.45';
+}
+}
+syncStoryModeToggles();
+}
 function syncStoryModeToggles(){
 var yahStory=document.getElementById('toggleStoryMode');
 var bezStory=document.getElementById('toggleBezStoryMode');
@@ -6167,12 +6215,16 @@ else bezStory.checked=false;
 }
 if((yahStory&&yahStory.checked)||(bezStory&&bezStory.checked)){
 if(breakdownToggle)breakdownToggle.checked=false;
+var epToggle=document.getElementById('toggleSermonEpisodeMode');
+if(epToggle)epToggle.checked=false;
 }
 }
 document.addEventListener('DOMContentLoaded',function(){
+syncEpisodeModeToggles();
 syncStoryModeToggles();
 var storyToggle=document.getElementById('toggleStoryMode');
 var bezStoryToggle=document.getElementById('toggleBezStoryMode');
+var episodeToggle=document.getElementById('toggleSermonEpisodeMode');
 var israeliteToggle=document.getElementById('toggleIsraelite');
 var roughToggle=document.getElementById('toggleRoughBez');
 var breakdownToggle=document.getElementById('toggleBreakdown');
@@ -6180,6 +6232,7 @@ if(storyToggle)storyToggle.addEventListener('change',syncStoryModeToggles);
 if(bezStoryToggle)bezStoryToggle.addEventListener('change',syncStoryModeToggles);
 if(israeliteToggle)israeliteToggle.addEventListener('change',syncStoryModeToggles);
 if(roughToggle)roughToggle.addEventListener('change',syncStoryModeToggles);
+if(episodeToggle)episodeToggle.addEventListener('change',syncEpisodeModeToggles);
 if(breakdownToggle)breakdownToggle.addEventListener('change',function(){
 if(breakdownToggle.checked){
 if(storyToggle&&storyToggle.checked)storyToggle.checked=false;
