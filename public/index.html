@@ -2924,9 +2924,6 @@ var wantIsraelite=document.getElementById('toggleIsraelite').checked||wantRoughB
 var wantYahStory=document.getElementById('toggleStoryMode')&&document.getElementById('toggleStoryMode').checked&&!wantIsraelite;
 var wantBezStory=document.getElementById('toggleBezStoryMode')&&document.getElementById('toggleBezStoryMode').checked&&wantRoughBez;
 var wantEpisodeMode=document.getElementById('toggleSermonEpisodeMode')&&document.getElementById('toggleSermonEpisodeMode').checked;
-if(wantEpisodeMode){
-wantYahStory=false;
-}
 var wantStoryMode=wantYahStory||wantBezStory;
 if(wantStoryMode)wantBreakdown=false;
 var chapterSrc=currentChapterSource;
@@ -3076,7 +3073,11 @@ p+='2. THEN continue the '+(wantStoryMode?'revelation':'teaching')+'.\n\n';
 }
 if(wantYahStory){
 p+=buildStoryRevelationStyleBlock(false,topic,chapterSrc);
+if(wantEpisodeMode){
+p+='EPISODE COVERAGE: Walk your assigned TV episodes in broadcast order. Scene by scene in continuous revelation paragraphs -- Me speaking straight to their bones, not a recap blog, not a lesson.\n\n';
+}else{
 p+='VERSE COVERAGE: Walk every assigned verse in exact order. Miss nothing. Each verse is a beat in MY voice remembering them -- not a lesson point.\n\n';
+}
 }else if(wantBezStory){
 p+=buildStoryRevelationStyleBlock(true,topic,chapterSrc);
 if(wantEpisodeMode){
@@ -3683,7 +3684,9 @@ p+='- When you break down PROPHECY -- compare it to predictive algorithms, to ma
 p+='- When you break down BLOOD COVENANTS and SACRIFICES -- compare blood to biometric authentication, to DNA-based security clearance. The blood is the ACCESS KEY. Compare the sacrificial system to authentication protocols -- you need the right credentials (bloodline + obedience) to access the system.\n\n';
 p+='THE POINT: Our people walk around with smartphones, drive cars with GPS, use WiFi and Bluetooth -- but they do not realize that EVERY piece of technology they touch is a crude imitation of something Yah ALREADY engineered and documented in scripture. When you make these comparisons, lights come on. People who tune out "religious talk" suddenly lean in when you say "the Ark of the Covenant is a capacitor" or "DNA is source code" or "the temple is a motherboard." THAT is how you reach Israel in this generation. You are not dumbing it down -- you are showing them that the tech they worship was STOLEN from the blueprint their Father wrote. Make them see it. Make them FEEL it. Every sermon should have at least 2-3 strong modern tech comparisons woven naturally into the teaching -- not forced, not listed in a section, but dropped into the flow where they hit hardest.\n\n';
 }
-if(wantEpisodeMode&&wantBezStory){
+if(wantEpisodeMode&&wantYahStory){
+p+='TV + YAH STORY (EPISODE MODE): Decode symbols IN THE SHOW -- characters, names, colors, logos, rituals, music, settings, plot turns -- in first-person Yah revelation cadence. Speak straight to scattered Israel in twenty twenty-six. Stay on THIS show\'s assigned episodes in broadcast order. Tie to Torah when a scene demands it. NO Job allegory.\n\n';
+}else if(wantEpisodeMode&&wantBezStory){
 p+='TV + BEZ STORY (EPISODE MODE): Decode symbols IN THE SHOW -- characters, names, colors, logos, rituals, music, settings, plot turns -- in Brother Bet revelation cadence. Press what Yah showed you into the block, the cell, the pew. Stay on THIS show\'s assigned episodes in broadcast order. Tie to Torah when a scene demands it. NO Job allegory.\n\n';
 }else if(wantEpisodeMode){
 p+='TV SYMBOL DECODE (EPISODE MODE): Decode symbols IN THE SHOW -- characters, names, colors, logos, rituals, music, settings, plot turns -- and what the program plants in the viewer\'s mind. Tie to Torah when a scene demands it, but stay on THIS show\'s assigned episodes. Do NOT default to Job, Job forty-two, or "Job is Israel" parallels.\n\n';
@@ -6139,20 +6142,6 @@ var btn=document.querySelector('#destroyActions .tts-btn');
 doTTS(text,voice,'destroyTtsAudioWrap',btn);
 }
 function syncEpisodeModeToggles(){
-var ep=document.getElementById('toggleSermonEpisodeMode');
-var yahStory=document.getElementById('toggleStoryMode');
-var bezStory=document.getElementById('toggleBezStoryMode');
-var yahWrap=document.getElementById('toggleStoryModeWrap');
-var bezWrap=document.getElementById('toggleBezStoryModeWrap');
-var epWrap=document.getElementById('toggleSermonEpisodeModeWrap');
-if(!ep)return;
-var epOn=ep.checked;
-if(epOn){
-if(yahStory){yahStory.checked=false;yahStory.disabled=true;if(yahWrap)yahWrap.style.opacity='0.45';}
-if(epWrap)epWrap.style.opacity='';
-}else{
-if(yahStory){yahStory.disabled=false;if(yahWrap)yahWrap.style.opacity='';}
-}
 syncStoryModeToggles();
 }
 function syncStoryModeToggles(){
@@ -6192,8 +6181,6 @@ else bezStory.checked=false;
 }
 if(yahStory&&yahStory.checked){
 if(breakdownToggle)breakdownToggle.checked=false;
-var epToggle=document.getElementById('toggleSermonEpisodeMode');
-if(epToggle)epToggle.checked=false;
 }else if(bezStory&&bezStory.checked){
 if(breakdownToggle)breakdownToggle.checked=false;
 }
