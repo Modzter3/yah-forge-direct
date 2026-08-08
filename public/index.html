@@ -949,7 +949,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch" id="toggleStoryModeWrap" title="Yah first-person revelation cadence — paragraph-flow ElevenLabs (not a lesson)"><input type="checkbox" id="toggleStoryMode"><span class="toggle-track story-track"></span><span><i class="fas fa-book-open" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Yah Story</span></label>
       <label class="toggle-switch" id="toggleBezStoryModeWrap" title="Rough Bezaleel revelation cadence — paragraph-flow ElevenLabs (not a lesson)"><input type="checkbox" id="toggleBezStoryMode"><span class="toggle-track bez-story-track"></span><span><i class="fas fa-book-open" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Bez Story</span></label>
       <label class="toggle-switch" id="toggleSermonEpisodeModeWrap" title="TV season episode-by-episode breakdown across parts"><input type="checkbox" id="toggleSermonEpisodeMode"><span class="toggle-track"></span><span><i class="fas fa-tv" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Episode Mode</span></label>
-      <label class="toggle-switch" title="OpenRouter web search when model supports it (silent — no URLs in output)"><input type="checkbox" id="toggleWebResearch" checked><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
+      <label class="toggle-switch" title="Live web search: verify facts, find recent news, weave headlines into the sermon (silent — no URLs in output)"><input type="checkbox" id="toggleWebResearch" checked><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
       <div class="model-select-wrap">
         <label><i class="fas fa-robot"></i> Model:</label>
         <select class="model-select" id="modelSelect" onchange="onSermonModelDropdown()">
@@ -1716,12 +1716,61 @@ return params;
 function stripMediaSources(text){
 return stripDestroyUrlsAndSources(text);
 }
-function buildWebResearchPromptBlock(topic){
+function buildWebResearchPromptBlock(topic,opts){
 var webEl=document.getElementById('toggleWebResearch');
 if(!webEl||!webEl.checked||!topic)return '';
+opts=opts||{};
+var partNum=opts.partNum||1;
+var totalParts=opts.totalParts||1;
+var wantEpisodeMode=!!opts.wantEpisodeMode;
+var chapterSrc=opts.chapterSrc||null;
+var wantStoryMode=!!opts.wantStoryMode;
+var mode=opts.currentMode||currentMode||'doctrine';
+if(mode==='news')return '';
+var title=topic.title||'this topic';
+var isTv=wantEpisodeMode||looksLikeTvSeason(topic);
+var isChapter=!!chapterSrc;
 var p='WEB RESEARCH (SILENT -- MANDATORY WHEN ENABLED):\n';
-p+='Use live web search INTERNALLY before and while writing to verify plot, characters, season/episode counts, release order, and recent developments for "'+topic.title+'". ';
-p+='Research stays INTERNAL. Do NOT paste URLs, hyperlinks, footnotes, "Sources," "References," citation brackets, or bibliography into the sermon. Output plain spoken prose only.\n\n';
+p+='Use live web search INTERNALLY before and while writing. Research stays INTERNAL -- do NOT paste URLs, hyperlinks, footnotes, "Sources," "References," citation brackets, outlet names as bibliography, or any bibliography into the sermon. Output plain spoken prose only.\n\n';
+p+='STEP 1 -- TOPIC VERIFICATION:\n';
+if(isTv){
+p+='Search for "'+title+'": verify plot, characters, season/episode counts, release order, and recent developments about the show.\n';
+}else if(isChapter){
+p+='Search for the themes, symbols, and historical context of '+title+' ('+chapterSrc.book+' Chapter '+chapterSrc.chapter+').\n';
+}else{
+p+='Search for background, recent developments, and real-world context around "'+title+'".\n';
+}
+p+='\nSTEP 2 -- CURRENT NEWS (MANDATORY):\n';
+p+='Search for 2-4 REAL recent news articles (past 30-90 days when possible) that connect to "'+title+'". ';
+if(isTv){
+p+='Look for: cast/creator controversies, cultural impact, parallel real-world events the show mirrors, legislation or policy tied to the show\'s themes, fan/protest reactions, and headlines that prove the lie or pattern the episodes expose.\n';
+}else if(isChapter){
+p+='Look for: current events that fulfill, mirror, or illuminate the scripture you are preaching -- wars, captivity, deception, economy, Israel, nature signs, law, health, church, race, land, military alliances, or whatever this chapter actually addresses.\n';
+}else{
+p+='Look for: headlines that prove the doctrine -- legislation, wars, economy, deception, Israel, surveillance, health, race, church compromise, or whatever "'+title+'" exposes.\n';
+}
+if(totalParts>1){
+var newsPerPart=Math.max(1,Math.ceil(4/totalParts));
+var newsStart=(partNum-1)*newsPerPart+1;
+var newsEnd=Math.min(partNum*newsPerPart,4);
+p+='Across the full '+totalParts+'-part sermon, plan roughly 2-4 distinct current events total. ';
+p+='YOU ARE WRITING PART '+partNum+' OF '+totalParts+' -- prioritize weaving news event(s) numbered roughly '+newsStart+' through '+newsEnd+' in THIS part. ';
+p+='Do NOT dump every headline in Part 1. Later parts get their own events. One sentence bridge max if a prior part already named an event.\n';
+}else{
+p+='Weave 2-3 of the strongest articles into this single sermon -- not a news recap, but evidence inside the preaching.\n';
+}
+p+='\nSTEP 3 -- WEAVE INTO THE SERMON (NOT A NEWS BULLETIN):\n';
+p+='- Name what happened in plain speech: "They just signed it last week," "The headlines this month showed," "While you were sleeping on this verse, the news proved it."\n';
+p+='- Do NOT read like a news anchor. PREACH the event as proof the Most High already told Israel what Babylon would do.\n';
+p+='- Tie each event to scattered Israel\'s body -- block, cell, pew, bills, stolen name, schools, churches, bloodline.\n';
+p+='- Scripture confirms the headline; the headline makes the scripture land harder. Intertwine -- do not tack news on at the end.\n';
+if(wantStoryMode){
+p+='- In Story mode: weave news INSIDE the revelation paragraphs -- one hard pivot from verse to headline to "you see it now," never a separate "news segment."\n';
+}
+if(isTv){
+p+='- In Episode mode: after you walk a scene, strike with the real-world headline that scene just exposed -- show to street without leaving the episode spine.\n';
+}
+p+='- NEVER say "according to [outlet]" or list sources. The listener should feel the times, not read a feed.\n\n';
 return p;
 }
 function buildStoryRevelationStyleBlock(isBez,topic,chapterSrc){
@@ -2997,7 +3046,7 @@ p+='You MUST write approximately '+wordsPerPart.toLocaleString()+' words for thi
 if(totalParts>1){
 p+='ONE PART ONLY (CRITICAL): You are writing ONLY Part '+partNum+' of '+totalParts+' in THIS response. Do NOT write Part '+(partNum+1)+' or any later part. Do NOT include "# Part '+(partNum+1)+':" or any future part header. Stop when Part '+partNum+' is complete -- the forge requests later parts separately.\n\n';
 }
-p+=buildWebResearchPromptBlock(topic);
+p+=buildWebResearchPromptBlock(topic,{partNum:partNum,totalParts:totalParts,wantEpisodeMode:wantEpisodeMode,chapterSrc:chapterSrc,wantStoryMode:wantStoryMode,currentMode:currentMode});
 p+=buildEpisodeModeBlock(partNum,totalParts,topic);
 if(wantIsraelite&&wantRoughBez&&!wantBezStory){
 // ROUGH BEZALEEL MODE -- no broadcast format, no welcome/backdrop
