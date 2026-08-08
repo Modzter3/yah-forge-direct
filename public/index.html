@@ -1286,7 +1286,8 @@ var APOC_BOOKS=[
 {n:"4 Baruch (Rest of Jeremiah)",c:9},{n:"Apocalypse of Zephaniah",c:12},{n:"Ladder of Jacob",c:7},
 {n:"Treatise of Shem",c:12},{n:"Lives of the Prophets",c:23},{n:"Martyrdom of Isaiah",c:5},
 {n:"Apocalypse of Peter",c:17},{n:"History of the Rechabites",c:16},{n:"Sefer HaBahir (Book of Brightness)",c:5},
-{n:"Pistis Sophia",c:6},{n:"Conflict of Adam and Eve with Satan",c:40}
+{n:"Pistis Sophia",c:6},{n:"Conflict of Adam and Eve with Satan",c:40},
+{n:"Book of Natasrym (Natsarim)",c:21}
 ];
 var APOC_NAMES=APOC_BOOKS.map(function(b){return b.n;});
 var SEALED_BOOKS=[
@@ -1323,7 +1324,8 @@ var SEALED_BOOKS=[
 {n:"History of the Rechabites",c:16,desc:"The blessed island of the sons of Rechab -- Jeremiah's faithful ones who kept the covenant perfectly."},
 {n:"Sefer HaBahir (Book of Brightness)",c:5,desc:"The oldest kabbalistic text -- the light hidden from creation, the tree, the cosmic pillars of Yah's design."},
 {n:"Pistis Sophia",c:6,desc:"Yod-He-Waw-Shin-Ayin's post-resurrection teachings -- the fallen Sophia, the archons, the mysteries of the light realm."},
-{n:"Conflict of Adam and Eve with Satan",c:40,desc:"The extended warfare -- Satan's disguises, the gold, incense, and myrrh, the cave of treasures prophecy."}
+{n:"Conflict of Adam and Eve with Satan",c:40,desc:"The extended warfare -- Satan's disguises, the gold, incense, and myrrh, the cave of treasures prophecy."},
+{n:"Book of Natasrym (Natsarim)",c:21,desc:"The Nazarene gospel from the Gospel of the Kailedy -- Yahusha's sayings on Torah obedience, parables expounded, and walking among Israel. Preserved through Celtic believers; no ancient manuscripts survive. Filter for buried Torah-truth; reject anything that contradicts KJV canon."}
 ];
 var activeCategory='all';
 var searchTerm='';
@@ -2739,7 +2741,7 @@ prompt+='- Obscure scriptural cross-references that are rarely taught\n';
 prompt+='- Suppressed historical connections (Dead Sea Scrolls fragments, early church councils that removed texts, ancient Hebrew customs lost to time)\n';
 prompt+='- Apocryphal or pseudepigraphal connections most skip over -- BUT filtered through the theological framework above. Destroy serpent seed corruption, extract the buried gold\n';
 prompt+='- Linguistic rabbit holes (original Paleo Hebrew/Aramaic words that change everything when properly translated -- use Paleo Hebrew letters with English names and pictographic meanings, NEVER modern square-script)\n';
-prompt+='- Connections to SEALED SCROLLS that most people have never read: Sefer Yetzirah (Book of Formation/Creation), 1 Enoch (FILTER HARD -- Enoch is DEAD per John 3:13, heaven tours are fabricated, only pre-flood history and flat earth astronomy are usable), 2 Enoch (MOST CORRUPTED -- ten heavens is serpent seed garbage), 3 Enoch (Metatron mythology is kabbalistic poison), Book of Jasher, Book of Jubilees, Testaments of Abraham/Moses/Job/Adam/Solomon, Apocalypse of Abraham, 1 & 2 Adam and Eve, Book of Giants, Sefer Raziel HaMalakh, Psalms of Solomon, Odes of Solomon, Ladder of Jacob, Apocalypse of Zephaniah/Elijah/Peter (Elijah is also DEAD -- same rule), Martyrdom of Isaiah, Conflict of Adam and Eve with Satan, Pistis Sophia, Sefer HaBahir, History of the Rechabites, Treatise of Shem\n';
+prompt+='- Connections to SEALED SCROLLS that most people have never read: Sefer Yetzirah (Book of Formation/Creation), 1 Enoch (FILTER HARD -- Enoch is DEAD per John 3:13, heaven tours are fabricated, only pre-flood history and flat earth astronomy are usable), 2 Enoch (MOST CORRUPTED -- ten heavens is serpent seed garbage), 3 Enoch (Metatron mythology is kabbalistic poison), Book of Jasher, Book of Jubilees, Testaments of Abraham/Moses/Job/Adam/Solomon, Apocalypse of Abraham, 1 & 2 Adam and Eve, Book of Giants, Sefer Raziel HaMalakh, Psalms of Solomon, Odes of Solomon, Ladder of Jacob, Apocalypse of Zephaniah/Elijah/Peter (Elijah is also DEAD -- same rule), Martyrdom of Isaiah, Conflict of Adam and Eve with Satan, Pistis Sophia, Sefer HaBahir, History of the Rechabites, Treatise of Shem, Book of Natasrym (Natsarim)\n';
 prompt+='- Buried historical parallels (specific ancient civilizations, archaeological finds, suppressed manuscripts)\n';
 prompt+='- Engineering, physics, or technical specifications hidden in the text -- show the DESIGN that the Master Engineer embedded. When referencing Hebrew letters, use Paleo Hebrew with English names and pictographic translations ONLY.\n';
 prompt+='- Engineering, physics, or scientific concepts encoded in scripture that modern science only recently discovered\n';
@@ -3888,7 +3890,7 @@ if(wantApocrypha&&!wantStoryMode){
 p+='APOCRYPHAL & SEALED SCROLL REFERENCES -- NO MORE MILK:\n';
 p+='Reference and quote from BOTH the Apocrypha AND the Sealed Scrolls wherever they support, deepen, or reveal hidden layers of the doctrine. The restriction is LIFTED -- use EVERYTHING available.\n';
 p+='PERMITTED APOCRYPHA: '+apocList+'.\n';
-p+='PERMITTED SEALED SCROLLS: Sefer Yetzirah, 1 Enoch, 2 Enoch, 3 Enoch, Book of Jasher, Book of Jubilees, Testament of Abraham, Testament of Moses, Testament of Job, Testament of Adam, Testament of Solomon, Apocalypse of Abraham, 1 Adam and Eve, 2 Adam and Eve, Book of Giants, Sefer Raziel HaMalakh, Psalms of Solomon, Odes of Solomon, 3 Baruch, 4 Baruch, Apocalypse of Zephaniah, Apocalypse of Elijah, Ladder of Jacob, Martyrdom of Isaiah, Apocalypse of Peter, History of the Rechabites, Conflict of Adam and Eve with Satan, Sefer HaBahir, Pistis Sophia.\n';
+p+='PERMITTED SEALED SCROLLS: Sefer Yetzirah, 1 Enoch, 2 Enoch, 3 Enoch, Book of Jasher, Book of Jubilees, Testament of Abraham, Testament of Moses, Testament of Job, Testament of Adam, Testament of Solomon, Apocalypse of Abraham, 1 Adam and Eve, 2 Adam and Eve, Book of Giants, Sefer Raziel HaMalakh, Psalms of Solomon, Odes of Solomon, 3 Baruch, 4 Baruch, Apocalypse of Zephaniah, Apocalypse of Elijah, Ladder of Jacob, Martyrdom of Isaiah, Apocalypse of Peter, History of the Rechabites, Conflict of Adam and Eve with Satan, Sefer HaBahir, Pistis Sophia, Book of Natasrym (Natsarim).\n';
 p+='Cite specific book, chapter, and verse (or section for texts without verse numbering). When quoting sealed scrolls, ALWAYS cross-reference with KJV canon to anchor the truth. If the sealed text confirms Torah -- teach it as BURIED TRUTH the enemy hid. If it contradicts Torah -- cuss it out as serpent seed bullshit but still reference it to DESTROY the lie. Do NOT be polite about it -- go just as hard on corrupted sealed text as you go on any other false doctrine.\n';
 p+='*** ZERO TOLERANCE ANTI-HALLUCINATION RULE FOR SEALED SCROLLS ***\n';
 p+='DO NOT FABRICATE, INVENT, OR GUESS sealed scroll references. If you cite "First Enoch chapter twelve verse three" -- that verse MUST actually exist in First Enoch chapter twelve. If you are not 100% CERTAIN a specific chapter and verse exists in a sealed text, DO NOT CITE IT. Sealed scrolls are rare texts and your training data may have incomplete or inaccurate information about their exact chapter/verse structure.\n';
