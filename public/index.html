@@ -1339,6 +1339,106 @@ var currentChapterText=null;
 var currentChapterVerseCount=0;
 var currentNewsContext=null;
 var currentThreadsContext=null;
+var sermonNewsAnglePlan=null;
+var sermonNewsLedger=[];
+var NEWS_ANGLE_POOL=[
+'Legislation, courts, executive orders, or new laws tied to this topic',
+'Economy, banks, inflation, debt, housing, rent, or jobs tied to this topic',
+'Wars, military deployments, alliances, or geopolitical conflict tied to this topic',
+'Health, pharma, hospitals, or public health policy tied to this topic',
+'Surveillance, AI, censorship, or tech platform control tied to this topic',
+'Church scandals, false doctrine trends, or religious persecution tied to this topic',
+'Race, identity, immigration, or civil unrest tied to this topic',
+'Israel, Middle East, captivity, or diaspora oppression tied to this topic',
+'Education, youth, curriculum fights, or university crackdowns tied to this topic',
+'Food, water, land grabs, or resource/climate control tied to this topic',
+'Entertainment, culture war, or media propaganda tied to this topic',
+'Police, prisons, courts, or criminal justice tied to this topic'
+];
+function buildSermonNewsAnglePlan(totalParts,topic){
+var pool=NEWS_ANGLE_POOL.slice();
+var seed=0;
+if(topic){
+var t=(topic.title||'')+(topic.desc||'');
+for(var si=0;si<t.length;si++)seed=(seed+t.charCodeAt(si))%9973;
+}
+for(var pi=pool.length-1;pi>0;pi--){
+var j=seed%(pi+1);seed=Math.floor(seed/9973)+pi+1;
+var tmp=pool[pi];pool[pi]=pool[j];pool[j]=tmp;
+}
+var plan=[];
+for(var p=0;p<totalParts;p++)plan.push(pool[p%pool.length]);
+return plan;
+}
+function extractNewsStoryHints(text){
+if(!text)return [];
+var hints=[];
+var seen={};
+var sentences=String(text).split(/(?<=[.!?])\s+/);
+var triggers=/\b(last week|this month|yesterday|today|headlines?|breaking|signed|passed|bill|congress|senate|house|president|governor|mayor|war|invasion|strike|protest|arrested|charged|indicted|vaccine|FDA|CDC|FEMA|Israel|Gaza|Ukraine|inflation|fed |federal reserve|court ruled|supreme court|executive order|emergency powers|curfew|shutdown|layoff|eviction|border|deportation|surveillance|algorithm|ban on)\b/i;
+for(var i=0;i<sentences.length;i++){
+if(!triggers.test(sentences[i]))continue;
+var s=sentences[i].trim().replace(/\s+/g,' ');
+if(s.length<35||s.length>320)continue;
+var key=s.slice(0,80).toLowerCase();
+if(seen[key])continue;
+seen[key]=true;
+hints.push(s.slice(0,220));
+}
+return hints.slice(0,8);
+}
+function recordSermonNewsLedger(partNum,text,angle){
+var hints=extractNewsStoryHints(text);
+if(angle)hints.unshift('Part '+partNum+' news lane: '+angle);
+for(var i=0;i<hints.length;i++){
+if(sermonNewsLedger.indexOf(hints[i])===-1)sermonNewsLedger.push(hints[i]);
+}
+}
+function buildUsedNewsDedupBlock(partNum,totalParts,opts){
+opts=opts||{};
+var webEl=document.getElementById('toggleWebResearch');
+var webOn=webEl&&webEl.checked&&opts.currentMode!=='news';
+var newsMode=opts.currentMode==='news'&&currentNewsContext&&currentNewsContext.length>0;
+if(!webOn&&!newsMode)return '';
+var p='NEWS UNIQUENESS -- ZERO REPEAT HEADLINES (MANDATORY):\n';
+p+='Every real-world news story gets ONE appearance in this entire sermon. Do NOT repeat the same event, bill, war, protest, arrest, policy, or scandal under different wording. If a listener heard it already, it is BURNED.\n';
+if(totalParts===1){
+p+='This is a single-part sermon: weave 2-3 COMPLETELY DIFFERENT headlines -- three distinct events, three distinct angles. Never tell the same story twice.\n';
+}else{
+p+='This is Part '+partNum+' of '+totalParts+': introduce exactly ONE new headline/event in this part. Do NOT revisit headlines from earlier parts except one bridge sentence max.\n';
+}
+var banned=[];
+for(var bi=0;bi<partNum-1;bi++){
+banned=banned.concat(extractNewsStoryHints(sermonPartsRaw[bi]||''));
+}
+for(var li=0;li<sermonNewsLedger.length;li++){
+if(banned.indexOf(sermonNewsLedger[li])===-1)banned.push(sermonNewsLedger[li]);
+}
+if(newsMode&&totalParts>1&&currentNewsContext.length>1){
+var storiesPerPart=Math.ceil(currentNewsContext.length/totalParts);
+var myStart=(partNum-1)*storiesPerPart;
+var myEnd=Math.min(myStart+storiesPerPart,currentNewsContext.length);
+if(partNum===totalParts)myEnd=currentNewsContext.length;
+for(var ni=0;ni<currentNewsContext.length;ni++){
+if(ni>=myStart&&ni<myEnd)continue;
+var h=currentNewsContext[ni].headline||currentNewsContext[ni].summary;
+if(h&&banned.indexOf(h)===-1)banned.push('Article '+(ni+1)+': '+String(h).slice(0,180));
+}
+}
+if(banned.length){
+p+='\nALREADY USED OR RESERVED FOR OTHER PARTS -- DO NOT MENTION AGAIN:\n';
+for(var ui=0;ui<banned.length;ui++)p+='- '+banned[ui]+'\n';
+}
+p+='\n';
+return p;
+}
+function ensureSermonNewsPlan(){
+if(sermonNewsAnglePlan)return;
+var webEl=document.getElementById('toggleWebResearch');
+if(webEl&&webEl.checked&&currentMode!=='news'){
+sermonNewsAnglePlan=buildSermonNewsAnglePlan(selectedPartCount,currentTopic);
+}
+}
 function detectMediaWorkFromTopic(topic){
 if(!topic)return null;
 var raw=((''+(topic.title||''))+'\n'+(''+(topic.desc||''))).toLowerCase();
@@ -1744,24 +1844,27 @@ p+='Search for the themes, symbols, and historical context of '+title+' ('+chapt
 p+='Search for background, recent developments, and real-world context around "'+title+'".\n';
 }
 p+='\nSTEP 2 -- CURRENT NEWS (MANDATORY):\n';
-p+='Search for 2-4 REAL recent news articles (past 30-90 days when possible) that connect to "'+title+'". ';
+if(totalParts>1){
+var partAngle=sermonNewsAnglePlan&&sermonNewsAnglePlan[partNum-1]?sermonNewsAnglePlan[partNum-1]:null;
+p+='Search for exactly ONE REAL recent news story (past 30-90 days when possible) for THIS part only -- a distinct headline nobody has heard yet in this sermon.\n';
+if(partAngle)p+='YOUR EXCLUSIVE SEARCH LANE FOR PART '+partNum+': '+partAngle+'.\n';
+p+='Other parts own other lanes. Do NOT search for or weave stories that fit another part\'s lane. Do NOT reuse a headline from a prior part.\n';
+}else{
+p+='Search for 2-3 REAL recent news articles (past 30-90 days when possible) that connect to "'+title+'". Each must be a COMPLETELY DIFFERENT event -- not the same story rephrased.\n';
+}
 if(isTv){
 p+='Look for: cast/creator controversies, cultural impact, parallel real-world events the show mirrors, legislation or policy tied to the show\'s themes, fan/protest reactions, and headlines that prove the lie or pattern the episodes expose.\n';
 }else if(isChapter){
 p+='Look for: current events that fulfill, mirror, or illuminate the scripture you are preaching -- wars, captivity, deception, economy, Israel, nature signs, law, health, church, race, land, military alliances, or whatever this chapter actually addresses.\n';
-}else{
+}else if(totalParts===1){
 p+='Look for: headlines that prove the doctrine -- legislation, wars, economy, deception, Israel, surveillance, health, race, church compromise, or whatever "'+title+'" exposes.\n';
 }
 if(totalParts>1){
-var newsPerPart=Math.max(1,Math.ceil(4/totalParts));
-var newsStart=(partNum-1)*newsPerPart+1;
-var newsEnd=Math.min(partNum*newsPerPart,4);
-p+='Across the full '+totalParts+'-part sermon, plan roughly 2-4 distinct current events total. ';
-p+='YOU ARE WRITING PART '+partNum+' OF '+totalParts+' -- prioritize weaving news event(s) numbered roughly '+newsStart+' through '+newsEnd+' in THIS part. ';
-p+='Do NOT dump every headline in Part 1. Later parts get their own events. One sentence bridge max if a prior part already named an event.\n';
+p+='When you find your ONE headline for this part, state it internally in six to twelve words (who/what/when) so you do not drift into a story you already used.\n';
 }else{
-p+='Weave 2-3 of the strongest articles into this single sermon -- not a news recap, but evidence inside the preaching.\n';
+p+='Weave 2-3 of the strongest DISTINCT articles into this single sermon -- not a news recap, and never the same event twice.\n';
 }
+p+=buildUsedNewsDedupBlock(partNum,totalParts,{currentMode:mode});
 p+='\nSTEP 3 -- WEAVE INTO THE SERMON (NOT A NEWS BULLETIN):\n';
 p+='- Name what happened in plain speech: "They just signed it last week," "The headlines this month showed," "While you were sleeping on this verse, the news proved it."\n';
 p+='- Do NOT read like a news anchor. PREACH the event as proof the Most High already told Israel what Babylon would do.\n';
@@ -1776,7 +1879,8 @@ p+='- In Bez Story Breakdown: every verse or scene gets unraveled piece by piece
 if(isTv){
 p+='- In Episode mode: after you walk a scene, strike with the real-world headline that scene just exposed -- show to street without leaving the episode spine.\n';
 }
-p+='- NEVER say "according to [outlet]" or list sources. The listener should feel the times, not read a feed.\n\n';
+p+='- NEVER say "according to [outlet]" or list sources. The listener should feel the times, not read a feed.\n';
+p+='- Each headline appears ONCE in the whole sermon. No echoing the same war, bill, protest, or scandal in a later part with new adjectives.\n\n';
 return p;
 }
 function buildRoughBezVocabularyBlock(){
@@ -2302,6 +2406,8 @@ sermonSavedThisSession=false;
 sermonPartsRaw=[];
 sermonPartsTitles=[];
 sermonPartsCombined='';
+sermonNewsAnglePlan=null;
+sermonNewsLedger=[];
 currentChapterText=null;
 currentChapterVerseCount=0;
 // Clear news context if not in news mode to prevent stale data
@@ -2579,6 +2685,8 @@ var finalized=finalizeSermonPartText(partContent,partNum);
 var extractedTitle=extractPartTitle(finalized,partNum);
 sermonPartsTitles.push(extractedTitle);
 sermonPartsRaw.push(finalized);
+var angle=sermonNewsAnglePlan&&sermonNewsAnglePlan[partNum-1]?sermonNewsAnglePlan[partNum-1]:null;
+recordSermonNewsLedger(partNum,finalized,angle);
 var ldr=document.getElementById('loader'+partNum);
 if(ldr)ldr.remove();
 updateProgress(partNum);
@@ -2668,6 +2776,7 @@ sermonGenCtx=null;
 }
 function generatePart(partNum){
 if(partNum>selectedPartCount){seriesComplete();return;}
+ensureSermonNewsPlan();
 var output=document.getElementById('sermonOutput');
 // Add part divider -- starts generic, updates when content arrives
 var divider=document.createElement('div');
@@ -3449,8 +3558,10 @@ p+='2. WEAVE your assigned articles together into a COHESIVE part -- find the TH
 p+='3. PREACH, do not report. You are a teacher of Israel, not a news anchor. Use these events as EVIDENCE of what the Most High told us would happen.\n';
 p+='4. For EACH event, make it PERSONAL to the scattered children of Israel. How does this affect OUR people?\n';
 p+='5. Include scripture references that NATURALLY connect to the events -- but keep the articles front and center. The news is the proof, the scriptures confirm. Draw from SEALED SCROLLS (Enoch -- FILTERED, pre-flood/astronomy only, NO heaven tours; Jubilees, 2 Esdras, Apocalypse of Elijah -- Elijah is DEAD, prophetic content only; etc.) where they add prophetic depth beyond KJV canon alone. No more milk and NO LEAVEN.\n';
+p+='6. UNIQUE HEADLINES ONLY: Each assigned article headline is a ONE-TIME use in this sermon. Do NOT repeat, re-summarize, or paraphrase an article from another part. Do NOT discuss two different articles that are really the same underlying event.\n';
+p+=buildUsedNewsDedupBlock(partNum,totalParts,{currentMode:'news'});
 if(hasAssignment){
-p+='6. STAY ON YOUR ARTICLES. Do NOT discuss or summarize articles assigned to other parts. Do NOT repeat content from other parts. Your articles are '+(assignedStart+1)+' through '+assignedEnd+' -- those are the ONLY articles you should break down in detail.\n';
+p+='7. STAY ON YOUR ARTICLES. Do NOT discuss or summarize articles assigned to other parts. Do NOT repeat content from other parts. Your articles are '+(assignedStart+1)+' through '+assignedEnd+' -- those are the ONLY articles you should break down in detail.\n';
 }
 p+='\n';
 }else if(currentMode==='threads'&&currentThreadsContext&&currentThreadsContext.length>0){
@@ -3561,6 +3672,11 @@ p+='- Do NOT re-state the same doctrinal points. If predestination was already e
 p+='- Do NOT open with a recap or summary of previous parts beyond a brief 1-2 sentence bridge. Jump straight into NEW material. The listener just heard the previous part -- they do not need a refresher.\n';
 p+='- Do NOT use the same rhetorical questions that appeared in previous parts.\n';
 p+='- Do NOT circle back to the same "wake up" calls, the same emotional beats, or the same closing energy that was already delivered.\n';
+var webElDedup=document.getElementById('toggleWebResearch');
+if((webElDedup&&webElDedup.checked&&currentMode!=='news')||currentMode==='news'){
+p+='- Do NOT repeat the same NEWS STORY, headline, bill, war, protest, policy, arrest, or scandal from a previous part -- even with different words. Each real-world event gets ONE mention in the whole sermon.\n';
+p+=buildUsedNewsDedupBlock(partNum,totalParts,{currentMode:currentMode});
+}
 p+='Each part must advance the lesson. If a listener heard the same speech twice, they would turn it off. Every sentence in Part '+partNum+' must be content the listener has NEVER heard before in this episode.\n';
 p+='If you catch yourself writing something that echoes a previous part, DELETE IT and write something fresh.\n\n';
 }
