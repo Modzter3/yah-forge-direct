@@ -5,8 +5,9 @@
  * to your own API provider(s) configured on the backend.
  */
 (function () {
-  if (window.Poe) return;
-
+  // Always install the shim on Forge Direct. If the page runs inside Poe (or Poe
+  // injects window.Poe first), skipping here would bill Poe points instead of
+  // routing through /api/ai → OpenRouter / your configured provider.
   const API_ROUTE = '/api/ai';
   const handlers  = {};
 
