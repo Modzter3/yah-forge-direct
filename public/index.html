@@ -950,6 +950,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch" id="toggleBezStoryModeWrap" title="Rough Bezaleel revelation cadence — paragraph-flow ElevenLabs (not a lesson)"><input type="checkbox" id="toggleBezStoryMode"><span class="toggle-track bez-story-track"></span><span><i class="fas fa-book-open" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Bez Story</span></label>
       <label class="toggle-switch" id="toggleSermonEpisodeModeWrap" title="TV season episode-by-episode breakdown across parts"><input type="checkbox" id="toggleSermonEpisodeMode"><span class="toggle-track"></span><span><i class="fas fa-tv" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Episode Mode</span></label>
       <label class="toggle-switch" title="Live web search: verify facts, find recent news, weave headlines into the sermon (silent — no URLs in output)"><input type="checkbox" id="toggleWebResearch" checked><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
+      <label class="toggle-switch" id="toggleBehindTheVeilWrap" title="News-triggered closed-door drama: real headlines → dramatized meeting where sector elites plot the beast-system policy (prophetic illustration, not leaked intel)"><input type="checkbox" id="toggleBehindTheVeil"><span class="toggle-track" style="background:linear-gradient(135deg,#4a1a6a,#8B1A1A);"></span><span><i class="fas fa-door-closed" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Behind the Veil</span></label>
+      <label class="toggle-switch" id="togglePureTheatreWrap" title="Pure closed-door theatre: prominent figures in this sector speak freely with no cameras — policy mechanics, contempt, deals (no mandatory news weave)"><input type="checkbox" id="togglePureTheatre"><span class="toggle-track" style="background:linear-gradient(135deg,#2a2a35,#6A1B9A);"></span><span><i class="fas fa-masks-theater" style="color:#D4A017;margin-right:3px;font-size:0.7rem;"></i>Pure Theatre</span></label>
       <div class="model-select-wrap">
         <label><i class="fas fa-robot"></i> Model:</label>
         <select class="model-select" id="modelSelect" onchange="onSermonModelDropdown()">
@@ -1929,6 +1931,93 @@ p+='ZERO TOLERANCE: No teaching tone, no Hebrew word studies, no Paleo breakdown
 p+='PARAGRAPH MODE (ELEVENLABS): One # title line, then dense flowing paragraphs only. No ## headers, no --- dividers, no blockquotes, no verse label stubs. One blank line between paragraphs. Scripture quoted inside plain speech.\n\n';
 return p;
 }
+function isTheatreModeActive(){
+var veil=document.getElementById('toggleBehindTheVeil');
+var pure=document.getElementById('togglePureTheatre');
+return (veil&&veil.checked)||(pure&&pure.checked);
+}
+function getForgePartLabel(partNum,includeOf){
+if(isTheatreModeActive()){
+if(selectedPartCount===1)return 'Script';
+return includeOf?('Act '+partNum+' of '+selectedPartCount):('Act '+partNum);
+}
+return selectedPartCount===1?'Episode':(includeOf?('Part '+partNum+' of '+selectedPartCount):('Part '+partNum));
+}
+function buildClosedDoorTheatrePrompt(partNum,opts){
+opts=opts||{};
+var topic=opts.topic||currentTopic;
+var totalParts=opts.totalParts||selectedPartCount;
+var wantBehind=!!opts.wantBehindTheVeil;
+var wantExplicit=!!opts.wantExplicit;
+var title=topic?topic.title:'this policy';
+var desc=topic?topic.desc:'';
+var wordsPerPart=totalParts===1?3500:1800;
+var p='CLOSED-DOOR THEATRE MODE -- MANDATORY:\n';
+p+='You are a playwright forging a BEHIND-CLOSED-DOORS dramatization of Babylon\'s beast system. This is PROPHETIC ILLUSTRATION -- how draconian policy gets decided when the cameras are off. NOT journalism. NOT a claim of leaked recordings. NOT a sermon.\n\n';
+p+='OUTPUT FORMAT -- PLAY SCRIPT ONLY:\n';
+p+='- Your FIRST line must be exactly: *Dramatization for prophetic illustration -- not a claim of factual record or leaked dialogue.*\n';
+p+='- Second line: # '+title+(totalParts>1?' -- Act '+partNum:'')+'\n';
+p+='- Then stage directions in [brackets] and dialogue as CHARACTER NAME: lines.\n';
+p+='- 3 to 5 speaking roles -- REAL prominent figures who actually run this sector (name them by full name and title). Research who holds power in this space if needed.\n';
+p+='- They speak WITHOUT public restraint: contempt for the masses, cold bureaucracy, deals, threats, euphemisms dropping, the real logic behind the policy.\n';
+p+='- NO sermon voice. NO Yah first-person. NO Brother Bet teaching. NO verse breakdown. NO ## lesson headers. This is a ROOM, not a pulpit.\n';
+p+='- Write approximately '+wordsPerPart.toLocaleString()+' words for this '+(totalParts===1?'script':'act')+'.\n';
+if(totalParts>1){
+p+='- ONE ACT ONLY: Write ONLY Act '+partNum+' of '+totalParts+'. Do NOT write Act '+(partNum+1)+' or preview later acts beyond one ominous line at most.\n';
+}
+p+='\nCASTING (MANDATORY):\n';
+p+='- Identify the SECTOR this topic belongs to (health/pharma, finance/CBDC, surveillance/tech, government, media, military, religion, food/ag, energy, etc.).\n';
+p+='- Cast 3-5 people who are GENUINELY prominent in THAT sector right now -- CEOs, regulators, foundation heads, agency directors, central bankers, tech oligarchs, policy architects. Use their real names and titles.\n';
+p+='- Give each a distinct voice: the financier, the enforcer, the public face, the technocrat, the ideologue.\n';
+p+='- Setting: a specific closed room -- boardroom, summit suite, private club, basement policy session, yacht salon, Davos side room, agency war room. No cameras. No press. Doors locked.\n';
+p+='\nSCENE ENGINE:\n';
+p+='- The TOPIC on the table: "'+title+'" -- '+desc+'\n';
+p+='- Show HOW this kind of policy gets engineered: who benefits, who gets crushed, what lie they will sell publicly vs what they admit privately.\n';
+p+='- Beast-system framing is atmospheric, not preachy -- they ARE the machine talking to itself. Israel/scattered Negroes may appear only as "the demographic problem," "the ones who won\'t comply," or "legacy populations" in THEIR mouths -- so the listener hears the cage being built.\n';
+if(wantBehind){
+p+='\nBEHIND THE VEIL -- NEWS TRIGGER (MANDATORY):\n';
+p+=buildWebResearchPromptBlock(topic,{partNum:partNum,totalParts:totalParts,wantEpisodeMode:false,chapterSrc:null,wantStoryMode:false,wantBezStoryBreakdown:false,currentMode:currentMode});
+p+='- AFTER internal news research: open or anchor this act on a REAL recent headline tied to "'+title+'". The meeting dramatizes HOW that headline was produced -- who signed off, who profits, what they call the public in private.\n';
+p+='- Do NOT read news like a anchor. The headline is the HOOK; the room is the reveal.\n';
+p+='- No URLs, no outlet bibliography in the script.\n';
+}else{
+p+='\nPURE THEATRE -- NO MANDATORY NEWS:\n';
+p+='- No headline required. This is the meeting that WOULD happen for this policy whether or not it made tonight\'s feed.\n';
+p+='- Optional: brief reference to current events only if it sharpens the scene -- never a news recap.\n';
+p+='- Focus on sector power players talking freely: implementation timelines, enforcement, public messaging vs private intent, who gets exempted, who gets sacrificed.\n';
+}
+if(totalParts===1){
+p+='\nACT STRUCTURE (single script):\n';
+p+='[SCENE] Establish room and cast. [BEAT] Masks on -- public talking points. [BEAT] Masks slip -- real agenda, contempt, deals. [BEAT] Commitments signed in spirit. [END] One chilling line as they leave -- the public will never hear this.\n';
+}else if(partNum===1){
+p+='\nACT '+partNum+' FOCUS -- THE ROOM OPENS:\n';
+p+='Introduce the cast and the policy on the table. Public-facing doublespeak first. End with the first crack -- someone says what they would never say on camera.\n';
+}else if(partNum===totalParts){
+p+='\nACT '+partNum+' FOCUS -- THE SIGNATURE:\n';
+p+='Pick up from Act '+(partNum-1)+'. One-sentence bridge max. The real deal closes -- enforcement, rollout, who gets hurt, what story they will feed the public. End on a cold line that lands like a cell door.\n';
+}else{
+p+='\nACT '+partNum+' FOCUS -- MASKS OFF:\n';
+p+='Pick up from Act '+(partNum-1)+'. One-sentence bridge max. Middle act: bargaining, threats, ideology naked, technocratic details, contempt for resistance. Escalate toward the final commitment.\n';
+}
+if(partNum>1&&sermonPartsRaw.length){
+p+='\n============================================================\n';
+p+='PREVIOUS ACTS -- READ BEFORE WRITING ACT '+partNum+'\n';
+p+='============================================================\n';
+for(var ti=0;ti<partNum-1;ti++){
+p+='--- ACT '+(ti+1)+': '+(sermonPartsTitles[ti]||'Untitled')+' ---\n';
+p+=(sermonPartsRaw[ti]||'')+'\n--- END ACT '+(ti+1)+' ---\n\n';
+}
+p+='Do NOT repeat dialogue or beats from prior acts. Advance the same meeting -- new revelations, new deals, deeper mask-off moments.\n\n';
+}
+if(wantExplicit){
+p+='\nEXPLICIT THEATRE: These elites speak with profanity, vulgarity, and graphic contempt when the masks drop -- how they really talk behind closed doors. No sanitizing. No asterisks.\n';
+}
+p+='\nCRITICAL OUTPUT RULES:\n';
+p+='- Bracket stage directions ARE required in this mode: [SCENE], [BEAT], [DOOR CLOSES], etc.\n';
+p+='- Do NOT include thinking/reasoning tags or word-count meta.\n';
+p+='- Start immediately with the disclaimer line, then the # title.\n';
+return p;
+}
 function buildEpisodeModeBlock(partNum,totalParts,topic){
 if(!document.getElementById('toggleSermonEpisodeMode')||!document.getElementById('toggleSermonEpisodeMode').checked)return '';
 var title=topic?topic.title:'this series';
@@ -2585,7 +2674,7 @@ if(m)return m[1].trim().replace(/^#+\s*/,'');
 // Try any first heading
 var h=text.match(/^#+\s+(.+)/m);
 if(h){var t=h[1].replace(/^(?:Episode|Part|PART|EPISODE)\s*\d+\s*[:\-–—]+\s*/i,'').trim();if(t.length>2)return t;}
-return (selectedPartCount===1?'Episode':'Part '+partNum);
+return getForgePartLabel(partNum,false);
 }
 /** Remove the model's own # Part / # Episode title so we do not double-prefix when assembling */
 function stripLeadingPartHeading(text){
@@ -2729,7 +2818,7 @@ if(!sermonGenCtx||sermonGenCtx.handlerName!==activeHandler)return;
 if(msg.status==='error'){
 clearSermonWatchdogs();
 var ldr=document.getElementById('loader'+partNum);if(ldr)ldr.remove();
-ctx.partContainer.innerHTML='<div class="error-msg"><i class="fas fa-exclamation-triangle"></i> '+(selectedPartCount===1?'Episode':'Part '+partNum)+' failed: '+escapeHtml(msg.statusText||'Unknown error')+'</div>';
+ctx.partContainer.innerHTML='<div class="error-msg"><i class="fas fa-exclamation-triangle"></i> '+getForgePartLabel(partNum,false)+' failed: '+escapeHtml(msg.statusText||'Unknown error')+'</div>';
 document.getElementById('generateBtn').disabled=false;
 isGenerating=false;
 sermonGenCtx=null;
@@ -2783,7 +2872,7 @@ var output=document.getElementById('sermonOutput');
 var divider=document.createElement('div');
 divider.className='part-divider';
 divider.id='partDivider'+partNum;
-divider.innerHTML='<i class="fas fa-scroll" style="margin-right:6px;font-size:0.65rem;"></i>'+(selectedPartCount===1?'Episode':'Part '+partNum+' of '+selectedPartCount);
+divider.innerHTML='<i class="fas fa-scroll" style="margin-right:6px;font-size:0.65rem;"></i>'+getForgePartLabel(partNum,true);
 output.appendChild(divider);
 // Add streaming container for this part
 var partContainer=document.createElement('div');
@@ -2794,7 +2883,7 @@ output.appendChild(partContainer);
 var loader=document.createElement('div');
 loader.className='loading-state';
 loader.id='loader'+partNum;
-loader.innerHTML='<div class="loading-pulse"></div><div class="loading-text">Forging '+(selectedPartCount===1?'Episode':'Part '+partNum+' of '+selectedPartCount)+'...</div>'
+loader.innerHTML='<div class="loading-pulse"></div><div class="loading-text">Forging '+getForgePartLabel(partNum,true)+'...</div>'
 +'<button type="button" class="vc-btn cancel" style="margin-top:12px;font-size:0.75rem;" onclick="forceNextSermonPart()"><i class="fas fa-forward" style="margin-right:4px;"></i>Stuck? Force next part</button>';
 output.appendChild(loader);
 loader.scrollIntoView({behavior:'smooth',block:'center'});
@@ -3104,9 +3193,15 @@ return middleFocuses[mapped];
 }
 function buildPartPrompt(partNum){
 var topic=currentTopic;
+var wantBehindTheVeil=document.getElementById('toggleBehindTheVeil')&&document.getElementById('toggleBehindTheVeil').checked;
+var wantPureTheatre=document.getElementById('togglePureTheatre')&&document.getElementById('togglePureTheatre').checked;
+var wantExplicit=document.getElementById('toggleExplicit').checked;
+var totalParts=selectedPartCount;
+if(wantBehindTheVeil||wantPureTheatre){
+return buildClosedDoorTheatrePrompt(partNum,{topic:topic,totalParts:totalParts,wantBehindTheVeil:wantBehindTheVeil,wantExplicit:wantExplicit});
+}
 var wantBreakdown=document.getElementById('toggleBreakdown').checked;
 var wantApocrypha=document.getElementById('toggleApocrypha').checked;
-var wantExplicit=document.getElementById('toggleExplicit').checked;
 var wantRoughBez=document.getElementById('toggleRoughBez').checked;
 var wantBezStory=document.getElementById('toggleBezStoryMode')&&document.getElementById('toggleBezStoryMode').checked&&wantRoughBez;
 var wantIsraelite=document.getElementById('toggleIsraelite').checked||(wantRoughBez&&!wantBezStory);
@@ -6371,7 +6466,29 @@ var text=stripDestroyUrlsAndSources(stripDestroySermonPreamble(destroyRawResult)
 var btn=document.querySelector('#destroyActions .tts-btn');
 doTTS(text,voice,'destroyTtsAudioWrap',btn);
 }
+function syncTheatreToggles(){
+var veil=document.getElementById('toggleBehindTheVeil');
+var pure=document.getElementById('togglePureTheatre');
+var web=document.getElementById('toggleWebResearch');
+var story=document.getElementById('toggleStoryMode');
+var bezStory=document.getElementById('toggleBezStoryMode');
+var episode=document.getElementById('toggleSermonEpisodeMode');
+if(!veil&&!pure)return;
+if(veil&&veil.checked&&pure&&pure.checked){
+if(document.activeElement===pure)pure.checked=false;
+else veil.checked=false;
+}
+var theatreOn=(veil&&veil.checked)||(pure&&pure.checked);
+if(theatreOn){
+if(veil&&veil.checked&&web&&!web.checked)web.checked=true;
+if(story)story.checked=false;
+if(bezStory)bezStory.checked=false;
+if(episode)episode.checked=false;
+syncStoryModeToggles();
+}
+}
 function syncEpisodeModeToggles(){
+syncTheatreToggles();
 syncStoryModeToggles();
 }
 function syncStoryModeToggles(){
@@ -6419,6 +6536,8 @@ syncStoryModeToggles();
 var storyToggle=document.getElementById('toggleStoryMode');
 var bezStoryToggle=document.getElementById('toggleBezStoryMode');
 var episodeToggle=document.getElementById('toggleSermonEpisodeMode');
+var veilToggle=document.getElementById('toggleBehindTheVeil');
+var pureTheatreToggle=document.getElementById('togglePureTheatre');
 var israeliteToggle=document.getElementById('toggleIsraelite');
 var roughToggle=document.getElementById('toggleRoughBez');
 var breakdownToggle=document.getElementById('toggleBreakdown');
@@ -6427,6 +6546,8 @@ if(bezStoryToggle)bezStoryToggle.addEventListener('change',syncStoryModeToggles)
 if(israeliteToggle)israeliteToggle.addEventListener('change',syncStoryModeToggles);
 if(roughToggle)roughToggle.addEventListener('change',syncStoryModeToggles);
 if(episodeToggle)episodeToggle.addEventListener('change',syncEpisodeModeToggles);
+if(veilToggle)veilToggle.addEventListener('change',syncTheatreToggles);
+if(pureTheatreToggle)pureTheatreToggle.addEventListener('change',syncTheatreToggles);
 if(breakdownToggle)breakdownToggle.addEventListener('change',function(){
 if(breakdownToggle.checked){
 if(storyToggle&&storyToggle.checked)storyToggle.checked=false;
