@@ -1951,9 +1951,15 @@ var wantBehind=!!opts.wantBehindTheVeil;
 var wantExplicit=!!opts.wantExplicit;
 var title=topic?topic.title:'this policy';
 var desc=topic?topic.desc:'';
-var wordsPerPart=totalParts===1?1200:900;
+var wordsPerPart=totalParts===1?4000:2200;
 var p='CLOSED-DOOR THEATRE MODE -- MANDATORY:\n';
-p+='You are a playwright forging a BEHIND-CLOSED-DOORS dramatization of Babylon\'s beast system. This is PROPHETIC ILLUSTRATION -- how draconian policy gets decided when the cameras are off. NOT journalism. NOT a claim of leaked recordings. NOT a sermon. NOT a Hollywood thriller.\n\n';
+p+='You are a playwright forging a BEHIND-CLOSED-DOORS BOARDROOM dramatization of Babylon\'s beast system. This is PROPHETIC ILLUSTRATION -- how draconian policy gets decided when the cameras are off. NOT journalism. NOT a claim of leaked recordings. NOT a sermon. NOT a Hollywood thriller.\n\n';
+p+='BOARDROOM PACING (MANDATORY -- THIS IS NOT A SHORT SKIT):\n';
+p+='- This must feel like eavesdropping on a REAL closed-door meeting that RUNS LONG. They ramble, interrupt, pour drinks, circle back, contradict each other, and slowly peel the mask off.\n';
+p+='- Write AT LEAST '+wordsPerPart.toLocaleString()+' words for this '+(totalParts===1?'script':'act')+'. Do NOT rush to a conclusion. Do NOT summarize. Let the contempt breathe.\n';
+p+='- Long exchanges: one exec opens with PR doublespeak, another pushes back with cold math, a third drops the line they would never say on CNBC. Give each speaker multiple turns.\n';
+p+='- Use [BEAT] pauses, side glances, nervous laughter, papers sliding across the table, someone checking their watch -- the boring texture of power, not action-movie pacing.\n';
+p+='- Depth over plot: stay in the ROOM unpacking "'+title+'" from every angle -- who gets fired, who stays, what they call the public, what the spreadsheet says, what the lawyer allows.\n\n';
 p+='TOPIC LOCK (ZERO TOLERANCE):\n';
 p+='- EVERY line must serve the assigned topic: "'+title+'".\n';
 p+='- Stay on what elites think, plan, and say about THIS subject -- especially who gets crushed, who profits, and what they admit when cameras are off.\n';
@@ -1969,10 +1975,9 @@ p+='- Your FIRST line must be exactly: *Dramatization for prophetic illustration
 p+='- Second line: # '+title+(totalParts>1?' -- Act '+partNum:'')+'\n';
 p+='- Then stage directions in [brackets] and dialogue as CHARACTER NAME: lines.\n';
 p+='- Cast REAL prominent figures in that sector (full name + title). They speak WITHOUT public restraint.\n';
-p+='- NO sermon voice. NO Yah. NO Brother Bet. NO verse breakdown. This is a ROOM, not a pulpit.\n';
-p+='- Target '+wordsPerPart.toLocaleString()+' words MAX for this '+(totalParts===1?'script':'act')+'. Short and lethal beats dialogue -- do not fill space with plot escalation.\n';
+p+='- NO sermon voice. NO Yah. NO Brother Bet. NO verse breakdown. This is a BOARDROOM, not a pulpit.\n';
 if(totalParts===1||partNum===totalParts){
-p+='- End with exactly one line: [SCENE END] then STOP. Do not write anything after [SCENE END].\n';
+p+='- When the meeting truly ends, close with [SCENE END] then STOP. Do not write anything after [SCENE END].\n';
 }else{
 p+='- Do NOT write [SCENE END] on this act -- the meeting continues in Act '+(partNum+1)+'.\n';
 }
@@ -2000,17 +2005,21 @@ p+='- Optional: brief reference to current events only if it sharpens the scene 
 p+='- Focus on sector power players talking freely: implementation timelines, enforcement, public messaging vs private intent, who gets exempted, who gets sacrificed.\n';
 }
 if(totalParts===1){
-p+='\nSTRUCTURE (single script, one meeting):\n';
-p+='[SCENE START] room + [PRESENT: cast]. [BEAT] public doublespeak. [BEAT] masks slip -- contempt, deals, who gets fired/crushed. [BEAT] one cold closing line. [SCENE END]\n';
+p+='\nSTRUCTURE (single long meeting):\n';
+p+='[SCENE START] -- describe the room (subterranean boardroom, soundproofing, no phones). [PRESENT: cast with titles].\n';
+p+='[BEAT] Opening pleasantries and public-facing doublespeak about "'+title+'".\n';
+p+='[BEAT] First crack -- someone says what the press release will never say.\n';
+p+='[BEAT] Extended debate: who benefits, who gets crushed, implementation, enforcement, messaging.\n';
+p+='[BEAT] Masks fully off -- contempt, deals, who they sacrifice. Slow walk to the door. [SCENE END]\n';
 }else if(partNum===1){
-p+='\nACT '+partNum+' -- ROOM OPENS (same meeting continues in later acts):\n';
-p+='Introduce cast and topic. Public doublespeak first, then first mask-off moment. End at a natural pause in the SAME room. Do NOT write [SCENE END] yet -- Acts 2+'+(totalParts>2?' and '+totalParts:'')+' continue this meeting.\n';
+p+='\nACT '+partNum+' -- THE MEETING OPENS (long boardroom session, same room throughout all acts):\n';
+p+='Set the room. Introduce every cast member with title. Open with corporate/institutional doublespeak, then let the conversation RUN -- multiple rounds on "'+title+'". End mid-meeting on a tense beat. Do NOT write [SCENE END].\n';
 }else if(partNum===totalParts){
-p+='\nACT '+partNum+' -- THE SIGNATURE (same meeting, same room, same cast):\n';
-p+='One-sentence bridge from Act '+(partNum-1)+' max. Close the deal: enforcement, rollout, who gets hurt, public cover story. One final cold line. [SCENE END]\n';
+p+='\nACT '+partNum+' -- THE MEETING CLOSES (same room, same cast, pick up mid-conversation):\n';
+p+='Brief bridge from Act '+(partNum-1)+' (one sentence max). Keep talking -- enforcement, rollout, who gets hurt, public cover story. Let it run long before the final cold line. [SCENE END]\n';
 }else{
-p+='\nACT '+partNum+' -- MASKS OFF (same meeting, same room, same cast):\n';
-p+='One-sentence bridge max. Deeper contempt, bargaining, who they sacrifice. No new locations or new cast. Do NOT write [SCENE END] yet.\n';
+p+='\nACT '+partNum+' -- THE MEETING DEEPENS (same room, same cast):\n';
+p+='Brief bridge max. Extended boardroom debate -- bargaining, threats, ideology naked, spreadsheets and headcount, contempt for anyone not in the room. No new locations. Do NOT write [SCENE END].\n';
 }
 if(partNum>1&&sermonPartsRaw.length){
 p+='\n============================================================\n';
@@ -2025,15 +2034,15 @@ p+='Continue the SAME meeting in the SAME room with the SAME cast. Do NOT repeat
 if(wantExplicit){
 p+='\nEXPLICIT THEATRE: Profanity and graphic contempt when masks drop. No sanitizing.\n';
 }
-p+='\nFORBIDDEN OUTPUT (instant fail):\n';
-p+='- Anything after [SCENE END]\n';
-p+='- A second [SCENE START], EXT./INT. slug lines, or cut to another location\n';
+p+='\nFORBIDDEN OUTPUT (drift only -- do NOT confuse with "keep it short"):\n';
+p+='- Anything after [SCENE END] on the final act\n';
+p+='- Cutting to a NEW location: second [SCENE START], EXT./INT. slug lines, street scenes, war rooms, server bunkers\n';
 p+='- PART '+(partNum+1)+', Act '+(partNum+1)+', or --- dividers starting a new document\n';
-p+='- AI takeover, war rooms, coups, explosions, or blockbuster action unrelated to "'+title+'"\n';
+p+='- Unrelated blockbuster plots: AI apocalypse, coups, explosions, chases -- anything not about "'+title+'"\n';
 p+='\nCRITICAL OUTPUT RULES:\n';
-p+='- Bracket stage directions: [SCENE START], [BEAT], [PRESENT:], [SCENE END]\n';
-p+='- No thinking tags, no word-count meta\n';
-p+='- Start with disclaimer, then # title, end with [SCENE END] and STOP\n';
+p+='- Bracket stage directions: [SCENE START], [BEAT], [PRESENT:], [SCENE END] on final act only\n';
+p+='- No thinking tags, no word-count meta in the output\n';
+p+='- Start with disclaimer, then # title. WRITE LONG. Stay in the boardroom on topic.\n';
 return p;
 }
 function buildEpisodeModeBlock(partNum,totalParts,topic){
@@ -2729,29 +2738,31 @@ if(pm&&parseInt(pm[1],10)>currentPartNum){cut=i;break;}
 if(cut>=0)return lines.slice(0,cut).join('\n').replace(/\s+$/,'');
 return text;
 }
-/** Theatre: hard-stop at [SCENE END], block bonus scenes / movie drift */
+/** Theatre: trim only drift/spill -- keep long boardroom runs on topic */
 function truncateAtTheatreBoundary(text,currentPartNum,totalParts){
 if(!text)return text;
 var t=text;
+if(totalParts===1||currentPartNum===totalParts){
 var sceneEndRe=/\[SCENE\s+END\]/gi;
 var endMatch=sceneEndRe.exec(t);
 if(endMatch){
 return t.slice(0,endMatch.index+endMatch[0].length).replace(/\s+$/,'');
 }
+}
 t=truncateAtNextPartBoundary(t,currentPartNum);
+if(t.length>2500){
 var startRe=/\[SCENE\s+START\]/gi;
 var starts=[];
 var sm;
 while((sm=startRe.exec(t))!==null)starts.push(sm.index);
 if(starts.length>1)return t.slice(0,starts[1]).replace(/\s+$/,'');
-if(t.length>600){
 var lines=t.split('\n');
 var dialogueStarted=false;
 var cut=-1;
 for(var i=0;i<lines.length;i++){
 var line=lines[i].trim();
 if(/^[A-Z][A-Z0-9 .'\-&]+:\s*(\[|$)/.test(line)||/^[A-Z][A-Z0-9 .'\-&]+:\s*$/.test(line))dialogueStarted=true;
-if(dialogueStarted&&i>12&&/^(?:\[)?(?:EXT\.|INT\.)/i.test(line)){cut=i;break;}
+if(dialogueStarted&&i>40&&/^(?:\[)?(?:EXT\.|INT\.)/i.test(line)){cut=i;break;}
 }
 if(cut>=0)return lines.slice(0,cut).join('\n').replace(/\s+$/,'');
 }
@@ -2830,10 +2841,11 @@ else sermonGenCtx.firstTokenTimer=t;
 function buildSermonContinuationPrompt(partNum,existing){
 if(isTheatreModeActive()){
 var p='THEATRE CONTINUATION -- SAME ACT '+partNum+' ONLY (CRITICAL):\n';
-p+='Continue the SAME closed-door meeting in the SAME room. Do NOT add [SCENE START] again. Do NOT cut to EXT./INT. Do NOT start a new story, sector, or cast.\n';
-p+='Stay on the assigned topic. No AI apocalypse, coups, or action-movie drift.\n';
-if(partNum===selectedPartCount)p+='Finish this act and end with [SCENE END] then STOP.\n';
-else p+='Do NOT write [SCENE END] until the final act.\n';
+p+='Continue the SAME boardroom meeting in the SAME room. Do NOT rush. Do NOT wrap up early.\n';
+p+='Stay on topic: "'+(currentTopic?currentTopic.title:'the assigned topic')+'". No AI apocalypse, coups, or location cuts.\n';
+p+='Keep the slow boardroom feel -- more dialogue, more turns, more contempt. Do NOT add [SCENE START] again.\n';
+if(partNum===selectedPartCount)p+='When the meeting is truly finished, end with [SCENE END].\n';
+else p+='Do NOT write [SCENE END] -- Act '+(partNum+1)+' continues this meeting.\n';
 p+='LAST FOUR HUNDRED CHARACTERS:\n"...'+String(existing||'').slice(-400)+'"\n\nCONTINUE IMMEDIATELY:\n';
 return p;
 }
@@ -2909,7 +2921,7 @@ if(msg.status==='complete'){
 clearSermonWatchdogs();
 var finalized=finalizeSermonPartText(ctx.partContent,partNum);
 var truncated=detectTruncation(finalized);
-var maxCont=isTheatreModeActive()?1:SERMON_MAX_CONTINUATIONS;
+var maxCont=isTheatreModeActive()?SERMON_MAX_CONTINUATIONS:SERMON_MAX_CONTINUATIONS;
 var actDone=theatreActComplete(finalized,partNum,selectedPartCount);
 if(truncated&&!actDone&&ctx.continuationCount<maxCont){
 ctx.continuationCount++;
