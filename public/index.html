@@ -1951,29 +1951,42 @@ var wantBehind=!!opts.wantBehindTheVeil;
 var wantExplicit=!!opts.wantExplicit;
 var title=topic?topic.title:'this policy';
 var desc=topic?topic.desc:'';
-var wordsPerPart=totalParts===1?3500:1800;
+var wordsPerPart=totalParts===1?1200:900;
 var p='CLOSED-DOOR THEATRE MODE -- MANDATORY:\n';
-p+='You are a playwright forging a BEHIND-CLOSED-DOORS dramatization of Babylon\'s beast system. This is PROPHETIC ILLUSTRATION -- how draconian policy gets decided when the cameras are off. NOT journalism. NOT a claim of leaked recordings. NOT a sermon.\n\n';
+p+='You are a playwright forging a BEHIND-CLOSED-DOORS dramatization of Babylon\'s beast system. This is PROPHETIC ILLUSTRATION -- how draconian policy gets decided when the cameras are off. NOT journalism. NOT a claim of leaked recordings. NOT a sermon. NOT a Hollywood thriller.\n\n';
+p+='TOPIC LOCK (ZERO TOLERANCE):\n';
+p+='- EVERY line must serve the assigned topic: "'+title+'".\n';
+p+='- Stay on what elites think, plan, and say about THIS subject -- especially who gets crushed, who profits, and what they admit when cameras are off.\n';
+p+='- Do NOT pivot to unrelated plots: no AI apocalypse, no server farms in Iceland, no NORAD coups, no Situation Room drama, no corporate takeover of the military, no romance subplots, no chase scenes.\n';
+p+='- If the topic is middle management, stay on middle management -- layoffs, automation, contempt for managers, HR theater, who they protect vs sacrifice. Do not become a technothriller.\n\n';
+p+='ONE ROOM / ONE MEETING RULE:\n';
+p+='- ONE location only for this '+(totalParts===1?'script':'act')+'. One closed-door meeting. Doors locked. No cameras.\n';
+p+='- ONE sector only -- pick the sector that best fits "'+title+'" and do NOT switch sectors across acts (no jumping from corporate to defense to healthcare unless the topic explicitly spans them).\n';
+p+='- 3 to 5 speakers max in the room. Same cast continues across acts when multi-part.\n';
+p+='- Do NOT write a second scene, epilogue, B-plot, or exterior street scene. When the meeting ends, write [SCENE END] and STOP.\n\n';
 p+='OUTPUT FORMAT -- PLAY SCRIPT ONLY:\n';
 p+='- Your FIRST line must be exactly: *Dramatization for prophetic illustration -- not a claim of factual record or leaked dialogue.*\n';
 p+='- Second line: # '+title+(totalParts>1?' -- Act '+partNum:'')+'\n';
 p+='- Then stage directions in [brackets] and dialogue as CHARACTER NAME: lines.\n';
-p+='- 3 to 5 speaking roles -- REAL prominent figures who actually run this sector (name them by full name and title). Research who holds power in this space if needed.\n';
-p+='- They speak WITHOUT public restraint: contempt for the masses, cold bureaucracy, deals, threats, euphemisms dropping, the real logic behind the policy.\n';
-p+='- NO sermon voice. NO Yah first-person. NO Brother Bet teaching. NO verse breakdown. NO ## lesson headers. This is a ROOM, not a pulpit.\n';
-p+='- Write approximately '+wordsPerPart.toLocaleString()+' words for this '+(totalParts===1?'script':'act')+'.\n';
+p+='- Cast REAL prominent figures in that sector (full name + title). They speak WITHOUT public restraint.\n';
+p+='- NO sermon voice. NO Yah. NO Brother Bet. NO verse breakdown. This is a ROOM, not a pulpit.\n';
+p+='- Target '+wordsPerPart.toLocaleString()+' words MAX for this '+(totalParts===1?'script':'act')+'. Short and lethal beats dialogue -- do not fill space with plot escalation.\n';
+if(totalParts===1||partNum===totalParts){
+p+='- End with exactly one line: [SCENE END] then STOP. Do not write anything after [SCENE END].\n';
+}else{
+p+='- Do NOT write [SCENE END] on this act -- the meeting continues in Act '+(partNum+1)+'.\n';
+}
 if(totalParts>1){
-p+='- ONE ACT ONLY: Write ONLY Act '+partNum+' of '+totalParts+'. Do NOT write Act '+(partNum+1)+' or preview later acts beyond one ominous line at most.\n';
+p+='- ONE ACT ONLY: Write ONLY Act '+partNum+' of '+totalParts+'. Do NOT write Act '+(partNum+1)+', do NOT write "PART '+(partNum+1)+'", do NOT preview the next act.\n';
 }
 p+='\nCASTING (MANDATORY):\n';
-p+='- Identify the SECTOR this topic belongs to (health/pharma, finance/CBDC, surveillance/tech, government, media, military, religion, food/ag, energy, etc.).\n';
-p+='- Cast 3-5 people who are GENUINELY prominent in THAT sector right now -- CEOs, regulators, foundation heads, agency directors, central bankers, tech oligarchs, policy architects. Use their real names and titles.\n';
-p+='- Give each a distinct voice: the financier, the enforcer, the public face, the technocrat, the ideologue.\n';
-p+='- Setting: a specific closed room -- boardroom, summit suite, private club, basement policy session, yacht salon, Davos side room, agency war room. No cameras. No press. Doors locked.\n';
+p+='- Identify the ONE sector this topic belongs to (corporate, health/pharma, finance, surveillance/tech, government, media, military, religion, etc.).\n';
+p+='- Cast 3-5 people genuinely prominent in THAT sector -- CEOs, regulators, foundation heads, agency directors, policy architects. Real names and titles.\n';
+p+='- Distinct voices: financier, enforcer, public face, technocrat, ideologue.\n';
 p+='\nSCENE ENGINE:\n';
 p+='- The TOPIC on the table: "'+title+'" -- '+desc+'\n';
-p+='- Show HOW this kind of policy gets engineered: who benefits, who gets crushed, what lie they will sell publicly vs what they admit privately.\n';
-p+='- Beast-system framing is atmospheric, not preachy -- they ARE the machine talking to itself. Israel/scattered Negroes may appear only as "the demographic problem," "the ones who won\'t comply," or "legacy populations" in THEIR mouths -- so the listener hears the cage being built.\n';
+p+='- Show HOW this policy mindset gets engineered: who benefits, who gets crushed, public lie vs private admission.\n';
+p+='- Beast-system framing is atmospheric -- they ARE the machine talking to itself. Israel/scattered Negroes may appear only as "legacy populations" or "demographic problem" in THEIR mouths.\n';
 if(wantBehind){
 p+='\nBEHIND THE VEIL -- NEWS TRIGGER (MANDATORY):\n';
 p+=buildWebResearchPromptBlock(topic,{partNum:partNum,totalParts:totalParts,wantEpisodeMode:false,chapterSrc:null,wantStoryMode:false,wantBezStoryBreakdown:false,currentMode:currentMode});
@@ -1987,35 +2000,40 @@ p+='- Optional: brief reference to current events only if it sharpens the scene 
 p+='- Focus on sector power players talking freely: implementation timelines, enforcement, public messaging vs private intent, who gets exempted, who gets sacrificed.\n';
 }
 if(totalParts===1){
-p+='\nACT STRUCTURE (single script):\n';
-p+='[SCENE] Establish room and cast. [BEAT] Masks on -- public talking points. [BEAT] Masks slip -- real agenda, contempt, deals. [BEAT] Commitments signed in spirit. [END] One chilling line as they leave -- the public will never hear this.\n';
+p+='\nSTRUCTURE (single script, one meeting):\n';
+p+='[SCENE START] room + [PRESENT: cast]. [BEAT] public doublespeak. [BEAT] masks slip -- contempt, deals, who gets fired/crushed. [BEAT] one cold closing line. [SCENE END]\n';
 }else if(partNum===1){
-p+='\nACT '+partNum+' FOCUS -- THE ROOM OPENS:\n';
-p+='Introduce the cast and the policy on the table. Public-facing doublespeak first. End with the first crack -- someone says what they would never say on camera.\n';
+p+='\nACT '+partNum+' -- ROOM OPENS (same meeting continues in later acts):\n';
+p+='Introduce cast and topic. Public doublespeak first, then first mask-off moment. End at a natural pause in the SAME room. Do NOT write [SCENE END] yet -- Acts 2+'+(totalParts>2?' and '+totalParts:'')+' continue this meeting.\n';
 }else if(partNum===totalParts){
-p+='\nACT '+partNum+' FOCUS -- THE SIGNATURE:\n';
-p+='Pick up from Act '+(partNum-1)+'. One-sentence bridge max. The real deal closes -- enforcement, rollout, who gets hurt, what story they will feed the public. End on a cold line that lands like a cell door.\n';
+p+='\nACT '+partNum+' -- THE SIGNATURE (same meeting, same room, same cast):\n';
+p+='One-sentence bridge from Act '+(partNum-1)+' max. Close the deal: enforcement, rollout, who gets hurt, public cover story. One final cold line. [SCENE END]\n';
 }else{
-p+='\nACT '+partNum+' FOCUS -- MASKS OFF:\n';
-p+='Pick up from Act '+(partNum-1)+'. One-sentence bridge max. Middle act: bargaining, threats, ideology naked, technocratic details, contempt for resistance. Escalate toward the final commitment.\n';
+p+='\nACT '+partNum+' -- MASKS OFF (same meeting, same room, same cast):\n';
+p+='One-sentence bridge max. Deeper contempt, bargaining, who they sacrifice. No new locations or new cast. Do NOT write [SCENE END] yet.\n';
 }
 if(partNum>1&&sermonPartsRaw.length){
 p+='\n============================================================\n';
-p+='PREVIOUS ACTS -- READ BEFORE WRITING ACT '+partNum+'\n';
+p+='PREVIOUS ACTS -- SAME MEETING (read before writing Act '+partNum+')\n';
 p+='============================================================\n';
 for(var ti=0;ti<partNum-1;ti++){
 p+='--- ACT '+(ti+1)+': '+(sermonPartsTitles[ti]||'Untitled')+' ---\n';
 p+=(sermonPartsRaw[ti]||'')+'\n--- END ACT '+(ti+1)+' ---\n\n';
 }
-p+='Do NOT repeat dialogue or beats from prior acts. Advance the same meeting -- new revelations, new deals, deeper mask-off moments.\n\n';
+p+='Continue the SAME meeting in the SAME room with the SAME cast. Do NOT repeat lines. Do NOT change sector. Do NOT start a new story.\n\n';
 }
 if(wantExplicit){
-p+='\nEXPLICIT THEATRE: These elites speak with profanity, vulgarity, and graphic contempt when the masks drop -- how they really talk behind closed doors. No sanitizing. No asterisks.\n';
+p+='\nEXPLICIT THEATRE: Profanity and graphic contempt when masks drop. No sanitizing.\n';
 }
+p+='\nFORBIDDEN OUTPUT (instant fail):\n';
+p+='- Anything after [SCENE END]\n';
+p+='- A second [SCENE START], EXT./INT. slug lines, or cut to another location\n';
+p+='- PART '+(partNum+1)+', Act '+(partNum+1)+', or --- dividers starting a new document\n';
+p+='- AI takeover, war rooms, coups, explosions, or blockbuster action unrelated to "'+title+'"\n';
 p+='\nCRITICAL OUTPUT RULES:\n';
-p+='- Bracket stage directions ARE required in this mode: [SCENE], [BEAT], [DOOR CLOSES], etc.\n';
-p+='- Do NOT include thinking/reasoning tags or word-count meta.\n';
-p+='- Start immediately with the disclaimer line, then the # title.\n';
+p+='- Bracket stage directions: [SCENE START], [BEAT], [PRESENT:], [SCENE END]\n';
+p+='- No thinking tags, no word-count meta\n';
+p+='- Start with disclaimer, then # title, end with [SCENE END] and STOP\n';
 return p;
 }
 function buildEpisodeModeBlock(partNum,totalParts,topic){
@@ -2668,12 +2686,15 @@ document.getElementById('progressFill').style.width=pct+'%';
 document.getElementById('progressLabel').textContent=partNum>=total?'Complete -- '+total+' / '+total:(total===1?'Episode':'Part '+partNum+' / '+total);
 }
 function extractPartTitle(text,partNum){
-// Try to find "# Episode X: Title" or "# Part X: Title" pattern
-var m=text.match(/^#\s*(?:Episode|Part|PART|EPISODE)\s*\d+\s*[:\-–—]+\s*(.+)/im);
+// Try to find "# Episode X: Title" or "# Part X: Title" or Act pattern
+var m=text.match(/^#\s*(?:Episode|Part|PART|EPISODE|Act|ACT)\s*\d+\s*[:\-–—]+\s*(.+)/im);
 if(m)return m[1].trim().replace(/^#+\s*/,'');
+// Try # Title -- Act N
+var ma=text.match(/^#\s+(.+?)\s*--\s*Act\s*\d+/im);
+if(ma)return ma[1].trim();
 // Try any first heading
 var h=text.match(/^#+\s+(.+)/m);
-if(h){var t=h[1].replace(/^(?:Episode|Part|PART|EPISODE)\s*\d+\s*[:\-–—]+\s*/i,'').trim();if(t.length>2)return t;}
+if(h){var t=h[1].replace(/^(?:Episode|Part|PART|EPISODE|Act|ACT)\s*\d+\s*[:\-–—]+\s*/i,'').replace(/\s*--\s*Act\s*\d+.*$/i,'').trim();if(t.length>2)return t;}
 return getForgePartLabel(partNum,false);
 }
 /** Remove the model's own # Part / # Episode title so we do not double-prefix when assembling */
@@ -2697,26 +2718,64 @@ var lines=text.split('\n');
 var cut=-1;
 for(var i=0;i<lines.length;i++){
 var L=lines[i].trim();
-var m=L.match(/^#+\s*(?:Part|PART|Episode|EPISODE)\s*(\d+)\s*[:\-–—]/i);
+var m=L.match(/^#+\s*(?:Part|PART|Episode|EPISODE|Act|ACT)\s*(\d+)\s*[:\-–—]/i);
 if(m){
 var n=parseInt(m[1],10);
 if(n>currentPartNum){cut=i;break;}
 }
+var pm=L.match(/^PART\s+(\d+)\s*--/i);
+if(pm&&parseInt(pm[1],10)>currentPartNum){cut=i;break;}
 }
 if(cut>=0)return lines.slice(0,cut).join('\n').replace(/\s+$/,'');
 return text;
 }
+/** Theatre: hard-stop at [SCENE END], block bonus scenes / movie drift */
+function truncateAtTheatreBoundary(text,currentPartNum,totalParts){
+if(!text)return text;
+var t=text;
+var sceneEndRe=/\[SCENE\s+END\]/gi;
+var endMatch=sceneEndRe.exec(t);
+if(endMatch){
+return t.slice(0,endMatch.index+endMatch[0].length).replace(/\s+$/,'');
+}
+t=truncateAtNextPartBoundary(t,currentPartNum);
+var startRe=/\[SCENE\s+START\]/gi;
+var starts=[];
+var sm;
+while((sm=startRe.exec(t))!==null)starts.push(sm.index);
+if(starts.length>1)return t.slice(0,starts[1]).replace(/\s+$/,'');
+if(t.length>600){
+var lines=t.split('\n');
+var dialogueStarted=false;
+var cut=-1;
+for(var i=0;i<lines.length;i++){
+var line=lines[i].trim();
+if(/^[A-Z][A-Z0-9 .'\-&]+:\s*(\[|$)/.test(line)||/^[A-Z][A-Z0-9 .'\-&]+:\s*$/.test(line))dialogueStarted=true;
+if(dialogueStarted&&i>12&&/^(?:\[)?(?:EXT\.|INT\.)/i.test(line)){cut=i;break;}
+}
+if(cut>=0)return lines.slice(0,cut).join('\n').replace(/\s+$/,'');
+}
+var hrPart=t.search(/\n---+\s*\n\s*(?:PART\s+\d+|#+\s*(?:Part|Act))/i);
+if(hrPart>=0)return t.slice(0,hrPart).replace(/\s+$/,'');
+return t;
+}
+function theatreActComplete(text,partNum,totalParts){
+if(!text)return false;
+if(/\[SCENE\s+END\]/i.test(text))return true;
+if(totalParts>1&&partNum<totalParts)return false;
+return false;
+}
 /** Remove duplicate # Part N: lines; fix glued headers like heat.# Part 1: */
 function dedupePartHeaders(text){
 if(!text)return text;
-text=text.replace(/([^\n\s])(\s*)(#+\s*(?:Part|PART|Episode|EPISODE)\s*\d+\s*[:\-–—])/gi,'$1\n\n$3');
-text=text.replace(/\.(#+\s*(?:Part|PART|Episode|EPISODE)\s*\d+)/gi,'.\n\n$1');
+text=text.replace(/([^\n\s])(\s*)(#+\s*(?:Part|PART|Episode|EPISODE|Act|ACT)\s*\d+\s*[:\-–—])/gi,'$1\n\n$3');
+text=text.replace(/\.(#+\s*(?:Part|PART|Episode|EPISODE|Act|ACT)\s*\d+)/gi,'.\n\n$1');
 var lines=text.split('\n');
 var seenPartNums={};
 var out=[];
 for(var i=0;i<lines.length;i++){
 var L=lines[i];
-var m=L.trim().match(/^#+\s*(?:Part|PART|Episode|EPISODE)\s*(\d+)\s*[:\-–—]/i);
+var m=L.trim().match(/^#+\s*(?:Part|PART|Episode|EPISODE|Act|ACT)\s*(\d+)\s*[:\-–—]/i);
 if(m){
 var pn=m[1];
 if(seenPartNums[pn])continue;
@@ -2728,7 +2787,11 @@ return out.join('\n');
 }
 function finalizeSermonPartText(text,partNum){
 var out=stripSermonPreamble(text||'');
+if(isTheatreModeActive()){
+out=truncateAtTheatreBoundary(out,partNum,selectedPartCount);
+}else{
 out=truncateAtNextPartBoundary(out,partNum);
+}
 out=dedupePartHeaders(out);
 var webEl=document.getElementById('toggleWebResearch');
 if(webEl&&webEl.checked)out=stripMediaSources(out);
@@ -2765,6 +2828,15 @@ if(sermonGenCtx.gotFirstToken)sermonGenCtx.chunkTimer=t;
 else sermonGenCtx.firstTokenTimer=t;
 }
 function buildSermonContinuationPrompt(partNum,existing){
+if(isTheatreModeActive()){
+var p='THEATRE CONTINUATION -- SAME ACT '+partNum+' ONLY (CRITICAL):\n';
+p+='Continue the SAME closed-door meeting in the SAME room. Do NOT add [SCENE START] again. Do NOT cut to EXT./INT. Do NOT start a new story, sector, or cast.\n';
+p+='Stay on the assigned topic. No AI apocalypse, coups, or action-movie drift.\n';
+if(partNum===selectedPartCount)p+='Finish this act and end with [SCENE END] then STOP.\n';
+else p+='Do NOT write [SCENE END] until the final act.\n';
+p+='LAST FOUR HUNDRED CHARACTERS:\n"...'+String(existing||'').slice(-400)+'"\n\nCONTINUE IMMEDIATELY:\n';
+return p;
+}
 var p='CONTINUATION -- SAME PART '+partNum+' ONLY (CRITICAL):\n';
 p+='Your previous output was cut off mid-sentence or mid-thought. Do NOT add a new "# Part" heading. Do NOT restart the title. Pick up EXACTLY where you stopped and keep writing ONLY Part '+partNum+'.\n\n';
 p+='LAST FOUR HUNDRED CHARACTERS OF YOUR DRAFT:\n"...'+String(existing||'').slice(-400)+'"\n\nCONTINUE IMMEDIATELY:';
@@ -2837,7 +2909,9 @@ if(msg.status==='complete'){
 clearSermonWatchdogs();
 var finalized=finalizeSermonPartText(ctx.partContent,partNum);
 var truncated=detectTruncation(finalized);
-if(truncated&&ctx.continuationCount<SERMON_MAX_CONTINUATIONS){
+var maxCont=isTheatreModeActive()?1:SERMON_MAX_CONTINUATIONS;
+var actDone=theatreActComplete(finalized,partNum,selectedPartCount);
+if(truncated&&!actDone&&ctx.continuationCount<maxCont){
 ctx.continuationCount++;
 ctx.partContentBeforeContinue=ctx.partContent;
 startSermonPartStream(partNum,true);
