@@ -952,6 +952,14 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch" title="Live web search: verify facts, find recent news, weave headlines into the sermon (silent — no URLs in output)"><input type="checkbox" id="toggleWebResearch" checked><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
       <label class="toggle-switch" id="toggleBehindTheVeilWrap" title="News-triggered closed-door drama: real headlines → dramatized meeting where sector elites plot the beast-system policy (prophetic illustration, not leaked intel)"><input type="checkbox" id="toggleBehindTheVeil"><span class="toggle-track" style="background:linear-gradient(135deg,#4a1a6a,#8B1A1A);"></span><span><i class="fas fa-door-closed" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Behind the Veil</span></label>
       <label class="toggle-switch" id="togglePureTheatreWrap" title="Pure closed-door theatre: prominent figures in this sector speak freely with no cameras — policy mechanics, contempt, deals (no mandatory news weave)"><input type="checkbox" id="togglePureTheatre"><span class="toggle-track" style="background:linear-gradient(135deg,#2a2a35,#6A1B9A);"></span><span><i class="fas fa-masks-theater" style="color:#D4A017;margin-right:3px;font-size:0.7rem;"></i>Pure Theatre</span></label>
+      <div class="model-select-wrap" id="theatreCommentaryWrap" style="display:none;flex:1 1 100%;">
+        <label><i class="fas fa-pause-circle" style="color:#c9a227;margin-right:3px;"></i> Scene guide:</label>
+        <select class="model-select" id="theatreCommentaryVoice" style="flex:1;max-width:280px;">
+          <option value="off">Off — boardroom only</option>
+          <option value="yah">Yah pauses &amp; explains</option>
+          <option value="bez">Bez pauses &amp; explains</option>
+        </select>
+      </div>
       <div class="model-select-wrap">
         <label><i class="fas fa-robot"></i> Model:</label>
         <select class="model-select" id="modelSelect" onchange="onSermonModelDropdown()">
@@ -1943,12 +1951,57 @@ return includeOf?('Act '+partNum+' of '+selectedPartCount):('Act '+partNum);
 }
 return selectedPartCount===1?'Episode':(includeOf?('Part '+partNum+' of '+selectedPartCount):('Part '+partNum));
 }
+function getTheatreCommentaryVoice(){
+if(!isTheatreModeActive())return 'off';
+var el=document.getElementById('theatreCommentaryVoice');
+var v=el?el.value:'off';
+return (v==='yah'||v==='bez')?v:'off';
+}
+function buildTheatreCommentaryBlock(voice,topic,opts){
+opts=opts||{};
+if(!voice||voice==='off')return '';
+var title=topic?topic.title:'this topic';
+var desc=topic?topic.desc:'';
+var wantRough=!!opts.wantRoughBez;
+var isBez=voice==='bez';
+var p='SCENE GUIDE COMMENTARY (MANDATORY -- PAUSE / EXPLAIN / RESUME):\n';
+p+='The boardroom scene FREEZES periodically so a narrator breaks the fourth wall, explains in PLAIN LAYMAN\'S TERMS what the elites just said or what their jargon really means, then UNPAUSES and the meeting continues exactly where it left off.\n\n';
+p+='FORMAT (use these exact markers):\n';
+p+='[PAUSE -- '+(isBez?'BEZ':'YAH')+' COMMENTARY]\n';
+p+='(plain-language explanation -- 2-6 short paragraphs or a tight spoken burst)\n';
+p+='[RESUME SCENE]\n';
+p+='(boardroom dialogue continues -- same room, same cast, pick up the same beat)\n\n';
+p+='CADENCE:\n';
+p+='- Pause AT LEAST 5 times per act (more is fine). Trigger a pause when: corporate euphemism drops, a policy gets named, contempt for the public shows, headcount/spreadsheet talk, legal/regulatory dodge, or Israel/legacy populations get mentioned.\n';
+p+='- Commentary is INTERRUPTIVE but BRIEF relative to the scene -- decode, expose, land it on real life, then get out of the way.\n';
+p+='- Do NOT let commentary replace the boardroom. The meeting is the spine; pauses are the decoder ring.\n';
+p+='- Never pause mid-sentence of an executive -- finish their line, THEN pause.\n\n';
+if(isBez){
+p+='BEZ VOICE (Brother Bet -- urban nationalist Hebrew Israelite street preacher):\n';
+p+='- THIRD PERSON about Yah only. You are a man, not God.\n';
+p+='- Talk to Israel like they are standing on the corner: "You hearing what he just said?" "That ain\'t HR -- that\'s a purge." "They call it restructuring -- your mama calls it the rent due."\n';
+p+='- Plain English. No seminary tone. No lesson headers. Decode the beast-system move and who eats it.\n';
+if(wantRough)p+='- Rough Bezaleel heat OK -- blunt, profane if Explicit is on, street truth.\n';
+else p+='- Keep it sharp but not a full Rough Bez rant unless Explicit is on.\n';
+}else{
+p+='YAH VOICE (Most High speaking directly to scattered Israel):\n';
+p+='- FIRST PERSON as Yah/Yahusha. Intimate, confrontational, remembering them to themselves.\n';
+p+='- Plain English: translate their boardroom language into what it does to YOUR people -- bills, jobs, schools, churches, bloodline, block, cell, pew.\n';
+p+='- Not a sermon outline. Not verse-by-verse teaching. Short divine decoder bursts -- "When he says flatten the org, he means your cousin\'s livelihood."\n';
+}
+p+='COMMENTARY MUST STAY ON TOPIC: "'+title+'" -- '+desc+'\n';
+p+='- Decode THIS meeting only. No unrelated tangents.\n';
+p+='- Optional: one short scripture strike inside a pause if it lands the point -- woven in plain speech, not a lesson.\n\n';
+return p;
+}
 function buildClosedDoorTheatrePrompt(partNum,opts){
 opts=opts||{};
 var topic=opts.topic||currentTopic;
 var totalParts=opts.totalParts||selectedPartCount;
 var wantBehind=!!opts.wantBehindTheVeil;
 var wantExplicit=!!opts.wantExplicit;
+var commentaryVoice=opts.commentaryVoice||'off';
+var wantRoughBez=!!opts.wantRoughBez;
 var title=topic?topic.title:'this policy';
 var desc=topic?topic.desc:'';
 var wordsPerPart=totalParts===1?4000:2200;
@@ -1975,7 +2028,11 @@ p+='- Your FIRST line must be exactly: *Dramatization for prophetic illustration
 p+='- Second line: # '+title+(totalParts>1?' -- Act '+partNum:'')+'\n';
 p+='- Then stage directions in [brackets] and dialogue as CHARACTER NAME: lines.\n';
 p+='- Cast REAL prominent figures in that sector (full name + title). They speak WITHOUT public restraint.\n';
-p+='- NO sermon voice. NO Yah. NO Brother Bet. NO verse breakdown. This is a BOARDROOM, not a pulpit.\n';
+if(commentaryVoice==='off'){
+p+='- NO narrator voice in the room. NO Yah. NO Brother Bet breaking the scene. Boardroom dialogue only.\n';
+}else{
+p+='- Boardroom speakers stay in character. Yah/Bez do NOT sit at the table -- they PAUSE the scene from outside and comment, then [RESUME SCENE].\n';
+}
 if(totalParts===1||partNum===totalParts){
 p+='- When the meeting truly ends, close with [SCENE END] then STOP. Do not write anything after [SCENE END].\n';
 }else{
@@ -2003,6 +2060,9 @@ p+='\nPURE THEATRE -- NO MANDATORY NEWS:\n';
 p+='- No headline required. This is the meeting that WOULD happen for this policy whether or not it made tonight\'s feed.\n';
 p+='- Optional: brief reference to current events only if it sharpens the scene -- never a news recap.\n';
 p+='- Focus on sector power players talking freely: implementation timelines, enforcement, public messaging vs private intent, who gets exempted, who gets sacrificed.\n';
+}
+if(commentaryVoice!=='off'){
+p+=buildTheatreCommentaryBlock(commentaryVoice,topic,{wantRoughBez:wantRoughBez,wantExplicit:wantExplicit});
 }
 if(totalParts===1){
 p+='\nSTRUCTURE (single long meeting):\n';
@@ -2040,7 +2100,7 @@ p+='- Cutting to a NEW location: second [SCENE START], EXT./INT. slug lines, str
 p+='- PART '+(partNum+1)+', Act '+(partNum+1)+', or --- dividers starting a new document\n';
 p+='- Unrelated blockbuster plots: AI apocalypse, coups, explosions, chases -- anything not about "'+title+'"\n';
 p+='\nCRITICAL OUTPUT RULES:\n';
-p+='- Bracket stage directions: [SCENE START], [BEAT], [PRESENT:], [SCENE END] on final act only\n';
+p+='- Bracket stage directions: [SCENE START], [BEAT], [PRESENT:], [PAUSE -- YAH COMMENTARY] or [PAUSE -- BEZ COMMENTARY], [RESUME SCENE], [SCENE END] on final act only\n';
 p+='- No thinking tags, no word-count meta in the output\n';
 p+='- Start with disclaimer, then # title. WRITE LONG. Stay in the boardroom on topic.\n';
 return p;
@@ -2840,10 +2900,13 @@ else sermonGenCtx.firstTokenTimer=t;
 }
 function buildSermonContinuationPrompt(partNum,existing){
 if(isTheatreModeActive()){
+var cv=getTheatreCommentaryVoice();
 var p='THEATRE CONTINUATION -- SAME ACT '+partNum+' ONLY (CRITICAL):\n';
 p+='Continue the SAME boardroom meeting in the SAME room. Do NOT rush. Do NOT wrap up early.\n';
 p+='Stay on topic: "'+(currentTopic?currentTopic.title:'the assigned topic')+'". No AI apocalypse, coups, or location cuts.\n';
 p+='Keep the slow boardroom feel -- more dialogue, more turns, more contempt. Do NOT add [SCENE START] again.\n';
+if(cv==='yah')p+='Keep using [PAUSE -- YAH COMMENTARY] / [RESUME SCENE] throughout -- plain layman\'s decode for Israel.\n';
+else if(cv==='bez')p+='Keep using [PAUSE -- BEZ COMMENTARY] / [RESUME SCENE] throughout -- street-plain decode for Israel.\n';
 if(partNum===selectedPartCount)p+='When the meeting is truly finished, end with [SCENE END].\n';
 else p+='Do NOT write [SCENE END] -- Act '+(partNum+1)+' continues this meeting.\n';
 p+='LAST FOUR HUNDRED CHARACTERS:\n"...'+String(existing||'').slice(-400)+'"\n\nCONTINUE IMMEDIATELY:\n';
@@ -2921,7 +2984,7 @@ if(msg.status==='complete'){
 clearSermonWatchdogs();
 var finalized=finalizeSermonPartText(ctx.partContent,partNum);
 var truncated=detectTruncation(finalized);
-var maxCont=isTheatreModeActive()?SERMON_MAX_CONTINUATIONS:SERMON_MAX_CONTINUATIONS;
+var maxCont=SERMON_MAX_CONTINUATIONS;
 var actDone=theatreActComplete(finalized,partNum,selectedPartCount);
 if(truncated&&!actDone&&ctx.continuationCount<maxCont){
 ctx.continuationCount++;
@@ -3284,7 +3347,7 @@ var wantPureTheatre=document.getElementById('togglePureTheatre')&&document.getEl
 var wantExplicit=document.getElementById('toggleExplicit').checked;
 var totalParts=selectedPartCount;
 if(wantBehindTheVeil||wantPureTheatre){
-return buildClosedDoorTheatrePrompt(partNum,{topic:topic,totalParts:totalParts,wantBehindTheVeil:wantBehindTheVeil,wantExplicit:wantExplicit});
+return buildClosedDoorTheatrePrompt(partNum,{topic:topic,totalParts:totalParts,wantBehindTheVeil:wantBehindTheVeil,wantExplicit:wantExplicit,commentaryVoice:getTheatreCommentaryVoice(),wantRoughBez:document.getElementById('toggleRoughBez')&&document.getElementById('toggleRoughBez').checked});
 }
 var wantBreakdown=document.getElementById('toggleBreakdown').checked;
 var wantApocrypha=document.getElementById('toggleApocrypha').checked;
@@ -6558,12 +6621,18 @@ var web=document.getElementById('toggleWebResearch');
 var story=document.getElementById('toggleStoryMode');
 var bezStory=document.getElementById('toggleBezStoryMode');
 var episode=document.getElementById('toggleSermonEpisodeMode');
+var commentaryWrap=document.getElementById('theatreCommentaryWrap');
 if(!veil&&!pure)return;
 if(veil&&veil.checked&&pure&&pure.checked){
 if(document.activeElement===pure)pure.checked=false;
 else veil.checked=false;
 }
 var theatreOn=(veil&&veil.checked)||(pure&&pure.checked);
+if(commentaryWrap)commentaryWrap.style.display=theatreOn?'flex':'none';
+if(!theatreOn){
+var cv=document.getElementById('theatreCommentaryVoice');
+if(cv)cv.value='off';
+}
 if(theatreOn){
 if(veil&&veil.checked&&web&&!web.checked)web.checked=true;
 if(story)story.checked=false;
