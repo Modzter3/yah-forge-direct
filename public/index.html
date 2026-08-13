@@ -90,7 +90,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .custom-forge-bar{padding:14px 16px 6px;border-bottom:1px solid var(--border);}
 .custom-forge-inner{display:flex;align-items:center;gap:10px;padding:10px 14px;background:linear-gradient(135deg,rgba(212,160,23,0.06) 0%,rgba(139,26,26,0.06) 100%);border:1px solid var(--gold-dim);border-radius:12px;position:relative;}
 .custom-forge-icon{color:var(--gold);font-size:1rem;flex-shrink:0;opacity:0.7;}
-.custom-forge-input{flex:1;padding:10px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:'Bitter',serif;font-size:16px;outline:none;transition:border-color 0.2s;min-width:0;}
+.custom-forge-input{flex:1;padding:10px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:'Bitter',serif;font-size:16px;outline:none;transition:border-color 0.2s;min-width:0;resize:vertical;min-height:42px;max-height:220px;line-height:1.45;}
 .custom-forge-input::placeholder{color:var(--text-dim);font-style:italic;}
 .custom-forge-input:focus{border-color:var(--gold);}
 .custom-forge-btn{padding:10px 18px;background:linear-gradient(135deg,var(--crimson),var(--crimson-glow));border:none;border-radius:8px;color:#fff;font-family:'Cinzel Decorative',serif;font-size:0.82rem;font-weight:700;cursor:pointer;transition:all 0.25s;letter-spacing:0.04em;white-space:nowrap;display:flex;align-items:center;gap:6px;}
@@ -500,7 +500,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <div class="custom-forge-bar">
     <div class="custom-forge-inner">
       <i class="fas fa-pen-fancy custom-forge-icon"></i>
-      <input type="text" id="customTopicInput" placeholder="Enter any topic to forge a sermon..." class="custom-forge-input">
+      <textarea id="customTopicInput" rows="1" placeholder="Enter a topic — or paste scripture with verses (line by line, in order)..." class="custom-forge-input"></textarea>
       <button class="custom-forge-btn" id="customForgeBtn" onclick="forgeCustomTopic()"><i class="fas fa-fire"></i> Forge</button>
     </div>
   </div>
@@ -1549,6 +1549,13 @@ for(var l=0;l<light.length;l++){if(bookName.indexOf(light[l])!==-1)return 2;}
 return 3;
 }
 if(mode==='standard'){
+if(currentChapterSource&&currentChapterSource.type==='custom'&&currentChapterVerseCount>0){
+var cv=currentChapterVerseCount;
+if(cv<=8)return 2;
+if(cv<=16)return 3;
+if(cv<=28)return 4;
+return 5;
+}
 var mwTopic=detectMediaWorkFromTopic(topic);
 if(mwTopic){
 if(mwTopic.kind==='tv'){
@@ -1659,7 +1666,8 @@ newsEndEl.max=todayStr;
 onNewsDatePreset();
 }
 document.getElementById('searchInput').addEventListener('input',function(e){searchTerm=e.target.value.toLowerCase().trim();renderTopics();});
-document.getElementById('customTopicInput').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();forgeCustomTopic();}});
+document.getElementById('customTopicInput').addEventListener('keydown',function(e){if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();forgeCustomTopic();}});
+document.getElementById('customTopicInput').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,220)+'px';});
 }
 function switchTab(tab,el){
 var btns=document.querySelectorAll('.tab-btn');
@@ -2261,6 +2269,79 @@ if(seen[1]&&seen[2]&&seen[3]&&maxBrute>=5)return maxBrute;
 // Fallback: return best guess from any strategy
 return Math.max(maxFromCitations,maxFromLines,maxFromAll,maxBrute);
 }
+function detectVerseMarkersInText(text){
+var lineMatches=text.match(/(?:^|\n)\s*\**(\d{1,3})\**[\.\):\s]/g)||[];
+var nums={};
+var max=0;
+for(var i=0;i<lineMatches.length;i++){
+var n=lineMatches[i].match(/(\d+)/);
+if(n){
+var v=parseInt(n[1],10);
+if(v>=1&&v<=200){
+nums[v]=true;
+if(v>max)max=v;
+}
+}
+}
+return {count:Object.keys(nums).length,max:max};
+}
+function looksLikePastedScripture(text){
+if(!text)return false;
+var t=String(text).trim();
+if(t.length<30)return false;
+var markers=detectVerseMarkersInText(t);
+if(markers.count>=2)return true;
+var cites=t.match(/[A-Za-z][A-Za-z0-9 .']+\s+\d+:\d+/g)||[];
+if(cites.length>=2)return true;
+if(markers.count>=1&&t.indexOf('\n')!==-1)return true;
+return false;
+}
+function parseScriptureHeaderLine(line){
+var L=String(line||'').trim();
+if(!L)return null;
+var m=L.match(/^([1-3]?\s*[A-Za-z][A-Za-z .']+?)\s+(\d+)\s*(?::\s*(\d+)(?:\s*[-–]\s*\d+)?)?\s*$/);
+if(m)return {book:m[1].trim(),chapter:parseInt(m[2],10)||1};
+m=L.match(/^([1-3]?\s*[A-Za-z][A-Za-z .']+?)\s+chapter\s+(\d+)\s*$/i);
+if(m)return {book:m[1].trim(),chapter:parseInt(m[2],10)||1};
+return null;
+}
+function parseCustomScriptureInput(raw){
+if(!raw||typeof raw!=='string')return {isScripture:false};
+var text=raw.trim();
+if(!text||!looksLikePastedScripture(text))return {isScripture:false};
+var lines=text.split('\n');
+var header=parseScriptureHeaderLine(lines[0]);
+var scriptureText=text;
+var book='Pasted Scripture';
+var chapter=1;
+var title='Pasted Scripture';
+if(header){
+book=header.book;
+chapter=header.chapter;
+title=book+' Chapter '+chapter;
+if(lines.length>1){
+var body=lines.slice(1).join('\n').trim();
+if(body)scriptureText=body;
+}
+}else{
+var cite=text.match(/([A-Za-z][A-Za-z0-9 .']+)\s+(\d+):(\d+)/);
+if(cite){
+book=cite[1].trim();
+chapter=parseInt(cite[2],10)||1;
+title=book+' Chapter '+chapter;
+}
+}
+var verseCount=countVersesInText(scriptureText);
+if(verseCount<1)verseCount=countVersesInText(text);
+return {
+isScripture:true,
+scriptureText:scriptureText,
+title:title,
+book:book,
+chapter:chapter,
+verseCount:verseCount
+};
+}
 function getVerseRangeForPart(partNum,totalParts,totalVerses){
 // Divide verses as evenly as possible across parts
 var base=Math.floor(totalVerses/totalParts);
@@ -2304,11 +2385,20 @@ function forgeCustomTopic(){
 var input=document.getElementById('customTopicInput');
 var raw=input.value.trim();
 if(!raw){showToast('Type a topic first -- anything you want a sermon on.');return;}
+var parsed=parseCustomScriptureInput(raw);
+if(parsed.isScripture){
+currentTopic={id:-1,cat:'doctrine',title:parsed.title,desc:'Custom scripture sermon: '+parsed.title};
+currentMode='standard';
+currentChapterSource={book:parsed.book,chapter:parsed.chapter,type:'custom'};
+currentChapterText=parsed.scriptureText;
+currentChapterVerseCount=parsed.verseCount>0?parsed.verseCount:countVersesInText(parsed.scriptureText);
+}else{
 currentTopic={id:-1,cat:'doctrine',title:raw,desc:'Custom sermon topic: '+raw};
 currentMode='standard';
 currentChapterSource=null;
 currentChapterText=null;
 currentChapterVerseCount=0;
+}
 openModal();
 }
 function openModal(){
@@ -2326,7 +2416,11 @@ titleEl.innerHTML+=(' <span class="mode-badge" style="background:rgba(139,26,26,
 }else if(currentMode==='sealed'){
 titleEl.innerHTML+=(' <span class="mode-badge" style="background:rgba(139,26,26,0.18);color:var(--crimson-glow);"><i class="fas fa-lock" style="margin-right:4px;font-size:0.65em;"></i>SEALED SCROLL</span>');
 }else if(currentTopic.id===-1){
+if(currentChapterSource&&currentChapterSource.type==='custom'){
+titleEl.innerHTML+=(' <span class="mode-badge" style="background:rgba(74,124,155,0.15);color:var(--accent-blue);"><i class="fas fa-book-bible" style="margin-right:4px;font-size:0.65em;"></i>SCRIPTURE</span>');
+}else{
 titleEl.innerHTML+=(' <span class="mode-badge" style="background:rgba(212,160,23,0.15);color:var(--gold);">CUSTOM</span>');
+}
 }
 descEl.textContent=currentTopic.desc;
 document.getElementById('sermonOutput').innerHTML='<div class="sermon-placeholder"><i class="fas fa-fire-flame-curved"></i>Configure options, choose your part count, then hit Generate to forge the sermon.</div>';
@@ -2585,6 +2679,7 @@ sermonPartsTitles=[];
 sermonPartsCombined='';
 sermonNewsAnglePlan=null;
 sermonNewsLedger=[];
+var savedCustomScripture=(currentChapterSource&&currentChapterSource.type==='custom'&&currentChapterText)?{text:currentChapterText,count:currentChapterVerseCount,src:currentChapterSource}:null;
 currentChapterText=null;
 currentChapterVerseCount=0;
 // Clear news context if not in news mode to prevent stale data
@@ -2599,8 +2694,25 @@ actions.style.display='none';
 progress.style.display='flex';
 output.innerHTML='';
 updateProgress(0);
-// If bible or apocrypha mode, check for manual paste first, then fetch if not provided
-if((currentMode==='bible'||currentMode==='apocrypha'||currentMode==='sealed')&&currentChapterSource){
+if(savedCustomScripture){
+currentChapterText=savedCustomScripture.text;
+currentChapterVerseCount=savedCustomScripture.count;
+currentChapterSource=savedCustomScripture.src;
+var vc=currentChapterVerseCount;
+var vcLabel=vc>0?vc+' verse'+(vc!==1?'s':'')+' detected':'Verse count could not be determined';
+var box=document.createElement('div');
+box.className='verse-confirm-box';
+box.innerHTML='<div class="vc-title"><i class="fas fa-book-bible" style="margin-right:6px;"></i>Pasted Scripture Loaded</div>'
++'<div class="vc-count">'+vcLabel+'</div>'
++'<div class="vc-detail">'+escapeHtml(currentChapterSource.book)+' Chapter '+currentChapterSource.chapter+' from your <strong>custom topic field</strong>.<br>'
++(vc>0?'Verses will be walked <strong>line by line in order</strong> across <strong>'+selectedPartCount+' part'+(selectedPartCount!==1?'s':'')+'</strong> (~'+Math.floor(vc/selectedPartCount)+' verses per part).':'Verse pacing will use the pasted text in order.')
++'</div>'
++'<div class="vc-actions">'
++'<button class="vc-btn confirm" onclick="this.closest(\'.verse-confirm-box\').style.opacity=\'0.4\';generatePart(1);"><i class="fas fa-bolt" style="margin-right:4px;"></i>Looks Good -- Forge Line by Line</button>'
++'<button class="vc-btn cancel" onclick="cancelSermonGeneration()"><i class="fas fa-times" style="margin-right:4px;"></i>Cancel</button>'
++'</div>';
+output.appendChild(box);
+}else if((currentMode==='bible'||currentMode==='apocrypha'||currentMode==='sealed')&&currentChapterSource){
 var manualPasteId=currentChapterSource.type==='sealed'?'sealedManualPaste':currentChapterSource.type==='apocrypha'?'apocManualPaste':'bibleManualPaste';
 var manualText=(document.getElementById(manualPasteId).value||'').trim();
 if(manualText){
@@ -3532,7 +3644,9 @@ p+='VERSE COVERAGE: Walk every assigned verse in exact order. Miss nothing. Each
 p+=''+(wantRoughBez?(totalParts===1?'SERMON':'PART '+partNum):(totalParts===1?'EPISODE':'PART '+partNum))+' FOCUS:\n'+partFocus+'\n\n';
 if(chapterSrc){
 p+='SOURCE: '+chapterSrc.book+' Chapter '+chapterSrc.chapter+'.\n';
-if(chapterSrc.type==='sealed'){
+if(chapterSrc.type==='custom'){
+p+='THIS IS PASTED SCRIPTURE from the custom topic field. The FULL text is provided below. You MUST walk it LINE BY LINE, VERSE BY VERSE, in EXACT ORDER from first to last. Do NOT skip verses. Do NOT jump from verse 1 to verse 10. Do NOT cherry-pick highlights. Every numbered verse in your assignment gets covered before you move to the next one.\n\n';
+}else if(chapterSrc.type==='sealed'){
 p+='THIS IS A SEALED SCROLL -- an ancient text that was BOTH hidden from Yah\'s people AND polluted by the serpent seed\'s scribes across centuries.\n\n';
 if(wantStoryMode){
 p+='STORY MODE SEALED FILTER (BRIEF): Filter corruption against Torah inside the revelation flow -- no five-layer lecture, no Paleo dissection, no engineering. If a passage is serpent seed garbage, call it out in plain street speech and keep moving. Enoch heaven tours are fabricated. Enoch is dead per John chapter three verse thirteen.\n\n';
@@ -3610,7 +3724,11 @@ p+='This is the REAL text. Use ONLY these verses. Do NOT add, invent, or fabrica
 p+='=======================================\n';
 p+=currentChapterText+'\n';
 p+='=======================================\n';
+if(chapterSrc.type==='custom'){
+p+='END OF PASTED TEXT. The above is the COMPLETE scripture the user provided. Walk it in order from top to bottom. There are NO additional verses beyond what is shown.\n\n';
+}else{
 p+='END OF CHAPTER TEXT. The above is the COMPLETE chapter. There are NO additional verses beyond what is shown.\n\n';
+}
 }
 p+=(wantStoryMode?'VERSE-BY-VERSE REVELATION':'VERSE-BY-VERSE BREAKDOWN')+' -- THIS IS MANDATORY FOR CHAPTER SERMONS:\n';
 p+=(wantStoryMode?'You MUST walk through ':'You MUST go through ')+chapterSrc.book+' Chapter '+chapterSrc.chapter+' VERSE BY VERSE in SEQUENTIAL ORDER. Start at verse one and work through the chapter in order -- do NOT skip verses, do NOT rearrange, do NOT jump around. Every verse gets addressed in the order it appears.\n';
