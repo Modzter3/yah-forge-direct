@@ -2110,6 +2110,7 @@ p+='- Unrelated blockbuster plots: AI apocalypse, coups, explosions, chases -- a
 p+='\nCRITICAL OUTPUT RULES:\n';
 p+='- Bracket stage directions: [SCENE START], [BEAT], [PRESENT:], [PAUSE -- YAH COMMENTARY] or [PAUSE -- BEZ COMMENTARY], [RESUME SCENE], [SCENE END] on final act only\n';
 p+='- No thinking tags, no word-count meta in the output\n';
+p+='- NO DIAGRAMS, FLOWCHARTS, OR ASCII ART -- plain prose and dialogue only\n';
 p+='- Start with disclaimer, then # title. WRITE LONG. Stay in the boardroom on topic.\n';
 return p;
 }
@@ -2564,7 +2565,49 @@ text=text.replace(/```(?:thinking|reasoning|reflection|internal|scratchpad|analy
 text=text.replace(new RegExp('\x3cdetails[^>]*>\\s*\x3csummary[^>]*>[^\x3c]*(?:think|reason|reflect|internal|scratchpad|analysis|planning|deliberation|pondering)[^\x3c]*\x3c/summary>[\\s\\S]*?\x3c/details>','gi'),'');
 text=text.replace(/^\s*\n+/,'');
 text=text.replace(/\n{3,}/g,'\n\n');
-return text;
+return text.replace(/^\s*\n+/,'');
+}
+function stripSermonDiagrams(text){
+if(!text)return text;
+text=text.replace(/```mermaid[\s\S]*?```/gi,'');
+text=text.replace(/```[^\n]*\n([\s\S]*?)```/g,function(block,inner){
+if(/[─│▼►◄┌┐└┘├┤┬┴┼═║╔╗╚╝→←↔↓↑]|(?:──►|--►)/.test(inner))return '';
+return block;
+});
+var boxRx=/[─│▼►◄┌┐└┘├┤┬┴┼═║╔╗╚╝→←↔↓↑]|(?:──►|--►)/;
+var bracketTitleRx=/^\s*\[\s*[A-Z0-9][A-Z0-9 '"()\-]{10,}\s*\]\s*$/;
+var soloSymbolRx=/^\s*(?:→|←|↓|↑|↔|│|▼|►|◄)\s*$/;
+function lineIsDiagram(L,prev,next){
+if(boxRx.test(L)||soloSymbolRx.test(L))return true;
+if(bracketTitleRx.test(L)&&(boxRx.test(prev||'')||boxRx.test(next||'')||soloSymbolRx.test(prev||'')||soloSymbolRx.test(next||'')))return true;
+return false;
+}
+var lines=text.split('\n');
+var out=[];
+var diagramRun=[];
+function flushDiagramRun(){
+var hasContent=false;
+for(var i=0;i<diagramRun.length;i++){
+if(lineIsDiagram(diagramRun[i],diagramRun[i-1],diagramRun[i+1])){hasContent=true;break;}
+}
+if(!hasContent){
+for(var j=0;j<diagramRun.length;j++)out.push(diagramRun[j]);
+}
+diagramRun=[];
+}
+for(var k=0;k<lines.length;k++){
+var L=lines[k];
+var prev=k>0?lines[k-1]:'';
+var next=k+1<lines.length?lines[k+1]:'';
+if(lineIsDiagram(L,prev,next)||(diagramRun.length&&/^\s*$/.test(L))){
+diagramRun.push(L);
+}else{
+flushDiagramRun();
+out.push(L);
+}
+}
+flushDiagramRun();
+return out.join('\n').replace(/\n{3,}/g,'\n\n');
 }
 // NUCLEAR: Find where the real sermon starts and kill everything before it.
 // No more guessing what format models use for thinking -- just find the content anchor.
@@ -2970,6 +3013,7 @@ return out.join('\n');
 }
 function finalizeSermonPartText(text,partNum){
 var out=stripSermonPreamble(text||'');
+out=stripSermonDiagrams(out);
 if(isTheatreModeActive()){
 out=truncateAtTheatreBoundary(out,partNum,selectedPartCount);
 }else{
@@ -3025,7 +3069,8 @@ p+='LAST FOUR HUNDRED CHARACTERS:\n"...'+String(existing||'').slice(-400)+'"\n\n
 return p;
 }
 var p='CONTINUATION -- SAME PART '+partNum+' ONLY (CRITICAL):\n';
-p+='Your previous output was cut off mid-sentence or mid-thought. Do NOT add a new "# Part" heading. Do NOT restart the title. Pick up EXACTLY where you stopped and keep writing ONLY Part '+partNum+'.\n\n';
+p+='Your previous output was cut off mid-sentence or mid-thought. Do NOT add a new "# Part" heading. Do NOT restart the title. Pick up EXACTLY where you stopped and keep writing ONLY Part '+partNum+'.\n';
+p+='Do NOT add diagrams, flowcharts, ASCII art, box-drawing characters, or arrow-chain visuals -- prose paragraphs only.\n\n';
 p+='LAST FOUR HUNDRED CHARACTERS OF YOUR DRAFT:\n"...'+String(existing||'').slice(-400)+'"\n\nCONTINUE IMMEDIATELY:';
 return p;
 }
@@ -4416,6 +4461,7 @@ p+='- No [Thinking] or [Internal reasoning] bracket blocks.\n';
 p+='- ABSOLUTELY NO BRACKET TAGS OF ANY KIND. No [pause], [angry], [laughs], [whispers], [scoffs], [sighs], [booming], [dramatic tone], or ANY text inside square brackets that acts as a stage direction, emotion cue, or sound effect. Square brackets are ONLY permitted for actual content like [citation] references. If you include even ONE bracket stage direction tag, the ENTIRE output is ruined. This is a written document, not a voice script.\n';
 p+='- No "Thinking..." or "Analyzing..." or "Let me consider..." preambles.\n';
 p+='- Do NOT mention word counts anywhere in the sermon. No "approximately 2,000 words" or "word count" or "I will write X words" or anything about length targets. The word count instruction is for YOUR guidance only -- it must NEVER appear in the output text.\n';
+p+='- NO DIAGRAMS, FLOWCHARTS, OR ASCII ART (ZERO TOLERANCE): This is spoken-word prose for preaching -- NOT a textbook, whiteboard, or engineering manual. Do NOT output ASCII diagrams, box-and-arrow flowcharts, circuit schematics, tree charts, timeline graphics, mermaid, or code-fenced visual layouts. Do NOT use Unicode box-drawing characters (──, │, ▼, ►, etc.) or arrow chains to illustrate concepts. Do NOT wrap concepts in bracketed diagram titles like [ THE CIRCUIT OF ... ]. Explain every idea in plain paragraphs and sentences only. If you feel the urge to draw it, DESCRIBE it in words instead.\n';
 p+='- Your VERY FIRST output must be the # title line, then '+openingInstruction+'. Nothing before the title. Zero preamble.\n';
 return p;
 }
