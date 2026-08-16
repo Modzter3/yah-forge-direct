@@ -2255,9 +2255,18 @@ if(totalParts>1){
 p+='- ONE ACT ONLY: Write ONLY Act '+partNum+' of '+totalParts+'. Do NOT write Act '+(partNum+1)+', do NOT write "PART '+(partNum+1)+'", do NOT preview the next act.\n';
 }
 p+='\nCASTING (MANDATORY):\n';
+if(currentNewsContext&&currentNewsContext.length>0&&currentNewsContext[0].source_url){
+p+='- Follow the ANCHOR NEWS ARTICLE cast list below — names, CURRENT verified titles, and rules are specified there.\n';
+if(currentNewsContext[0].cast_mode==='ultra_elite'){
+p+='- ULTRA ELITE MODE: speakers are DYNASTIC FAMILIES ONLY (cream of the crop). Their private bloodline POV — not middle management, not outdated titles, not public PR voice.\n';
+}else{
+p+='- Use CURRENT titles as of 2026 for every speaker. Never use outdated roles.\n';
+}
+}else{
 p+='- Identify the ONE sector this topic belongs to (corporate, health/pharma, finance, surveillance/tech, government, media, military, religion, etc.).\n';
-p+='- Cast 3-5 people genuinely prominent in THAT sector -- CEOs, regulators, foundation heads, agency directors, policy architects. Real names and titles.\n';
+p+='- Cast 3-5 people genuinely prominent in THAT sector -- CEOs, regulators, foundation heads, agency directors, policy architects. Real names and CURRENT titles (verify via web search if needed).\n';
 p+='- Distinct voices: financier, enforcer, public face, technocrat, ideologue.\n';
+}
 p+='\nSCENE ENGINE:\n';
 p+='- The TOPIC on the table: "'+title+'" -- '+desc+'\n';
 p+='- Show HOW this policy mindset gets engineered: who benefits, who gets crushed, public lie vs private admission.\n';
