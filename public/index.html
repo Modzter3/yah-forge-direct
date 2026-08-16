@@ -2318,13 +2318,10 @@ p+='\nBEHIND THE VEIL -- NEWS TRIGGER (MANDATORY):\n';
 if(currentNewsContext&&currentNewsContext.length>0&&currentNewsContext[0].source_url){
 p+=buildNewsArticleVeilBlock(currentNewsContext);
 }else{
-if(ultraElite){
-p+=buildUltraEliteTheatreCastBlock(topic);
-}
 p+=buildWebResearchPromptBlock(topic,{partNum:partNum,totalParts:totalParts,wantEpisodeMode:false,chapterSrc:null,wantStoryMode:false,wantBezStoryBreakdown:false,currentMode:currentMode});
 p+='- AFTER internal news research: open or anchor this act on a REAL recent headline tied to "'+title+'". The meeting dramatizes HOW that headline was produced -- who signed off, who profits, what they call the public in private.\n';
 if(ultraElite){
-p+='- The speakers at the table are DYNASTIC ELITE (see CASTING) — they discuss the headline as bloodline power, not as corporate middle management.\n';
+p+='- Speakers are DYNASTIC ELITE (see CASTING above) — bloodline power discussing the headline, not corporate middle management.\n';
 }
 }
 p+='- Do NOT read news like a anchor. The headline is the HOOK; the room is the reveal.\n';
