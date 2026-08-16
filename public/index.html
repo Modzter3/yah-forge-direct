@@ -509,7 +509,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     </div>
     <div class="custom-forge-inner veil-url-inner">
       <i class="fas fa-door-closed custom-forge-icon"></i>
-      <input type="url" id="veilNewsUrlInput" placeholder="Paste news article URL → auto Behind the Veil script with real players..." class="custom-forge-input" style="min-height:42px;resize:none;" onkeydown="if(event.key==='Enter'){event.preventDefault();forgeNewsUrlBehindTheVeil();}">
+      <input type="url" id="veilNewsUrlInput" placeholder="Paste news article URL → load cast for Behind the Veil (pick model, then Generate)..." class="custom-forge-input" style="min-height:42px;resize:none;" onkeydown="if(event.key==='Enter'){event.preventDefault();forgeNewsUrlBehindTheVeil();}">
       <button class="custom-forge-btn veil-forge-btn" id="veilForgeBtn" onclick="forgeNewsUrlBehindTheVeil()"><i class="fas fa-mask"></i> Veil Forge</button>
     </div>
   </div>
@@ -822,7 +822,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="news-search-bar">
       <div class="search-box" style="flex:1 1 100%;">
         <i class="fas fa-link"></i>
-        <input type="url" id="newsVeilUrlInput" placeholder="Paste article URL → auto Behind the Veil boardroom script with prominent players..." onkeydown="if(event.key==='Enter'){event.preventDefault();forgeNewsUrlBehindTheVeil(document.getElementById('newsVeilUrlInput').value);}">
+        <input type="url" id="newsVeilUrlInput" placeholder="Paste article URL → load Behind the Veil cast (pick model, then Generate)..." onkeydown="if(event.key==='Enter'){event.preventDefault();forgeNewsUrlBehindTheVeil(document.getElementById('newsVeilUrlInput').value);}">
       </div>
       <button class="news-scan-btn veil-forge-btn" id="newsVeilForgeBtn" onclick="forgeNewsUrlBehindTheVeil(document.getElementById('newsVeilUrlInput').value)" style="flex:0 0 auto;white-space:nowrap;"><i class="fas fa-door-closed"></i> Veil Forge URL</button>
     </div>
@@ -6116,7 +6116,7 @@ window.Poe.sendUserMessage('@'+model+' '+buildNewsUrlVeilFetchPrompt(url),{handl
 if(!handled){handled=true;callback(String(err),null);}
 });
 }
-function applyVeilArticleAndGenerate(article,url){
+function applyVeilArticleLoaded(article,url){
 var title=article.policy_topic||article.headline||'Behind the Veil';
 var desc='Closed-door dramatization of: '+article.headline;
 if(article.summary)desc+=' -- '+article.summary.substring(0,280);
@@ -6134,16 +6134,29 @@ titleEl.innerHTML=escapeHtml(currentTopic.title)+(' <span class="mode-badge" sty
 }
 if(descEl)descEl.textContent=currentTopic.desc;
 var playerCount=(article.key_players?article.key_players.length:0)+(article.boardroom_cast_suggestions?article.boardroom_cast_suggestions.length:0);
+var castLines='';
+if(article.key_players&&article.key_players.length){
+for(var i=0;i<article.key_players.length;i++){
+var pl=article.key_players[i];
+if(!pl||!pl.name)continue;
+castLines+='• '+escapeHtml(pl.name)+(pl.title?(' — '+escapeHtml(pl.title)):'')+'<br>';
+}
+}
 var output=document.getElementById('sermonOutput');
 if(output){
 output.innerHTML='<div class="verse-confirm-box">'
-+'<div class="vc-title"><i class="fas fa-check-circle" style="margin-right:6px;"></i>Article Loaded -- Cast Identified</div>'
++'<div class="vc-title"><i class="fas fa-check-circle" style="margin-right:6px;"></i>Article Loaded — Cast Identified</div>'
 +'<div class="vc-count">'+escapeHtml(article.headline)+'</div>'
-+'<div class="vc-detail">'+(article.source?escapeHtml(article.source)+' · ':'')+playerCount+' prominent player'+(playerCount!==1?'s':'')+' mapped for the boardroom.<br>Behind the Veil is ON. Forging script now...</div>'
-+'</div>';
++'<div class="vc-detail">'+(article.source?escapeHtml(article.source)+' · ':'')+playerCount+' prominent player'+(playerCount!==1?'s':'')+' mapped for the boardroom.'
++(castLines?('<br><br><strong>In the article:</strong><br>'+castLines):'')
++'<br><br>Pick your <strong>model</strong>, adjust options if you want, then hit <strong>Generate</strong> — or use the button below.</div>'
++'<div class="vc-actions">'
++'<button class="vc-btn confirm" onclick="this.closest(\'.verse-confirm-box\').style.opacity=\'0.4\';generateSermon();"><i class="fas fa-bolt" style="margin-right:4px;"></i>Looks Good — Forge It</button>'
++'<button class="vc-btn cancel" onclick="cancelSermonGeneration()"><i class="fas fa-times" style="margin-right:4px;"></i>Cancel</button>'
++'</div></div>';
 }
-document.getElementById('generateBtn').disabled=true;
-setTimeout(function(){generateSermon();},400);
+var genBtn=document.getElementById('generateBtn');
+if(genBtn)genBtn.disabled=false;
 }
 function forgeNewsUrlBehindTheVeil(urlInput){
 if(isGenerating){showToast('Already generating -- wait or cancel first.');return;}
@@ -6180,7 +6193,7 @@ document.getElementById('generateBtn').disabled=false;
 currentNewsVeilFromUrl=false;
 return;
 }
-applyVeilArticleAndGenerate(article,url);
+applyVeilArticleLoaded(article,url);
 });
 }
 function forgeNewsSermonAll(){
