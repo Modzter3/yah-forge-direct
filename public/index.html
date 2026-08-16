@@ -980,6 +980,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch" id="toggleSermonEpisodeModeWrap" title="TV season episode-by-episode breakdown across parts"><input type="checkbox" id="toggleSermonEpisodeMode"><span class="toggle-track"></span><span><i class="fas fa-tv" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Episode Mode</span></label>
       <label class="toggle-switch" title="Live web search: verify facts, find recent news, weave headlines into the sermon (silent — no URLs in output)"><input type="checkbox" id="toggleWebResearch" checked><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
       <label class="toggle-switch" id="toggleBehindTheVeilWrap" title="News-triggered closed-door drama: real headlines → dramatized meeting where sector elites plot the beast-system policy (prophetic illustration, not leaked intel)"><input type="checkbox" id="toggleBehindTheVeil"><span class="toggle-track" style="background:linear-gradient(135deg,#4a1a6a,#8B1A1A);"></span><span><i class="fas fa-door-closed" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Behind the Veil</span></label>
+      <label class="toggle-switch" id="toggleModalVeilUltraEliteWrap" style="display:none;" title="Dynastic families — cream of the crop who truly run the world (current titles, private POV only)"><input type="checkbox" id="toggleModalVeilUltraElite" onchange="syncVeilUltraEliteToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#4a1a6a,#2a1810);"></span><span><i class="fas fa-crown" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Ultra Elite</span></label>
       <label class="toggle-switch" id="togglePureTheatreWrap" title="Pure closed-door theatre: prominent figures in this sector speak freely with no cameras — policy mechanics, contempt, deals (no mandatory news weave)"><input type="checkbox" id="togglePureTheatre"><span class="toggle-track" style="background:linear-gradient(135deg,#2a2a35,#6A1B9A);"></span><span><i class="fas fa-masks-theater" style="color:#D4A017;margin-right:3px;font-size:0.7rem;"></i>Pure Theatre</span></label>
       <div class="model-select-wrap" id="theatreCommentaryWrap" style="display:none;flex:1 1 100%;">
         <label><i class="fas fa-pause-circle" style="color:#c9a227;margin-right:3px;"></i> Scene guide:</label>
@@ -2053,16 +2054,49 @@ return m?m[0].replace(/[.,;:!?)]+$/,''):'';
 function syncVeilUltraEliteToggles(){
 var a=document.getElementById('toggleVeilUltraElite');
 var b=document.getElementById('toggleNewsVeilUltraElite');
-if(!a||!b)return;
-if(document.activeElement===a)b.checked=a.checked;
-else if(document.activeElement===b)a.checked=b.checked;
+var c=document.getElementById('toggleModalVeilUltraElite');
+var on=false;
+if(a&&a.checked)on=true;
+if(b&&b.checked)on=true;
+if(c&&c.checked)on=true;
+if(a)a.checked=on;
+if(b)b.checked=on;
+if(c)c.checked=on;
 }
 function isVeilUltraEliteCastRequested(){
 syncVeilUltraEliteToggles();
 var cb=document.getElementById('toggleVeilUltraElite');
-if(cb&&cb.checked)return true;
+var cb2=document.getElementById('toggleNewsVeilUltraElite');
+var cb3=document.getElementById('toggleModalVeilUltraElite');
+if((cb&&cb.checked)||(cb2&&cb2.checked)||(cb3&&cb3.checked))return true;
 var hint=((document.getElementById('veilCastHint')||{}).value||'')+' '+((document.getElementById('newsVeilCastHint')||{}).value||'');
-return /\b(ultra\s*elite|cream\s+of\s+the\s+crop|dynastic|old\s+money|truly\s+wealthy|generational\s+wealth|bloodline\s+elite|world\s+behind|prominent\s+families|who\s+truly\s+run)\b/i.test(hint);
+if(/\b(ultra\s*elite|cream\s+of\s+the\s+crop|dynastic|old\s+money|truly\s+wealthy|generational\s+wealth|bloodline\s+elite|world\s+behind|prominent\s+families|who\s+truly\s+run)\b/i.test(hint))return true;
+if(currentTopic){
+var raw=((currentTopic.title||'')+' '+(currentTopic.desc||'')).toLowerCase();
+if(/\b(ultra\s*elite|cream\s+of\s+the\s+crop|dynastic\s+famil|old\s+money|truly\s+wealthy|generational\s+wealth|bloodline\s+elite|prominent\s+families)\b/i.test(raw))return true;
+}
+return false;
+}
+function buildUltraEliteTheatreCastBlock(topic){
+var title=topic?topic.title:'this topic';
+var desc=topic?topic.desc:'';
+var p='*** ULTRA ELITE CAST MODE — DYNASTIC FAMILIES ONLY (ZERO TOLERANCE) ***\n';
+p+='The user wants the CREAM OF THE CROP — generational dynastic elite who truly run the world behind "'+title+'" — NOT mid-level CEOs, pundits, former officials, lobbyists, or public-facing middle management.\n\n';
+p+='TITLE VERIFICATION (MANDATORY — August 2026):\n';
+p+='Before casting anyone, use web search INTERNALLY for each name: "[Full Name] current position title 2026".\n';
+p+='Use ONLY their CURRENT verified role. Never use outdated titles from memory. Omit deceased persons.\n';
+p+='On first appearance: FULL NAME — CURRENT TITLE [as of 2026].\n\n';
+p+='WHO BELONGS AT THIS TABLE:\n';
+p+='- 3-5 speakers from DYNASTIC POWER FAMILIES whose bloodlines control the sector this topic touches (finance, pharma, tech, media, energy, government, military-industrial, etc.).\n';
+p+='- Real family names where verifiable: Rockefeller, Rothschild, Windsor, Saud, Walton, Mars, Koch, Arnault, Agnelli, etc. — ONLY living representatives with verified current roles.\n';
+p+='- Each speaker represents GENERATIONAL WEALTH and bloodline continuity — not hired CEOs who can be fired tomorrow.\n\n';
+p+='VOICE AND POV (MANDATORY):\n';
+p+='- Dialogue is their PRIVATE worldview only — what they say when cameras are off.\n';
+p+='- Old money calculus: populations as assets, demographics, headcount, legacy populations, externalities, bloodline preservation.\n';
+p+='- They discuss "'+title+'" as dynasts protecting dynastic interest — not corporate PR.\n';
+if(desc)p+='- Topic context: '+desc+'\n';
+p+='- Do NOT cast random sector CEOs unless they ARE dynastic elite. No pundits. No former officials unless still verifiably powerful as family representatives.\n\n';
+return p;
 }
 function buildNewsUrlVeilFetchPrompt(url,opts){
 opts=opts||{};
@@ -2240,7 +2274,11 @@ p+='OUTPUT FORMAT -- PLAY SCRIPT ONLY:\n';
 p+='- Your FIRST line must be exactly: *Dramatization for prophetic illustration -- not a claim of factual record or leaked dialogue.*\n';
 p+='- Second line: # '+title+(totalParts>1?' -- Act '+partNum:'')+'\n';
 p+='- Then stage directions in [brackets] and dialogue as CHARACTER NAME: lines.\n';
-p+='- Cast REAL prominent figures in that sector (full name + title). They speak WITHOUT public restraint.\n';
+if(isVeilUltraEliteCastRequested()){
+p+='- Cast DYNASTIC ELITE ONLY — generational family power with CURRENT verified titles (see CASTING block).\n';
+}else{
+p+='- Cast REAL prominent figures in that sector (full name + CURRENT title). They speak WITHOUT public restraint.\n';
+}
 if(commentaryVoice==='off'){
 p+='- NO narrator voice in the room. NO Yah. NO Brother Bet breaking the scene. Boardroom dialogue only.\n';
 }else{
@@ -2255,13 +2293,17 @@ if(totalParts>1){
 p+='- ONE ACT ONLY: Write ONLY Act '+partNum+' of '+totalParts+'. Do NOT write Act '+(partNum+1)+', do NOT write "PART '+(partNum+1)+'", do NOT preview the next act.\n';
 }
 p+='\nCASTING (MANDATORY):\n';
-if(currentNewsContext&&currentNewsContext.length>0&&currentNewsContext[0].source_url){
+var ultraElite=isVeilUltraEliteCastRequested()||(currentNewsContext&&currentNewsContext[0]&&currentNewsContext[0].cast_mode==='ultra_elite');
+var hasArticleUrl=currentNewsContext&&currentNewsContext.length>0&&currentNewsContext[0].source_url;
+if(hasArticleUrl){
 p+='- Follow the ANCHOR NEWS ARTICLE cast list below — names, CURRENT verified titles, and rules are specified there.\n';
-if(currentNewsContext[0].cast_mode==='ultra_elite'){
+if(ultraElite){
 p+='- ULTRA ELITE MODE: speakers are DYNASTIC FAMILIES ONLY (cream of the crop). Their private bloodline POV — not middle management, not outdated titles, not public PR voice.\n';
 }else{
 p+='- Use CURRENT titles as of 2026 for every speaker. Never use outdated roles.\n';
 }
+}else if(ultraElite){
+p+=buildUltraEliteTheatreCastBlock(topic);
 }else{
 p+='- Identify the ONE sector this topic belongs to (corporate, health/pharma, finance, surveillance/tech, government, media, military, religion, etc.).\n';
 p+='- Cast 3-5 people genuinely prominent in THAT sector -- CEOs, regulators, foundation heads, agency directors, policy architects. Real names and CURRENT titles (verify via web search if needed).\n';
@@ -2276,8 +2318,14 @@ p+='\nBEHIND THE VEIL -- NEWS TRIGGER (MANDATORY):\n';
 if(currentNewsContext&&currentNewsContext.length>0&&currentNewsContext[0].source_url){
 p+=buildNewsArticleVeilBlock(currentNewsContext);
 }else{
+if(ultraElite){
+p+=buildUltraEliteTheatreCastBlock(topic);
+}
 p+=buildWebResearchPromptBlock(topic,{partNum:partNum,totalParts:totalParts,wantEpisodeMode:false,chapterSrc:null,wantStoryMode:false,wantBezStoryBreakdown:false,currentMode:currentMode});
 p+='- AFTER internal news research: open or anchor this act on a REAL recent headline tied to "'+title+'". The meeting dramatizes HOW that headline was produced -- who signed off, who profits, what they call the public in private.\n';
+if(ultraElite){
+p+='- The speakers at the table are DYNASTIC ELITE (see CASTING) — they discuss the headline as bloodline power, not as corporate middle management.\n';
+}
 }
 p+='- Do NOT read news like a anchor. The headline is the HOOK; the room is the reveal.\n';
 p+='- No URLs, no outlet bibliography in the script.\n';
@@ -2285,7 +2333,11 @@ p+='- No URLs, no outlet bibliography in the script.\n';
 p+='\nPURE THEATRE -- NO MANDATORY NEWS:\n';
 p+='- No headline required. This is the meeting that WOULD happen for this policy whether or not it made tonight\'s feed.\n';
 p+='- Optional: brief reference to current events only if it sharpens the scene -- never a news recap.\n';
+if(ultraElite){
+p+='- ULTRA ELITE: dynastic family boardroom only — see CASTING block. Private bloodline POV on "'+title+'".\n';
+}else{
 p+='- Focus on sector power players talking freely: implementation timelines, enforcement, public messaging vs private intent, who gets exempted, who gets sacrificed.\n';
+}
 }
 if(commentaryVoice!=='off'){
 p+=buildTheatreCommentaryBlock(commentaryVoice,topic,{wantRoughBez:wantRoughBez,wantExplicit:wantExplicit});
@@ -7181,13 +7233,20 @@ var story=document.getElementById('toggleStoryMode');
 var bezStory=document.getElementById('toggleBezStoryMode');
 var episode=document.getElementById('toggleSermonEpisodeMode');
 var commentaryWrap=document.getElementById('theatreCommentaryWrap');
+var ultraEliteWrap=document.getElementById('toggleModalVeilUltraEliteWrap');
 if(!veil&&!pure)return;
 if(veil&&veil.checked&&pure&&pure.checked){
 if(document.activeElement===pure)pure.checked=false;
 else veil.checked=false;
 }
 var theatreOn=(veil&&veil.checked)||(pure&&pure.checked);
+var veilOn=veil&&veil.checked;
 if(commentaryWrap)commentaryWrap.style.display=theatreOn?'flex':'none';
+if(ultraEliteWrap)ultraEliteWrap.style.display=veilOn?'inline-flex':'none';
+if(!veilOn){
+var modalUltra=document.getElementById('toggleModalVeilUltraElite');
+if(modalUltra)modalUltra.checked=false;
+}
 if(!theatreOn){
 var cv=document.getElementById('theatreCommentaryVoice');
 if(cv)cv.value='off';
