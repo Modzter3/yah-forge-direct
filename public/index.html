@@ -96,6 +96,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .custom-forge-btn{padding:10px 18px;background:linear-gradient(135deg,var(--crimson),var(--crimson-glow));border:none;border-radius:8px;color:#fff;font-family:'Cinzel Decorative',serif;font-size:0.82rem;font-weight:700;cursor:pointer;transition:all 0.25s;letter-spacing:0.04em;white-space:nowrap;display:flex;align-items:center;gap:6px;}
 .custom-forge-btn:hover{transform:scale(1.04);box-shadow:0 4px 20px rgba(196,30,58,0.3);}
 .custom-forge-btn i{font-size:0.8rem;}
+.veil-url-inner{background:linear-gradient(135deg,rgba(74,26,106,0.12) 0%,rgba(139,26,26,0.08) 100%);border-color:rgba(201,162,39,0.35);margin-top:8px;}
+.veil-url-inner .custom-forge-icon{color:#c9a227;}
+.veil-forge-btn{background:linear-gradient(135deg,#4a1a6a,#8B1A1A);}
+.veil-forge-btn:hover{box-shadow:0 4px 20px rgba(74,26,106,0.35);}
 
 /* DISMANTLE PANEL */
 .dismantle-wrap{padding:16px;}
@@ -503,6 +507,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <textarea id="customTopicInput" rows="1" placeholder="Enter a topic — or paste scripture with verses (line by line, in order)..." class="custom-forge-input"></textarea>
       <button class="custom-forge-btn" id="customForgeBtn" onclick="forgeCustomTopic()"><i class="fas fa-fire"></i> Forge</button>
     </div>
+    <div class="custom-forge-inner veil-url-inner">
+      <i class="fas fa-door-closed custom-forge-icon"></i>
+      <input type="url" id="veilNewsUrlInput" placeholder="Paste news article URL → auto Behind the Veil script with real players..." class="custom-forge-input" style="min-height:42px;resize:none;" onkeydown="if(event.key==='Enter'){event.preventDefault();forgeNewsUrlBehindTheVeil();}">
+      <button class="custom-forge-btn veil-forge-btn" id="veilForgeBtn" onclick="forgeNewsUrlBehindTheVeil()"><i class="fas fa-mask"></i> Veil Forge</button>
+    </div>
   </div>
   <div class="controls-bar">
     <div class="search-box"><i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="Filter preset topics..."></div>
@@ -809,6 +818,13 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <button class="news-cat-btn bonus" onclick="setNewsCat('space',this)">Space &amp; Firmament</button>
       <button class="news-cat-btn bonus" onclick="setNewsCat('food',this)">Food &amp; Water</button>
       <button class="news-cat-btn bonus" onclick="setNewsCat('culture',this)">Culture &amp; Entertainment</button>
+    </div>
+    <div class="news-search-bar">
+      <div class="search-box" style="flex:1 1 100%;">
+        <i class="fas fa-link"></i>
+        <input type="url" id="newsVeilUrlInput" placeholder="Paste article URL → auto Behind the Veil boardroom script with prominent players..." onkeydown="if(event.key==='Enter'){event.preventDefault();forgeNewsUrlBehindTheVeil(document.getElementById('newsVeilUrlInput').value);}">
+      </div>
+      <button class="news-scan-btn veil-forge-btn" id="newsVeilForgeBtn" onclick="forgeNewsUrlBehindTheVeil(document.getElementById('newsVeilUrlInput').value)" style="flex:0 0 auto;white-space:nowrap;"><i class="fas fa-door-closed"></i> Veil Forge URL</button>
     </div>
     <div class="news-search-bar">
       <div class="search-box" style="flex:1 1 100%;">
@@ -1349,6 +1365,8 @@ var selectedPartCount=5;
 var currentChapterText=null;
 var currentChapterVerseCount=0;
 var currentNewsContext=null;
+var currentNewsVeilFromUrl=false;
+var lastVeilNewsUrl='';
 var currentThreadsContext=null;
 var sermonNewsAnglePlan=null;
 var sermonNewsLedger=[];
@@ -2002,6 +2020,109 @@ p+='- Decode THIS meeting only. No unrelated tangents.\n';
 p+='- Optional: one short scripture strike inside a pause if it lands the point -- woven in plain speech, not a lesson.\n\n';
 return p;
 }
+function isNewsArticleUrl(text){
+if(!text)return false;
+var t=String(text).trim();
+return /^https?:\/\/[^\s]+/i.test(t);
+}
+function normalizeNewsArticleUrl(text){
+var t=String(text||'').trim();
+var m=t.match(/https?:\/\/[^\s<>"']+/i);
+return m?m[0].replace(/[.,;:!?)]+$/,''):'';
+}
+function buildNewsUrlVeilFetchPrompt(url){
+var p='*** MANDATORY: READ THIS EXACT ARTICLE URL ***\n';
+p+='Use web search / browsing to open and read the FULL article at:\n'+url+'\n\n';
+p+='Extract facts from the REAL published article only. Do NOT invent quotes, statistics, or people not in the story.\n';
+p+='Identify every prominently named person and the sector power structure this story touches.\n\n';
+p+='RESPOND WITH ONLY ONE JSON OBJECT. No markdown fences. No commentary before or after.\n';
+p+='{\n';
+p+='  "headline": "exact or best-match headline",\n';
+p+='  "summary": "4-6 sentence factual summary of what the article reports",\n';
+p+='  "source": "outlet name",\n';
+p+='  "date": "publication date if known, else empty string",\n';
+p+='  "sector": "corporate|health_pharma|finance|surveillance_tech|government|media|military|religion|other",\n';
+p+='  "policy_topic": "short title for the closed-door meeting about this story",\n';
+p+='  "veil_agenda": "what elites would discuss in private about this headline",\n';
+p+='  "key_players": [{"name":"Full Name","title":"Role/Title","role_in_story":"how they appear in the article"}],\n';
+p+='  "affected_parties": ["groups or communities harmed, targeted, or impacted"],\n';
+p+='  "boardroom_cast_suggestions": [{"name":"Full Name","title":"Real title","why_in_room":"why this prominent figure would be at the table"}]\n';
+p+='}\n';
+p+='key_players: include EVERY person prominently named in the article (officials, CEOs, spokespeople, named victims, lawmakers). Minimum 3 when the article provides them.\n';
+p+='boardroom_cast_suggestions: 2-4 ADDITIONAL real prominent sector power players (full name + title) who would plausibly be in the room for this policy even if not named in the article.\n';
+return p;
+}
+function parseNewsVeilArticleJson(raw,url){
+var cleaned=String(raw||'').trim();
+cleaned=cleaned.replace(/^```(?:json)?\s*/i,'').replace(/\s*```\s*$/,'');
+var start=cleaned.indexOf('{');
+var end=cleaned.lastIndexOf('}');
+if(start===-1||end<=start)return null;
+var chunk=cleaned.substring(start,end+1);
+var obj=null;
+try{obj=JSON.parse(chunk);}catch(e1){
+try{obj=JSON.parse(repairJSON(chunk));}catch(e2){return null;}
+}
+if(!obj||typeof obj!=='object')return null;
+var headline=String(obj.headline||obj.title||'').trim();
+var summary=String(obj.summary||obj.description||'').trim();
+if(!headline&&summary)headline=summary.substring(0,120)+(summary.length>120?'…':'');
+if(!headline)headline='News Article';
+obj.headline=headline;
+obj.summary=summary||headline;
+obj.source=String(obj.source||'').trim();
+obj.source_url=url;
+obj.date=String(obj.date||'').trim();
+obj.sector=String(obj.sector||'other').trim();
+obj.policy_topic=String(obj.policy_topic||headline).trim();
+obj.veil_agenda=String(obj.veil_agenda||'').trim();
+if(!Array.isArray(obj.key_players))obj.key_players=[];
+if(!Array.isArray(obj.affected_parties))obj.affected_parties=[];
+if(!Array.isArray(obj.boardroom_cast_suggestions))obj.boardroom_cast_suggestions=[];
+return obj;
+}
+function buildNewsArticleVeilBlock(articles){
+if(!articles||!articles.length)return '';
+var art=articles[0];
+var p='\nANCHOR NEWS ARTICLE -- BEHIND THE VEIL TRIGGER (MANDATORY):\n';
+p+='This script is anchored on ONE real news article the user supplied. The boardroom dramatizes HOW this headline was produced -- who signed off, who profits, what they admit when cameras are off.\n\n';
+p+='HEADLINE: '+art.headline+'\n';
+if(art.source)p+='SOURCE: '+art.source+'\n';
+if(art.date)p+='DATE: '+art.date+'\n';
+if(art.source_url)p+='ARTICLE URL (already read -- do NOT paste URL in output): '+art.source_url+'\n';
+p+='SUMMARY: '+art.summary+'\n';
+if(art.sector)p+='SECTOR: '+art.sector.replace(/_/g,' ')+'\n';
+if(art.policy_topic)p+='MEETING TOPIC ON THE TABLE: '+art.policy_topic+'\n';
+if(art.veil_agenda)p+='PRIVATE AGENDA (what this room is really about): '+art.veil_agenda+'\n';
+if(art.affected_parties&&art.affected_parties.length){
+p+='WHO THIS STORY AFFECTS (must appear in their private contempt or calculus): '+art.affected_parties.join('; ')+'\n';
+}
+if(art.key_players&&art.key_players.length){
+p+='\nPEOPLE NAMED IN THE ARTICLE (MUST appear in the cast):\n';
+for(var i=0;i<art.key_players.length;i++){
+var pl=art.key_players[i];
+if(!pl||!pl.name)continue;
+p+='- '+pl.name+(pl.title?(' -- '+pl.title):'')+(pl.role_in_story?(': '+pl.role_in_story):'')+'\n';
+}
+}
+if(art.boardroom_cast_suggestions&&art.boardroom_cast_suggestions.length){
+p+='\nADDITIONAL PROMINENT PLAYERS TO CAST (real names -- sector power at the table):\n';
+for(var j=0;j<art.boardroom_cast_suggestions.length;j++){
+var sug=art.boardroom_cast_suggestions[j];
+if(!sug||!sug.name)continue;
+p+='- '+sug.name+(sug.title?(' -- '+sug.title):'')+(sug.why_in_room?(': '+sug.why_in_room):'')+'\n';
+}
+}
+p+='\nCASTING RULES FOR THIS ARTICLE (ZERO TOLERANCE):\n';
+p+='- At least 3 people from the article MUST speak at the table (full name + title on first appearance).\n';
+p+='- Fill the room with 3-5 total speakers using article names PLUS suggested sector power players.\n';
+p+='- Distinct voices: financier, enforcer, public face, technocrat, ideologue -- whoever fits THIS story.\n';
+p+='- The meeting opens anchored on THIS headline -- not a generic policy lecture. They reference the story, the rollout, the PR cover, who gets sacrificed.\n';
+p+='- affected_parties are how they talk about the public in private -- legacy populations, demographics, headcount, "externalities."\n';
+p+='- Do NOT read the article like a news anchor. The headline is the HOOK; the room is the REVEAL.\n';
+p+='- No URLs, no outlet bibliography in the script.\n\n';
+return p;
+}
 function buildClosedDoorTheatrePrompt(partNum,opts){
 opts=opts||{};
 var topic=opts.topic||currentTopic;
@@ -2059,8 +2180,12 @@ p+='- Show HOW this policy mindset gets engineered: who benefits, who gets crush
 p+='- Beast-system framing is atmospheric -- they ARE the machine talking to itself. Israel/scattered Negroes may appear only as "legacy populations" or "demographic problem" in THEIR mouths.\n';
 if(wantBehind){
 p+='\nBEHIND THE VEIL -- NEWS TRIGGER (MANDATORY):\n';
+if(currentNewsContext&&currentNewsContext.length>0&&currentNewsContext[0].source_url){
+p+=buildNewsArticleVeilBlock(currentNewsContext);
+}else{
 p+=buildWebResearchPromptBlock(topic,{partNum:partNum,totalParts:totalParts,wantEpisodeMode:false,chapterSrc:null,wantStoryMode:false,wantBezStoryBreakdown:false,currentMode:currentMode});
 p+='- AFTER internal news research: open or anchor this act on a REAL recent headline tied to "'+title+'". The meeting dramatizes HOW that headline was produced -- who signed off, who profits, what they call the public in private.\n';
+}
 p+='- Do NOT read news like a anchor. The headline is the HOOK; the room is the reveal.\n';
 p+='- No URLs, no outlet bibliography in the script.\n';
 }else{
@@ -2386,6 +2511,11 @@ function forgeCustomTopic(){
 var input=document.getElementById('customTopicInput');
 var raw=input.value.trim();
 if(!raw){showToast('Type a topic first -- anything you want a sermon on.');return;}
+if(isNewsArticleUrl(raw)){
+forgeNewsUrlBehindTheVeil(raw);
+return;
+}
+currentNewsVeilFromUrl=false;
 var parsed=parseCustomScriptureInput(raw);
 if(parsed.isScripture){
 currentTopic={id:-1,cat:'doctrine',title:parsed.title,desc:'Custom scripture sermon: '+parsed.title};
@@ -2402,7 +2532,8 @@ currentChapterVerseCount=0;
 }
 openModal();
 }
-function openModal(){
+function openModal(opts){
+opts=opts||{};
 var titleEl=document.getElementById('modalTitle');
 var descEl=document.getElementById('modalDesc');
 titleEl.innerHTML=escapeHtml(currentTopic.title);
@@ -2411,7 +2542,11 @@ titleEl.innerHTML+=(' <span class="mode-badge" style="background:rgba(74,124,155
 }else if(currentMode==='apocrypha'){
 titleEl.innerHTML+=(' <span class="mode-badge" style="background:rgba(156,39,176,0.15);color:var(--music-purple);">APOCRYPHA</span>');
 }else if(currentMode==='news'){
+if(currentNewsVeilFromUrl){
+titleEl.innerHTML+=(' <span class="mode-badge" style="background:rgba(74,26,106,0.2);color:#c9a227;"><i class="fas fa-door-closed" style="margin-right:4px;font-size:0.65em;"></i>BEHIND THE VEIL</span>');
+}else{
 titleEl.innerHTML+=(' <span class="mode-badge" style="background:rgba(220,38,38,0.15);color:#ef4444;">NEWS</span>');
+}
 }else if(currentMode==='threads'){
 titleEl.innerHTML+=(' <span class="mode-badge" style="background:rgba(139,26,26,0.15);color:var(--crimson-glow);">HIDDEN THREADS</span>');
 }else if(currentMode==='sealed'){
@@ -2424,7 +2559,9 @@ titleEl.innerHTML+=(' <span class="mode-badge" style="background:rgba(212,160,23
 }
 }
 descEl.textContent=currentTopic.desc;
+if(!opts.preserveOutput){
 document.getElementById('sermonOutput').innerHTML='<div class="sermon-placeholder"><i class="fas fa-fire-flame-curved"></i>Configure options, choose your part count, then hit Generate to forge the sermon.</div>';
+}
 document.getElementById('seriesProgress').style.display='none';
 document.getElementById('sermonActions').style.display='none';
 document.getElementById('outputMusic').innerHTML='';
@@ -2434,8 +2571,8 @@ document.getElementById('outputLyrics').innerHTML='';
 // Reset hidden threads
 var htWrap=document.getElementById('hiddenThreads');
 if(htWrap){htWrap.classList.remove('visible');document.getElementById('hiddenThreadsBody').innerHTML='<div class="ht-loading"><div class="ht-loading-anim"></div><div class="ht-loading-text">Unearthing buried threads...</div></div>';}
-document.getElementById('generateBtn').disabled=false;
-updatePartRecommendation();
+if(!opts.disableGenerateBtn)document.getElementById('generateBtn').disabled=false;
+if(!opts.skipPartRec)updatePartRecommendation();
 var epToggle=document.getElementById('toggleSermonEpisodeMode');
 if(epToggle&&looksLikeTvSeason(currentTopic))epToggle.checked=true;
 syncEpisodeModeToggles();
@@ -2460,6 +2597,7 @@ sermonSavedThisSession=true;
 }
 document.getElementById('sermonModal').classList.remove('open');
 document.body.style.overflow='';
+currentNewsVeilFromUrl=false;
 }
 function buildCombinedText(){
 return buildCombinedTextFromParts(sermonPartsRaw,sermonPartsTitles);
@@ -2910,6 +3048,7 @@ sermonGenCtx=null;
 isGenerating=false;
 currentChapterText=null;
 currentChapterVerseCount=0;
+currentNewsVeilFromUrl=false;
 var btn=document.getElementById('generateBtn');
 var progress=document.getElementById('seriesProgress');
 var output=document.getElementById('sermonOutput');
@@ -5900,6 +6039,9 @@ if(item.weaves_with){html+='<div class="news-card-weave"><i class="fas fa-link">
 html+='<div class="news-card-actions">';
 html+='<a class="news-card-btn" href="'+escapeAttr(searchUrl)+'" target="_blank" rel="noopener noreferrer" style="border-color:var(--accent-blue);color:var(--accent-blue);text-decoration:none;"><i class="fas fa-newspaper"></i> Find Article</a>';
 html+='<button class="news-card-btn breakdown-btn" onclick="breakdownNewsItem('+idx+')"><i class="fas fa-fire"></i> Full Breakdown</button>';
+if(item.source_url){
+html+='<button class="news-card-btn" onclick="forgeNewsUrlBehindTheVeil(newsItems['+idx+'].source_url)" style="border-color:#c9a227;color:#c9a227;"><i class="fas fa-door-closed"></i> Veil Forge</button>';
+}
 html+='<button class="news-card-btn" onclick="exportNewsToSermon('+idx+')" style="border-color:#8b5cf6;color:#8b5cf6;"><i class="fas fa-bolt"></i> Sermon</button>';
 html+='<button class="news-card-btn" onclick="copyNewsItem('+idx+',this)"><i class="fas fa-copy"></i> Copy</button>';
 html+='</div>';
@@ -5936,6 +6078,7 @@ return indices;
 function exportNewsToSermon(idx){
 var item=newsItems[idx];
 if(!item)return;
+currentNewsVeilFromUrl=false;
 var title=item.headline||'News Story';
 var desc=(item.prophetic_angle||'')+(item.summary?' -- '+item.summary:'');
 currentTopic={id:-1,cat:'doctrine',title:title,desc:desc};
@@ -5947,8 +6090,102 @@ currentNewsContext=[item];
 switchTab('topics',document.querySelector('.tab-btn'));
 openModal();
 }
+function fetchNewsArticleForVeil(url,callback){
+var model=getNewsModel();
+var params={web_search:true};
+if(forgeIsClaude(model)){params.thinking_budget=0;}
+else if(forgeIsOpenAI(model)){params.reasoning_effort='low';}
+else if(forgeIsGemini(model)&&forgeIsFlashTier(model)){params.thinking_level='low';}
+var handlerName='news-veil-fetch-'+Date.now();
+var handled=false;
+window.Poe.registerHandler(handlerName,function(result){
+var msg=result.responses[0];
+if(!msg)return;
+if(msg.status==='error'){
+if(!handled){handled=true;callback(msg.statusText||'Failed to read article',null);}
+}else if(msg.status==='complete'){
+if(!handled){
+handled=true;
+var article=parseNewsVeilArticleJson(msg.content||'',url);
+if(!article){callback('Could not parse article data from the model response.',null);}
+else{callback(null,article);}
+}
+}
+});
+window.Poe.sendUserMessage('@'+model+' '+buildNewsUrlVeilFetchPrompt(url),{handler:handlerName,stream:false,openChat:false,parameters:params}).catch(function(err){
+if(!handled){handled=true;callback(String(err),null);}
+});
+}
+function applyVeilArticleAndGenerate(article,url){
+var title=article.policy_topic||article.headline||'Behind the Veil';
+var desc='Closed-door dramatization of: '+article.headline;
+if(article.summary)desc+=' -- '+article.summary.substring(0,280);
+currentTopic={id:-1,cat:'doctrine',title:title,desc:desc};
+currentMode='news';
+currentChapterSource=null;
+currentChapterText=null;
+currentChapterVerseCount=0;
+currentNewsContext=[article];
+currentNewsVeilFromUrl=true;
+var titleEl=document.getElementById('modalTitle');
+var descEl=document.getElementById('modalDesc');
+if(titleEl){
+titleEl.innerHTML=escapeHtml(currentTopic.title)+(' <span class="mode-badge" style="background:rgba(74,26,106,0.2);color:#c9a227;"><i class="fas fa-door-closed" style="margin-right:4px;font-size:0.65em;"></i>BEHIND THE VEIL</span>');
+}
+if(descEl)descEl.textContent=currentTopic.desc;
+var playerCount=(article.key_players?article.key_players.length:0)+(article.boardroom_cast_suggestions?article.boardroom_cast_suggestions.length:0);
+var output=document.getElementById('sermonOutput');
+if(output){
+output.innerHTML='<div class="verse-confirm-box">'
++'<div class="vc-title"><i class="fas fa-check-circle" style="margin-right:6px;"></i>Article Loaded -- Cast Identified</div>'
++'<div class="vc-count">'+escapeHtml(article.headline)+'</div>'
++'<div class="vc-detail">'+(article.source?escapeHtml(article.source)+' · ':'')+playerCount+' prominent player'+(playerCount!==1?'s':'')+' mapped for the boardroom.<br>Behind the Veil is ON. Forging script now...</div>'
++'</div>';
+}
+document.getElementById('generateBtn').disabled=true;
+setTimeout(function(){generateSermon();},400);
+}
+function forgeNewsUrlBehindTheVeil(urlInput){
+if(isGenerating){showToast('Already generating -- wait or cancel first.');return;}
+var url=normalizeNewsArticleUrl(typeof urlInput==='string'?urlInput:(document.getElementById('veilNewsUrlInput')||document.getElementById('newsVeilUrlInput')||{}).value);
+if(!url){showToast('Paste a news article URL first (https://...)');return;}
+if(!/^https?:\/\//i.test(url)){showToast('URL must start with http:// or https://');return;}
+lastVeilNewsUrl=url;
+currentNewsVeilFromUrl=true;
+currentTopic={id:-1,cat:'doctrine',title:'Reading article...',desc:'Fetching headline and identifying prominent players for Behind the Veil dramatization.'};
+currentMode='news';
+currentChapterSource=null;
+currentChapterText=null;
+currentChapterVerseCount=0;
+currentNewsContext=null;
+var veil=document.getElementById('toggleBehindTheVeil');
+var pure=document.getElementById('togglePureTheatre');
+if(veil)veil.checked=true;
+if(pure)pure.checked=false;
+syncTheatreToggles();
+setPartCount(3);
+openModal({skipPartRec:true,preserveOutput:true,disableGenerateBtn:true});
+var modelName=getNewsModel();
+document.getElementById('sermonOutput').innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text"><i class="fas fa-door-closed" style="margin-right:6px;"></i>Reading article &amp; identifying prominent players via <strong>'+escapeHtml(modelName)+'</strong>...</div></div>';
+fetchNewsArticleForVeil(url,function(err,article){
+if(err){
+document.getElementById('sermonOutput').innerHTML='<div class="verse-confirm-box" style="border-color:var(--gold-dim);background:rgba(212,160,23,0.08);">'
++'<div class="vc-title" style="color:var(--gold);"><i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i>Article Read Failed</div>'
++'<div class="vc-detail">'+escapeHtml(err)+'<br>Try a web-search model (Gemini 3.1 Pro, GPT 5.2) or paste the article JSON in Prophecy Watch.</div>'
++'<div class="vc-actions">'
++'<button class="vc-btn retry" onclick="forgeNewsUrlBehindTheVeil(lastVeilNewsUrl)"><i class="fas fa-redo" style="margin-right:4px;"></i>Retry</button>'
++'<button class="vc-btn cancel" onclick="cancelSermonGeneration();closeModal();"><i class="fas fa-times" style="margin-right:4px;"></i>Cancel</button>'
++'</div></div>';
+document.getElementById('generateBtn').disabled=false;
+currentNewsVeilFromUrl=false;
+return;
+}
+applyVeilArticleAndGenerate(article,url);
+});
+}
 function forgeNewsSermonAll(){
 if(!newsItems||newsItems.length===0){showToast('No news articles loaded. Scan first.');return;}
+currentNewsVeilFromUrl=false;
 var title='Prophecy Watch -- '+newsItems.length+' Signs of the Times';
 var desc='Aggregated prophetic news sermon covering '+newsItems.length+' current events through the scriptural lens.';
 currentTopic={id:-1,cat:'doctrine',title:title,desc:desc};
@@ -5963,6 +6200,7 @@ openModal();
 function forgeNewsSermonSelected(){
 var indices=getSelectedNewsIndices();
 if(indices.length===0){showToast('Select at least one article.');return;}
+currentNewsVeilFromUrl=false;
 var selected=[];
 for(var i=0;i<indices.length;i++){if(newsItems[indices[i]])selected.push(newsItems[indices[i]]);}
 var title='Prophecy Watch -- '+selected.length+' Sign'+(selected.length!==1?'s':'')+' of the Times';
