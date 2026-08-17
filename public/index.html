@@ -519,6 +519,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     </div>
     <div class="veil-cast-options">
       <label title="Cast dynastic families — cream of the crop who truly run the world, not mid-level officials"><input type="checkbox" id="toggleVeilUltraElite" onchange="syncVeilUltraEliteToggles()"> Ultra Elite (dynastic families)</label>
+      <label title="Elites speak in plain layman's terms — no corporate jargon in their dialogue"><input type="checkbox" id="toggleVeilLaymanTerms" onchange="syncVeilLaymanTermsToggles()"> Layman's terms</label>
       <input type="text" id="veilCastHint" class="veil-cast-hint" placeholder="Optional cast note: ultra elite, cream of the crop, old money…">
     </div>
   </div>
@@ -839,6 +840,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     </div>
     <div class="veil-cast-options" style="padding-left:0;padding-right:0;">
       <label title="Cast dynastic families — cream of the crop who truly run the world"><input type="checkbox" id="toggleNewsVeilUltraElite" onchange="syncVeilUltraEliteToggles()"> Ultra Elite (dynastic families)</label>
+      <label title="Elites speak in plain layman's terms — no corporate jargon in their dialogue"><input type="checkbox" id="toggleNewsVeilLaymanTerms" onchange="syncVeilLaymanTermsToggles()"> Layman's terms</label>
       <input type="text" id="newsVeilCastHint" class="veil-cast-hint" placeholder="Optional: ultra elite, cream of the crop, old money…" oninput="syncVeilUltraEliteToggles()">
     </div>
     <div class="news-search-bar">
@@ -984,6 +986,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch" title="Live web search: verify facts, find recent news, weave headlines into the sermon (silent — no URLs in output)"><input type="checkbox" id="toggleWebResearch" checked><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
       <label class="toggle-switch" id="toggleBehindTheVeilWrap" title="News-triggered closed-door drama: real headlines → dramatized meeting where sector elites plot the beast-system policy (prophetic illustration, not leaked intel)"><input type="checkbox" id="toggleBehindTheVeil"><span class="toggle-track" style="background:linear-gradient(135deg,#4a1a6a,#8B1A1A);"></span><span><i class="fas fa-door-closed" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Behind the Veil</span></label>
       <label class="toggle-switch" id="toggleModalVeilUltraEliteWrap" style="display:none;" title="Dynastic families — cream of the crop who truly run the world (current titles, private POV only)"><input type="checkbox" id="toggleModalVeilUltraElite" onchange="syncVeilUltraEliteToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#4a1a6a,#2a1810);"></span><span><i class="fas fa-crown" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Ultra Elite</span></label>
+      <label class="toggle-switch" id="toggleModalVeilLaymanTermsWrap" style="display:none;" title="Elites speak in plain layman's terms — no corporate jargon or doublespeak in their dialogue"><input type="checkbox" id="toggleModalVeilLaymanTerms" onchange="syncVeilLaymanTermsToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#2a3540,#4a90a4);"></span><span><i class="fas fa-comments" style="color:#7ec8e3;margin-right:3px;font-size:0.7rem;"></i>Layman's terms</span></label>
       <label class="toggle-switch" id="togglePureTheatreWrap" title="Pure closed-door theatre: prominent figures in this sector speak freely with no cameras — policy mechanics, contempt, deals (no mandatory news weave)"><input type="checkbox" id="togglePureTheatre"><span class="toggle-track" style="background:linear-gradient(135deg,#2a2a35,#6A1B9A);"></span><span><i class="fas fa-masks-theater" style="color:#D4A017;margin-right:3px;font-size:0.7rem;"></i>Pure Theatre</span></label>
       <div class="model-select-wrap" id="theatreCommentaryWrap" style="display:none;flex:1 1 100%;align-items:center;flex-wrap:wrap;gap:8px;">
         <label><i class="fas fa-pause-circle" style="color:#c9a227;margin-right:3px;"></i> Scene guide:</label>
@@ -992,7 +995,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           <option value="yah">Yah pauses &amp; explains</option>
           <option value="bez">Bez pauses &amp; explains</option>
         </select>
-        <label class="toggle-switch" id="toggleTheatreELI5Wrap" title="Elites speak in plain layman's terms — no corporate jargon or doublespeak in their dialogue"><input type="checkbox" id="toggleTheatreELI5"><span class="toggle-track" style="background:linear-gradient(135deg,#2a3540,#4a90a4);"></span><span><i class="fas fa-comments" style="color:#7ec8e3;margin-right:3px;font-size:0.7rem;"></i>Layman's terms</span></label>
       </div>
       <div class="model-select-wrap">
         <label><i class="fas fa-robot"></i> Model:</label>
@@ -2006,8 +2008,21 @@ return (v==='yah'||v==='bez')?v:'off';
 }
 function isTheatreELI5Enabled(){
 if(!isTheatreModeActive())return false;
-var el=document.getElementById('toggleTheatreELI5');
+syncVeilLaymanTermsToggles();
+var el=document.getElementById('toggleModalVeilLaymanTerms');
 return !!(el&&el.checked);
+}
+function syncVeilLaymanTermsToggles(){
+var a=document.getElementById('toggleVeilLaymanTerms');
+var b=document.getElementById('toggleNewsVeilLaymanTerms');
+var c=document.getElementById('toggleModalVeilLaymanTerms');
+var on=false;
+if(a&&a.checked)on=true;
+if(b&&b.checked)on=true;
+if(c&&c.checked)on=true;
+if(a)a.checked=on;
+if(b)b.checked=on;
+if(c)c.checked=on;
 }
 function buildTheatreELI5Block(topic){
 var title=topic?topic.title:'this topic';
@@ -6346,7 +6361,7 @@ output.innerHTML='<div class="verse-confirm-box">'
 +'<div class="vc-count">'+escapeHtml(article.headline)+'</div>'
 +'<div class="vc-detail">'+(article.source?escapeHtml(article.source)+' · ':'')+playerCount+' player'+(playerCount!==1?'s':'')+' mapped'+(ultraElite?' (ultra elite mode)':'')+'.'
 +castLines
-+'<br><br>Behind the Veil is ON. Pick your <strong>model</strong> and part count above, then hit <strong>Generate Series</strong> when you are ready.</div>'
++'<br><br>Behind the Veil is ON. Optional: check <strong>Layman\'s terms</strong> (on the article row or in toggles above) so elites speak plain English. Pick your <strong>model</strong> and part count, then hit <strong>Generate Series</strong> when you are ready.</div>'
 +'<div class="vc-actions">'
 +'<button class="vc-btn cancel" onclick="dismissVeilArticleConfirm()"><i class="fas fa-times" style="margin-right:4px;"></i>Dismiss</button>'
 +'</div></div>';
@@ -7262,6 +7277,7 @@ var bezStory=document.getElementById('toggleBezStoryMode');
 var episode=document.getElementById('toggleSermonEpisodeMode');
 var commentaryWrap=document.getElementById('theatreCommentaryWrap');
 var ultraEliteWrap=document.getElementById('toggleModalVeilUltraEliteWrap');
+var laymanWrap=document.getElementById('toggleModalVeilLaymanTermsWrap');
 if(!veil&&!pure)return;
 if(veil&&veil.checked&&pure&&pure.checked){
 if(document.activeElement===pure)pure.checked=false;
@@ -7271,6 +7287,7 @@ var theatreOn=(veil&&veil.checked)||(pure&&pure.checked);
 var veilOn=veil&&veil.checked;
 if(commentaryWrap)commentaryWrap.style.display=theatreOn?'flex':'none';
 if(ultraEliteWrap)ultraEliteWrap.style.display=veilOn?'inline-flex':'none';
+if(laymanWrap)laymanWrap.style.display=theatreOn?'inline-flex':'none';
 if(!veilOn){
 var modalUltra=document.getElementById('toggleModalVeilUltraElite');
 if(modalUltra)modalUltra.checked=false;
@@ -7278,10 +7295,11 @@ if(modalUltra)modalUltra.checked=false;
 if(!theatreOn){
 var cv=document.getElementById('theatreCommentaryVoice');
 if(cv)cv.value='off';
-var eli5=document.getElementById('toggleTheatreELI5');
-if(eli5)eli5.checked=false;
+var modalLayman=document.getElementById('toggleModalVeilLaymanTerms');
+if(modalLayman)modalLayman.checked=false;
 }
 if(theatreOn){
+syncVeilLaymanTermsToggles();
 if(veil&&veil.checked&&web&&!web.checked)web.checked=true;
 if(story)story.checked=false;
 if(bezStory)bezStory.checked=false;
