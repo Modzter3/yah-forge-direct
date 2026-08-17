@@ -989,7 +989,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           <option value="yah">Yah pauses &amp; explains</option>
           <option value="bez">Bez pauses &amp; explains</option>
         </select>
-        <label class="toggle-switch" id="toggleTheatreELI5Wrap" title="When elites drop corporate or policy jargon, pause and explain what it really means in the simplest plain English"><input type="checkbox" id="toggleTheatreELI5"><span class="toggle-track" style="background:linear-gradient(135deg,#2a3540,#4a90a4);"></span><span><i class="fas fa-child" style="color:#7ec8e3;margin-right:3px;font-size:0.7rem;"></i>ELI5 jargon</span></label>
+        <label class="toggle-switch" id="toggleTheatreELI5Wrap" title="Elites speak in plain layman's terms — no corporate jargon or doublespeak in their dialogue"><input type="checkbox" id="toggleTheatreELI5"><span class="toggle-track" style="background:linear-gradient(135deg,#2a3540,#4a90a4);"></span><span><i class="fas fa-comments" style="color:#7ec8e3;margin-right:3px;font-size:0.7rem;"></i>Layman's terms</span></label>
       </div>
       <div class="model-select-wrap">
         <label><i class="fas fa-robot"></i> Model:</label>
@@ -2005,33 +2005,20 @@ if(!isTheatreModeActive())return false;
 var el=document.getElementById('toggleTheatreELI5');
 return !!(el&&el.checked);
 }
-function buildTheatreELI5Block(topic,opts){
-opts=opts||{};
+function buildTheatreELI5Block(topic){
 var title=topic?topic.title:'this topic';
-var commentaryVoice=opts.commentaryVoice||'off';
-var p='ELI5 JARGON DECODE (MANDATORY -- SIMPLE PLAIN ENGLISH):\n';
-p+='When a boardroom speaker uses corporate, legal, financial, or policy LINGO, the scene FREEZES so a neutral narrator explains what that word or phrase REALLY means -- like talking to a smart five-year-old who never worked in an office.\n\n';
-p+='FORMAT (use these exact markers):\n';
-p+='[PAUSE -- ELI5]\n';
-p+='(1-3 short sentences max. Neutral tone. No preaching. No Yah. No Bez. Just: "When he says X, he means Y.")\n';
-p+='[RESUME SCENE]\n';
-p+='(boardroom dialogue continues -- same room, same cast, pick up the same beat)\n\n';
-p+='TRIGGERS -- pause for ELI5 when you hear:\n';
-p+='- HR euphemisms: "right-sizing," "workforce optimization," "talent mobility," "synergy," "headcount reduction," "flatten the org"\n';
-p+='- Finance speak: "EBITDA," "stakeholder value," "fiduciary duty," "liquidity event," "arbitrage," "capital allocation"\n';
-p+='- Policy dodge: "compliance framework," "voluntary standards," "public-private partnership," "risk mitigation," "stakeholder engagement"\n';
-p+='- Contempt codewords: "legacy populations," "demographic friction," "behavioral nudging," "engagement metrics," "optics"\n';
-p+='- Any acronym, insider term, or doublespeak a normal person would not say at the dinner table\n\n';
-p+='CADENCE:\n';
-p+='- ELI5 AT LEAST 4 times per act (more when jargon is heavy). Finish the executive\'s line FIRST, then pause.\n';
-p+='- Keep ELI5 TIGHT -- decode the word, land one real-world example ("that means your cousin loses the job"), then resume.\n';
-p+='- ELI5 stays on topic: "'+title+'". Decode THIS meeting\'s language only.\n';
-if(commentaryVoice!=='off'){
-p+='- SCENE GUIDE IS ALSO ON: in the SAME freeze, write [PAUSE -- ELI5] first (neutral simple decode), then [PAUSE -- '+(commentaryVoice==='bez'?'BEZ':'YAH')+' COMMENTARY] (prophetic street decode for Israel), then ONE [RESUME SCENE]. Do not resume between ELI5 and scene guide.\n';
-}else{
-p+='- Scene guide is OFF -- ELI5 is the only pause layer. No Yah. No Bez. Just the neutral decoder.\n';
-}
-p+='\n';
+var p='LAYMAN\'S TERMS DIALOGUE (MANDATORY -- PLAIN ENGLISH SPEAKERS):\n';
+p+='Every boardroom speaker talks like a blunt human behind closed doors — NOT like a press release, NOT like a McKinsey deck. The cameras are off AND the vocabulary is plain.\n\n';
+p+='RULES:\n';
+p+='- ZERO corporate euphemism in dialogue. Say what they mean out loud:\n';
+p+='  - "fire people" / "cut jobs" — NOT "right-size," "workforce optimization," "talent mobility," "flatten the org"\n';
+p+='  - "make the rich richer" — NOT "stakeholder value," "fiduciary duty," "capital allocation"\n';
+p+='  - "poor people," "regular folks," "Negroes," "the masses" — NOT "legacy populations," "demographic friction," "behavioral nudging"\n';
+p+='  - "lie to the public" — NOT "manage optics," "shape the narrative," "stakeholder engagement"\n';
+p+='- No unexplained acronyms (EBITDA, KPI, etc.). If a number matters, say it in plain words.\n';
+p+='- They stay contemptuous, cold, and plotting — just in words anyone at the kitchen table would understand.\n';
+p+='- NO pause to explain jargon. NO narrator decoder. NO [PAUSE -- ELI5]. The dialogue ITSELF is the decode.\n';
+p+='- Stay on topic: "'+title+'". Every plain-English line serves THIS meeting.\n\n';
 return p;
 }
 function buildTheatreCommentaryBlock(voice,topic,opts){
@@ -2040,24 +2027,16 @@ if(!voice||voice==='off')return '';
 var title=topic?topic.title:'this topic';
 var desc=topic?topic.desc:'';
 var wantRough=!!opts.wantRoughBez;
-var eli5Enabled=!!opts.eli5Enabled;
 var isBez=voice==='bez';
 var p='SCENE GUIDE COMMENTARY (MANDATORY -- PAUSE / EXPLAIN / RESUME):\n';
 p+='The boardroom scene FREEZES periodically so a narrator breaks the fourth wall, explains in PLAIN LAYMAN\'S TERMS what the elites just said or what their jargon really means, then UNPAUSES and the meeting continues exactly where it left off.\n\n';
 p+='FORMAT (use these exact markers):\n';
-if(eli5Enabled){
-p+='[PAUSE -- ELI5]\n';
-p+='(neutral 1-3 sentence jargon decode -- see ELI5 block above)\n';
-}
 p+='[PAUSE -- '+(isBez?'BEZ':'YAH')+' COMMENTARY]\n';
 p+='(plain-language explanation -- 2-6 short paragraphs or a tight spoken burst)\n';
 p+='[RESUME SCENE]\n';
 p+='(boardroom dialogue continues -- same room, same cast, pick up the same beat)\n\n';
 p+='CADENCE:\n';
-if(eli5Enabled){
-p+='- ELI5 is ON: jargon gets the simple decode first; YOU add the prophetic layer. ONE [RESUME SCENE] after both blocks.\n';
-}
-p+='- Pause AT LEAST 5 times per act (more is fine). Trigger a pause when: corporate euphemism drops, a policy gets named, contempt for the public shows, headcount/spreadsheet talk, legal/regulatory dodge, or Israel/legacy populations get mentioned.\n';
+p+='- Pause AT LEAST 5 times per act (more is fine). Trigger a pause when: a policy gets named, contempt for the public shows, headcount/spreadsheet talk, legal/regulatory dodge, or Israel gets mentioned.\n';
 p+='- Commentary is INTERRUPTIVE but BRIEF relative to the scene -- decode, expose, land it on real life, then get out of the way.\n';
 p+='- Do NOT let commentary replace the boardroom. The meeting is the spine; pauses are the decoder ring.\n';
 p+='- Never pause mid-sentence of an executive -- finish their line, THEN pause.\n\n';
@@ -2318,14 +2297,10 @@ p+='- Cast DYNASTIC ELITE ONLY — generational family power with CURRENT verifi
 }else{
 p+='- Cast REAL prominent figures in that sector (full name + CURRENT title). They speak WITHOUT public restraint.\n';
 }
-if(commentaryVoice==='off'&&!eli5Enabled){
+if(commentaryVoice==='off'){
 p+='- NO narrator voice in the room. NO Yah. NO Brother Bet breaking the scene. Boardroom dialogue only.\n';
-}else if(commentaryVoice==='off'&&eli5Enabled){
-p+='- Boardroom speakers stay in character. A neutral ELI5 narrator PAUSES only to decode jargon ([PAUSE -- ELI5] / [RESUME SCENE]). No Yah. No Bez at the table.\n';
-}else if(commentaryVoice!=='off'&&!eli5Enabled){
-p+='- Boardroom speakers stay in character. Yah/Bez do NOT sit at the table -- they PAUSE the scene from outside and comment, then [RESUME SCENE].\n';
 }else{
-p+='- Boardroom speakers stay in character. ELI5 decodes jargon first; Yah/Bez add prophetic commentary in the same pause; then [RESUME SCENE]. Neither sits at the table.\n';
+p+='- Boardroom speakers stay in character. Yah/Bez do NOT sit at the table -- they PAUSE the scene from outside and comment, then [RESUME SCENE].\n';
 }
 if(totalParts===1||partNum===totalParts){
 p+='- When the meeting truly ends, close with [SCENE END] then STOP. Do not write anything after [SCENE END].\n';
@@ -2355,7 +2330,11 @@ p+='- Distinct voices: financier, enforcer, public face, technocrat, ideologue.\
 p+='\nSCENE ENGINE:\n';
 p+='- The TOPIC on the table: "'+title+'" -- '+desc+'\n';
 p+='- Show HOW this policy mindset gets engineered: who benefits, who gets crushed, public lie vs private admission.\n';
+if(eli5Enabled){
+p+='- LAYMAN\'S TERMS ON: speakers say who gets hurt in plain words — no "legacy populations" or corporate codewords.\n';
+}else{
 p+='- Beast-system framing is atmospheric -- they ARE the machine talking to itself. Israel/scattered Negroes may appear only as "legacy populations" or "demographic problem" in THEIR mouths.\n';
+}
 if(wantBehind){
 p+='\nBEHIND THE VEIL -- NEWS TRIGGER (MANDATORY):\n';
 if(currentNewsContext&&currentNewsContext.length>0&&currentNewsContext[0].source_url){
@@ -2380,10 +2359,10 @@ p+='- Focus on sector power players talking freely: implementation timelines, en
 }
 }
 if(eli5Enabled){
-p+=buildTheatreELI5Block(topic,{commentaryVoice:commentaryVoice});
+p+=buildTheatreELI5Block(topic);
 }
 if(commentaryVoice!=='off'){
-p+=buildTheatreCommentaryBlock(commentaryVoice,topic,{wantRoughBez:wantRoughBez,wantExplicit:wantExplicit,eli5Enabled:eli5Enabled});
+p+=buildTheatreCommentaryBlock(commentaryVoice,topic,{wantRoughBez:wantRoughBez,wantExplicit:wantExplicit});
 }
 if(totalParts===1){
 p+='\nSTRUCTURE (single long meeting):\n';
@@ -2421,7 +2400,7 @@ p+='- Cutting to a NEW location: second [SCENE START], EXT./INT. slug lines, str
 p+='- PART '+(partNum+1)+', Act '+(partNum+1)+', or --- dividers starting a new document\n';
 p+='- Unrelated blockbuster plots: AI apocalypse, coups, explosions, chases -- anything not about "'+title+'"\n';
 p+='\nCRITICAL OUTPUT RULES:\n';
-p+='- Bracket stage directions: [SCENE START], [BEAT], [PRESENT:], [PAUSE -- ELI5], [PAUSE -- YAH COMMENTARY] or [PAUSE -- BEZ COMMENTARY], [RESUME SCENE], [SCENE END] on final act only\n';
+p+='- Bracket stage directions: [SCENE START], [BEAT], [PRESENT:], [PAUSE -- YAH COMMENTARY] or [PAUSE -- BEZ COMMENTARY], [RESUME SCENE], [SCENE END] on final act only\n';
 p+='- No thinking tags, no word-count meta in the output\n';
 p+='- NO DIAGRAMS, FLOWCHARTS, ASCII ART, TABLES, OR MATRICES -- plain prose and dialogue only\n';
 p+='- Start with disclaimer, then # title. WRITE LONG. Stay in the boardroom on topic.\n';
@@ -3415,10 +3394,9 @@ var p='THEATRE CONTINUATION -- SAME ACT '+partNum+' ONLY (CRITICAL):\n';
 p+='Continue the SAME boardroom meeting in the SAME room. Do NOT rush. Do NOT wrap up early.\n';
 p+='Stay on topic: "'+(currentTopic?currentTopic.title:'the assigned topic')+'". No AI apocalypse, coups, or location cuts.\n';
 p+='Keep the slow boardroom feel -- more dialogue, more turns, more contempt. Do NOT add [SCENE START] again.\n';
-if(eli5)p+='Keep using [PAUSE -- ELI5] before [RESUME SCENE] whenever elites drop jargon -- simplest plain English decode.\n';
+if(eli5)p+='Keep all boardroom speakers in layman\'s terms -- plain English dialogue, no corporate jargon or euphemism.\n';
 if(cv==='yah')p+='Keep using [PAUSE -- YAH COMMENTARY] / [RESUME SCENE] throughout -- plain layman\'s decode for Israel.\n';
 else if(cv==='bez')p+='Keep using [PAUSE -- BEZ COMMENTARY] / [RESUME SCENE] throughout -- street-plain decode for Israel.\n';
-if(eli5&&cv!=='off')p+='When both ELI5 and scene guide are on: ELI5 first in the same pause, then Yah/Bez, then one [RESUME SCENE].\n';
 if(partNum===selectedPartCount)p+='When the meeting is truly finished, end with [SCENE END].\n';
 else p+='Do NOT write [SCENE END] -- Act '+(partNum+1)+' continues this meeting.\n';
 p+='LAST FOUR HUNDRED CHARACTERS:\n"...'+String(existing||'').slice(-400)+'"\n\nCONTINUE IMMEDIATELY:\n';
