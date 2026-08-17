@@ -648,13 +648,14 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <select class="model-select" id="dismantleModel" style="width:100%;" onchange="onDismantleModelDropdown()">
           <optgroup label="⚡ Budget / Fast">
             <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.1 Fast</option>
+            <option value="Gemini-3.6-Flash" selected>Gemini 3.6 Flash</option>
             <option value="Gemini-3-Flash">Gemini 3 Flash</option>
           </optgroup>
           <optgroup label="🔥 Mid-Tier">
             <option value="Grok-4">Grok 4</option>
             <option value="Claude-Sonnet-4.5">Claude Sonnet 4.5</option>
             <option value="Gemini-3-Pro">Gemini 3 Pro</option>
-            <option value="Gemini-3.1-Pro" selected>Gemini 3.1 Pro</option>
+            <option value="Gemini-3.1-Pro">Gemini 3.1 Pro</option>
           </optgroup>
           <optgroup label="🧪 Open Source">
             <option value="GLM-5">GLM 5</option>
@@ -732,13 +733,14 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <select class="model-select" id="destroyModel" style="width:100%;" onchange="onDestroyModelDropdown()">
           <optgroup label="⚡ Budget / Fast">
             <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.1 Fast</option>
+            <option value="Gemini-3.6-Flash" selected>Gemini 3.6 Flash</option>
             <option value="Gemini-3-Flash">Gemini 3 Flash</option>
           </optgroup>
           <optgroup label="🔥 Mid-Tier">
             <option value="Grok-4">Grok 4</option>
             <option value="Claude-Sonnet-4.5">Claude Sonnet 4.5</option>
             <option value="Gemini-3-Pro">Gemini 3 Pro</option>
-            <option value="Gemini-3.1-Pro" selected>Gemini 3.1 Pro</option>
+            <option value="Gemini-3.1-Pro">Gemini 3.1 Pro</option>
           </optgroup>
           <optgroup label="🧪 Open Source">
             <option value="GLM-5">GLM 5</option>
@@ -849,7 +851,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <div style="flex:1;min-width:180px;">
         <select class="model-select" id="newsModel" style="width:100%;" onchange="onNewsModelDropdown()">
           <optgroup label="🔍 Web Search (Real News)">
-            <option value="Gemini-3.1-Pro" selected>Gemini 3.1 Pro</option>
+            <option value="Gemini-3.6-Flash" selected>Gemini 3.6 Flash</option>
+            <option value="Gemini-3.1-Pro">Gemini 3.1 Pro</option>
             <option value="Gemini-3-Pro">Gemini 3 Pro</option>
             <option value="GPT-5.2">GPT 5.2</option>
             <option value="Claude-Sonnet-4.5">Claude Sonnet 4.5</option>
@@ -997,14 +1000,15 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           <optgroup label="⚡ Budget / Fast">
             <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.1 Fast -- Free &amp; Raw</option>
             <option value="Grok-4.1-Fast-Reasoning">Grok 4.1 Fast Reasoning</option>
-            <option value="Gemini-3-Flash">Gemini 3 Flash -- Fast &amp; Brutal</option>
+            <option value="Gemini-3.6-Flash" selected>Gemini 3.6 Flash -- Fast &amp; Brutal</option>
+            <option value="Gemini-3-Flash">Gemini 3 Flash -- Legacy Fast</option>
             <option value="Grok-Code-Fast-1">Grok Code Fast -- Budget</option>
           </optgroup>
           <optgroup label="🔥 Mid-Tier">
             <option value="Grok-4">Grok 4 -- Unfiltered King</option>
             <option value="Claude-Sonnet-4.5">Claude Sonnet 4.5 -- Smart</option>
             <option value="Gemini-3-Pro">Gemini 3 Pro -- Deep Context</option>
-            <option value="Gemini-3.1-Pro" selected>Gemini 3.1 Pro -- 2x Reasoning</option>
+            <option value="Gemini-3.1-Pro">Gemini 3.1 Pro -- 2x Reasoning</option>
           </optgroup>
           <optgroup label="🧪 Open Source / Test">
             <option value="GLM-5">GLM 5 -- Opus-Class Open Source</option>
@@ -2796,7 +2800,7 @@ MODEL SELECTOR HELPER
 function getSelectedModel(){
 var custom=(document.getElementById('customModelInput').value||'').trim();
 if(custom)return custom;
-return document.getElementById('modelSelect').value||'google/gemini-2.5-pro';
+return document.getElementById('modelSelect').value||'Gemini-3.6-Flash';
 }
 function getImagePromptModel(){
 var custom=(document.getElementById('customImagePromptModel').value||'').trim();
@@ -2806,12 +2810,12 @@ return document.getElementById('imagePromptModel').value||'google/gemini-2.5-fla
 function getNewsModel(){
 var custom=(document.getElementById('customNewsModel').value||'').trim();
 if(custom)return custom;
-return document.getElementById('newsModel').value||'google/gemini-2.5-pro';
+return document.getElementById('newsModel').value||'Gemini-3.6-Flash';
 }
 function getDismantleModel(){
 var custom=(document.getElementById('customDismantleModel').value||'').trim();
 if(custom)return custom;
-return document.getElementById('dismantleModel').value||'google/gemini-2.5-pro';
+return document.getElementById('dismantleModel').value||'Gemini-3.6-Flash';
 }
 function onCustomModel(el,selectId){
 var val=el.value.trim();
@@ -7038,7 +7042,7 @@ saveToLibrary(title,desc,'deception','destroy',model,parts,combined,titles);
 function getDestroyModel(){
 var custom=(document.getElementById('customDestroyModel').value||'').trim();
 if(custom)return custom;
-return document.getElementById('destroyModel').value||'google/gemini-2.5-pro';
+return document.getElementById('destroyModel').value||'Gemini-3.6-Flash';
 }
 function onDestroyModelDropdown(){
 var ci=document.getElementById('customDestroyModel');

@@ -13,6 +13,7 @@ const PROVIDERS = {
 const PROVIDER_ALIASES = {
   openrouter: {
     'Gemini-3-Flash':               'google/gemini-2.5-flash',
+    'Gemini-3.6-Flash':             'google/gemini-3.6-flash',
     'Gemini-3-Pro':                 'google/gemini-2.5-pro',
     'Gemini-3.1-Pro':               'google/gemini-2.5-pro',
     'Claude-Sonnet-4.5':            'anthropic/claude-sonnet-4',
@@ -28,6 +29,7 @@ const PROVIDER_ALIASES = {
   },
   openai: {
     'Gemini-3-Flash':    'gpt-4.1-mini',
+    'Gemini-3.6-Flash':  'gpt-4.1-mini',
     'Gemini-3-Pro':      'gpt-4.1',
     'Gemini-3.1-Pro':    'gpt-4.1',
     'Claude-Sonnet-4.5': 'gpt-4.1',

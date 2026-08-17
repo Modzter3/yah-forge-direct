@@ -114,8 +114,9 @@
 
   function preferredDefault(models) {
     var want = [
-      'google/gemini-2.5-pro',
+      'google/gemini-3.6-flash',
       'google/gemini-2.5-flash',
+      'google/gemini-2.5-pro',
       'anthropic/claude-sonnet-4',
       'anthropic/claude-opus-4',
       'openai/gpt-4.1',
