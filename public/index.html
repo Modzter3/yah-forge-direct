@@ -982,13 +982,14 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch" id="toggleBehindTheVeilWrap" title="News-triggered closed-door drama: real headlines → dramatized meeting where sector elites plot the beast-system policy (prophetic illustration, not leaked intel)"><input type="checkbox" id="toggleBehindTheVeil"><span class="toggle-track" style="background:linear-gradient(135deg,#4a1a6a,#8B1A1A);"></span><span><i class="fas fa-door-closed" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Behind the Veil</span></label>
       <label class="toggle-switch" id="toggleModalVeilUltraEliteWrap" style="display:none;" title="Dynastic families — cream of the crop who truly run the world (current titles, private POV only)"><input type="checkbox" id="toggleModalVeilUltraElite" onchange="syncVeilUltraEliteToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#4a1a6a,#2a1810);"></span><span><i class="fas fa-crown" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Ultra Elite</span></label>
       <label class="toggle-switch" id="togglePureTheatreWrap" title="Pure closed-door theatre: prominent figures in this sector speak freely with no cameras — policy mechanics, contempt, deals (no mandatory news weave)"><input type="checkbox" id="togglePureTheatre"><span class="toggle-track" style="background:linear-gradient(135deg,#2a2a35,#6A1B9A);"></span><span><i class="fas fa-masks-theater" style="color:#D4A017;margin-right:3px;font-size:0.7rem;"></i>Pure Theatre</span></label>
-      <div class="model-select-wrap" id="theatreCommentaryWrap" style="display:none;flex:1 1 100%;">
+      <div class="model-select-wrap" id="theatreCommentaryWrap" style="display:none;flex:1 1 100%;align-items:center;flex-wrap:wrap;gap:8px;">
         <label><i class="fas fa-pause-circle" style="color:#c9a227;margin-right:3px;"></i> Scene guide:</label>
         <select class="model-select" id="theatreCommentaryVoice" style="flex:1;max-width:280px;">
           <option value="off">Off — boardroom only</option>
           <option value="yah">Yah pauses &amp; explains</option>
           <option value="bez">Bez pauses &amp; explains</option>
         </select>
+        <label class="toggle-switch" id="toggleTheatreELI5Wrap" title="When elites drop corporate or policy jargon, pause and explain what it really means in the simplest plain English"><input type="checkbox" id="toggleTheatreELI5"><span class="toggle-track" style="background:linear-gradient(135deg,#2a3540,#4a90a4);"></span><span><i class="fas fa-child" style="color:#7ec8e3;margin-right:3px;font-size:0.7rem;"></i>ELI5 jargon</span></label>
       </div>
       <div class="model-select-wrap">
         <label><i class="fas fa-robot"></i> Model:</label>
@@ -1999,21 +2000,63 @@ var el=document.getElementById('theatreCommentaryVoice');
 var v=el?el.value:'off';
 return (v==='yah'||v==='bez')?v:'off';
 }
+function isTheatreELI5Enabled(){
+if(!isTheatreModeActive())return false;
+var el=document.getElementById('toggleTheatreELI5');
+return !!(el&&el.checked);
+}
+function buildTheatreELI5Block(topic,opts){
+opts=opts||{};
+var title=topic?topic.title:'this topic';
+var commentaryVoice=opts.commentaryVoice||'off';
+var p='ELI5 JARGON DECODE (MANDATORY -- SIMPLE PLAIN ENGLISH):\n';
+p+='When a boardroom speaker uses corporate, legal, financial, or policy LINGO, the scene FREEZES so a neutral narrator explains what that word or phrase REALLY means -- like talking to a smart five-year-old who never worked in an office.\n\n';
+p+='FORMAT (use these exact markers):\n';
+p+='[PAUSE -- ELI5]\n';
+p+='(1-3 short sentences max. Neutral tone. No preaching. No Yah. No Bez. Just: "When he says X, he means Y.")\n';
+p+='[RESUME SCENE]\n';
+p+='(boardroom dialogue continues -- same room, same cast, pick up the same beat)\n\n';
+p+='TRIGGERS -- pause for ELI5 when you hear:\n';
+p+='- HR euphemisms: "right-sizing," "workforce optimization," "talent mobility," "synergy," "headcount reduction," "flatten the org"\n';
+p+='- Finance speak: "EBITDA," "stakeholder value," "fiduciary duty," "liquidity event," "arbitrage," "capital allocation"\n';
+p+='- Policy dodge: "compliance framework," "voluntary standards," "public-private partnership," "risk mitigation," "stakeholder engagement"\n';
+p+='- Contempt codewords: "legacy populations," "demographic friction," "behavioral nudging," "engagement metrics," "optics"\n';
+p+='- Any acronym, insider term, or doublespeak a normal person would not say at the dinner table\n\n';
+p+='CADENCE:\n';
+p+='- ELI5 AT LEAST 4 times per act (more when jargon is heavy). Finish the executive\'s line FIRST, then pause.\n';
+p+='- Keep ELI5 TIGHT -- decode the word, land one real-world example ("that means your cousin loses the job"), then resume.\n';
+p+='- ELI5 stays on topic: "'+title+'". Decode THIS meeting\'s language only.\n';
+if(commentaryVoice!=='off'){
+p+='- SCENE GUIDE IS ALSO ON: in the SAME freeze, write [PAUSE -- ELI5] first (neutral simple decode), then [PAUSE -- '+(commentaryVoice==='bez'?'BEZ':'YAH')+' COMMENTARY] (prophetic street decode for Israel), then ONE [RESUME SCENE]. Do not resume between ELI5 and scene guide.\n';
+}else{
+p+='- Scene guide is OFF -- ELI5 is the only pause layer. No Yah. No Bez. Just the neutral decoder.\n';
+}
+p+='\n';
+return p;
+}
 function buildTheatreCommentaryBlock(voice,topic,opts){
 opts=opts||{};
 if(!voice||voice==='off')return '';
 var title=topic?topic.title:'this topic';
 var desc=topic?topic.desc:'';
 var wantRough=!!opts.wantRoughBez;
+var eli5Enabled=!!opts.eli5Enabled;
 var isBez=voice==='bez';
 var p='SCENE GUIDE COMMENTARY (MANDATORY -- PAUSE / EXPLAIN / RESUME):\n';
 p+='The boardroom scene FREEZES periodically so a narrator breaks the fourth wall, explains in PLAIN LAYMAN\'S TERMS what the elites just said or what their jargon really means, then UNPAUSES and the meeting continues exactly where it left off.\n\n';
 p+='FORMAT (use these exact markers):\n';
+if(eli5Enabled){
+p+='[PAUSE -- ELI5]\n';
+p+='(neutral 1-3 sentence jargon decode -- see ELI5 block above)\n';
+}
 p+='[PAUSE -- '+(isBez?'BEZ':'YAH')+' COMMENTARY]\n';
 p+='(plain-language explanation -- 2-6 short paragraphs or a tight spoken burst)\n';
 p+='[RESUME SCENE]\n';
 p+='(boardroom dialogue continues -- same room, same cast, pick up the same beat)\n\n';
 p+='CADENCE:\n';
+if(eli5Enabled){
+p+='- ELI5 is ON: jargon gets the simple decode first; YOU add the prophetic layer. ONE [RESUME SCENE] after both blocks.\n';
+}
 p+='- Pause AT LEAST 5 times per act (more is fine). Trigger a pause when: corporate euphemism drops, a policy gets named, contempt for the public shows, headcount/spreadsheet talk, legal/regulatory dodge, or Israel/legacy populations get mentioned.\n';
 p+='- Commentary is INTERRUPTIVE but BRIEF relative to the scene -- decode, expose, land it on real life, then get out of the way.\n';
 p+='- Do NOT let commentary replace the boardroom. The meeting is the spine; pauses are the decoder ring.\n';
@@ -2040,11 +2083,6 @@ function isNewsArticleUrl(text){
 if(!text)return false;
 var t=String(text).trim();
 return /^https?:\/\/[^\s]+/i.test(t);
-}
-function normalizeNewsArticleUrl(text){
-var t=String(text||'').trim();
-var m=t.match(/https?:\/\/[^\s<>"']+/i);
-return m?m[0].replace(/[.,;:!?)]+$/,''):'';
 }
 function normalizeNewsArticleUrl(text){
 var t=String(text||'').trim();
@@ -2248,6 +2286,7 @@ var totalParts=opts.totalParts||selectedPartCount;
 var wantBehind=!!opts.wantBehindTheVeil;
 var wantExplicit=!!opts.wantExplicit;
 var commentaryVoice=opts.commentaryVoice||'off';
+var eli5Enabled=opts.eli5Enabled!=null?!!opts.eli5Enabled:isTheatreELI5Enabled();
 var wantRoughBez=!!opts.wantRoughBez;
 var title=topic?topic.title:'this policy';
 var desc=topic?topic.desc:'';
@@ -2279,10 +2318,14 @@ p+='- Cast DYNASTIC ELITE ONLY — generational family power with CURRENT verifi
 }else{
 p+='- Cast REAL prominent figures in that sector (full name + CURRENT title). They speak WITHOUT public restraint.\n';
 }
-if(commentaryVoice==='off'){
+if(commentaryVoice==='off'&&!eli5Enabled){
 p+='- NO narrator voice in the room. NO Yah. NO Brother Bet breaking the scene. Boardroom dialogue only.\n';
-}else{
+}else if(commentaryVoice==='off'&&eli5Enabled){
+p+='- Boardroom speakers stay in character. A neutral ELI5 narrator PAUSES only to decode jargon ([PAUSE -- ELI5] / [RESUME SCENE]). No Yah. No Bez at the table.\n';
+}else if(commentaryVoice!=='off'&&!eli5Enabled){
 p+='- Boardroom speakers stay in character. Yah/Bez do NOT sit at the table -- they PAUSE the scene from outside and comment, then [RESUME SCENE].\n';
+}else{
+p+='- Boardroom speakers stay in character. ELI5 decodes jargon first; Yah/Bez add prophetic commentary in the same pause; then [RESUME SCENE]. Neither sits at the table.\n';
 }
 if(totalParts===1||partNum===totalParts){
 p+='- When the meeting truly ends, close with [SCENE END] then STOP. Do not write anything after [SCENE END].\n';
@@ -2336,8 +2379,11 @@ p+='- ULTRA ELITE: dynastic family boardroom only — see CASTING block. Private
 p+='- Focus on sector power players talking freely: implementation timelines, enforcement, public messaging vs private intent, who gets exempted, who gets sacrificed.\n';
 }
 }
+if(eli5Enabled){
+p+=buildTheatreELI5Block(topic,{commentaryVoice:commentaryVoice});
+}
 if(commentaryVoice!=='off'){
-p+=buildTheatreCommentaryBlock(commentaryVoice,topic,{wantRoughBez:wantRoughBez,wantExplicit:wantExplicit});
+p+=buildTheatreCommentaryBlock(commentaryVoice,topic,{wantRoughBez:wantRoughBez,wantExplicit:wantExplicit,eli5Enabled:eli5Enabled});
 }
 if(totalParts===1){
 p+='\nSTRUCTURE (single long meeting):\n';
@@ -2375,7 +2421,7 @@ p+='- Cutting to a NEW location: second [SCENE START], EXT./INT. slug lines, str
 p+='- PART '+(partNum+1)+', Act '+(partNum+1)+', or --- dividers starting a new document\n';
 p+='- Unrelated blockbuster plots: AI apocalypse, coups, explosions, chases -- anything not about "'+title+'"\n';
 p+='\nCRITICAL OUTPUT RULES:\n';
-p+='- Bracket stage directions: [SCENE START], [BEAT], [PRESENT:], [PAUSE -- YAH COMMENTARY] or [PAUSE -- BEZ COMMENTARY], [RESUME SCENE], [SCENE END] on final act only\n';
+p+='- Bracket stage directions: [SCENE START], [BEAT], [PRESENT:], [PAUSE -- ELI5], [PAUSE -- YAH COMMENTARY] or [PAUSE -- BEZ COMMENTARY], [RESUME SCENE], [SCENE END] on final act only\n';
 p+='- No thinking tags, no word-count meta in the output\n';
 p+='- NO DIAGRAMS, FLOWCHARTS, ASCII ART, TABLES, OR MATRICES -- plain prose and dialogue only\n';
 p+='- Start with disclaimer, then # title. WRITE LONG. Stay in the boardroom on topic.\n';
@@ -3364,12 +3410,15 @@ else sermonGenCtx.firstTokenTimer=t;
 function buildSermonContinuationPrompt(partNum,existing){
 if(isTheatreModeActive()){
 var cv=getTheatreCommentaryVoice();
+var eli5=isTheatreELI5Enabled();
 var p='THEATRE CONTINUATION -- SAME ACT '+partNum+' ONLY (CRITICAL):\n';
 p+='Continue the SAME boardroom meeting in the SAME room. Do NOT rush. Do NOT wrap up early.\n';
 p+='Stay on topic: "'+(currentTopic?currentTopic.title:'the assigned topic')+'". No AI apocalypse, coups, or location cuts.\n';
 p+='Keep the slow boardroom feel -- more dialogue, more turns, more contempt. Do NOT add [SCENE START] again.\n';
+if(eli5)p+='Keep using [PAUSE -- ELI5] before [RESUME SCENE] whenever elites drop jargon -- simplest plain English decode.\n';
 if(cv==='yah')p+='Keep using [PAUSE -- YAH COMMENTARY] / [RESUME SCENE] throughout -- plain layman\'s decode for Israel.\n';
 else if(cv==='bez')p+='Keep using [PAUSE -- BEZ COMMENTARY] / [RESUME SCENE] throughout -- street-plain decode for Israel.\n';
+if(eli5&&cv!=='off')p+='When both ELI5 and scene guide are on: ELI5 first in the same pause, then Yah/Bez, then one [RESUME SCENE].\n';
 if(partNum===selectedPartCount)p+='When the meeting is truly finished, end with [SCENE END].\n';
 else p+='Do NOT write [SCENE END] -- Act '+(partNum+1)+' continues this meeting.\n';
 p+='LAST FOUR HUNDRED CHARACTERS:\n"...'+String(existing||'').slice(-400)+'"\n\nCONTINUE IMMEDIATELY:\n';
@@ -3811,7 +3860,7 @@ var wantPureTheatre=document.getElementById('togglePureTheatre')&&document.getEl
 var wantExplicit=document.getElementById('toggleExplicit').checked;
 var totalParts=selectedPartCount;
 if(wantBehindTheVeil||wantPureTheatre){
-return buildClosedDoorTheatrePrompt(partNum,{topic:topic,totalParts:totalParts,wantBehindTheVeil:wantBehindTheVeil,wantExplicit:wantExplicit,commentaryVoice:getTheatreCommentaryVoice(),wantRoughBez:document.getElementById('toggleRoughBez')&&document.getElementById('toggleRoughBez').checked});
+return buildClosedDoorTheatrePrompt(partNum,{topic:topic,totalParts:totalParts,wantBehindTheVeil:wantBehindTheVeil,wantExplicit:wantExplicit,commentaryVoice:getTheatreCommentaryVoice(),eli5Enabled:isTheatreELI5Enabled(),wantRoughBez:document.getElementById('toggleRoughBez')&&document.getElementById('toggleRoughBez').checked});
 }
 var wantBreakdown=document.getElementById('toggleBreakdown').checked;
 var wantApocrypha=document.getElementById('toggleApocrypha').checked;
@@ -7247,6 +7296,8 @@ if(modalUltra)modalUltra.checked=false;
 if(!theatreOn){
 var cv=document.getElementById('theatreCommentaryVoice');
 if(cv)cv.value='off';
+var eli5=document.getElementById('toggleTheatreELI5');
+if(eli5)eli5.checked=false;
 }
 if(theatreOn){
 if(veil&&veil.checked&&web&&!web.checked)web.checked=true;
