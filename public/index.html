@@ -1869,9 +1869,14 @@ return forgeIsGemini(model)||forgeIsClaude(model)||forgeIsOpenAI(model);
 }
 function getSermonWebSearchParams(model){
 var params={};
+var theatre=isTheatreModeActive();
 var webEl=document.getElementById('toggleWebResearch');
-if(webEl&&webEl.checked&&forgeSupportsWebBrowse(model)){
+if((webEl&&webEl.checked||theatre)&&forgeSupportsWebBrowse(model)){
 params.web_search=true;
+}
+if(theatre&&forgeIsGemini(model)){
+if(isVeilUltraEliteCastRequested())params.thinking_level='high';
+else if(forgeIsFlashTier(model))params.thinking_level='medium';
 }
 return params;
 }
@@ -2128,10 +2133,61 @@ p+='- Real family names where verifiable: Rockefeller, Rothschild, Windsor, Saud
 p+='- Each speaker represents GENERATIONAL WEALTH and bloodline continuity — not hired CEOs who can be fired tomorrow.\n\n';
 p+='VOICE AND POV (MANDATORY):\n';
 p+='- Dialogue is their PRIVATE worldview only — what they say when cameras are off.\n';
+p+='- THINK from their full documented history: every line should sound like someone who lived the deals, wars, mergers, and body counts in their web-searchable record.\n';
 p+='- Old money calculus: populations as assets, demographics, headcount, legacy populations, externalities, bloodline preservation.\n';
 p+='- They discuss "'+title+'" as dynasts protecting dynastic interest — not corporate PR.\n';
 if(desc)p+='- Topic context: '+desc+'\n';
 p+='- Do NOT cast random sector CEOs unless they ARE dynastic elite. No pundits. No former officials unless still verifiably powerful as family representatives.\n\n';
+return p;
+}
+function buildTheatreEliteDeepIntelBlock(ultraElite,topic,partNum){
+var title=topic?topic.title:'this topic';
+var p='DEEP ELITE INTELLIGENCE (MANDATORY — SEARCH THE WHOLE WEB BEFORE WRITING):\n';
+p+='Before a single line of dialogue, run EXTENSIVE silent web search on EVERY person at this table. Dig like an investigator with unlimited time — biographies, board seats, mergers, lawsuits, lobbying, family ties, philanthropy fronts, leaked quotes, congressional testimony, shareholder letters, memoirs, investigative journalism, regulatory filings. Their entire public trail is at your grasp across the internet. USE IT.\n\n';
+p+='FOR EACH CAST MEMBER — search internally (multiple queries per person):\n';
+p+='1. "[Full Name] biography career history major roles"\n';
+p+='2. "[Full Name] controversies scandals decisions lawsuits"\n';
+p+='3. "[Full Name] board investments family net worth philanthropy"\n';
+p+='4. "[Full Name] '+title+' policy lobbying stance"\n';
+p+='5. "[Full Name] quotes leaked emails private remarks" (reported only)\n';
+if(ultraElite){
+p+='6. "[Family name] dynastic wealth generational influence bloodline"\n';
+p+='7. "[Family name] historical decisions wars economy populations"\n';
+}
+p+='\nTHINK LIKE ULTRA ELITE (MANDATORY MINDSET — Act '+partNum+'):\n';
+p+='- You are NOT writing generic villains. Each speaker carries DECADES of calculated moves — who they crushed, who they protect, which bloodline eats first.\n';
+p+='- Their brain runs old-money calculus: populations as assets, nations as balance sheets, faith as control infrastructure, Israel as demographic problem, legacy populations as friction.\n';
+p+='- They speak what the public record IMPLIES they believe privately — dramatized admission, not a claim of leaked transcripts.\n';
+p+='- Reference SPECIFIC real history only insiders would connect: dated deals, named acquisitions, regulators they installed, wars their portfolios needed, foundations that launder intent.\n';
+p+='- Secrets in the room = plausible inference from documented pattern + their known worldview — what they would say if the mask fully dropped.\n\n';
+p+='DIALOGUE — INSIDER DEPTH (ZERO TOLERANCE FOR GENERIC CEO SPEAK):\n';
+p+='- EVERY speaker drops AT LEAST 3 insider-specific references this act — real deals, dated decisions, board conflicts, family arrangements, policies they personally architected.\n';
+p+='- They reference each other\'s REAL shared history — same merger, same foundation board, same Bilderberg year, same regulator they both own — only if search confirms the link.\n';
+p+='- No hollow "we need to manage optics." Name the ACTUAL optics disaster they survived, the ACTUAL headcount they already cut, the ACTUAL population their family has treated as externality for generations.\n';
+p+='- They reveal private calculus the public never hears: who gets sacrificed, whose fund benefits, which cousin\'s trust wins, which regulator is already bought.\n';
+p+='- Speak as if everyone in the room already knows the history — because they lived it together.\n\n';
+p+='FORBIDDEN:\n';
+p+='- Surface CEO cosplay with no dates, no names, no specific decisions\n';
+p+='- Generic evil monologue disconnected from searchable history\n';
+p+='- Inventing criminal acts with zero public record (pattern-based private admission IS allowed)\n';
+p+='- URLs, footnotes, "according to Wikipedia," or bibliography in the script\n\n';
+return p;
+}
+function buildTheatreWebResearchBlock(topic,partNum,totalParts,ultraElite){
+var webEl=document.getElementById('toggleWebResearch');
+if(!webEl||!webEl.checked||!topic)return '';
+var title=topic?topic.title:'this topic';
+var p='THEATRE WEB RESEARCH (SILENT — MANDATORY):\n';
+p+='Use live web search INTERNALLY throughout Act '+partNum+' of '+totalParts+'. Research never appears as URLs or citations in the script — it fuels what elites SAY.\n\n';
+p+='SEARCH PRIORITIES:\n';
+p+='1. TOPIC DEEP DIVE: "'+title+'" — recent headlines, policy text, who signed what, who profits, who gets hurt.\n';
+p+='2. CAST DOSSIERS: full career arc + major decisions + controversies for EVERY person at the table.\n';
+p+='3. CONNECTION MAP: who served on the same board, same merger, same family marriage, same lobbying push — cross-reference speakers.\n';
+if(ultraElite){
+p+='4. DYNASTIC LENS: how generational wealth families historically handled this type of crisis — precedents from their bloodline\'s playbook.\n';
+}
+p+='5. CURRENT WINDOW: anything from the past 12 months that would come up in THIS closed-door meeting about "'+title+'".\n\n';
+p+='Weave findings into DIALOGUE as insider knowledge — not as a news recap.\n\n';
 return p;
 }
 function buildNewsUrlVeilFetchPrompt(url,opts){
@@ -2152,11 +2208,17 @@ p+='cast_mode must be "ultra_elite".\n';
 p+='dynastic_elite_cast: 4-6 speakers from generational wealth / dynastic power families relevant to this story\'s sector (finance, pharma, tech, media, energy, government, military-industrial, etc.).\n';
 p+='Include REAL family names (e.g. Rockefeller, Rothschild, Windsor, Saud, Arnault, Walton, Mars, Koch, etc.) ONLY when web search confirms a CURRENT living representative with a verifiable role — full name + family + verified current title.\n';
 p+='Each dynastic_elite_cast entry MUST include "worldview": one line on how THIS family sees the public / affected populations in private.\n';
+p+='Each cast entry (dynastic_elite_cast AND key_players) MUST include deep web-researched dossier fields:\n';
+p+='  "deep_history": "3-5 sentences — career arc, major decisions, boards, family ties from web search",\n';
+p+='  "private_agenda": "what they want from THIS headline that the public must never know",\n';
+p+='  "insider_knowledge": "2-4 specific facts only their circle would reference — named deals, dated moves, policies they shaped, scandals they survived"\n';
+p+='Run SEPARATE web searches per person to fill these — do not guess from training memory.\n';
 p+='boardroom_cast_suggestions: leave empty [] — the room is dynastic elite ONLY.\n';
 p+='key_players: still list article names with VERIFIED current titles for context, but the dramatization cast comes from dynastic_elite_cast.\n\n';
 }else{
 p+='cast_mode must be "standard".\n';
 p+='Identify every prominently named person in the article and 2-4 ADDITIONAL current sector power players who would plausibly be in the room.\n';
+p+='Each person in key_players and boardroom_cast_suggestions MUST include deep_history, private_agenda, and insider_knowledge from web search (see fields above).\n';
 p+='dynastic_elite_cast: empty array [].\n\n';
 }
 p+='RESPOND WITH ONLY ONE JSON OBJECT. No markdown fences. No commentary before or after.\n';
@@ -2169,10 +2231,10 @@ p+='  "date": "publication date if known, else empty string",\n';
 p+='  "sector": "corporate|health_pharma|finance|surveillance_tech|government|media|military|religion|other",\n';
 p+='  "policy_topic": "short title for the closed-door meeting about this story",\n';
 p+='  "veil_agenda": "what elites would discuss in private about this headline",\n';
-p+='  "key_players": [{"name":"Full Name","title":"CURRENT verified title","title_verified_as_of":"August 2026","role_in_story":"how they appear in the article"}],\n';
+p+='  "key_players": [{"name":"Full Name","title":"CURRENT verified title","title_verified_as_of":"August 2026","role_in_story":"how they appear in the article","deep_history":"web-researched career arc","private_agenda":"hidden motive on this story","insider_knowledge":"specific insider facts from their record"}],\n';
 p+='  "affected_parties": ["groups or communities harmed, targeted, or impacted"],\n';
-p+='  "boardroom_cast_suggestions": [{"name":"Full Name","title":"CURRENT verified title","title_verified_as_of":"August 2026","why_in_room":"why at the table"}],\n';
-p+='  "dynastic_elite_cast": [{"name":"Full Name","family":"Family name","title":"CURRENT verified title","title_verified_as_of":"August 2026","why_in_room":"why this dynast is at the table for THIS headline","worldview":"private POV — how they see the masses / affected groups"}]\n';
+p+='  "boardroom_cast_suggestions": [{"name":"Full Name","title":"CURRENT verified title","title_verified_as_of":"August 2026","why_in_room":"why at the table","deep_history":"...","private_agenda":"...","insider_knowledge":"..."}],\n';
+p+='  "dynastic_elite_cast": [{"name":"Full Name","family":"Family name","title":"CURRENT verified title","title_verified_as_of":"August 2026","why_in_room":"why this dynast is at the table for THIS headline","worldview":"private POV — how they see the masses / affected groups","deep_history":"...","private_agenda":"...","insider_knowledge":"..."}]\n';
 p+='}\n';
 return p;
 }
@@ -2220,6 +2282,9 @@ if(pl.title_verified_as_of)line+=' [verified '+pl.title_verified_as_of+']';
 if(pl.role_in_story)line+=': '+pl.role_in_story;
 else if(pl.why_in_room)line+=': '+pl.why_in_room;
 if(pl.worldview)line+=' | POV: '+pl.worldview;
+if(pl.deep_history)line+='\n    HISTORY: '+pl.deep_history;
+if(pl.private_agenda)line+='\n    PRIVATE AGENDA: '+pl.private_agenda;
+if(pl.insider_knowledge)line+='\n    INSIDER KNOWLEDGE: '+pl.insider_knowledge;
 return line+'\n';
 }
 function extractTheatreSpeakerNames(text){
@@ -2365,6 +2430,7 @@ p+='- Distinct voices: financier, enforcer, public face, technocrat, ideologue.\
 p+='- Meeting anchored on THIS headline. Headline is the HOOK; the room is the REVEAL.\n';
 p+='- CAST LOCK: once Act 1 writes [PRESENT: ...], only those names speak across all acts. No silent swaps. New person = [ENTER -- Name, Title: how they arrived] BEFORE their first line.\n';
 p+='- Do not replace article cast with different famous people mid-script.\n';
+p+='- DIALOGUE must weaponize the deep_history, private_agenda, and insider_knowledge dossiers below — speakers reference their own and each other\'s documented moves as secrets the room already knows.\n';
 p+='- No URLs in the script.\n\n';
 return p;
 }
@@ -2439,6 +2505,8 @@ p+='- Cast 3-5 people genuinely prominent in THAT sector -- CEOs, regulators, fo
 p+='- Distinct voices: financier, enforcer, public face, technocrat, ideologue.\n';
 }
 p+=buildTheatreCastLockBlock(partNum,totalParts);
+p+=buildTheatreEliteDeepIntelBlock(ultraElite,topic,partNum);
+p+=buildTheatreWebResearchBlock(topic,partNum,totalParts,ultraElite);
 p+='\nSCENE ENGINE:\n';
 p+='- The TOPIC on the table: "'+title+'" -- '+desc+'\n';
 p+='- Show HOW this policy mindset gets engineered: who benefits, who gets crushed, public lie vs private admission.\n';
@@ -3511,6 +3579,7 @@ p+='Keep the slow boardroom feel -- more dialogue, more turns, more contempt. Do
 var roster=getTheatreLockedCastRoster();
 if(roster.length)p+='LOCKED CAST ONLY: '+roster.join(' | ')+'\n';
 if(eli5)p+='Keep all boardroom speakers in layman\'s terms -- plain English dialogue, no corporate jargon or euphemism.\n';
+p+='Keep dropping insider-specific secrets grounded in each speaker\'s real history — dated deals, named decisions, private calculus. Search the web if you need more depth.\n';
 if(cv==='yah')p+='Keep using [PAUSE -- YAH COMMENTARY] / [RESUME SCENE] throughout -- plain layman\'s decode for Israel.\n';
 else if(cv==='bez')p+='Keep using [PAUSE -- BEZ COMMENTARY] / [RESUME SCENE] throughout -- street-plain decode for Israel.\n';
 if(partNum===selectedPartCount)p+='When the meeting is truly finished, end with [SCENE END].\n';
@@ -6496,7 +6565,7 @@ setPartCount(3);
 openModal({skipPartRec:true,preserveOutput:true,disableGenerateBtn:true});
 isFetchingVeilArticle=true;
 var modelName=getNewsModel();
-document.getElementById('sermonOutput').innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text"><i class="fas fa-door-closed" style="margin-right:6px;"></i>Reading article'+(isVeilUltraEliteCastRequested()?' &amp; mapping dynastic elite':'')+' &amp; verifying current titles via <strong>'+escapeHtml(modelName)+'</strong>...</div></div>';
+document.getElementById('sermonOutput').innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text"><i class="fas fa-door-closed" style="margin-right:6px;"></i>Reading article'+(isVeilUltraEliteCastRequested()?' &amp; mapping dynastic elite':'')+' — deep web dossiers on every player, verifying titles via <strong>'+escapeHtml(modelName)+'</strong>...</div></div>';
 setTimeout(function(){
 var gb=document.getElementById('generateBtn');
 if(gb)gb.blur();
