@@ -2478,14 +2478,14 @@ p+=buildTheatreCommentaryBlock(commentaryVoice,topic,{wantRoughBez:wantRoughBez,
 }
 if(totalParts===1){
 p+='\nSTRUCTURE (single long meeting):\n';
-p+='[SCENE START] -- describe the room (subterranean boardroom, soundproofing, no phones). [PRESENT: cast with titles].\n';
+p+='[SCENE START] -- describe the room (subterranean boardroom, soundproofing, no phones). [PRESENT: every cast member with full name and current title — this roster is LOCKED].\n';
 p+='[BEAT] Opening pleasantries and public-facing doublespeak about "'+title+'".\n';
 p+='[BEAT] First crack -- someone says what the press release will never say.\n';
 p+='[BEAT] Extended debate: who benefits, who gets crushed, implementation, enforcement, messaging.\n';
 p+='[BEAT] Masks fully off -- contempt, deals, who they sacrifice. Slow walk to the door. [SCENE END]\n';
 }else if(partNum===1){
 p+='\nACT '+partNum+' -- THE MEETING OPENS (long boardroom session, same room throughout all acts):\n';
-p+='Set the room. Introduce every cast member with title. Open with corporate/institutional doublespeak, then let the conversation RUN -- multiple rounds on "'+title+'". End mid-meeting on a tense beat. Do NOT write [SCENE END].\n';
+p+='Set the room. [PRESENT: full name + title for every person at the table — locked roster]. Open with corporate/institutional doublespeak, then let the conversation RUN -- multiple rounds on "'+title+'". End mid-meeting on a tense beat. Do NOT write [SCENE END].\n';
 }else if(partNum===totalParts){
 p+='\nACT '+partNum+' -- THE MEETING CLOSES (same room, same cast, pick up mid-conversation):\n';
 p+='Brief bridge from Act '+(partNum-1)+' (one sentence max). Keep talking -- enforcement, rollout, who gets hurt, public cover story. Let it run long before the final cold line. [SCENE END]\n';
