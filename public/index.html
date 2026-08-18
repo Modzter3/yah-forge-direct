@@ -2222,6 +2222,95 @@ else if(pl.why_in_room)line+=': '+pl.why_in_room;
 if(pl.worldview)line+=' | POV: '+pl.worldview;
 return line+'\n';
 }
+function extractTheatreSpeakerNames(text){
+if(!text)return [];
+var names={};
+var presentRe=/\[PRESENT:\s*([^\]]+)\]/i;
+var pm=text.match(presentRe);
+if(pm){
+var parts=pm[1].split(/[|,;]/);
+for(var pi=0;pi<parts.length;pi++){
+var n=parts[pi].replace(/\([^)]*\)/g,'').replace(/\[[^\]]*\]/g,'').trim();
+if(n&&n.length>2)names[n.toUpperCase()]=n;
+}
+}
+var lineRe=/^([A-Z][A-Z0-9 .'\-&]{2,}):\s/gm;
+var m;
+while((m=lineRe.exec(text))!==null){
+var name=m[1].trim();
+if(!/^(BEAT|SCENE|PRESENT|PAUSE|RESUME|ENTER|EXIT)$/i.test(name))names[name.toUpperCase()]=name;
+}
+var out=[];
+for(var k in names){if(names.hasOwnProperty(k))out.push(names[k]);}
+return out;
+}
+function getTheatreLockedCastRoster(){
+var roster=[];
+if(currentNewsContext&&currentNewsContext[0]){
+var art=currentNewsContext[0];
+var ultra=art.cast_mode==='ultra_elite';
+var list=[];
+if(ultra&&art.dynastic_elite_cast&&art.dynastic_elite_cast.length){
+list=art.dynastic_elite_cast;
+}else{
+if(art.boardroom_cast_suggestions&&art.boardroom_cast_suggestions.length)list=list.concat(art.boardroom_cast_suggestions);
+if(art.key_players&&art.key_players.length){
+for(var ki=0;ki<art.key_players.length;ki++){
+var kp=art.key_players[ki];
+if(!kp||!kp.name)continue;
+var dup=false;
+for(var li=0;li<list.length;li++){if(list[li]&&list[li].name===kp.name){dup=true;break;}}
+if(!dup)list.push(kp);
+}
+}
+}
+for(var i=0;i<list.length&&roster.length<5;i++){
+if(list[i]&&list[i].name)roster.push(list[i].name+(list[i].title?(' — '+list[i].title):''));
+}
+}
+if(!roster.length&&sermonPartsRaw.length){
+roster=extractTheatreSpeakerNames(sermonPartsRaw[0]);
+for(var si=1;si<sermonPartsRaw.length&&roster.length<6;si++){
+var more=extractTheatreSpeakerNames(sermonPartsRaw[si]);
+for(var mi=0;mi<more.length;mi++){
+var found=false;
+for(var ri=0;ri<roster.length;ri++){if(roster[ri].toUpperCase().indexOf(more[mi].toUpperCase())===0||more[mi].toUpperCase().indexOf(roster[ri].split(' — ')[0].toUpperCase())===0){found=true;break;}}
+if(!found)roster.push(more[mi]);
+}
+}
+}
+return roster;
+}
+function buildTheatreCastLockBlock(partNum,totalParts){
+var roster=getTheatreLockedCastRoster();
+var p='CAST LOCK (ZERO TOLERANCE — NO SILENT SWAPS):\n';
+p+='- This meeting has a FIXED roster. Same people, same room, from Act 1 through the final act.\n';
+p+='- Do NOT silently replace one speaker with another. Do NOT drop someone and swap in a different famous person without explanation.\n';
+p+='- Do NOT introduce a new named speaker in dialogue without a stage direction FIRST explaining how they got there.\n\n';
+p+='FORMAT:\n';
+p+='- Act 1 opens with [PRESENT: Full Name, Current Title | Full Name, Current Title | ...] — 3 to 5 people max. This roster is LOCKED unless you explicitly add or remove someone.\n';
+p+='- Late arrival (rare — max 1 per act): [ENTER -- Full Name, Current Title: how they got here — door opens, video patched in, lawyer summoned them, walked in uninvited, etc.]\n';
+p+='- Someone leaves (rare): [EXIT -- Full Name: why they left the room]\n';
+p+='- Then their dialogue line. Never name a new speaker without [ENTER -- ...] first.\n\n';
+if(partNum===1){
+p+='- Act 1: establish the full cast in [PRESENT: ...] before the first line of dialogue. Only these people speak unless you use [ENTER -- ...].\n';
+if(roster.length){
+p+='- PRE-LOCKED CAST from article/research (use these names — do not substitute others):\n';
+for(var i=0;i<roster.length;i++)p+='  • '+roster[i]+'\n';
+}
+}else{
+p+='- Act '+partNum+' of '+totalParts+': ONLY speakers from Act 1 / previous acts. Same full names. Same roles.\n';
+p+='- Do NOT re-introduce the room. Do NOT add [PRESENT:] again. Pick up mid-meeting with the SAME people talking.\n';
+if(roster.length){
+p+='- LOCKED ROSTER (your only speakers unless [ENTER -- ...]):\n';
+for(var j=0;j<roster.length;j++)p+='  • '+roster[j]+'\n';
+}
+p+='- If Act '+(partNum-1)+' ended with five people at the table, Act '+partNum+' starts with those same five — not four, not six, not a different CEO.\n';
+}
+p+='- Unnamed staff (servers, assistants) may appear without [ENTER] only if they do not speak.\n';
+p+='- FORBIDDEN: surprise new senators, regulators, CEOs, or pundits appearing in dialogue with no [ENTER -- ...] line.\n\n';
+return p;
+}
 function buildNewsArticleVeilBlock(articles){
 if(!articles||!articles.length)return '';
 var art=articles[0];
@@ -2274,6 +2363,8 @@ p+='- 3-5 total speakers: article names plus sector power players.\n';
 p+='- Distinct voices: financier, enforcer, public face, technocrat, ideologue.\n';
 }
 p+='- Meeting anchored on THIS headline. Headline is the HOOK; the room is the REVEAL.\n';
+p+='- CAST LOCK: once Act 1 writes [PRESENT: ...], only those names speak across all acts. No silent swaps. New person = [ENTER -- Name, Title: how they arrived] BEFORE their first line.\n';
+p+='- Do not replace article cast with different famous people mid-script.\n';
 p+='- No URLs in the script.\n\n';
 return p;
 }
@@ -2306,6 +2397,7 @@ p+='ONE ROOM / ONE MEETING RULE:\n';
 p+='- ONE location only for this '+(totalParts===1?'script':'act')+'. One closed-door meeting. Doors locked. No cameras.\n';
 p+='- ONE sector only -- pick the sector that best fits "'+title+'" and do NOT switch sectors across acts (no jumping from corporate to defense to healthcare unless the topic explicitly spans them).\n';
 p+='- 3 to 5 speakers max in the room. Same cast continues across acts when multi-part.\n';
+p+='- Cast is LOCKED at [PRESENT:] in Act 1. No silent character swaps in later acts.\n';
 p+='- Do NOT write a second scene, epilogue, B-plot, or exterior street scene. When the meeting ends, write [SCENE END] and STOP.\n\n';
 p+='OUTPUT FORMAT -- PLAY SCRIPT ONLY:\n';
 p+='- Your FIRST line must be exactly: *Dramatization for prophetic illustration -- not a claim of factual record or leaked dialogue.*\n';
@@ -2346,6 +2438,7 @@ p+='- Identify the ONE sector this topic belongs to (corporate, health/pharma, f
 p+='- Cast 3-5 people genuinely prominent in THAT sector -- CEOs, regulators, foundation heads, agency directors, policy architects. Real names and CURRENT titles (verify via web search if needed).\n';
 p+='- Distinct voices: financier, enforcer, public face, technocrat, ideologue.\n';
 }
+p+=buildTheatreCastLockBlock(partNum,totalParts);
 p+='\nSCENE ENGINE:\n';
 p+='- The TOPIC on the table: "'+title+'" -- '+desc+'\n';
 p+='- Show HOW this policy mindset gets engineered: who benefits, who gets crushed, public lie vs private admission.\n';
@@ -2408,7 +2501,7 @@ for(var ti=0;ti<partNum-1;ti++){
 p+='--- ACT '+(ti+1)+': '+(sermonPartsTitles[ti]||'Untitled')+' ---\n';
 p+=(sermonPartsRaw[ti]||'')+'\n--- END ACT '+(ti+1)+' ---\n\n';
 }
-p+='Continue the SAME meeting in the SAME room with the SAME cast. Do NOT repeat lines. Do NOT change sector. Do NOT start a new story.\n\n';
+p+='Continue the SAME meeting in the SAME room with the SAME cast. Do NOT repeat lines. Do NOT change sector. Do NOT start a new story. Do NOT swap speakers.\n\n';
 }
 if(wantExplicit){
 p+='\nEXPLICIT THEATRE: Profanity and graphic contempt when masks drop. No sanitizing.\n';
@@ -2418,8 +2511,10 @@ p+='- Anything after [SCENE END] on the final act\n';
 p+='- Cutting to a NEW location: second [SCENE START], EXT./INT. slug lines, street scenes, war rooms, server bunkers\n';
 p+='- PART '+(partNum+1)+', Act '+(partNum+1)+', or --- dividers starting a new document\n';
 p+='- Unrelated blockbuster plots: AI apocalypse, coups, explosions, chases -- anything not about "'+title+'"\n';
+p+='- Silent cast drift: new named speakers without [ENTER -- Full Name, Title: how they arrived]\n';
+p+='- Replacing a cast member with a different person without [EXIT -- ...] and/or [ENTER -- ...]\n';
 p+='\nCRITICAL OUTPUT RULES:\n';
-p+='- Bracket stage directions: [SCENE START], [BEAT], [PRESENT:], [PAUSE -- YAH COMMENTARY] or [PAUSE -- BEZ COMMENTARY], [RESUME SCENE], [SCENE END] on final act only\n';
+p+='- Bracket stage directions: [SCENE START], [BEAT], [PRESENT: Name, Title | ...], [ENTER -- Name, Title: arrival], [EXIT -- Name: reason], [PAUSE -- YAH COMMENTARY] or [PAUSE -- BEZ COMMENTARY], [RESUME SCENE], [SCENE END] on final act only\n';
 p+='- No thinking tags, no word-count meta in the output\n';
 p+='- NO DIAGRAMS, FLOWCHARTS, ASCII ART, TABLES, OR MATRICES -- plain prose and dialogue only\n';
 p+='- Start with disclaimer, then # title. WRITE LONG. Stay in the boardroom on topic.\n';
@@ -3412,7 +3507,9 @@ var eli5=isTheatreELI5Enabled();
 var p='THEATRE CONTINUATION -- SAME ACT '+partNum+' ONLY (CRITICAL):\n';
 p+='Continue the SAME boardroom meeting in the SAME room. Do NOT rush. Do NOT wrap up early.\n';
 p+='Stay on topic: "'+(currentTopic?currentTopic.title:'the assigned topic')+'". No AI apocalypse, coups, or location cuts.\n';
-p+='Keep the slow boardroom feel -- more dialogue, more turns, more contempt. Do NOT add [SCENE START] again.\n';
+p+='Keep the slow boardroom feel -- more dialogue, more turns, more contempt. Do NOT add [SCENE START] again. Do NOT add new named speakers without [ENTER -- Name, Title: how they got here].\n';
+var roster=getTheatreLockedCastRoster();
+if(roster.length)p+='LOCKED CAST ONLY: '+roster.join(' | ')+'\n';
 if(eli5)p+='Keep all boardroom speakers in layman\'s terms -- plain English dialogue, no corporate jargon or euphemism.\n';
 if(cv==='yah')p+='Keep using [PAUSE -- YAH COMMENTARY] / [RESUME SCENE] throughout -- plain layman\'s decode for Israel.\n';
 else if(cv==='bez')p+='Keep using [PAUSE -- BEZ COMMENTARY] / [RESUME SCENE] throughout -- street-plain decode for Israel.\n';
