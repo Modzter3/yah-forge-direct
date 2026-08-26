@@ -12,6 +12,7 @@
     'sealedFetchModel',
     'dismantleModel',
     'destroyModel',
+    'yahChatModel',
     'newsModel',
     'imagePromptModel',
   ];

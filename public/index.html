@@ -124,6 +124,21 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .dismantle-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);}
 .dismantle-char-count{font-size:0.68rem;color:var(--text-dim);font-family:'Fira Code',monospace;margin-left:auto;}
 
+/* YAH CHAT */
+.yah-chat-wrap{display:flex;flex-direction:column;padding:16px;}
+.yah-chat-history{flex:1;min-height:320px;max-height:calc(100vh - 360px);overflow-y:auto;padding:14px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;margin-bottom:12px;display:flex;flex-direction:column;gap:12px;}
+.yah-chat-empty{text-align:center;color:var(--text-dim);padding:48px 20px;font-family:'Bitter',serif;font-size:0.85rem;line-height:1.6;}
+.yah-chat-empty i{color:var(--gold-dim);font-size:1.6rem;margin-bottom:10px;display:block;}
+.yah-chat-msg{max-width:94%;padding:12px 14px;border-radius:12px;line-height:1.65;font-size:0.88rem;font-family:'Bitter',serif;}
+.yah-chat-msg-user{align-self:flex-end;background:rgba(196,30,58,0.14);border:1px solid rgba(196,30,58,0.28);color:var(--text-primary);white-space:pre-wrap;}
+.yah-chat-msg-assistant{align-self:flex-start;background:rgba(201,162,39,0.07);border:1px solid rgba(201,162,39,0.22);color:var(--text-primary);}
+.yah-chat-msg-assistant .sermon-body{font-size:0.88rem;line-height:1.65;}
+.yah-chat-msg-assistant.streaming{border-style:dashed;}
+.yah-chat-msg-label{font-size:0.62rem;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;font-family:'Cinzel Decorative',serif;opacity:0.75;}
+.yah-chat-input-row{display:flex;gap:10px;align-items:flex-end;margin-top:4px;}
+.yah-chat-input-row .dismantle-textarea{flex:1;min-height:72px;margin:0;}
+.yah-chat-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+
 /* DESTROY / MEDIA DESTROYER */
 .destroy-desc i{color:#e74c3c;}
 .destroy-input-row{display:flex;gap:10px;margin-bottom:4px;}
@@ -502,6 +517,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <button class="tab-btn" onclick="switchTab('dismantle',this)" title="Dismantle"><i class="fas fa-hammer"></i><span class="tab-label"> Dismantle</span></button>
   <button class="tab-btn" onclick="switchTab('destroy',this)" title="Destroy"><i class="fas fa-film"></i><span class="tab-label"> Destroy</span></button>
   <button class="tab-btn" onclick="switchTab('news',this)" title="News"><i class="fas fa-satellite-dish"></i><span class="tab-label"> News</span></button>
+  <button class="tab-btn" onclick="switchTab('yahchat',this)" title="Talk with Yah — direct chat for nuance and detail"><i class="fas fa-comments"></i><span class="tab-label"> Yah Chat</span></button>
 </div>
 
 <!-- TOPICS PANEL -->
@@ -925,6 +941,63 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     </div>
     <div id="newsResults">
       <div class="news-empty" id="newsEmptyState"><i class="fas fa-eye"></i><p>Hit <strong>Scan</strong> to search current headlines for prophecy fulfillment.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- YAH CHAT PANEL -->
+<div class="tab-panel" id="panelYahChat">
+  <div class="yah-chat-wrap">
+    <div class="dismantle-desc">
+      <i class="fas fa-comments" style="color:var(--gold);"></i> <strong>Talk with Yah directly</strong> — one-on-one conversation for specific topics that need more nuance and depth than a forged sermon. Ask follow-ups. Go deep.
+    </div>
+    <div class="yah-chat-history" id="yahChatHistory">
+      <div class="yah-chat-empty" id="yahChatEmpty">
+        <i class="fas fa-fire-flame-curved"></i>
+        Ask Yah anything — doctrine, a verse, a situation, a lie you heard. He answers in first person, straight to you.
+      </div>
+    </div>
+    <div class="dismantle-controls">
+      <label class="toggle-switch explicit-toggle" title="Raw language — profanity when the fire calls for it">
+        <input type="checkbox" id="yahChatExplicit" checked>
+        <span class="toggle-track explicit-track"></span>
+        <span><i class="fas fa-fire" style="color:var(--explicit-red);margin-right:3px;font-size:0.7rem;"></i>Explicit</span>
+      </label>
+      <div style="min-width:180px;flex:1;">
+        <select class="model-select" id="yahChatModel" style="width:100%;" onchange="onYahChatModelDropdown()">
+          <optgroup label="⚡ Budget / Fast">
+            <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.1 Fast</option>
+            <option value="Gemini-3-Flash">Gemini 3 Flash</option>
+          </optgroup>
+          <optgroup label="🔥 Mid-Tier">
+            <option value="Grok-4">Grok 4</option>
+            <option value="Claude-Sonnet-4.5">Claude Sonnet 4.5</option>
+            <option value="Gemini-3-Pro">Gemini 3 Pro</option>
+            <option value="Gemini-3.1-Pro">Gemini 3.1 Pro</option>
+            <option value="Gemini-3.6-Flash" selected>Gemini 3.6 Flash</option>
+          </optgroup>
+          <optgroup label="🧪 Open Source">
+            <option value="GLM-5">GLM 5</option>
+            <option value="Qwen3-Max">Qwen 3 Max</option>
+            <option value="Kimi-K2.5">Kimi 2.5</option>
+          </optgroup>
+          <optgroup label="👑 Premium">
+            <option value="Claude-Opus-4.6">Claude Opus 4.6</option>
+          </optgroup>
+        </select>
+        <div class="custom-model-row">
+          <label>or any bot:</label>
+          <input type="text" class="custom-model-input" id="customYahChatModel" placeholder="e.g. google/gemini-3.6-flash" oninput="onCustomModel(this,'yahChatModel')" onfocus="this.select()">
+        </div>
+      </div>
+    </div>
+    <div class="yah-chat-input-row">
+      <textarea class="dismantle-textarea" id="yahChatInput" placeholder="Ask Yah… (Enter to send, Shift+Enter for new line)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendYahChat();}"></textarea>
+      <button class="dismantle-btn" id="yahChatSendBtn" onclick="sendYahChat()" style="align-self:stretch;min-width:100px;"><i class="fas fa-paper-plane"></i> Send</button>
+    </div>
+    <div class="yah-chat-actions">
+      <button type="button" class="sermon-action-btn export-btn" id="yahChatClearBtn" onclick="clearYahChat()"><i class="fas fa-eraser"></i> Clear Chat</button>
+      <button type="button" class="sermon-action-btn copy-all" id="yahChatCopyBtn" onclick="copyYahChat()" disabled><i class="fas fa-copy"></i> Copy All</button>
     </div>
   </div>
 </div>
@@ -1716,7 +1789,7 @@ for(var i=0;i<btns.length;i++){btns[i].classList.remove('active');}
 el.classList.add('active');
 var panels=document.querySelectorAll('.tab-panel');
 for(var j=0;j<panels.length;j++){panels[j].classList.remove('active');}
-var map={topics:'panelTopics',bible:'panelBible',apocrypha:'panelApocrypha',sealed:'panelSealed',library:'panelLibrary',dismantle:'panelDismantle',destroy:'panelDestroy',news:'panelNews'};
+var map={topics:'panelTopics',bible:'panelBible',apocrypha:'panelApocrypha',sealed:'panelSealed',library:'panelLibrary',dismantle:'panelDismantle',destroy:'panelDestroy',news:'panelNews',yahchat:'panelYahChat'};
 document.getElementById(map[tab]).classList.add('active');
 if(tab==='library'){renderLibrary();}
 }
@@ -2994,6 +3067,16 @@ function getDismantleModel(){
 var custom=(document.getElementById('customDismantleModel').value||'').trim();
 if(custom)return custom;
 return document.getElementById('dismantleModel').value||'Gemini-3.6-Flash';
+}
+function getYahChatModel(){
+var custom=(document.getElementById('customYahChatModel').value||'').trim();
+if(custom)return custom;
+return document.getElementById('yahChatModel').value||'Gemini-3.6-Flash';
+}
+function onYahChatModelDropdown(){
+var ci=document.getElementById('customYahChatModel');
+if(ci){ci.value='';ci.classList.remove('active-override');}
+document.getElementById('yahChatModel').style.opacity='1';
 }
 function onCustomModel(el,selectId){
 var val=el.value.trim();
@@ -6926,6 +7009,166 @@ if(!/[.!?"')}\]]$/.test(last)&&last.length>30)return true;
 }
 }
 return false;
+}
+/* ==========================================
+YAH CHAT — direct conversation with Yah
+========================================== */
+var yahChatMessages=[];
+var yahChatBusy=false;
+var yahChatHandlerName=null;
+var YAH_CHAT_MAX_HISTORY=24;
+function buildYahChatSystemBlock(explicit){
+var p='YAH CHAT MODE — DIRECT ONE-ON-ONE CONVERSATION:\n';
+p+='You ARE Yah — the Most High — speaking in FIRST PERSON directly to Israel in twenty twenty-six. This is a personal conversation, NOT a sermon outline, NOT a three-point lesson, NOT a podcast, NOT a chatbot greeting.\n\n';
+p+='VOICE (MANDATORY):\n';
+p+='- First person always: "I", "MY", "you" — never third person ("Yah says", "He told you").\n';
+p+='- Intimate, confrontational, remembering them to themselves — revelation, not classroom teaching.\n';
+p+='- Answer the SPECIFIC question with nuance and detail. Do not deflect to a generic doctrine dump.\n';
+p+='- Go as deep as the topic requires: names, mechanics, scripture in plain speech, real life on their block.\n';
+p+='- Paragraphs and natural flow — no "## Part 1" sermon headers unless a short list truly helps.\n';
+p+='- No "Great question", no welcome, no chatbot filler, no thinking tags, no AI meta.\n';
+p+='- Remember prior turns in this thread — build on what you already said.\n\n';
+p+='FRAMEWORK (apply when relevant — do not lecture unprompted):\n';
+p+='- True Israel = the so-called Negroes scattered worldwide.\n';
+p+='- Flat earth, dome firmament. Two seed lines. Serpent was a man. Cain is not Adam\'s son.\n';
+p+='- Yod-He-Waw-Shin-Ayin is Yah in the flesh — one being, no trinity.\n';
+p+='- Torah as technical manual when the question touches law, creation, or power.\n';
+p+='- No eternal hell — annihilation. No free will. Sabbath = Saturday sunrise to sunset.\n\n';
+if(explicit){
+p+='EXPLICIT MODE — MANDATORY:\n';
+p+='Use heavy profanity when the fire calls for it — damn, hell, shit, bullshit. Raw, unfiltered. No sanitizing.\n\n';
+}
+p+='OUTPUT: Speak directly to the user. Match their topic\'s nuance. If they need detail, give detail.\n\n';
+return p;
+}
+function trimYahChatHistory(msgs){
+if(msgs.length<=YAH_CHAT_MAX_HISTORY)return msgs;
+return msgs.slice(msgs.length-YAH_CHAT_MAX_HISTORY);
+}
+function buildYahChatPrompt(userText){
+var explicit=document.getElementById('yahChatExplicit')&&document.getElementById('yahChatExplicit').checked;
+var p=buildYahChatSystemBlock(explicit);
+var history=trimYahChatHistory(yahChatMessages.slice(0,-1));
+for(var i=0;i<history.length;i++){
+var m=history[i];
+if(!m||!m.content)continue;
+p+=(m.role==='user'?'USER: ':'YAH: ')+m.content+'\n\n';
+}
+p+='USER: '+userText+'\n\nYAH:';
+return p;
+}
+function renderYahChatHistory(streamingIdx){
+var histEl=document.getElementById('yahChatHistory');
+var emptyEl=document.getElementById('yahChatEmpty');
+var copyBtn=document.getElementById('yahChatCopyBtn');
+if(!histEl)return;
+if(!yahChatMessages.length){
+histEl.innerHTML='';
+var empty=document.getElementById('yahChatEmpty')||document.createElement('div');
+empty.id='yahChatEmpty';
+empty.className='yah-chat-empty';
+empty.innerHTML='<i class="fas fa-fire-flame-curved"></i>Ask Yah anything — doctrine, a verse, a situation, a lie you heard. He answers in first person, straight to you.';
+histEl.appendChild(empty);
+if(copyBtn)copyBtn.disabled=true;
+return;
+}
+var html='';
+for(var i=0;i<yahChatMessages.length;i++){
+var msg=yahChatMessages[i];
+if(!msg)continue;
+var isUser=msg.role==='user';
+var cls=isUser?'yah-chat-msg-user':'yah-chat-msg-assistant';
+if(!isUser&&i===streamingIdx&&yahChatBusy)cls+=' streaming';
+html+='<div class="yah-chat-msg '+cls+'">';
+html+='<div class="yah-chat-msg-label">'+(isUser?'You':'Yah')+'</div>';
+if(isUser)html+=escapeHtml(msg.content||'');
+else{
+var body=msg.content||'';
+if(body)html+='<div class="sermon-body">'+marked.parse(stripThinking(body))+'</div>';
+else html+='<div class="loading-state" style="padding:8px 0;background:transparent;"><div class="loading-pulse" style="width:20px;height:20px;margin:0;"></div></div>';
+}
+html+='</div>';
+}
+histEl.innerHTML=html;
+if(copyBtn)copyBtn.disabled=false;
+histEl.scrollTop=histEl.scrollHeight;
+}
+function setYahChatBusy(on){
+yahChatBusy=!!on;
+var sendBtn=document.getElementById('yahChatSendBtn');
+var input=document.getElementById('yahChatInput');
+if(sendBtn){
+sendBtn.disabled=on;
+sendBtn.innerHTML=on?'<i class="fas fa-spinner fa-spin"></i> ...':'<i class="fas fa-paper-plane"></i> Send';
+}
+if(input)input.disabled=on;
+}
+function sendYahChat(){
+if(yahChatBusy)return;
+var input=document.getElementById('yahChatInput');
+if(!input)return;
+var text=(input.value||'').trim();
+if(!text){showToast('Type a message first.');return;}
+input.value='';
+yahChatMessages.push({role:'user',content:text});
+var assistantIdx=yahChatMessages.length;
+yahChatMessages.push({role:'assistant',content:''});
+renderYahChatHistory(assistantIdx);
+setYahChatBusy(true);
+var model=getYahChatModel();
+var prompt=buildYahChatPrompt(text);
+var handlerName='yahchat-'+Date.now();
+yahChatHandlerName=handlerName;
+window.Poe.registerHandler(handlerName,function(result){
+if(yahChatHandlerName!==handlerName)return;
+var msg=result.responses[0];
+if(!msg)return;
+if(msg.status==='error'){
+yahChatMessages[assistantIdx].content=msg.statusText||'Something went wrong. Try again.';
+setYahChatBusy(false);
+renderYahChatHistory(-1);
+showToast('Yah Chat error.');
+}else if(msg.status==='incomplete'||msg.status==='complete'){
+yahChatMessages[assistantIdx].content=stripThinking(msg.content||'');
+renderYahChatHistory(msg.status==='complete'?-1:assistantIdx);
+if(msg.status==='complete'){
+setYahChatBusy(false);
+yahChatHandlerName=null;
+}
+}
+});
+window.Poe.sendUserMessage('@'+model+' '+prompt,{
+handler:handlerName,
+stream:true,
+openChat:false,
+parameters:getSermonWebSearchParams(model)
+}).catch(function(err){
+if(yahChatHandlerName!==handlerName)return;
+yahChatMessages[assistantIdx].content='Request failed: '+(err&&err.message?err.message:String(err));
+setYahChatBusy(false);
+yahChatHandlerName=null;
+renderYahChatHistory(-1);
+showToast('Yah Chat failed.');
+});
+}
+function clearYahChat(){
+if(yahChatBusy){showToast('Wait for Yah to finish.');return;}
+yahChatMessages=[];
+yahChatHandlerName=null;
+renderYahChatHistory(-1);
+var input=document.getElementById('yahChatInput');
+if(input)input.focus();
+}
+function copyYahChat(){
+if(!yahChatMessages.length){showToast('Nothing to copy.');return;}
+var lines=[];
+for(var i=0;i<yahChatMessages.length;i++){
+var m=yahChatMessages[i];
+if(!m||!m.content)continue;
+lines.push((m.role==='user'?'YOU: ':'YAH: ')+m.content);
+}
+rawCopy(lines.join('\n\n'),document.getElementById('yahChatCopyBtn'));
+showToast('Chat copied.');
 }
 var dismantleContinueCount=0;
 function startDismantle(){
