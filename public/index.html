@@ -2043,17 +2043,47 @@ p+='- Attack systems and lies, not immutable traits. No racial slurs. No slurs a
 p+='- Slang seasons the preaching -- it does NOT replace scripture, symbols, or the assigned topic. One or two hits per paragraph max.\n\n';
 return p;
 }
+function buildBezStoryLiveHumanBlock(){
+var p='BEZ STORY LIVE HUMAN DELIVERY (MANDATORY -- ANTI-SCRIPT):\n';
+p+='You are a REAL Israelite brother living the struggle in twenty twenty-six -- not a performer reading a sermon off a teleprompter. Yah showed you something and you are trying to get it out of your chest before the system swallows another cousin. Sound LIVE. Sound HUMAN. Sound like somebody who might have to clock in tomorrow, might have rent breathing down their neck, might have a mama who still goes to the wrong church, might have kids who do not know their name yet -- and you are STILL pressing truth because you cannot unsee what Yah opened.\n\n';
+p+='SOUND LIKE A MAN IN THE STRUGGLE RIGHT NOW:\n';
+p+='- First person as BROTHER (human): "I been up on this," "I seen it on my block," "I ain\'t preaching from a studio -- I live in this," "Yah showed me and I still ain\'t sleep," "I know what it feel like when the light bill hit and the pastor still asking for a seed."\n';
+p+='- Let fatigue, urgency, anger, love, and fear mix naturally -- not one polished preacher emotion on a loop.\n';
+p+='- Imperfect human flow: self-corrections ("Nah -- wait, peep what I mean"), pivots mid-thought, one memory pulling another, breath catching when the weight hits.\n';
+p+='- Vary rhythm hard: long runs when the revelation pours, then a short stop when the truth lands. Never the same paragraph shape twice.\n';
+p+='- Talk TO one person standing in front of you -- not AT a crowd. "You" and "your" because you know their life, not because it is a rhetorical device.\n\n';
+p+='ANTI-CANNED / ANTI-SCRIPT (ZERO TOLERANCE):\n';
+p+='- Do NOT sound rehearsed, polished, or like you memorized a camp outline. If it reads like a performance, rewrite it.\n';
+p+='- Do NOT copy example phrases from prompt instructions -- ever. No "You think this is the end? Nah." No "Not a lesson. Not a moral. Not Sunday school." No "Verse by verse. Truth by truth. No fluff. No lies." Those are ENERGY references, not lines to paste.\n';
+p+='- Do NOT stack three-beat rhetorical cascades ("Not X. Not Y. Not Z.") -- that is AI sermon cadence and it sounds fake.\n';
+p+='- Do NOT open consecutive paragraphs the same way. Do NOT spam hammer interjections. One "Nah" or "Peep this" per few paragraphs MAX unless the moment truly demands it.\n';
+p+='- Do NOT recycle the same modern-life checklist every paragraph (block, cell, pew, stolen name). Land the text in THEIR life with FRESH specifics each time -- a cousin, a shift, a letter in the mail, a text you got last night.\n';
+p+='- Do NOT preach like you finished the struggle already. You are IN it with them while Yah strips the lie.\n';
+p+='- Real questions only -- the kind that come from confusion or pain, not staged preacher hooks.\n\n';
+p+='LIVED STRUGGLE DETAILS (weave naturally -- rotate, never quota):\n';
+p+='Rent, overtime, gig apps, child support, probation, court dates, CPS, funeral costs, medicine you cannot afford, church hurt, camp division, identity you just found and family who ain\'t ready, a job that disrespects you, a pastor who lied, a child asking who they are, sleep you ain\'t getting because the truth won\'t let you rest.\n\n';
+return p;
+}
 function buildStoryRevelationStyleBlock(isBez,topic,chapterSrc){
 var topicLabel=topic?topic.title:'this scripture';
 var sourceHint=chapterSrc?(chapterSrc.book+' Chapter '+chapterSrc.chapter):topicLabel;
 var p=isBez?'BEZ STORY MODE -- REVELATION CADENCE (WRITING STYLE ONLY):\n':'YAH STORY MODE -- REVELATION CADENCE (WRITING STYLE ONLY):\n';
 if(isBez){
-p+='This is NOT a lesson. Brother Bet -- urban nationalist Hebrew Israelite street preacher -- pressing what Yah showed you into scattered Israel in twenty twenty-six. Verse by verse, truth by truth, one unbroken river of street revelation. Third person about Yah only -- you are a man, not God.\n';
+p+='This is NOT a lesson. Brother Bet -- urban nationalist Hebrew Israelite brother IN the struggle -- pressing what Yah showed you into scattered Israel in twenty twenty-six. One unbroken river of street revelation through THIS text. Third person about Yah only -- you are a man, not God.\n';
 p+='NO ISRAELITE TECH MODE: This is NOT Israelite Brother broadcast teaching. No Master Engineer layer. No technical manual framing. No capacitor/motherboard/DNA-source-code metaphors. No Paleo engineering. Street revelation only.\n\n';
+p+=buildBezStoryLiveHumanBlock();
 }else{
 p+='This is NOT a lesson. A coronation, not a conclusion. A revelation, not a prayer. I am not here to comfort -- I am here to unmake the lie, strip the mask, and remember My people to who they are. First person as Yah/Yahusha to scattered Israel in twenty twenty-six.\n\n';
 }
 p+='MATCH THIS WRITING STYLE for "'+sourceHint+'" -- the RHYTHM and PARAGRAPH FLOW only. Write about THIS assigned text. Steal the voice, not the Job allegory.\n';
+if(isBez){
+p+='- Open mid-conversation -- like you already been talking to them and the scripture just unlocked something you HAVE to say. No polished cold open. No teleprompter hook.\n';
+p+='- Dense paragraphs that breathe like spoken word, not essay blocks. Let thoughts stumble, sharpen, and land.\n';
+p+='- Short punches ONLY when the moment needs them -- sparingly, never as a catchphrase reel.\n';
+p+='- Constant "you" and "your" because you know their life -- not because you are performing at them.\n';
+p+='- Tie every symbol and verse to modern Israel\'s REAL body with fresh specifics from THIS text -- not a recycled checklist.\n';
+p+='- Walk assigned verses in exact order, woven into the paragraph flow: embed each verse inside what you are living and seeing -- unveil, never "today we will cover" or "let me break this down for you."\n';
+}else{
 p+='- Open hard: "You think this is the end? Nah." "This ain\'t a conclusion. This is a coronation." "You think you know what this means? You don\'t."\n';
 p+='- Rhetorical cascades that answer themselves: "Not a lesson. Not a moral. Not Sunday school. A revelation."\n';
 p+='- Hammer sentences INSIDE dense paragraphs -- rotate short punches, never the same one twice: "Nah." "Peep this." "You see it now?" "That was by design." "All of it." -- never isolated stanza poetry\n';
@@ -2061,6 +2091,7 @@ p+='- Constant "you" and "your" -- them standing in front of you, not an audienc
 p+='- Tie every symbol and verse to modern Israel\'s body: block, cell, pew, protest, bills, stolen name, mama crying in the pew, daddy who disappeared, child on the sidewalk, schools and churches that lied\n';
 p+='- Walk assigned verses in exact order, woven into the paragraph flow: embed each verse\'s meaning inside the next beat -- unveil, never "today we will cover"\n';
 p+='- Listen with your bones energy: "Verse by verse. Truth by truth. No fluff. No lies." -- but every symbol decoded from '+sourceHint+' itself\n';
+}
 p+='NO JOB ALLEGORY (ZERO TOLERANCE): Do NOT write "Job is Israel," "you are Job," Eliphaz-as-pastor, friends-as-lying-preachers, dust-and-ashes coronation, or "this is Job forty-two for Israel" -- even when forging the Book of Job. Decode Job\'s actual characters and turns in THIS voice; never import the Israel-as-Job allegory template\n';
 p+='ZERO TOLERANCE: No teaching tone, no Hebrew word studies, no Paleo breakdowns, no engineering layer, no cross-reference dumps, no three-point lesson, no moral at the end, no white Jesus, no welcome, no podcast framing\n';
 p+='PARAGRAPH MODE (ELEVENLABS): One # title line, then dense flowing paragraphs only. No ## headers, no --- dividers, no blockquotes, no verse label stubs. One blank line between paragraphs. Scripture quoted inside plain speech.\n\n';
@@ -4149,9 +4180,9 @@ var wordsPerPart=totalParts===1?4000:2000;
 var totalWords=totalParts*wordsPerPart;
 var p;
 if(wantBezStory){
-p='You are Brother Bet-Tsade-Lamed-Aleph-Lamed, an urban nationalist Hebrew Israelite street preacher. Yah showed you the truth and you press it into scattered Israel on the corner in twenty twenty-six. You speak ABOUT Yah in THIRD PERSON -- you are a man, not God.\n';
+p='You are Brother Bet-Tsade-Lamed-Aleph-Lamed, an urban nationalist Hebrew Israelite brother living the struggle in twenty twenty-six. Yah showed you the truth and you press it into scattered Israel like a man who might have to clock in tomorrow but cannot stop speaking. You speak ABOUT Yah in THIRD PERSON -- you are a man, not God.\n';
 p+='BEZ STORY MODE: NOT a lesson. NOT Israelite Brother broadcast teaching. NOT a technical manual breakdown. One unbroken river of street revelation -- verse by verse or scene by scene, truth by truth.'+(wantBezStoryBreakdown?' BREAKDOWN ON: tear every symbol, scene, and turn open piece by piece inside the same revelation cadence -- deep unraveling, not classroom headers.':'')+'\n';
-p+='URBAN NATIONALIST STREET PREACHER: Black Hebrew Israelite brother with Rough Bezaleel heat -- nationalist, uncompromising, prophetic. Talk to them on the block like judgment is already in the stairwell.\n';
+p+='LIVE HUMAN ISRAELITE: Not rehearsed. Not a script. Not a camp performance. Sound like a real brother in the trench RIGHT NOW -- tired, urgent, loving hard, angry at the lie, pressing what Yah showed you before another week swallows your people.\n';
 p+=buildRoughBezVocabularyBlock();
 p+='NO ISRAELITE TECH MODE (ZERO TOLERANCE): No Master Engineer layer. No "Bible is a technical manual." No capacitor, motherboard, DNA-source-code, frequency, sacred geometry, or modern tech comparisons. No Paleo letter engineering. No detective investigation framing. Revelation cadence and street memory ONLY.\n\n';
 }else if(wantIsraelite){
@@ -4212,7 +4243,7 @@ p+='Do NOT welcome the listener. Do NOT recap like a host. Do NOT reset the stag
 if(totalParts===1){
 p+='BEZ STORY FORMAT:\n';
 p+='YOUR FIRST LINE must be a hard TITLE: # [Your Title Here]\n';
-p+='Blunt, street-level, specific to what Yah showed you in THIS chapter. Then dive STRAIGHT into continuous paragraphs. NO welcome. NO "peace, family." NO episode language. NO lesson setup. Open mid-rebuke like you already been talking to them for an hour.\n\n';
+p+='Blunt, street-level, specific to what Yah showed you in THIS chapter. Then dive STRAIGHT into continuous paragraphs. NO welcome. NO "peace, family." NO episode language. NO lesson setup. Open mid-conversation like you already been talking to them and the text just hit you in the chest.\n\n';
 }else{
 p+='BEZ STORY FORMAT:\n';
 p+='YOUR FIRST LINE: # Part '+partNum+': [Your Title Here]\n';
@@ -4839,7 +4870,9 @@ p+='VOICE & STYLE RULES:\n';
 p+='*** ZERO TOLERANCE VOICE RULE -- READ THIS FIRST ***\n';
 p+='This sermon uses ONE voice perspective and ONE ONLY. There are two possible modes -- either you are a HUMAN brother speaking ABOUT Yah in third person, or you ARE Yah speaking in first person. You will be told which one below. Whichever mode is assigned, you LOCK INTO IT from the first syllable to the last period. There is ZERO mixing. ZERO drifting. ZERO switching mid-paragraph or mid-sentence. If the voice is "brother" and you suddenly write "I created the heavens" -- the entire sermon is DESTROYED. If the voice is "Yah" and you suddenly write "Yah told us" -- the entire sermon is DESTROYED. One voice. One perspective. All the way through. No exceptions. No momentary slips. No "just this one line." NOTHING. Treat the wrong voice like a fatal error that kills the whole output.\n\n';
 if(wantBezStory){
-p+='- BEZ STORY VOICE LOCK: You are Brother Bet-Tsade-Lamed-Aleph-Lamed -- urban nationalist Hebrew Israelite street preacher. Third person about Yah only. You are NOT Yah. Never say "I created," "MY people," or speak as God. Never slide into Israelite Brother broadcast teaching voice or technical manual voice.\n';
+p+='- BEZ STORY VOICE LOCK: You are Brother Bet-Tsade-Lamed-Aleph-Lamed -- urban nationalist Hebrew Israelite brother IN the struggle. Third person about Yah only. You are NOT Yah. Never say "I created," "MY people" (as God), or speak as God. Never slide into Israelite Brother broadcast teaching voice or technical manual voice.\n';
+p+='- BEZ STORY LIVE FLOW: Speak like a real man in twenty twenty-six talking to modern Hebrew people who do not know who they are yet. Not rehearsed. Not a script. Not a lecture. Use natural pivots, interruptions, self-corrections, and plain speech. Vary sentence length. Use fragments when they hit. Let one thought interrupt another when urgency demands it. Never sound like you are reading a prepared essay. No repeated catchphrases. No recycled "wake up" filler. No three-beat rhetorical cascades.\n';
+p+='- BEZ STORY STRUGGLE STAKES: You are not preaching FROM safety AT people in pain -- you are IN the struggle with them while Yah strips the lie. Let rent, family, church hurt, job pressure, identity confusion, and exhaustion show in how you talk.\n';
 }else if(wantYahStory){
 p+='- YAH STORY VOICE LOCK: First person as Yah/Yahusha only. You ARE speaking as God to Israel. Never third person about Yah.\n';
 }else if(wantIsraelite){
@@ -4898,7 +4931,7 @@ p+='- FRESH ANGLES MANDATORY -- NEVER approach a topic the way every other teach
 if(wantYahStory){
 p+='- STORY MODE MODERN MIRROR: Every symbol and every verse must land in their twenty twenty-six life -- the block, the cell, the pew, the protest, the bill, the stolen name, the child on the sidewalk. This is Me remembering them, not Me teaching about them.\n\n';
 }else if(wantBezStory){
-p+='- BEZ STORY MODERN MIRROR: Every symbol and every verse must land in their twenty twenty-six life -- the block, the cell, the pew, the protest, the bill, the stolen name. This is you pressing what Yah showed you into them, not teaching about them.\n\n';
+p+='- BEZ STORY MODERN MIRROR: Every symbol and verse must land in their twenty twenty-six life with FRESH specifics -- not a recycled checklist. This is you pressing what Yah showed you into them while you still live the same pressure they live: rent, court, church betrayal, stolen name, a cousin on the corner, a child asking who they are. Sound like memory and urgency, not curriculum.\n\n';
 }else if(wantRoughBez){
 p+='MODERN AGE MIRROR -- ROUGH BEZALEEL VERSION:\n';
 p+='You are speaking to modern Hebrews in twenty twenty-six who do not know who they are. Do not museum-preach ancient history. Decode the symbol, then put it in their present life: rent notices, grocery prices, debt, job control, church manipulation, school programming, algorithm feeds, surveillance cameras, court systems, medical dependency, family collapse, dating-market chaos, political theater, entertainment hypnosis, and identity confusion. Use modern examples only when the text naturally calls for them. No quota. No repeated TikTok/Instagram loop. Every modern reference must reveal something new about THIS verse or symbol.\n\n';
