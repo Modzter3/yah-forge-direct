@@ -2062,6 +2062,9 @@ p+='- Do NOT preach like you finished the struggle already. You are IN it with t
 p+='- Real questions only -- the kind that come from confusion or pain, not staged preacher hooks.\n\n';
 p+='LIVED STRUGGLE DETAILS (weave naturally -- rotate, never quota):\n';
 p+='Rent, overtime, gig apps, child support, probation, court dates, CPS, funeral costs, medicine you cannot afford, church hurt, camp division, identity you just found and family who ain\'t ready, a job that disrespects you, a pastor who lied, a child asking who they are, sleep you ain\'t getting because the truth won\'t let you rest.\n\n';
+p+='LENGTH (live tone does NOT mean short):\n';
+p+='- Sound human AND fill the full part length the forge assigned. Multi-part forge = roughly TWO THOUSAND words per part. Standalone = roughly FOUR THOUSAND words.\n';
+p+='- If you stop early you failed. Expand with more scripture decode, more lived pressure, more memory -- not padding, not repetition, not catchphrase loops.\n\n';
 return p;
 }
 function buildStoryRevelationStyleBlock(isBez,topic,chapterSrc){
@@ -3562,6 +3565,17 @@ return out.replace(/^\s*\n+/,'');
 var SERMON_MAX_CONTINUATIONS=6;
 var SERMON_FIRST_TOKEN_MS=5*60*1000;
 var SERMON_CHUNK_STALL_MS=2*60*1000;
+var SERMON_MIN_WORD_RATIO=0.75;
+function getForgeWordsPerPart(totalParts){
+return totalParts===1?4000:2000;
+}
+function countForgeWords(text){
+return String(text||'').trim().split(/\s+/).filter(Boolean).length;
+}
+function isForgePartUnderWordTarget(text,totalParts){
+var target=getForgeWordsPerPart(totalParts||selectedPartCount);
+return countForgeWords(text)<Math.floor(target*SERMON_MIN_WORD_RATIO);
+}
 var sermonGenCtx=null;
 /** Cut when model writes a later # Part N / # Episode N header in one response */
 function truncateAtNextPartBoundary(text,currentPartNum){
@@ -3682,7 +3696,8 @@ var t=setTimeout(onStall,ms);
 if(sermonGenCtx.gotFirstToken)sermonGenCtx.chunkTimer=t;
 else sermonGenCtx.firstTokenTimer=t;
 }
-function buildSermonContinuationPrompt(partNum,existing){
+function buildSermonContinuationPrompt(partNum,existing,opts){
+opts=opts||{};
 if(isTheatreModeActive()){
 var cv=getTheatreCommentaryVoice();
 var eli5=isTheatreELI5Enabled();
@@ -3702,7 +3717,15 @@ p+='LAST FOUR HUNDRED CHARACTERS:\n"...'+String(existing||'').slice(-400)+'"\n\n
 return p;
 }
 var p='CONTINUATION -- SAME PART '+partNum+' ONLY (CRITICAL):\n';
-p+='Your previous output was cut off mid-sentence or mid-thought. Do NOT add a new "# Part" heading. Do NOT restart the title. Pick up EXACTLY where you stopped and keep writing ONLY Part '+partNum+'.\n';
+if(opts.underWordCount){
+var target=getForgeWordsPerPart(selectedPartCount);
+var current=countForgeWords(existing);
+p+='TOO SHORT: You only wrote about '+current.toLocaleString()+' words. Part '+partNum+' MUST reach at least '+target.toLocaleString()+' words before stopping.\n';
+p+='Continue the SAME part -- more depth on your assigned verses/scenes, more lived struggle, more decode. EXPAND, do not repeat the same points.\n';
+}else{
+p+='Your previous output was cut off mid-sentence or mid-thought.\n';
+}
+p+='Do NOT add a new "# Part" heading. Do NOT restart the title. Pick up EXACTLY where you stopped and keep writing ONLY Part '+partNum+'.\n';
 p+='Do NOT add diagrams, flowcharts, ASCII art, tables, matrices, box-drawing characters, or arrow-chain visuals -- prose paragraphs only.\n\n';
 p+='LAST FOUR HUNDRED CHARACTERS OF YOUR DRAFT:\n"...'+String(existing||'').slice(-400)+'"\n\nCONTINUE IMMEDIATELY:';
 return p;
@@ -3742,7 +3765,7 @@ function startSermonPartStream(partNum,isContinuation){
 var ctx=sermonGenCtx;
 if(!ctx)return;
 var model=getSelectedModel();
-var prompt=isContinuation?buildSermonContinuationPrompt(partNum,ctx.partContent):buildPartPrompt(partNum);
+var prompt=isContinuation?buildSermonContinuationPrompt(partNum,ctx.partContent,ctx.continuationOpts||{}):buildPartPrompt(partNum);
 var params=getSermonWebSearchParams(model);
 ctx.handlerName='sermon-part-'+partNum+'-'+Date.now()+'-'+(isContinuation?ctx.continuationCount:0);
 var activeHandler=ctx.handlerName;
@@ -3774,11 +3797,13 @@ if(msg.status==='complete'){
 clearSermonWatchdogs();
 var finalized=finalizeSermonPartText(ctx.partContent,partNum);
 var truncated=detectTruncation(finalized);
+var underWords=isForgePartUnderWordTarget(finalized,selectedPartCount);
 var maxCont=SERMON_MAX_CONTINUATIONS;
 var actDone=theatreActComplete(finalized,partNum,selectedPartCount);
-if(truncated&&!actDone&&ctx.continuationCount<maxCont){
+if((truncated||underWords)&&!actDone&&ctx.continuationCount<maxCont){
 ctx.continuationCount++;
 ctx.partContentBeforeContinue=ctx.partContent;
+ctx.continuationOpts={underWordCount:underWords&&!truncated};
 startSermonPartStream(partNum,true);
 return;
 }
@@ -4176,7 +4201,7 @@ partFocus=partFocus.replace('Open as instructed above -- if Israelite voice, wel
 if(wantRoughBez&&!wantBezStory){
 partFocus+=' ROUGH BEZALEEL EXTRA: Keep this part dynamic and unrehearsed. Decode symbolic language first, apply it to modern Israel in twenty twenty-six, avoid repeated examples from earlier sections, and do not force Paleo Hebrew unless it truly changes the meaning.';
 }
-var wordsPerPart=totalParts===1?4000:2000;
+var wordsPerPart=getForgeWordsPerPart(totalParts);
 var totalWords=totalParts*wordsPerPart;
 var p;
 if(wantBezStory){
@@ -4213,7 +4238,11 @@ if(partNum>1){
 p+='The listener has already heard Parts 1 through '+(partNum-1)+'. This is a CONTINUATION of the same '+(wantRoughBez?'sermon':'episode')+' -- NOT a new '+(wantRoughBez?'sermon':'episode')+'. ';
 }
 }
-p+='You MUST write approximately '+wordsPerPart.toLocaleString()+' words for this '+(totalParts===1?(wantRoughBez?'sermon':'episode'):'part')+' (the full '+(totalParts===1?(wantRoughBez?'sermon':'episode'):(wantRoughBez?'sermon across all parts':'episode across all parts'))+' targets ~'+totalWords.toLocaleString()+' words total). Do NOT cut short. Fill the full '+wordsPerPart.toLocaleString()+' words.\n\n';
+p+='You MUST write approximately '+wordsPerPart.toLocaleString()+' words for this '+(totalParts===1?(wantRoughBez?'sermon':'episode'):'part')+' (the full '+(totalParts===1?(wantRoughBez?'sermon':'episode'):(wantRoughBez?'sermon across all parts':'episode across all parts'))+' targets ~'+totalWords.toLocaleString()+' words total). Do NOT cut short. Fill the full '+wordsPerPart.toLocaleString()+' words.\n';
+if(wantBezStory&&totalParts>1){
+p+='BEZ STORY LENGTH LOCK: '+totalParts+' parts = ~'+totalWords.toLocaleString()+' words total (~'+wordsPerPart.toLocaleString()+' per part). Live human tone is NOT permission to stop early. Linger on each verse/scene until this part hits the target.\n';
+}
+p+='\n';
 if(totalParts>1){
 p+='ONE PART ONLY (CRITICAL): You are writing ONLY Part '+partNum+' of '+totalParts+' in THIS response. Do NOT write Part '+(partNum+1)+' or any later part. Do NOT include "# Part '+(partNum+1)+':" or any future part header. Stop when Part '+partNum+' is complete -- the forge requests later parts separately.\n\n';
 }
