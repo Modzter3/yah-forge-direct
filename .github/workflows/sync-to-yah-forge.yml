@@ -9,6 +9,7 @@ on:
       - 'scripts/poe-polyfill-template.js'
       - 'scripts/adapt-index-for-poe.py'
       - 'scripts/build-yah-forge-port.sh'
+      - 'scripts/push-yah-forge-port.sh'
 
 jobs:
   sync:
@@ -20,28 +21,12 @@ jobs:
           TOKEN: ${{ secrets.YAH_FORGE_SYNC_TOKEN }}
         run: |
           if [ -z "$TOKEN" ]; then
-            echo "YAH_FORGE_SYNC_TOKEN secret not set — skipping sync" >&2
+            echo "YAH_FORGE_SYNC_TOKEN secret not set — add it under repo Settings → Secrets → Actions" >&2
             exit 1
           fi
-      - name: Clone yah-forge
+      - name: Push port to yah-forge
         env:
-          TOKEN: ${{ secrets.YAH_FORGE_SYNC_TOKEN }}
+          YAH_FORGE_SYNC_TOKEN: ${{ secrets.YAH_FORGE_SYNC_TOKEN }}
         run: |
-          git clone "https://x-access-token:${TOKEN}@github.com/Modzter3/yah-forge.git" yah-forge-target
-      - name: Build port package
-        run: |
-          chmod +x scripts/build-yah-forge-port.sh
-          YAH_FORGE_SRC="$PWD/yah-forge-target" ./scripts/build-yah-forge-port.sh
-      - name: Push to yah-forge
-        env:
-          TOKEN: ${{ secrets.YAH_FORGE_SYNC_TOKEN }}
-        run: |
-          cd yah-forge-target
-          git checkout -B cursor/port-forge-direct-features-34e9
-          rsync -a --delete --exclude '.git' --exclude 'docs' ../yah-forge-port/ ./
-          git add -A
-          git diff --staged --quiet && exit 0
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
-          git commit -m "Port yah-forge-direct features (Poe billing unchanged)"
-          git push -u origin cursor/port-forge-direct-features-34e9
+          chmod +x scripts/push-yah-forge-port.sh
+          ./scripts/push-yah-forge-port.sh
