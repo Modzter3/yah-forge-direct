@@ -1,0 +1,7 @@
+{
+  "name": "yah-forge-direct",
+  "install": "chmod +x scripts/*.sh yah-forge-port/scripts/*.sh 2>/dev/null || chmod +x scripts/*.sh",
+  "repositoryDependencies": [
+    "github.com/Modzter3/yah-forge"
+  ]
+}
