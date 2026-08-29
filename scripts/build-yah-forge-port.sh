@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Build Poe-adapted yah-forge tree from yah-forge-direct (this repo).
 # Does NOT add api/ai.js, ai-polyfill.js, or openrouter-models.js — Poe billing stays on /api/poe.
+# Rebuild triggers sync-to-yah-forge workflow when pushed to main.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="${ROOT}/yah-forge-port"

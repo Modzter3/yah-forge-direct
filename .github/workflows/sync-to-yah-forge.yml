@@ -12,10 +12,17 @@ on:
 
 jobs:
   sync:
-    if: ${{ secrets.YAH_FORGE_SYNC_TOKEN != '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Require sync token
+        env:
+          TOKEN: ${{ secrets.YAH_FORGE_SYNC_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "YAH_FORGE_SYNC_TOKEN secret not set — skipping sync" >&2
+            exit 1
+          fi
       - name: Clone yah-forge
         env:
           TOKEN: ${{ secrets.YAH_FORGE_SYNC_TOKEN }}
