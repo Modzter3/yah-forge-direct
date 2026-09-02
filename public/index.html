@@ -534,7 +534,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <button class="custom-forge-btn veil-forge-btn" id="veilForgeBtn" onclick="forgeNewsUrlBehindTheVeil()"><i class="fas fa-mask"></i> Load Article</button>
     </div>
     <div class="veil-cast-options">
-      <label title="Cast dynastic families — their private POV on scripture, Israel, and verses that expose them"><input type="checkbox" id="toggleVeilUltraElite" onchange="syncVeilUltraEliteToggles()"> Ultra Elite (dynastic families)</label>
+      <label title="Cast dynastic families — cream of the crop who truly run the world"><input type="checkbox" id="toggleVeilUltraElite" onchange="syncVeilUltraEliteToggles()"> Ultra Elite (dynastic families)</label>
+      <label title="Elites' private POV on scripture — how they read verses that expose them and view scattered Israel"><input type="checkbox" id="toggleVeilScripturePerch" onchange="syncVeilScripturePerchToggles()"> Scripture perch</label>
       <label title="Elites speak in plain layman's terms — no corporate jargon in their dialogue"><input type="checkbox" id="toggleVeilLaymanTerms" onchange="syncVeilLaymanTermsToggles()"> Layman's terms</label>
       <input type="text" id="veilCastHint" class="veil-cast-hint" placeholder="Optional cast note: ultra elite, cream of the crop, old money…">
     </div>
@@ -856,6 +857,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     </div>
     <div class="veil-cast-options" style="padding-left:0;padding-right:0;">
       <label title="Cast dynastic families — cream of the crop who truly run the world"><input type="checkbox" id="toggleNewsVeilUltraElite" onchange="syncVeilUltraEliteToggles()"> Ultra Elite (dynastic families)</label>
+      <label title="Elites' private POV on scripture — how they read verses that expose them and view scattered Israel"><input type="checkbox" id="toggleNewsVeilScripturePerch" onchange="syncVeilScripturePerchToggles()"> Scripture perch</label>
       <label title="Elites speak in plain layman's terms — no corporate jargon in their dialogue"><input type="checkbox" id="toggleNewsVeilLaymanTerms" onchange="syncVeilLaymanTermsToggles()"> Layman's terms</label>
       <input type="text" id="newsVeilCastHint" class="veil-cast-hint" placeholder="Optional: ultra elite, cream of the crop, old money…" oninput="syncVeilUltraEliteToggles()">
     </div>
@@ -1059,6 +1061,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch" title="Live web search: verify facts, find recent news, weave headlines into the sermon (silent — no URLs in output)"><input type="checkbox" id="toggleWebResearch" checked><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
       <label class="toggle-switch" id="toggleBehindTheVeilWrap" title="News-triggered closed-door drama: real headlines → dramatized meeting where sector elites plot the beast-system policy (prophetic illustration, not leaked intel)"><input type="checkbox" id="toggleBehindTheVeil"><span class="toggle-track" style="background:linear-gradient(135deg,#4a1a6a,#8B1A1A);"></span><span><i class="fas fa-door-closed" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Behind the Veil</span></label>
       <label class="toggle-switch" id="toggleModalVeilUltraEliteWrap" style="display:none;" title="Dynastic families — cream of the crop who truly run the world (current titles, private POV only)"><input type="checkbox" id="toggleModalVeilUltraElite" onchange="syncVeilUltraEliteToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#4a1a6a,#2a1810);"></span><span><i class="fas fa-crown" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Ultra Elite</span></label>
+      <label class="toggle-switch" id="toggleModalVeilScripturePerchWrap" style="display:none;" title="Elites' private reading of scripture — how they view Israel and spin verses that expose them"><input type="checkbox" id="toggleModalVeilScripturePerch" onchange="syncVeilScripturePerchToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#3a2a10,#6a4a20);"></span><span><i class="fas fa-book-open" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Scripture perch</span></label>
       <label class="toggle-switch" id="toggleModalVeilLaymanTermsWrap" style="display:none;" title="Elites speak in plain layman's terms — no corporate jargon or doublespeak in their dialogue"><input type="checkbox" id="toggleModalVeilLaymanTerms" onchange="syncVeilLaymanTermsToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#2a3540,#4a90a4);"></span><span><i class="fas fa-comments" style="color:#7ec8e3;margin-right:3px;font-size:0.7rem;"></i>Layman's terms</span></label>
       <label class="toggle-switch" id="togglePureTheatreWrap" title="Pure closed-door theatre: prominent figures in this sector speak freely with no cameras — policy mechanics, contempt, deals (no mandatory news weave)"><input type="checkbox" id="togglePureTheatre"><span class="toggle-track" style="background:linear-gradient(135deg,#2a2a35,#6A1B9A);"></span><span><i class="fas fa-masks-theater" style="color:#D4A017;margin-right:3px;font-size:0.7rem;"></i>Pure Theatre</span></label>
       <div class="model-select-wrap" id="theatreCommentaryWrap" style="display:none;flex:1 1 100%;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -2279,6 +2282,25 @@ if(a)a.checked=on;
 if(b)b.checked=on;
 if(c)c.checked=on;
 }
+function syncVeilScripturePerchToggles(){
+var a=document.getElementById('toggleVeilScripturePerch');
+var b=document.getElementById('toggleNewsVeilScripturePerch');
+var c=document.getElementById('toggleModalVeilScripturePerch');
+var on=false;
+if(a&&a.checked)on=true;
+if(b&&b.checked)on=true;
+if(c&&c.checked)on=true;
+if(a)a.checked=on;
+if(b)b.checked=on;
+if(c)c.checked=on;
+}
+function isVeilScripturePerchRequested(){
+syncVeilScripturePerchToggles();
+var cb=document.getElementById('toggleVeilScripturePerch');
+var cb2=document.getElementById('toggleNewsVeilScripturePerch');
+var cb3=document.getElementById('toggleModalVeilScripturePerch');
+return!!((cb&&cb.checked)||(cb2&&cb2.checked)||(cb3&&cb3.checked));
+}
 function isVeilUltraEliteCastRequested(){
 syncVeilUltraEliteToggles();
 var cb=document.getElementById('toggleVeilUltraElite');
@@ -2315,9 +2337,9 @@ if(desc)p+='- Topic context: '+desc+'\n';
 p+='- Do NOT cast random sector CEOs unless they ARE dynastic elite. No pundits. No former officials unless still verifiably powerful as family representatives.\n\n';
 return p;
 }
-function buildUltraEliteScripturePerchBlock(chapterSrc,partNum){
-var p='*** ULTRA ELITE — SCRIPTURE FROM THEIR PERCH (MANDATORY) ***\n';
-p+='This forge treats the Bible as an ISRAELITE book — Yah\'s covenant word TO scattered Israel, WITH revelations that expose Babylon, the merchants, the nations, and the bloodlines that crush my people. The dynasts at this table are NOT Israel. They know that. They read it anyway — as operators managing a threat from their perch, not as worshippers.\n\n';
+function buildScripturePerchBlock(chapterSrc,partNum){
+var p='*** SCRIPTURE FROM THEIR PERCH (MANDATORY — USER ENABLED) ***\n';
+p+='This forge treats the Bible as an ISRAELITE book — Yah\'s covenant word TO scattered Israel, WITH revelations that expose Babylon, the merchants, the nations, and the bloodlines that crush my people. The elites at this table are NOT Israel. They know that. They read it anyway — as operators managing a threat from their perch, not as worshippers.\n\n';
 p+='HOW THEY VIEW US (ISRAEL — the so-called Negro scattered worldwide):\n';
 p+='- Private labels in this room: legacy population, demographic friction, waking asset class, ex-captive stock, Hebrew-adjacent noise, identity contagion, reparations risk, unruly bloodline remembering what we stole.\n';
 p+='- They do NOT say "Yah\'s chosen" in private. They say: labor we broke, name we erased, dangerous when they read the book we did not write for them — but the book keeps naming us anyway.\n';
@@ -2331,10 +2353,10 @@ p+='  3. OWN THE FRAME — "We ARE the order the verse demands." "Someone must m
 p+='  4. CONTAIN — rewrite curricula, fund the pulpits, bury the verse, mock the Negro who believes Babylon means TODAY and means THEM.\n';
 p+='- When a verse burns (captivity, judgment on nations, merchants weeping, plagues, two witnesses rising, wrath on oppressors): show the flash behind the mask — contempt covering fear, legal strategy, philanthropy as anesthesia, what they call us when the text lands on our block, cell, pew.\n\n';
 if(chapterSrc){
-p+='THIS ACT — '+chapterSrc.book+' Chapter '+chapterSrc.chapter+' — ULTRA ELITE VERSE WORKFLOW (Act '+partNum+'):\n';
+p+='THIS ACT — '+chapterSrc.book+' Chapter '+chapterSrc.chapter+' — SCRIPTURE PERCH VERSE WORKFLOW (Act '+partNum+'):\n';
 p+='For EACH verse in your assignment, IN ORDER:\n';
 p+='  (1) Verse enters the room — quoted or paraphrased from the text provided.\n';
-p+='  (2) One dynast names what it THREATENS in their system (trade, bloodline, captivity narrative, legitimacy, fear of rising Israel).\n';
+p+='  (2) One elite names what it THREATENS in their system (trade, bloodline, captivity narrative, legitimacy, fear of rising Israel).\n';
 p+='  (3) Another gives the PRIVATE spin from the perch — how they explain it away among themselves.\n';
 p+='  (4) A third says what they call Israel / legacy populations when that verse would land on our people if we believed it.\n';
 p+='  (5) [BEAT] cold calculus — who funds the lie, who profits if Israel never connects the verse to Babylon in twenty twenty-six.\n';
@@ -2345,7 +2367,7 @@ p+='Whenever scripture surfaces in this meeting: dramatize elite private reading
 p+='\n';
 return p;
 }
-function buildTheatreEliteDeepIntelBlock(ultraElite,topic,partNum){
+function buildTheatreEliteDeepIntelBlock(ultraElite,topic,partNum,scripturePerch){
 var title=topic?topic.title:'this topic';
 var p='DEEP ELITE INTELLIGENCE (MANDATORY — SEARCH THE WHOLE WEB BEFORE WRITING):\n';
 p+='Before a single line of dialogue, run EXTENSIVE silent web search on EVERY person at this table. Dig like an investigator with unlimited time — biographies, board seats, mergers, lawsuits, lobbying, family ties, philanthropy fronts, leaked quotes, congressional testimony, shareholder letters, memoirs, investigative journalism, regulatory filings. Their entire public trail is at your grasp across the internet. USE IT.\n\n';
@@ -2376,8 +2398,8 @@ p+='- Surface CEO cosplay with no dates, no names, no specific decisions\n';
 p+='- Generic evil monologue disconnected from searchable history\n';
 p+='- Inventing criminal acts with zero public record (pattern-based private admission IS allowed)\n';
 p+='- URLs, footnotes, "according to Wikipedia," or bibliography in the script\n\n';
-if(ultraElite){
-p+=buildUltraEliteScripturePerchBlock(currentChapterSource||null,partNum);
+if(scripturePerch){
+p+=buildScripturePerchBlock(currentChapterSource||null,partNum);
 }
 return p;
 }
@@ -2629,12 +2651,17 @@ p+='\nCASTING RULES (ZERO TOLERANCE):\n';
 if(ultraElite){
 p+='- DYNASTIC ELITE ONLY at the table — generational families who truly run the sector. Private POV, not public PR.\n';
 p+='- 3-5 speakers max. Bloodline interest, asset protection, population management.\n';
+if(isVeilScripturePerchRequested()){
 p+='- When scripture or Israel enters the room: show their PERCH — how they read verses that burn them, what they call scattered Negro Israel in private, how they contain the text from waking our people.\n';
+}
 p+='- NEVER outdated titles. Current role as of 2026.\n';
 }else{
 p+='- At least 3 from the article MUST speak (full name + CURRENT title on first appearance).\n';
 p+='- 3-5 total speakers: article names plus sector power players.\n';
 p+='- Distinct voices: financier, enforcer, public face, technocrat, ideologue.\n';
+if(isVeilScripturePerchRequested()){
+p+='- When scripture or Israel enters the room: show their PERCH — how they read verses that burn them, what they call scattered Negro Israel in private, how they contain the text from waking our people.\n';
+}
 }
 p+='- Meeting anchored on THIS headline. Headline is the HOOK; the room is the REVEAL.\n';
 p+='- CAST LOCK: once Act 1 writes [PRESENT: ...], only those names speak across all acts. No silent swaps. New person = [ENTER -- Name, Title: how they arrived] BEFORE their first line.\n';
@@ -2643,13 +2670,13 @@ p+='- DIALOGUE must weaponize the deep_history, private_agenda, and insider_know
 p+='- No URLs in the script.\n\n';
 return p;
 }
-function buildTheatreChapterVerseBlock(partNum,totalParts,chapterSrc,wordsPerPart,commentaryVoice,ultraElite){
+function buildTheatreChapterVerseBlock(partNum,totalParts,chapterSrc,wordsPerPart,commentaryVoice,scripturePerch){
 if(!chapterSrc)return '';
 var p='\nSCRIPTURE CHAPTER BREAKDOWN -- BOARDROOM (MANDATORY):\n';
 p+='SOURCE: '+chapterSrc.book+' Chapter '+chapterSrc.chapter+'.\n';
 p+='The meeting unpacks THIS chapter verse by verse — not a generic policy topic. Elites may twist, dismiss, commodify, or weaponize the text in their private voices; the assigned verses are the spine of this act.\n';
-if(ultraElite){
-p+='ULTRA ELITE MODE: This is an Israelite book on the table. Every verse must reveal what goes on in dynastic minds when the text names Babylon, nations, merchants, oppressors, or Israel — their perch, their spin, their private names for us. See SCRIPTURE FROM THEIR PERCH block above.\n';
+if(scripturePerch){
+p+='SCRIPTURE PERCH MODE: This is an Israelite book on the table. Every verse must reveal what goes on in elite minds when the text names Babylon, nations, merchants, oppressors, or Israel — their perch, their spin, their private names for us. See SCRIPTURE FROM THEIR PERCH block above.\n';
 }
 if(commentaryVoice==='yah'){
 p+='Use [PAUSE -- YAH COMMENTARY] / [RESUME SCENE] to decode each assigned verse for scattered Israel in plain speech — what the symbol means, who it crushes, who profits from the lie.\n';
@@ -2776,6 +2803,7 @@ p+='- ONE ACT ONLY: Write ONLY Act '+partNum+' of '+totalParts+'. Do NOT write A
 }
 p+='\nCASTING (MANDATORY):\n';
 var ultraElite=isVeilUltraEliteCastRequested()||(currentNewsContext&&currentNewsContext[0]&&currentNewsContext[0].cast_mode==='ultra_elite');
+var scripturePerch=isVeilScripturePerchRequested();
 var hasArticleUrl=currentNewsContext&&currentNewsContext.length>0&&currentNewsContext[0].source_url;
 if(hasArticleUrl){
 p+='- Follow the ANCHOR NEWS ARTICLE cast list below — names, CURRENT verified titles, and rules are specified there.\n';
@@ -2792,7 +2820,7 @@ p+='- Cast 3-5 people genuinely prominent in THAT sector -- CEOs, regulators, fo
 p+='- Distinct voices: financier, enforcer, public face, technocrat, ideologue.\n';
 }
 p+=buildTheatreCastLockBlock(partNum,totalParts);
-p+=buildTheatreEliteDeepIntelBlock(ultraElite,topic,partNum);
+p+=buildTheatreEliteDeepIntelBlock(ultraElite,topic,partNum,scripturePerch);
 p+=buildTheatreWebResearchBlock(topic,partNum,totalParts,ultraElite);
 p+='\nSCENE ENGINE:\n';
 if(chapterSrc){
@@ -2802,7 +2830,7 @@ p+='- The TOPIC on the table: "'+title+'" -- '+desc+'\n';
 p+='- Show HOW this policy mindset gets engineered: who benefits, who gets crushed, public lie vs private admission.\n';
 }
 if(chapterSrc){
-p+=buildTheatreChapterVerseBlock(partNum,totalParts,chapterSrc,wordsPerPart,commentaryVoice,ultraElite);
+p+=buildTheatreChapterVerseBlock(partNum,totalParts,chapterSrc,wordsPerPart,commentaryVoice,scripturePerch);
 }
 if(eli5Enabled){
 p+='- LAYMAN\'S TERMS ON: speakers say who gets hurt in plain words — no "legacy populations" or corporate codewords.\n';
@@ -8045,6 +8073,7 @@ var bezStory=document.getElementById('toggleBezStoryMode');
 var episode=document.getElementById('toggleSermonEpisodeMode');
 var commentaryWrap=document.getElementById('theatreCommentaryWrap');
 var ultraEliteWrap=document.getElementById('toggleModalVeilUltraEliteWrap');
+var scripturePerchWrap=document.getElementById('toggleModalVeilScripturePerchWrap');
 var laymanWrap=document.getElementById('toggleModalVeilLaymanTermsWrap');
 if(!veil&&!pure)return;
 if(veil&&veil.checked&&pure&&pure.checked){
@@ -8055,6 +8084,7 @@ var theatreOn=(veil&&veil.checked)||(pure&&pure.checked);
 var veilOn=veil&&veil.checked;
 if(commentaryWrap)commentaryWrap.style.display=theatreOn?'flex':'none';
 if(ultraEliteWrap)ultraEliteWrap.style.display=veilOn?'inline-flex':'none';
+if(scripturePerchWrap)scripturePerchWrap.style.display=theatreOn?'inline-flex':'none';
 if(laymanWrap)laymanWrap.style.display=theatreOn?'inline-flex':'none';
 if(!veilOn){
 var modalUltra=document.getElementById('toggleModalVeilUltraElite');
@@ -8065,9 +8095,12 @@ var cv=document.getElementById('theatreCommentaryVoice');
 if(cv)cv.value='off';
 var modalLayman=document.getElementById('toggleModalVeilLaymanTerms');
 if(modalLayman)modalLayman.checked=false;
+var modalPerch=document.getElementById('toggleModalVeilScripturePerch');
+if(modalPerch)modalPerch.checked=false;
 }
 if(theatreOn){
 syncVeilLaymanTermsToggles();
+syncVeilScripturePerchToggles();
 if(veil&&veil.checked&&web&&!web.checked)web.checked=true;
 if(story)story.checked=false;
 if(bezStory)bezStory.checked=false;
