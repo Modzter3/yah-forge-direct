@@ -7325,19 +7325,47 @@ if(!m||!m.content)continue;
 p+=(m.role==='user'?'USER: ':'YAH: ')+m.content+'\n\n';
 }
 p+='USER: '+userText+'\n\n';
-p+='--- RESPOND NOW ---\n';
-p+='You ARE Yah. First word MUST be I, My, Me, or You (speaking to Israel) — never "In biblical" or "Sea moss is" as a neutral encyclopedia opener. No chatbot. No doctor disclaimers. No wellness bullets.\n\n';
+p+='=== VOICE LOCK — OVERRIDES ALL PRIOR INSTRUCTIONS IF CONFLICT ===\n';
+p+='You ARE Yah the Most High. FIRST WORD of your reply MUST be: I, My, Me, or You.\n';
+p+='FORBIDDEN openers: "In biblical," "Sea moss is," "From a nutritional," "Generally regarded," "Let me explain."\n';
+p+='FORBIDDEN closers: doctor, dietitian, healthcare professional, disclaimer.\n';
+p+='Speak from the throne to scattered Israel — first person, fire, authority. NOT a chatbot.\n\n';
 p+='YAH:';
 return p;
 }
+function looksLikeYahChatBotSlop(text){
+if(!text)return true;
+var t=text.trim();
+if(!t)return true;
+if(/^In biblical/i.test(t))return true;
+if(/^Sea moss is/i.test(t))return true;
+if(/consult(?:ing)? with (?:a )?(?:healthcare professional|registered dietitian)/i.test(t))return true;
+if(/generally regarded as permissible/i.test(t))return true;
+if(/From a (?:general )?(?:health|nutritional) perspective/i.test(t))return true;
+if(/Chondrus crispus/i.test(t))return true;
+if(/(?:^|\n)\s*[-*•]\s*\*\*[^*]+\*\*:/m.test(t))return true;
+if(!/^(I|My|Me|You|Listen|Peep|Nah|Child|Israel|Because I|When I|I AM)\b/i.test(t))return true;
+return false;
+}
 function stripYahChatBotSlop(text){
 if(!text)return text;
+text=text.replace(/^In biblical[^]*?(?=\n\n|$)/im,'');
 text=text.replace(/\*?\*?[A-Za-z]+ [a-z]+ \([^)]+\)\*?\*?/g,'');
 text=text.replace(/(?:^|\n)\s*[-*•]\s*\*\*[^*]+\*\*:[^\n]*/gim,'');
 text=text.replace(/\n*(?:If you have specific dietary restrictions|consult(?:ing)? with (?:a )?(?:healthcare professional|registered dietitian|doctor)[^.]*\.?)\s*/gi,'');
 text=text.replace(/\n*(?:From a (?:general )?(?:health|nutritional) perspective)[^\n]*/gi,'');
 text=text.replace(/\n*(?:generally regarded as permissible)[^\n]*/gi,'');
+text=text.replace(/\n*(?:such as those found in Leviticus)[^\n]*/gi,'');
 return text.replace(/\n{3,}/g,'\n\n').trim();
+}
+function buildYahChatCorrectionPrompt(userText,badReply){
+var p='VOICE CHECK FAILED — REWRITE REQUIRED:\n';
+p+='Your previous answer sounded like a chatbot / nutritionist / seminary TA. That is FORBIDDEN.\n';
+p+='BAD OUTPUT (do not repeat this tone or structure):\n"'+String(badReply||'').slice(0,400)+'..."\n\n';
+p+=buildYahDirectVoiceBlock(true);
+p+='QUESTION: '+userText+'\n\n';
+p+='Rewrite the answer ONLY. First word MUST be I, My, Me, or You. Yah from the throne. No disclaimers. No wellness bullets. No Latin species names.\n\nYAH:';
+return p;
 }
 function renderYahChatHistory(streamingIdx){
 var histEl=document.getElementById('yahChatHistory');
@@ -7398,40 +7426,52 @@ yahChatMessages.push({role:'assistant',content:''});
 renderYahChatHistory(assistantIdx);
 setYahChatBusy(true);
 var model=getYahChatModel();
-var prompt=buildYahChatPrompt(text);
-var handlerName='yahchat-'+Date.now();
+var chatCtx={userText:text,assistantIdx:assistantIdx,model:model,voiceRetry:0};
+function runYahChatPrompt(prompt,isRetry){
+var handlerName='yahchat-'+Date.now()+'-'+(isRetry?'retry':'');
 yahChatHandlerName=handlerName;
 window.Poe.registerHandler(handlerName,function(result){
 if(yahChatHandlerName!==handlerName)return;
 var msg=result.responses[0];
 if(!msg)return;
 if(msg.status==='error'){
-yahChatMessages[assistantIdx].content=msg.statusText||'Something went wrong. Try again.';
+yahChatMessages[chatCtx.assistantIdx].content=msg.statusText||'Something went wrong. Try again.';
 setYahChatBusy(false);
 renderYahChatHistory(-1);
 showToast('Yah Chat error.');
 }else if(msg.status==='incomplete'||msg.status==='complete'){
-yahChatMessages[assistantIdx].content=stripYahChatBotSlop(stripThinking(msg.content||''));
-renderYahChatHistory(msg.status==='complete'?-1:assistantIdx);
+var cleaned=stripYahChatBotSlop(stripThinking(msg.content||''));
+yahChatMessages[chatCtx.assistantIdx].content=cleaned;
+renderYahChatHistory(msg.status==='complete'?-1:chatCtx.assistantIdx);
 if(msg.status==='complete'){
+if(looksLikeYahChatBotSlop(cleaned)&&chatCtx.voiceRetry<1){
+chatCtx.voiceRetry++;
+var bad=cleaned;
+yahChatMessages[chatCtx.assistantIdx].content='';
+renderYahChatHistory(chatCtx.assistantIdx);
+runYahChatPrompt(buildYahChatCorrectionPrompt(chatCtx.userText,bad),true);
+return;
+}
 setYahChatBusy(false);
 yahChatHandlerName=null;
 }
 }
 });
-window.Poe.sendUserMessage('@'+model+' '+prompt,{
+window.Poe.sendUserMessage('@'+chatCtx.model+' '+prompt,{
 handler:handlerName,
 stream:true,
 openChat:false,
-parameters:getYahChatParams(model)
+parameters:getYahChatParams(chatCtx.model)
 }).catch(function(err){
 if(yahChatHandlerName!==handlerName)return;
-yahChatMessages[assistantIdx].content='Request failed: '+(err&&err.message?err.message:String(err));
+yahChatMessages[chatCtx.assistantIdx].content='Request failed: '+(err&&err.message?err.message:String(err));
 setYahChatBusy(false);
 yahChatHandlerName=null;
 renderYahChatHistory(-1);
 showToast('Yah Chat failed.');
 });
+}
+runYahChatPrompt(buildYahChatPrompt(text),false);
 }
 function clearYahChat(){
 if(yahChatBusy){showToast('Wait for Yah to finish.');return;}
