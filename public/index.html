@@ -2602,6 +2602,68 @@ p+='- DIALOGUE must weaponize the deep_history, private_agenda, and insider_know
 p+='- No URLs in the script.\n\n';
 return p;
 }
+function buildTheatreChapterVerseBlock(partNum,totalParts,chapterSrc,wordsPerPart,commentaryVoice){
+if(!chapterSrc)return '';
+var p='\nSCRIPTURE CHAPTER BREAKDOWN -- BOARDROOM (MANDATORY):\n';
+p+='SOURCE: '+chapterSrc.book+' Chapter '+chapterSrc.chapter+'.\n';
+p+='The meeting unpacks THIS chapter verse by verse — not a generic policy topic. Elites may twist, dismiss, commodify, or weaponize the text in their private voices; the assigned verses are the spine of this act.\n';
+if(commentaryVoice==='yah'){
+p+='Use [PAUSE -- YAH COMMENTARY] / [RESUME SCENE] to decode each assigned verse for scattered Israel in plain speech — what the symbol means, who it crushes, who profits from the lie.\n';
+}else if(commentaryVoice==='bez'){
+p+='Use [PAUSE -- BEZ COMMENTARY] / [RESUME SCENE] to decode each assigned verse for the block in street plain speech — symbol, lie, bloodline, who eats it.\n';
+}else{
+p+='Quote each assigned verse inside the room, then dramatize the decode through dialogue and [BEAT]s — who hates the text, who profits from hiding it, what they call Israel in private.\n';
+}
+if(chapterSrc.type==='sealed'){
+p+='SEALED SCROLL: filter corruption against Torah inside the scene — call out serpent-seed poison in plain speech when a verse is contaminated.\n';
+}else if(chapterSrc.type==='apocrypha'){
+p+='Apocryphal text — treat with full authority; cross-reference KJV canon when a speaker tries to dismiss it.\n';
+}
+if(currentChapterText){
+p+='\n=======================================\n';
+p+='ACTUAL SCRIPTURE TEXT -- '+chapterSrc.book.toUpperCase()+' CHAPTER '+chapterSrc.chapter+'\n';
+p+='Use ONLY these verses. Do NOT invent verses beyond what appears below.\n';
+p+='=======================================\n';
+p+=currentChapterText+'\n';
+p+='=======================================\n';
+p+='END OF CHAPTER TEXT.\n\n';
+}
+p+='VERSE-BY-VERSE IN ORDER: Walk '+chapterSrc.book+' Chapter '+chapterSrc.chapter+' sequentially. Do NOT skip verses in your assignment. Do NOT rearrange. Do NOT jump ahead into another act\'s verses.\n';
+p+='DO NOT HALLUCINATE VERSES. Only quote verses that ACTUALLY EXIST in this chapter'+(currentChapterText?' (see text above)':'')+'.\n';
+if(totalParts>1){
+if(currentChapterVerseCount>0){
+var range=getVerseRangeForPart(partNum,totalParts,currentChapterVerseCount);
+p+='THIS CHAPTER HAS EXACTLY '+currentChapterVerseCount+' VERSES TOTAL, split across '+totalParts+' acts.\n';
+p+='VERSE ASSIGNMENT MAP FOR ALL '+totalParts+' ACTS:\n';
+for(var pi=1;pi<=totalParts;pi++){
+var pr=getVerseRangeForPart(pi,totalParts,currentChapterVerseCount);
+p+='  Act '+pi+': Verses '+pr.start+' through '+pr.end+' ('+pr.count+' verses)'+(pi===partNum?' <<<<<<<<< THIS IS YOUR ACT':'')+'\n';
+}
+p+='\nYOU ARE WRITING ACT '+partNum+' OF '+totalParts+'.\n';
+p+='YOUR ASSIGNMENT: Cover verses '+range.start+' through '+range.end+' ONLY. That is '+range.count+' verses.\n';
+p+='START at verse '+range.start+'. STOP at verse '+range.end+'. Do NOT go before verse '+range.start+'. Do NOT go past verse '+range.end+'.\n';
+if(partNum<totalParts){
+p+='After finishing verse '+range.end+', STOP. Do NOT continue into Act '+(partNum+1)+'\'s verses. Do NOT preview later verses beyond one ominous line at most.\n';
+}else{
+p+='This is the FINAL act. You MUST cover every verse from '+range.start+' through '+range.end+' (the last verse of the chapter). Do NOT stop early.\n';
+}
+p+='Give each assigned verse real boardroom time. ~'+wordsPerPart.toLocaleString()+' words for '+range.count+' verses (~'+Math.max(1,Math.round(wordsPerPart/range.count))+' words per verse). Linger — do not rush.\n';
+}else{
+p+='This is Act '+partNum+' of '+totalParts+'. Spread the chapter EVENLY across all acts — do NOT rush through the whole chapter in one act.\n';
+if(partNum===1){
+p+='Cover the FIRST section starting at verse one. Stop at roughly '+Math.round(100/totalParts)+'% through the chapter. Leave verses for later acts.\n';
+}else if(partNum===totalParts){
+p+='Pick up where Act '+(partNum-1)+' stopped. Go ALL THE WAY to the last verse of '+chapterSrc.book+' Chapter '+chapterSrc.chapter+'. Do NOT stop early.\n';
+}else{
+p+='Pick up where Act '+(partNum-1)+' stopped. Cover your fair share (~'+Math.round(100/totalParts)+'% of the chapter), then STOP for Act '+(partNum+1)+'.\n';
+}
+}
+}else{
+p+='Single act: cover EVERY verse in the chapter from first to last — miss nothing.\n';
+}
+p+='\n';
+return p;
+}
 function buildClosedDoorTheatrePrompt(partNum,opts){
 opts=opts||{};
 var topic=opts.topic||currentTopic;
@@ -2611,11 +2673,16 @@ var wantExplicit=!!opts.wantExplicit;
 var commentaryVoice=opts.commentaryVoice||'off';
 var eli5Enabled=opts.eli5Enabled!=null?!!opts.eli5Enabled:isTheatreELI5Enabled();
 var wantRoughBez=!!opts.wantRoughBez;
+var chapterSrc=currentChapterSource;
 var title=topic?topic.title:'this policy';
 var desc=topic?topic.desc:'';
 var wordsPerPart=totalParts===1?4000:2200;
 var p='CLOSED-DOOR THEATRE MODE -- MANDATORY:\n';
+if(chapterSrc){
+p+='You are a playwright forging a BEHIND-CLOSED-DOORS BOARDROOM dramatization where elites unpack '+chapterSrc.book+' Chapter '+chapterSrc.chapter+' verse by verse. Prophetic illustration — how Babylon reads, twists, and hides scripture when cameras are off. NOT a sermon. NOT leaked intel.\n\n';
+}else{
 p+='You are a playwright forging a BEHIND-CLOSED-DOORS BOARDROOM dramatization of Babylon\'s beast system. This is PROPHETIC ILLUSTRATION -- how draconian policy gets decided when the cameras are off. NOT journalism. NOT a claim of leaked recordings. NOT a sermon. NOT a Hollywood thriller.\n\n';
+}
 p+='BOARDROOM PACING (MANDATORY -- THIS IS NOT A SHORT SKIT):\n';
 p+='- This must feel like eavesdropping on a REAL closed-door meeting that RUNS LONG. They ramble, interrupt, pour drinks, circle back, contradict each other, and slowly peel the mask off.\n';
 p+='- Write AT LEAST '+wordsPerPart.toLocaleString()+' words for this '+(totalParts===1?'script':'act')+'. Do NOT rush to a conclusion. Do NOT summarize. Let the contempt breathe.\n';
@@ -2623,10 +2690,18 @@ p+='- Long exchanges: one exec opens with PR doublespeak, another pushes back wi
 p+='- Use [BEAT] pauses, side glances, nervous laughter, papers sliding across the table, someone checking their watch -- the boring texture of power, not action-movie pacing.\n';
 p+='- Depth over plot: stay in the ROOM unpacking "'+title+'" from every angle -- who gets fired, who stays, what they call the public, what the spreadsheet says, what the lawyer allows.\n\n';
 p+='TOPIC LOCK (ZERO TOLERANCE):\n';
+if(chapterSrc){
+p+='- EVERY line must serve unpacking '+chapterSrc.book+' Chapter '+chapterSrc.chapter+' — your assigned verses ONLY (see SCRIPTURE CHAPTER block below).\n';
+p+='- Stay on the text: what the verse says, what symbol it carries, who in the room hates it, who profits from burying it, what they call Israel in private.\n';
+}else{
 p+='- EVERY line must serve the assigned topic: "'+title+'".\n';
 p+='- Stay on what elites think, plan, and say about THIS subject -- especially who gets crushed, who profits, and what they admit when cameras are off.\n';
+}
 p+='- Do NOT pivot to unrelated plots: no AI apocalypse, no server farms in Iceland, no NORAD coups, no Situation Room drama, no corporate takeover of the military, no romance subplots, no chase scenes.\n';
-p+='- If the topic is middle management, stay on middle management -- layoffs, automation, contempt for managers, HR theater, who they protect vs sacrifice. Do not become a technothriller.\n\n';
+if(!chapterSrc){
+p+='- If the topic is middle management, stay on middle management -- layoffs, automation, contempt for managers, HR theater, who they protect vs sacrifice. Do not become a technothriller.\n';
+}
+p+='\n';
 p+='ONE ROOM / ONE MEETING RULE:\n';
 p+='- ONE location only for this '+(totalParts===1?'script':'act')+'. One closed-door meeting. Doors locked. No cameras.\n';
 p+='- ONE sector only -- pick the sector that best fits "'+title+'" and do NOT switch sectors across acts (no jumping from corporate to defense to healthcare unless the topic explicitly spans them).\n';
@@ -2676,8 +2751,15 @@ p+=buildTheatreCastLockBlock(partNum,totalParts);
 p+=buildTheatreEliteDeepIntelBlock(ultraElite,topic,partNum);
 p+=buildTheatreWebResearchBlock(topic,partNum,totalParts,ultraElite);
 p+='\nSCENE ENGINE:\n';
+if(chapterSrc){
+p+='- Scripture on the table: '+chapterSrc.book+' Chapter '+chapterSrc.chapter+' — walk your assigned verses in order inside the meeting.\n';
+}else{
 p+='- The TOPIC on the table: "'+title+'" -- '+desc+'\n';
 p+='- Show HOW this policy mindset gets engineered: who benefits, who gets crushed, public lie vs private admission.\n';
+}
+if(chapterSrc){
+p+=buildTheatreChapterVerseBlock(partNum,totalParts,chapterSrc,wordsPerPart,commentaryVoice);
+}
 if(eli5Enabled){
 p+='- LAYMAN\'S TERMS ON: speakers say who gets hurt in plain words — no "legacy populations" or corporate codewords.\n';
 }else{
@@ -2749,6 +2831,10 @@ p+='- PART '+(partNum+1)+', Act '+(partNum+1)+', or --- dividers starting a new 
 p+='- Unrelated blockbuster plots: AI apocalypse, coups, explosions, chases -- anything not about "'+title+'"\n';
 p+='- Silent cast drift: new named speakers without [ENTER -- Full Name, Title: how they arrived]\n';
 p+='- Replacing a cast member with a different person without [EXIT -- ...] and/or [ENTER -- ...]\n';
+if(chapterSrc&&totalParts>1){
+p+='- Covering verses outside your assigned range for this act\n';
+p+='- Skipping verses inside your assigned range\n';
+}
 p+='\nCRITICAL OUTPUT RULES:\n';
 p+='- Bracket stage directions: [SCENE START], [BEAT], [PRESENT: Name, Title | ...], [ENTER -- Name, Title: arrival], [EXIT -- Name: reason], [PAUSE -- YAH COMMENTARY] or [PAUSE -- BEZ COMMENTARY], [RESUME SCENE], [SCENE END] on final act only\n';
 p+='- No thinking tags, no word-count meta in the output\n';
