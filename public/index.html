@@ -3782,6 +3782,7 @@ out=out.replace(/^#\s+(?!#).+\n+/,'');
 return out.replace(/^\s*\n+/,'');
 }
 var SERMON_MAX_CONTINUATIONS=6;
+var SERMON_MAX_DRIFT_RETRIES=1;
 var SERMON_FIRST_TOKEN_MS=5*60*1000;
 var SERMON_CHUNK_STALL_MS=2*60*1000;
 var SERMON_MIN_WORD_RATIO=0.75;
@@ -3915,6 +3916,58 @@ var t=setTimeout(onStall,ms);
 if(sermonGenCtx.gotFirstToken)sermonGenCtx.chunkTimer=t;
 else sermonGenCtx.firstTokenTimer=t;
 }
+function looksLikeSermonFlashDrift(text,partNum,totalParts){
+if(!text)return false;
+var t=String(text);
+var low=t.toLowerCase();
+var seminary=/\b(literary and historical context|hellenistic greek|hellenistic alexandria|middle platonism|stoic terminology|stoic concept|textual breakdown|linguistic nuances in the septuagint|platonic metaphysics|ontological structure|ptolemaic and early roman|if you would like to explore specific theological|composed in hellenistic|alexandrian jewish community|cosmic solidarity between creation|eschatological perspective)\b/i;
+if(seminary.test(t))return true;
+if(/\b(?:paideia|philanthropos|pneuma)\b/i.test(t)&&/\*\*verse\s*\d+/i.test(t))return true;
+if(/\*\*theme:\*\*/i.test(t)||/\*\*analysis:\*\*/i.test(t))return true;
+if((t.match(/\n#{3,4}\s+/g)||[]).length>=2)return true;
+if(/\bconsider the lived reality of our communities across the diaspora\b/i.test(t))return true;
+if(/\bthis (?:essay|analysis|section) (?:reveals|demonstrates|presents)\b/i.test(t))return true;
+if(totalParts>1){
+var partHeaders=t.match(/^#+\s*(?:part|PART)\s*(\d+)\s*[:\-–—]/gim)||[];
+if(partHeaders.length>1)return true;
+var ahead=t.match(/^#+\s*(?:part|PART)\s*(\d+)\s*[:\-–—]/gim);
+if(ahead){
+for(var i=0;i<ahead.length;i++){
+var m=ahead[i].match(/(\d+)/);
+if(m&&parseInt(m[1],10)>partNum)return true;
+}
+}
+var maxPart=0;
+var allParts=t.match(/(?:^|\n)#+\s*(?:part|PART)\s*(\d+)\s*[:\-–—]/gim)||[];
+for(var j=0;j<allParts.length;j++){
+var pm=allParts[j].match(/(\d+)/);
+if(pm)maxPart=Math.max(maxPart,parseInt(pm[1],10));
+}
+if(maxPart>totalParts)return true;
+}
+return false;
+}
+function buildSermonFlashDriftCorrectionPrompt(partNum,badReply){
+var p='FLASH DRIFT CHECK FAILED — FULL REWRITE REQUIRED (Part '+partNum+' ONLY):\n';
+p+='Your previous output slipped into seminary essay, academic analysis, markdown lesson headers, or wrong part structure. That is FORBIDDEN.\n\n';
+p+='FORBIDDEN (ZERO TOLERANCE):\n';
+p+='- "Literary and Historical Context", Hellenistic Greek, Stoicism, Platonism, Septuagint linguistics, Alexandria history essays\n';
+p+='- Markdown ### subheaders, **Theme:** / **Analysis:** bullet breakdowns, numbered academic verse analyses\n';
+p+='- Diaspora sociology essay tone — write revelation to Israel, not a term paper\n';
+p+='- Writing Part '+(partNum+1)+'+ or extra parts in this response — ONE part only\n\n';
+if(isTheatreModeActive()){
+p+='Return to boardroom dialogue and [BEAT]s on topic — not a lecture.\n\n';
+}else if(document.getElementById('toggleRoughBez')&&document.getElementById('toggleRoughBez').checked){
+p+='Return to ROUGH BEZ / street revelation — Nah, hold up, brother, sister, block, cell, pew. Verse by verse in plain fire.\n\n';
+}else if(document.getElementById('toggleStoryMode')&&document.getElementById('toggleStoryMode').checked){
+p+='Return to Yah first-person revelation — NOT a lesson, NOT scholarship.\n\n';
+}else{
+p+='Return to sermon revelation prose — decode symbols for scattered Israel in twenty twenty-six, not seminary neutrality.\n\n';
+}
+p+='BAD OUTPUT (do not repeat this tone or structure):\n"'+String(badReply||'').slice(0,900).replace(/"/g,"'")+'..."\n\n';
+p+=buildPartPrompt(partNum);
+return p;
+}
 function buildSermonContinuationPrompt(partNum,existing,opts){
 opts=opts||{};
 if(isTheatreModeActive()){
@@ -3980,13 +4033,21 @@ function forceNextSermonPart(){
 if(!isGenerating||!sermonGenCtx){showToast('Nothing generating right now.');return;}
 finishCurrentSermonPart('force');
 }
-function startSermonPartStream(partNum,isContinuation){
+function startSermonPartStream(partNum,isContinuation,streamOpts){
+streamOpts=streamOpts||{};
 var ctx=sermonGenCtx;
 if(!ctx)return;
 var model=getSelectedModel();
-var prompt=isContinuation?buildSermonContinuationPrompt(partNum,ctx.partContent,ctx.continuationOpts||{}):buildPartPrompt(partNum);
+var prompt;
+if(streamOpts.driftCorrection){
+prompt=buildSermonFlashDriftCorrectionPrompt(partNum,streamOpts.badSample||'');
+}else if(isContinuation){
+prompt=buildSermonContinuationPrompt(partNum,ctx.partContent,ctx.continuationOpts||{});
+}else{
+prompt=buildPartPrompt(partNum);
+}
 var params=getSermonWebSearchParams(model);
-ctx.handlerName='sermon-part-'+partNum+'-'+Date.now()+'-'+(isContinuation?ctx.continuationCount:0);
+ctx.handlerName='sermon-part-'+partNum+'-'+Date.now()+'-'+(isContinuation?ctx.continuationCount:0)+'-'+(streamOpts.driftCorrection?'drift':'');
 var activeHandler=ctx.handlerName;
 ctx.gotFirstToken=false;
 clearSermonWatchdogs();
@@ -4019,6 +4080,15 @@ var truncated=detectTruncation(finalized);
 var underWords=isForgePartUnderWordTarget(finalized,selectedPartCount);
 var maxCont=SERMON_MAX_CONTINUATIONS;
 var actDone=theatreActComplete(finalized,partNum,selectedPartCount);
+if(forgeIsFlashTier(model)&&ctx.driftRetryCount<SERMON_MAX_DRIFT_RETRIES&&looksLikeSermonFlashDrift(finalized,partNum,selectedPartCount)){
+ctx.driftRetryCount++;
+ctx.partContent='';
+ctx.partContentBeforeContinue='';
+ctx.continuationCount=0;
+showToast('Flash drift detected — redoing '+getForgePartLabel(partNum,false)+'...');
+startSermonPartStream(partNum,false,{driftCorrection:true,badSample:finalized});
+return;
+}
 if((truncated||underWords)&&!actDone&&ctx.continuationCount<maxCont){
 ctx.continuationCount++;
 ctx.partContentBeforeContinue=ctx.partContent;
@@ -4075,6 +4145,7 @@ partNum:partNum,
 partContent:'',
 partContentBeforeContinue:'',
 continuationCount:0,
+driftRetryCount:0,
 gotFirstToken:false,
 firstTokenTimer:null,
 chunkTimer:null,
