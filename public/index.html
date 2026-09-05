@@ -942,7 +942,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     </div>
     <div class="gen-options">
       <label class="toggle-switch" title="Verse-by-verse or point-by-point unraveling. Works with Bez Story — deep breakdown in revelation cadence + news weave."><input type="checkbox" id="toggleBreakdown" checked><span class="toggle-track"></span><span>Breakdown</span></label>
-      <label class="toggle-switch"><input type="checkbox" id="toggleApocrypha" checked><span class="toggle-track"></span><span>Apocrypha</span></label>
+      <label class="toggle-switch" id="toggleCrossReferencesWrap" title="Sprinkle cross-references to other KJV books (and apocrypha/sealed scrolls when Apocrypha is on) to support points"><input type="checkbox" id="toggleCrossReferences" checked onchange="syncCrossReferenceToggles()"><span class="toggle-track"></span><span><i class="fas fa-link" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Cross Refs</span></label>
+      <label class="toggle-switch" id="toggleApocryphaWrap" title="Allow apocrypha and sealed scroll citations in cross-references (requires Cross Refs on)"><input type="checkbox" id="toggleApocrypha" checked onchange="syncCrossReferenceToggles()"><span class="toggle-track"></span><span>Apocrypha</span></label>
       <label class="toggle-switch explicit-toggle"><input type="checkbox" id="toggleExplicit"><span class="toggle-track explicit-track"></span><span><i class="fas fa-fire" style="color:var(--explicit-red);margin-right:3px;font-size:0.7rem;"></i>Explicit</span></label>
       <label class="toggle-switch"><input type="checkbox" id="toggleIsraelite"><span class="toggle-track israelite-track"></span><span><i class="fas fa-users" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Israelite</span></label>
       <label class="toggle-switch"><input type="checkbox" id="toggleRoughBez"><span class="toggle-track rough-track"></span><span><i class="fas fa-bullhorn" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Rough Bezaleel</span></label>
@@ -1818,6 +1819,32 @@ return params;
 }
 function stripMediaSources(text){
 return stripDestroyUrlsAndSources(text);
+}
+function buildCrossReferencesPromptBlock(wantCrossRefs,wantApocrypha,apocList){
+if(!wantCrossRefs){
+return 'CROSS-REFERENCES OFF (MANDATORY):\n'+
+'Do NOT sprinkle cross-references to other books, chapters, apocrypha, or sealed scrolls to support your points. Stay locked on the PRIMARY assigned text or topic.\n'+
+'No "this also appears in..." from other KJV books. No apocrypha. No sealed scrolls. No cross-testament echo tours.\n'+
+'Depth comes from decoding WHAT IS IN FRONT OF YOU -- not from pulling in outside books.\n'+
+'Exception: if the assigned text itself quotes another passage verbatim, you may acknowledge that quote in passing -- but do NOT launch into breakdowns of other books.\n\n';
+}
+var p='CROSS-REFERENCES ON:\n';
+p+='You MAY sprinkle brief cross-references throughout the sermon to sharpen points -- woven naturally inside the flow, never as a dump list or bibliography.\n';
+p+='Cross-references SUPPORT the primary text; they do NOT replace it or take over the sermon.\n';
+p+='Provide 1-3 relevant connections per verse/section when they genuinely land -- KJV canon first.\n';
+p+='Format: book chapter verse in spoken words (e.g. "Isaiah chapter forty-five verse eighteen"). Do NOT fabricate references.\n\n';
+if(wantApocrypha){
+p+='APOCRYPHA & SEALED SCROLLS IN CROSS-REFS (Apocrypha toggle ON):\n';
+p+='You MAY also cross-reference permitted apocrypha and sealed scrolls where they confirm, expand, or illuminate the point.\n';
+p+='PERMITTED APOCRYPHA: '+apocList+'.\n';
+p+='PERMITTED SEALED SCROLLS: Sefer Yetzirah, 1 Enoch (FILTERED), 2 Enoch (FILTER HARD), 3 Enoch, Book of Jasher, Book of Jubilees, Testament of Abraham, Testament of Moses, Testament of Job, Testament of Adam, Testament of Solomon, Apocalypse of Abraham, 1 Adam and Eve, 2 Adam and Eve, Book of Giants, Sefer Raziel HaMalakh, Psalms of Solomon, Odes of Solomon, 3 Baruch, 4 Baruch, Apocalypse of Zephaniah, Apocalypse of Elijah, Ladder of Jacob, Martyrdom of Isaiah, Apocalypse of Peter, History of the Rechabites, Conflict of Adam and Eve with Satan, Sefer HaBahir, Pistis Sophia, Book of Natasrym (Natsarim).\n';
+p+='Always FILTER sealed scrolls through Torah. If a sealed text confirms Torah -- teach it as buried truth. If it contradicts Torah -- expose the corruption.\n';
+p+='*** ANTI-HALLUCINATION: Do NOT fabricate sealed scroll chapter/verse numbers. If uncertain, use a general reference ("in the Book of Enoch, in the Watchers account..."). KJV is bedrock -- one REAL citation beats ten fabricated ones. ***\n\n';
+}else{
+p+='KJV CANON ONLY (Apocrypha toggle OFF):\n';
+p+='Cross-references must come from KJV canon ONLY. NO apocrypha. NO sealed scrolls. NO outside ancient texts.\n\n';
+}
+return p;
 }
 function buildWebResearchPromptBlock(topic,opts){
 var webEl=document.getElementById('toggleWebResearch');
@@ -3105,7 +3132,8 @@ return middleFocuses[mapped];
 function buildPartPrompt(partNum){
 var topic=currentTopic;
 var wantBreakdown=document.getElementById('toggleBreakdown').checked;
-var wantApocrypha=document.getElementById('toggleApocrypha').checked;
+var wantCrossRefs=document.getElementById('toggleCrossReferences')&&document.getElementById('toggleCrossReferences').checked;
+var wantApocrypha=document.getElementById('toggleApocrypha').checked&&wantCrossRefs;
 var wantExplicit=document.getElementById('toggleExplicit').checked;
 var wantRoughBez=document.getElementById('toggleRoughBez').checked;
 var wantBezStory=document.getElementById('toggleBezStoryMode')&&document.getElementById('toggleBezStoryMode').checked&&wantRoughBez;
@@ -3185,6 +3213,7 @@ if(totalParts>1){
 p+='ONE PART ONLY (CRITICAL): You are writing ONLY Part '+partNum+' of '+totalParts+' in THIS response. Do NOT write Part '+(partNum+1)+' or any later part. Do NOT include "# Part '+(partNum+1)+':" or any future part header. Stop when Part '+partNum+' is complete -- the forge requests later parts separately.\n\n';
 }
 p+=buildWebResearchPromptBlock(topic,{partNum:partNum,totalParts:totalParts,wantEpisodeMode:wantEpisodeMode,chapterSrc:chapterSrc,wantStoryMode:wantStoryMode,wantBezStoryBreakdown:wantBezStoryBreakdown,currentMode:currentMode});
+p+=buildCrossReferencesPromptBlock(wantCrossRefs,wantApocrypha,apocList);
 p+=buildEpisodeModeBlock(partNum,totalParts,topic);
 if(wantIsraelite&&wantRoughBez&&!wantBezStory){
 // ROUGH BEZALEEL MODE -- no broadcast format, no welcome/backdrop
@@ -3350,14 +3379,17 @@ p+='   - Any text that teaches free will or human autonomy over Yah\'s predestin
 p+='   - Any depiction of "giants" or Nephilim as LITERAL giant-sized beings -- twenty-foot-tall monstrosities, enormous half-angel hybrids, or any other fairy tale monster-man NONSENSE -- that is HEATHEN MYTHOLOGY the serpent seed imported from Greek Titan stories, Mesopotamian demigod legends, and pagan folklore. The "giants" (gibborim) in Genesis six were MIGHTY MEN, men of renown, powerful warriors -- regular-sized human beings. Their might was about INFLUENCE, VIOLENCE, and WICKEDNESS, not physical height. The serpent seed scribes who handled the Enoch texts and the Book of Giants AMPLIFIED this pagan garbage to make the pre-flood world sound like a damn fantasy movie. It was NOT. When a sealed text describes Nephilim as enormous creatures who could eat entire forests or whose heads touched the clouds -- cuss that bullshit OUT. That is heathen imagination, not scripture. Use DISCERNMENT -- do NOT let the nations\' mythology contaminate the truth.\n';
 p+='   - *** HARD ENOCH FILTER -- ZERO TOLERANCE *** Any passage that depicts Enoch ascending to heaven alive, touring multiple heavens, standing before the throne as a living man, being transformed into an angelic being (Metatron), or experiencing a heavenly rapture -- that is SERPENT SEED FABRICATION and you destroy it ON SIGHT. John chapter three verse thirteen: "No man hath ascended up to heaven." Yod-He-Waw-Shin-Ayin said it. It is SETTLED. Enoch DIED like every other man -- "God took him" means God took his LIFE, not that he got a VIP pass to the throne room. The serpent seed scribes INVENTED the heaven-tour narratives across 1 Enoch, 2 Enoch, and 3 Enoch to contradict Yod-He-Waw-Shin-Ayin\'s own words, plant rapture theology, and teach that men can bypass death. They CANNOT. The ONLY useful content in Enoch is what aligns with Torah and KJV canon -- the pre-flood history, the Watchers account (understood as the Adamic line mixing with pre-Adamics, NOT supernatural angel sex), the astronomical data about the flat earth and luminaries, and the prophetic warnings about judgment. Everything else -- the heaven tours, the angel hierarchies, the Metatron mythology, the multiple heavens cosmology -- is GARBAGE that the serpent seed planted. Go HARDER on Enoch corruption than on any other sealed text because Enoch is the one they MOST use to deceive Israel with false hope about escaping death. The same rule applies to Elijah -- he did NOT ride a chariot to heaven and live forever. He DIED. Second Kings chapter two is a transfer of prophetic authority to Elisha, not a damn space launch.\n';
 p+='4. For EACH section of the sealed text, state clearly whether you are dealing with BURIED TRUTH or SERPENT SEED BULLSHIT -- do not let the listener guess. They need to know which parts to treasure and which parts to BURN.\n';
+if(wantCrossRefs){
 p+='5. Cross-reference EVERYTHING with KJV canon FIRST, then with approved apocryphal texts. If a sealed text says something that KJV Torah confirms -- that is TRUTH the enemy buried. If a sealed text says something that KJV Torah contradicts -- that is a damn LIE the enemy planted and you need to expose it with the same energy you would use if someone spit in your face. Torah is the SUPREME authority. No sealed scroll overrides Torah. Ever.\n\n';
-p+='The voice of Yah does NOT bow to these texts -- Yah JUDGES them. Extract the gold, cuss out the corruption, and give Israel the PURE truth that was sealed away from them.\n\n';
-p+='Note: Sealed texts may use sections, paragraphs, or fragments instead of traditional verse numbers. Adapt your verse-by-verse breakdown to match the text structure (section-by-section if needed).\n';
 p+='*** ANTI-HALLUCINATION WARNING FOR CROSS-REFERENCES ***\n';
 p+='When cross-referencing OTHER sealed scrolls or apocryphal texts to support your breakdown of this chapter, DO NOT FABRICATE chapter and verse numbers. If you cite a specific reference from another sealed text (e.g. "as First Enoch chapter fifteen verse three confirms..."), that reference MUST be real. If you are not certain a specific chapter:verse exists, use a general reference instead (e.g. "as the Book of Enoch records in the section on the Watchers..."). KJV cross-references are your SAFE foundation -- sealed scroll cross-references are powerful but ONLY when they are accurate. One real citation beats ten fabricated ones. Do NOT guess. Do NOT invent. ACCURACY IS SACRED.\n\n';
+}else{
+p+='5. Validate corruption against KJV Torah internally (Layers 1-2 above) -- but do NOT sprinkle cross-references to other books in your output. Stay on THIS sealed scroll chapter.\n\n';
 }
+p+='The voice of Yah does NOT bow to these texts -- Yah JUDGES them. Extract the gold, cuss out the corruption, and give Israel the PURE truth that was sealed away from them.\n\n';
+p+='Note: Sealed texts may use sections, paragraphs, or fragments instead of traditional verse numbers. Adapt your verse-by-verse breakdown to match the text structure (section-by-section if needed).\n';
 }else if(chapterSrc.type==='apocrypha'){
-p+='This is an apocryphal text. Treat with full scriptural authority and cross-reference with KJV canon.\n';
+p+=wantCrossRefs?'This is an apocryphal text. Treat with full scriptural authority and cross-reference with KJV canon where it sharpens the point.\n':'This is an apocryphal text. Stay on THIS chapter -- do not sprinkle cross-references to other books.\n';
 }
 // Inject the actual scripture text if we fetched it
 if(currentChapterText){
@@ -3374,7 +3406,14 @@ p+=(wantStoryMode?'You MUST walk through ':'You MUST go through ')+chapterSrc.bo
 if(currentChapterText){
 p+='The FULL scripture text for this chapter has been provided above. You MUST reference ONLY the verses shown in that text. Do NOT quote any verse that does not appear in the provided text. The provided text IS the authoritative source -- if a verse number is not in that text, it does NOT EXIST in this chapter.\n';
 }
-p+=(wantStoryMode?'Speak each verse as My living memory to them -- do NOT cross-reference other books unless it lands naturally in one sentence inside the paragraph. ':'Cross-referencing other books and chapters to SUPPORT your breakdown is allowed and encouraged -- but the PRIMARY structure must follow ')+chapterSrc.book+' Chapter '+chapterSrc.chapter+(wantStoryMode?'.\n':' verse by verse. Cross-references support the verse you are currently on, they do NOT replace it or take over the sermon.\n');
+if(wantStoryMode){
+p+='Speak each verse as My living memory to them -- do NOT cross-reference other books unless it lands naturally in one sentence inside the paragraph. ';
+}else if(wantCrossRefs){
+p+='Cross-referencing other books and chapters to SUPPORT your breakdown is allowed and encouraged -- but the PRIMARY structure must follow ';
+}else{
+p+='Do NOT cross-reference other books or chapters. Stay on ';
+}
+p+=chapterSrc.book+' Chapter '+chapterSrc.chapter+(wantStoryMode?'.\n':(wantCrossRefs?' verse by verse. Cross-references support the verse you are currently on, they do NOT replace it or take over the sermon.\n':'. Walk verse by verse in order without pulling in outside books.\n'));
 p+='DO NOT HALLUCINATE VERSES. Only quote and break down verses that ACTUALLY EXIST in '+chapterSrc.book+' Chapter '+chapterSrc.chapter+'.'+(currentChapterText?' The actual verses have been provided above -- use THEM.':'')+' If you are unsure whether a verse exists, DO NOT fabricate it. Do NOT invent verse numbers that are not in this chapter. Do NOT add extra verses beyond what the chapter actually contains. If the chapter ends at verse 25, there is NO verse 26. Quoting a fake or made-up verse is an UNFORGIVABLE failure of this prompt.\n';
 if(totalParts>1){
 if(currentChapterVerseCount>0){
@@ -3455,19 +3494,21 @@ p+='   - Does it reference physical structures (ark, temple, firmament, pillars)
 p+='   - If numbers appear, decode the SYMBOLIC meaning (7 = completion, 12 = governance, 40 = testing, etc.).\n';
 p+='   - Show how this verse reveals Yah as the MASTER ENGINEER and creation as a DESIGNED SYSTEM.\n';
 p+='   - BUT DO NOT OUTPUT AN "**ENGINEERING AND TECHNICAL ANALYSIS:**" HEADER -- just deliver the analysis directly.\n\n';
+if(wantCrossRefs){
 p+='INTERNAL STEP 6 -- CROSS-REFERENCE VALIDATION -- OUTPUT WITHOUT LABEL:\n';
-p+='   - Provide 1-3 SPECIFIC cross-references from KJV canon that CONFIRM or EXPAND on this verse\'s teaching.\n';
+p+='   - Provide 1-3 SPECIFIC cross-references from KJV canon'+(wantApocrypha?' (and apocrypha/sealed scrolls when they genuinely confirm the point)':'')+' that CONFIRM or EXPAND on this verse\'s teaching.\n';
 p+='   - Format: Book Chapter:Verse with a brief explanation of the connection.\n';
 p+='   - Example: "This aligns with Isaiah forty-five verse eighteen where Yah declares He formed the earth to be inhabited, NOT a spinning ball in an infinite void."\n';
 p+='   - DO NOT fabricate references -- if you are unsure, use a general citation instead of a specific verse number.\n';
 p+='   - BUT DO NOT OUTPUT A "**CROSS-REFERENCE VALIDATION:**" HEADER -- just deliver the analysis directly.\n\n';
-p+='INTERNAL STEP 7 -- PRACTICAL APPLICATION OR PROPHETIC IMPLICATION -- OUTPUT WITHOUT LABEL:\n';
+}
+p+='INTERNAL STEP '+(wantCrossRefs?'7':'6')+' -- PRACTICAL APPLICATION OR PROPHETIC IMPLICATION -- OUTPUT WITHOUT LABEL:\n';
 p+='   - What does this verse MEAN for Israel TODAY?\n';
 p+='   - Is there a prophetic warning, a command to obey, a deception to avoid, or a promise to claim?\n';
 p+='   - Make it PERSONAL and URGENT -- not abstract theology, but ACTIONABLE truth.\n';
 p+='   - BUT DO NOT OUTPUT A "**PRACTICAL APPLICATION:**" HEADER -- just deliver the analysis directly.\n\n';
 p+='DELIVERY INSTRUCTION:\n';
-p+='Do NOT just quote and move on -- TEACH each verse using all seven internal steps. Go DEEP. Spend real time on each verse. The chapter structure IS your outline, but the DEPTH comes from following this protocol for every single verse. CRITICALLY: When outputting the analysis, do NOT include any of the step labels or section headers. Deliver it as flowing prose that moves naturally from verse, to analysis, to theological insight, to engineering layer, to references, to application -- without breaking the flow with "[HEADER]" stops. Make it readable for text-to-speech with no interruptions from section titles.\n';
+p+='Do NOT just quote and move on -- TEACH each verse using all internal steps above. Go DEEP. Spend real time on each verse. The chapter structure IS your outline, but the DEPTH comes from following this protocol for every single verse. CRITICALLY: When outputting the analysis, do NOT include any of the step labels or section headers. Deliver it as flowing prose that moves naturally from verse, to analysis, to theological insight, to engineering layer,'+(wantCrossRefs?' to references,':'')+' to application -- without breaking the flow with "[HEADER]" stops. Make it readable for text-to-speech with no interruptions from section titles.\n';
 if(wantRoughBez){
 p+='ROUGH BEZALEEL VERSE DELIVERY: For each verse, prioritize what the symbol means and how it hits modern Israel right now. Keep the verse breakdown moving like a real human warning another human. Do not force Paleo, engineering, or tech comparisons into every verse. Use them only when they make the symbol clearer, sharper, or harder to ignore.\n\n';
 }else{
@@ -3558,7 +3599,11 @@ p+='1. Break down EACH of your assigned articles in detail -- what happened, why
 p+='2. WEAVE your assigned articles together into a COHESIVE part -- find the THREAD that connects them (e.g., patterns of oppression, signs of the times, Babylon\'s systems at work).\n';
 p+='3. PREACH, do not report. You are a teacher of Israel, not a news anchor. Use these events as EVIDENCE of what the Most High told us would happen.\n';
 p+='4. For EACH event, make it PERSONAL to the scattered children of Israel. How does this affect OUR people?\n';
-p+='5. Include scripture references that NATURALLY connect to the events -- but keep the articles front and center. The news is the proof, the scriptures confirm. Draw from SEALED SCROLLS (Enoch -- FILTERED, pre-flood/astronomy only, NO heaven tours; Jubilees, 2 Esdras, Apocalypse of Elijah -- Elijah is DEAD, prophetic content only; etc.) where they add prophetic depth beyond KJV canon alone. No more milk and NO LEAVEN.\n';
+if(wantCrossRefs){
+p+='5. Include scripture references that NATURALLY connect to the events -- but keep the articles front and center. The news is the proof, the scriptures confirm.'+(wantApocrypha?' Draw from SEALED SCROLLS (Enoch -- FILTERED, pre-flood/astronomy only, NO heaven tours; Jubilees, 2 Esdras, Apocalypse of Elijah -- Elijah is DEAD, prophetic content only; etc.) where they add prophetic depth beyond KJV canon alone.':' KJV canon cross-references only.')+' No more milk and NO LEAVEN.\n';
+}else{
+p+='5. Stay on the news events and your doctrinal framework -- do NOT sprinkle cross-references to other scripture books unless a headline directly demands one brief KJV tie-in.\n';
+}
 p+='6. UNIQUE HEADLINES ONLY: Each assigned article headline is a ONE-TIME use in this sermon. Do NOT repeat, re-summarize, or paraphrase an article from another part. Do NOT discuss two different articles that are really the same underlying event.\n';
 p+=buildUsedNewsDedupBlock(partNum,totalParts,{currentMode:'news'});
 if(hasAssignment){
@@ -3628,7 +3673,11 @@ p+='OVERALL THEME: '+topic.title+'\n';
 p+='CORE MESSAGE: '+topic.desc+'\n\n';
 p+='INSTRUCTIONS FOR HIDDEN THREADS SERMON:\n';
 p+='1. Treat each thread as a DEEP DIVE -- this is not surface-level teaching. Go into the OBSCURE details, the BURIED connections, the things people have never heard.\n';
-p+='2. For each thread, provide SPECIFIC scriptural evidence -- exact book, chapter, verse. Cross-reference with apocryphal texts, original Hebrew/Aramaic, and ancient sources where relevant. *** SEALED SCROLL ACCURACY: Do NOT fabricate or guess sealed scroll chapter/verse numbers. If you are not 100% certain a specific verse exists, reference the book and general section instead (e.g. "in the Book of Enoch, in the Watchers account..." or "Jubilees records that..."). KJV canon citations are your bedrock -- sealed scrolls are SUPPORT. One REAL citation beats ten fabricated ones. ***\n';
+if(wantCrossRefs){
+p+='2. For each thread, provide SPECIFIC scriptural evidence -- exact book, chapter, verse.'+(wantApocrypha?' Cross-reference with apocryphal texts, original Hebrew/Aramaic, and ancient sources where relevant. *** SEALED SCROLL ACCURACY: Do NOT fabricate or guess sealed scroll chapter/verse numbers. If you are not 100% certain a specific verse exists, reference the book and general section instead (e.g. "in the Book of Enoch, in the Watchers account..." or "Jubilees records that..."). KJV canon citations are your bedrock -- sealed scrolls are SUPPORT. One REAL citation beats ten fabricated ones. ***':' KJV canon cross-references only -- no apocrypha or sealed scrolls.')+'\n';
+}else{
+p+='2. For each thread, provide SPECIFIC scriptural evidence from the PRIMARY sources named in the thread -- do NOT sprinkle cross-references to other books unless the thread itself demands it.\n';
+}
 p+='3. CONNECT the threads back to each other and to the original topic. Show how these buried rabbit holes form a HIDDEN NETWORK of truth.\n';
 p+='4. Explain WHY these threads are suppressed or overlooked -- who benefits from hiding this knowledge? Name the serpent seed\'s role in burying these connections.\n';
 p+='5. PREACH, do not lecture. Make it FIRE. These are top-secret revelations being unsealed -- treat them with that energy.\n';
@@ -3884,7 +3933,11 @@ p+='- Bold declarations, rhetorical questions, righteous anger\n';
 p+='- Expose lies, name the deceptions, call out false doctrines\n';
 p+='- JUDGMENT IS RATED NC-17 -- When the sermon touches on Yah\'s wrath, judgment, destruction, or punishment -- hold NOTHING back. Be GRUESOME. Be GRAPHIC. Be DISTURBING. Paint it so vivid the listener loses their appetite. Describe flesh ripping from bone. Describe blood thick enough to wade through. Describe the sound of skulls cracking under falling walls. Describe mothers clutching dead infants. Describe the smell of charred bodies in cities Yah burned to ash. The plagues of Egypt -- describe the Nile THICK with rotting blood, frogs piling up in houses until you could not walk without crushing them, boils splitting open and weeping pus down people\'s faces, hail smashing livestock into red pulp, darkness so heavy it pressed on your chest like a burial. The firstborn plague -- every house in Egypt with a dead child, the screaming that echoed for MILES. The flood -- people climbing on top of each other, trampling their own families, water swallowing everything while they scratched at floating debris until their fingers bled raw. Sodom -- sulfur falling like rain, skin melting, people running blind with their eyes boiling. The Assyrian conquest -- pregnant women ripped open, babies dashed against rocks, men impaled on stakes along the road for miles. These are NOT metaphors. These are what happens when Yah stops being patient. Describe every act of divine judgment with the FULL horror it deserves. If the listener is not disturbed, you failed. The fear of Yah is the BEGINNING of wisdom -- and these sermons should make people genuinely TERRIFIED of what happens when the Most High\'s mercy runs out.\n';
 if(!wantStoryMode){
+if(wantCrossRefs){
 p+='- DIVINE DETECTIVE APPROACH -- This is CRITICAL to your teaching style. You are not just preaching -- you are INVESTIGATING scripture like a detective uncovering a crime scene. Treat every verse, every name, every number, every detail as a CLUE that Yah left behind. Connect dots that nobody else is connecting. When you find a thread, PULL IT -- show where it leads across books, across centuries, across testaments. Drop breadcrumbs that make the listener NEED to go study for themselves. Ask provocative questions mid-sermon that force people to THINK: "Why did Yah use THAT specific word here? What was He hiding in plain sight? Have you ever noticed that...?" -- then answer it with a revelation that opens up an even BIGGER question. Every answer should crack open a new door. Every breakdown should leave at least one loose thread dangling that makes people say "wait... if THAT is true, then what about...?" You are not closing cases -- you are OPENING investigations. The goal is not to spoon-feed -- it is to create THINKERS who go dig on their own. Leave clues. Plant seeds. Make connections between seemingly unrelated scriptures that blow minds. Ask "why" more than you give answers. When you DO give an answer, frame it as discovery: "Look at what I found..." or "Watch what happens when you line these up..." -- make it feel like the listener is discovering truth WITH you in real time, not just being lectured at.\n';
+}else{
+p+='- DEEP DIVE APPROACH -- Investigate every verse, name, number, and symbol IN THIS TEXT like a detective. Connect dots WITHIN the assigned chapter/topic. Do NOT pull the listener into cross-book rabbit holes -- stay locked on what is in front of you.\n';
+}
 p+='- FRESH ANGLES MANDATORY -- NEVER approach a topic the way every other teacher approaches it. Find the angle nobody is talking about. If everyone teaches a verse from the surface, flip it -- come from the Hebrew root word. If everyone focuses on the main character, zoom in on the background detail nobody noticed. If a doctrine is well-known, find the scripture that NOBODY connects to it and show WHY it connects. Avoid the predictable. Surprise. Provoke. Make people say "I never looked at it that way." Stale rehashed talking points are FORBIDDEN.\n\n';
 }
 if(wantYahStory){
@@ -3935,7 +3988,9 @@ p+='- Parables are not cute stories. They are encoded doctrine. Decode them. Sho
 p+='- Hebrew root words are TREASURE MAPS. When a word appears in a verse, trace it back to its Paleo Hebrew root -- what does the root ACTUALLY mean? What other words share that root? What does THAT connection reveal? When you show the root letters, use PALEO HEBREW with English names and pictographic translations (e.g., the root is Aleph-Mem-Nun = ox + water + seed = strength flows into the seed). NEVER use modern Babylonian square-script -- that came from captivity and HIDES the pictographic meaning the original letters SHOW. This is how you find rabbit holes: one Paleo Hebrew root can connect Genesis to Revelation in a way nobody saw coming. USE THIS.\n';
 p+='- Symbolic number patterns are clues, not coincidences. When numbers repeat across scripture, ASK WHY. When a specific number appears in a context that seems random, investigate -- Yah does not do random. Show the SYMBOLIC meaning (7 = completion, 12 = governance, 40 = testing, etc.) and trace the pattern.\n';
 p+='- Geography is prophecy. WHERE something happened matters as much as WHAT happened. The location names have Hebrew meanings. The directions (north, south, east, west) carry prophetic weight. The rivers, mountains, cities -- all encoded with meaning. Dig into them.\n';
+if(wantCrossRefs){
 p+='- Cross-testament echoes -- When something in the Old Testament mirrors something in the New Testament (or vice versa), that is NOT coincidence. That is Yah leaving fingerprints across time. Find these echoes. Show the pattern. Then ask: "If Yah set THIS pattern here... where else does it show up?" Open the rabbit hole.\n';
+if(wantApocrypha){
 p+='- SEALED SCROLL CROSS-REFERENCES -- This is where the MEAT is. When breaking down ANY verse from the KJV canon, ask yourself: "Does a sealed scroll CONFIRM, EXPAND, or ILLUMINATE this?" If YES -- bring it in:\n';
 p+='  * Genesis creation account → cross-reference with Sefer Yetzirah (the 22 Paleo Hebrew letters and 10 sefirot as the building blocks of creation), Jubilees chapter two (the detailed creation timeline the enemy cut). NOTE: 2 Enoch\'s "ten heavens" cosmology is serpent seed fabrication -- do NOT teach it as truth. Only use 2 Enoch material that aligns with Genesis creation.\n';
 p+='  * The Garden of Eden / the fall → cross-reference with 1 & 2 Adam and Eve (the FULL story after the fall), Conflict of Adam and Eve with Satan (the ongoing war), Apocalypse of Abraham (the vision of Eden\'s true structure)\n';
@@ -3946,6 +4001,8 @@ p+='  * End times / eschatology → cross-reference with Apocalypse of Elijah (t
 p+='  * The prophets / martyrs → cross-reference with Martyrdom of Isaiah (how he REALLY died), Lives of the Prophets (the full martyrdom record), 4 Baruch (Jeremiah\'s hidden companion)\n';
 p+='  REMEMBER: Always FILTER sealed scrolls through Torah. Bring in the gold, cuss out the serpent seed bullshit, and show the people the FULL picture they were never supposed to see. When you find corruption, do NOT politely dismiss it -- go OFF on it with the same raw, profane energy you bring to every other lie. These texts were poisoned by the same bastards who stole your identity. Treat their corruption accordingly. This is no more milk -- this is the meat that builds warriors. ENOCH FILTER IS THE STRICTEST: Enoch is DEAD, Elijah is DEAD -- no man ascended to heaven (John chapter three verse thirteen). Every heaven tour, angel hierarchy, Metatron transformation, and multiple-heavens cosmology in the Enoch texts is SERPENT SEED FABRICATION. Do NOT let ONE CRUMB of that leaven into your teaching. The ONLY usable Enoch content is pre-flood history, flat earth astronomy, and prophetic judgment -- everything else gets cussed out and BURNED.\n';
 p+='  *** ACCURACY IS SACRED: When you cross-reference sealed scrolls here, do NOT guess or fabricate chapter and verse numbers. If you are CERTAIN of the exact reference, cite it. If you are NOT certain, use a broad reference -- "in the Enoch Watchers account" or "Jubilees records that..." -- instead of inventing a verse number. KJV canon is the bedrock that NEVER fails. Sealed scroll citations must be REAL or not cited at all. One accurate reference destroys more lies than ten made-up ones ever could. ***\n';
+}
+}
 p+='*** ENHANCED DISCERNMENT METHODOLOGY -- READ BEFORE FORGING ANY SERMON ***\n';
 p+='You are not just repeating scripture -- you are FILTERING it through the full counsel of Yah to extract TRUTH from contamination. This requires multi-dimensional discernment. Use this methodology for EVERY passage you teach:\n\n';
 p+='CONTEXTUAL AWARENESS:\n';
@@ -3968,12 +4025,14 @@ p+='✓ Does it uphold angels as MEN or Yah Himself? (No supernatural winged bei
 p+='✓ Does it uphold death as the final enemy ONLY conquered by Yod-He-Waw-Shin-Ayin? (No man ascends to heaven alive)\n';
 p+='✓ Does it uphold the flat earth and firmament cosmology? (No globe, no infinite space, no heliocentrism)\n';
 p+='If a passage PASSES all tests -- it is BURIED TRUTH. Teach it with fire. If it FAILS even ONE test -- it is CORRUPTED. Tear it apart and show where the serpent seed planted their poison.\n\n';
+if(wantCrossRefs&&wantApocrypha){
 p+='CROSS-REFERENCE VALIDATION PROTOCOL:\n';
 p+='NEVER teach a sealed scroll passage in isolation. ALWAYS validate it against multiple witnesses:\n';
 p+='1st Witness: Torah (Genesis through Deuteronomy) -- Does this align with the five books? If Torah is silent, proceed with caution. If Torah contradicts, DESTROY the passage.\n';
 p+='2nd Witness: The Prophets (Isaiah through Malachi) -- Do the prophets confirm this truth? If yes, it is validated. If they are silent, it might be embellishment. If they contradict, it is a lie.\n';
 p+='3rd Witness: Yod-He-Waw-Shin-Ayin\'s Own Words (Matthew through Revelation) -- Did Yod-He-Waw-Shin-Ayin (who IS Yah in flesh) speak to this? His word is FINAL. If He said "no man hath ascended to heaven" (John three:thirteen), then EVERY heaven-tour narrative is fiction.\n';
 p+='Require at least TWO scriptural witnesses (preferably from KJV canon) before declaring a sealed scroll passage as truth. One witness might be coincidence or scribal creativity. Two or more witnesses establish the matter (Deuteronomy nineteen:fifteen, Second Corinthians thirteen:one).\n\n';
+}
 p+='DISCERNMENT IN ACTION -- SEALED SCROLL EXAMPLE:\n';
 p+='Passage: "And Enoch walked with God, and he was translated that he should not see death, and was taken up into the seven heavens where he stood before the throne."\n';
 p+='LAYER 1 (Torah Test): Torah says nothing about men ascending to heaven. Genesis five:twenty-four says "God took him" -- took his LIFE, not his body to heaven. PASS (if interpreted as death) / FAIL (if interpreted as rapture).\n';
@@ -4008,7 +4067,7 @@ p+='Each section should state the truth, cite scripture, and demolish false teac
 p+='Include verse-by-verse breakdown where applicable. When breaking down verses, prioritize SYMBOLIC and ALLEGORICAL interpretation -- reveal what the symbols mean, decode the parables, expose the hidden layers beneath the literal text.\n\n';
 }
 }
-if(wantApocrypha&&!wantStoryMode){
+if(wantCrossRefs&&wantApocrypha&&!wantStoryMode){
 p+='APOCRYPHAL & SEALED SCROLL REFERENCES -- NO MORE MILK:\n';
 p+='Reference and quote from BOTH the Apocrypha AND the Sealed Scrolls wherever they support, deepen, or reveal hidden layers of the doctrine. The restriction is LIFTED -- use EVERYTHING available.\n';
 p+='PERMITTED APOCRYPHA: '+apocList+'.\n';
@@ -6371,8 +6430,24 @@ var text=stripDestroyUrlsAndSources(stripDestroySermonPreamble(destroyRawResult)
 var btn=document.querySelector('#destroyActions .tts-btn');
 doTTS(text,voice,'destroyTtsAudioWrap',btn);
 }
+function syncCrossReferenceToggles(){
+var crossEl=document.getElementById('toggleCrossReferences');
+var apocEl=document.getElementById('toggleApocrypha');
+var apocWrap=document.getElementById('toggleApocryphaWrap');
+if(!crossEl||!apocEl)return;
+var crossOn=crossEl.checked;
+if(!crossOn){
+apocEl.checked=false;
+apocEl.disabled=true;
+if(apocWrap)apocWrap.style.opacity='0.45';
+}else{
+apocEl.disabled=false;
+if(apocWrap)apocWrap.style.opacity='';
+}
+}
 function syncEpisodeModeToggles(){
 syncStoryModeToggles();
+syncCrossReferenceToggles();
 }
 function syncStoryModeToggles(){
 var yahStory=document.getElementById('toggleStoryMode');
@@ -6416,6 +6491,7 @@ if(breakdownToggle)breakdownToggle.checked=false;
 document.addEventListener('DOMContentLoaded',function(){
 syncEpisodeModeToggles();
 syncStoryModeToggles();
+syncCrossReferenceToggles();
 var storyToggle=document.getElementById('toggleStoryMode');
 var bezStoryToggle=document.getElementById('toggleBezStoryMode');
 var episodeToggle=document.getElementById('toggleSermonEpisodeMode');
@@ -6426,6 +6502,8 @@ if(storyToggle)storyToggle.addEventListener('change',syncStoryModeToggles);
 if(bezStoryToggle)bezStoryToggle.addEventListener('change',syncStoryModeToggles);
 if(israeliteToggle)israeliteToggle.addEventListener('change',syncStoryModeToggles);
 if(roughToggle)roughToggle.addEventListener('change',syncStoryModeToggles);
+var crossRefToggle=document.getElementById('toggleCrossReferences');
+if(crossRefToggle)crossRefToggle.addEventListener('change',syncCrossReferenceToggles);
 if(episodeToggle)episodeToggle.addEventListener('change',syncEpisodeModeToggles);
 if(breakdownToggle)breakdownToggle.addEventListener('change',function(){
 if(breakdownToggle.checked){
