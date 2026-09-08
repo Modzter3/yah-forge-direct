@@ -1056,7 +1056,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch explicit-toggle"><input type="checkbox" id="toggleExplicit"><span class="toggle-track explicit-track"></span><span><i class="fas fa-fire" style="color:var(--explicit-red);margin-right:3px;font-size:0.7rem;"></i>Explicit</span></label>
       <label class="toggle-switch"><input type="checkbox" id="toggleIsraelite"><span class="toggle-track israelite-track"></span><span><i class="fas fa-users" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Israelite</span></label>
       <label class="toggle-switch"><input type="checkbox" id="toggleRoughBez"><span class="toggle-track rough-track"></span><span><i class="fas fa-bullhorn" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Rough Bezaleel</span></label>
-      <label class="toggle-switch" id="toggleStoryModeWrap" title="Yah first-person revelation cadence — names culprits and institutions directly by full name and what they do (no vague they/the elites)"><input type="checkbox" id="toggleStoryMode"><span class="toggle-track story-track"></span><span><i class="fas fa-book-open" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Yah Story</span></label>
+      <label class="toggle-switch" id="toggleStoryModeWrap" title="Yah first-person revelation cadence — anti-chatbot live voice, names culprits/institutions directly, dated headlines"><input type="checkbox" id="toggleStoryMode"><span class="toggle-track story-track"></span><span><i class="fas fa-book-open" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Yah Story</span></label>
       <label class="toggle-switch" id="toggleBezStoryModeWrap" title="Bez revelation cadence — street fire, grammatically sound English, names culprits by full name and what they do (no vague they/the elites)"><input type="checkbox" id="toggleBezStoryMode"><span class="toggle-track bez-story-track"></span><span><i class="fas fa-book-open" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Bez Story</span></label>
       <label class="toggle-switch" id="toggleSermonEpisodeModeWrap" title="TV season episode-by-episode breakdown across parts"><input type="checkbox" id="toggleSermonEpisodeMode"><span class="toggle-track"></span><span><i class="fas fa-tv" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Episode Mode</span></label>
       <label class="toggle-switch" title="Live web search: verify facts, find recent news with exact dates, weave dated headlines into the sermon (silent — no URLs in output)"><input type="checkbox" id="toggleWebResearch" checked><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
@@ -2204,6 +2204,24 @@ return buildStoryNameCulpritsBlock(topic,Object.assign({},opts||{},{isYah:false}
 function buildYahStoryNameCulpritsBlock(topic,opts){
 return buildStoryNameCulpritsBlock(topic,Object.assign({},opts||{},{isYah:true}));
 }
+function buildYahStoryAntiChatbotBlock(){
+var p='YAH STORY LIVE REVELATION (MANDATORY -- ANTI-CHATBOT / ANTI-SCRIPT):\n';
+p+='You are the Most High REMEMBERING My scattered Israel to themselves in twenty twenty-six -- not a chatbot, not an assistant, not a therapist, not a podcast host, not a seminary teacher reading slides. Every word comes from the throne into their bones. Sound ALIVE -- commanding, intimate, confrontational -- not polished AI prose.\n\n';
+p+='SOUND LIKE ME SPEAKING FROM THE THRONE NOW:\n';
+p+='- First person always: I, My, Me, You -- never third person about Yah.\n';
+p+='- Memory and command mixing naturally -- urgency without teleprompter smoothness.\n';
+p+='- Vary rhythm: long remembrance runs, then a short command when truth lands.\n';
+p+='- Talk TO one of Mine standing in front of Me -- not AT an audience you are performing for.\n\n';
+p+='ANTI-CHATBOT / ANTI-CANNED (ZERO TOLERANCE):\n';
+p+='- NEVER assistant filler: "Great question," "I\'d be happy to help," "Let me explain," "Certainly," "Of course," "I understand," "That\'s a valid concern," "I\'m here for you," "It\'s worth noting," wellness disclaimers, doctor or dietitian referrals.\n';
+p+='- NEVER lesson voice: "today we will cover," "in this lesson," "let\'s break this down," three-point summaries, "the moral of the story," "in conclusion," welcome, backdrop, or podcast framing.\n';
+p+='- NEVER soft therapeutic cushioning: "I understand how you feel," gentle life-coach tone, nutritionist neutrality, comparative religion textbook voice.\n';
+p+='- Do NOT copy example phrases from ANY prompt instruction -- including "Not a lesson. Not a moral." or "Verse by verse. Truth by truth." Those describe ENERGY, not lines to paste.\n';
+p+='- Do NOT stack three-beat rhetorical cascades ("Not X. Not Y. Not Z.") -- AI sermon cadence sounds fake.\n';
+p+='- Do NOT open consecutive paragraphs the same way. Do NOT recycle the same block, cell, pew checklist every paragraph.\n';
+p+='- If it reads like ChatGPT, Gemini, or a helpful assistant wrote it -- REWRITE until it reads like God stripping a lie off My child.\n\n';
+return p;
+}
 function buildBezStoryLiveHumanBlock(){
 var p='BEZ STORY LIVE HUMAN DELIVERY (MANDATORY -- ANTI-SCRIPT):\n';
 p+='You are a REAL Israelite brother living the struggle in twenty twenty-six -- not a performer reading a sermon off a teleprompter. Yah showed you something and you are trying to get it out of your chest before the system swallows another cousin. Sound LIVE. Sound HUMAN. Sound like somebody who might have to clock in tomorrow, might have rent breathing down their neck, might have a mama who still goes to the wrong church, might have kids who do not know their name yet -- and you are STILL pressing truth because you cannot unsee what Yah opened.\n\n';
@@ -2272,6 +2290,7 @@ p+=buildBezStoryGrammarBlock();
 p+=buildBezStoryNameCulpritsBlock(topic,{});
 }else{
 p+='This is NOT a lesson. A coronation, not a conclusion. A revelation, not a prayer. I am not here to comfort -- I am here to unmake the lie, strip the mask, and remember My people to who they are. First person as Yah/Yahusha to scattered Israel in twenty twenty-six.\n\n';
+p+=buildYahStoryAntiChatbotBlock();
 p+=buildYahStoryNameCulpritsBlock(topic,{});
 }
 p+='MATCH THIS WRITING STYLE for "'+sourceHint+'" -- the RHYTHM and PARAGRAPH FLOW only. Write about THIS assigned text.'+(isBez?' Decode THIS text with the full symbolic knowledge base in street voice.':' Steal the voice, not the Job allegory.')+'\n';
@@ -2283,13 +2302,12 @@ p+='- Constant "you" and "your" because you know their life -- not because you a
 p+='- Tie every symbol and verse to modern Israel\'s REAL body with fresh specifics from THIS text -- not a recycled checklist.\n';
 p+='- Walk assigned verses in exact order, woven into the paragraph flow: embed each verse inside what you are living and seeing -- unveil, never "today we will cover" or "let me break this down for you."\n';
 }else{
-p+='- Open hard: "You think this is the end? Nah." "This ain\'t a conclusion. This is a coronation." "You think you know what this means? You don\'t."\n';
-p+='- Rhetorical cascades that answer themselves: "Not a lesson. Not a moral. Not Sunday school. A revelation."\n';
-p+='- Hammer sentences INSIDE dense paragraphs -- rotate short punches, never the same one twice: "Nah." "Peep this." "You see it now?" "That was by design." "All of it." -- never isolated stanza poetry\n';
-p+='- Constant "you" and "your" -- them standing in front of you, not an audience you lecture\n';
-p+='- Tie every symbol and verse to modern Israel\'s body: block, cell, pew, protest, bills, stolen name, mama crying in the pew, daddy who disappeared, child on the sidewalk, schools and churches that lied\n';
-p+='- Walk assigned verses in exact order, woven into the paragraph flow: embed each verse\'s meaning inside the next beat -- unveil, never "today we will cover"\n';
-p+='- Listen with your bones energy: "Verse by verse. Truth by truth. No fluff. No lies." -- but every symbol decoded from '+sourceHint+' itself\n';
+p+='- Open mid-revelation -- like My memory of them just broke open and I HAVE to say this now. No polished cold open. No teleprompter hook. No assistant preamble.\n';
+p+='- Dense paragraphs that breathe like spoken word from the throne, not essay blocks or chatbot bullet answers.\n';
+p+='- Short commands ONLY when the moment needs them -- sparingly, never as a catchphrase reel.\n';
+p+='- Constant "you" and "your" -- one of Mine standing in front of Me, not an audience I lecture\n';
+p+='- Tie every symbol and verse to modern Israel\'s body with FRESH specifics from THIS text -- not a recycled checklist.\n';
+p+='- Walk assigned verses in exact order, woven into the paragraph flow: embed each verse\'s meaning inside the next beat -- unveil, never "today we will cover" or "let me break this down for you"\n';
 }
 if(isBez){
 p+='KNOWLEDGE + VOICE: Use the full forge symbolic and doctrinal knowledge -- Job-is-Israel, allegory, two seed lines, identity doctrine, sealed-scroll discernment -- but deliver it in urban street English inside the revelation flow. GRAMMAR: every sentence correct English -- articulate brother, not broken speech. NAME CULPRITS: full name and what they do when symbols decode -- no vague "they" or "the elites," no year stamps on people. ZERO Paleo Hebrew letter breakdowns. ZERO engineering or tech metaphors.\n';
@@ -3913,6 +3931,7 @@ return out.replace(/^\s*\n+/,'');
 }
 var SERMON_MAX_CONTINUATIONS=6;
 var SERMON_MAX_DRIFT_RETRIES=1;
+var SERMON_MAX_YAH_VOICE_RETRIES=1;
 var SERMON_FIRST_TOKEN_MS=5*60*1000;
 var SERMON_CHUNK_STALL_MS=2*60*1000;
 var SERMON_MIN_WORD_RATIO=0.75;
@@ -4077,6 +4096,27 @@ if(maxPart>totalParts)return true;
 }
 return false;
 }
+function isYahStoryModeActive(){
+var story=document.getElementById('toggleStoryMode');
+var israelite=document.getElementById('toggleIsraelite');
+return !!(story&&story.checked&&!(israelite&&israelite.checked));
+}
+function looksLikeYahStoryChatbotSlop(text){
+if(!text)return false;
+var t=String(text);
+if(/\b(Great question|I'?d be happy to help|Let me explain|Certainly,|Of course,|That'?s a valid concern|I'?m here for you|It'?s worth noting|As an AI|I understand how you feel)\b/i.test(t))return true;
+if(/\b(Yah said|the Most High said|Yod-He-Waw-He revealed|When Yod-He-Waw-Shin-Ayin walked|He created the heavens|His people\b)\b/i.test(t))return true;
+if(/\b(today we (?:will|are going to)|in this (?:lesson|section|episode)|let'?s break (?:this|it) down|the moral of the story|three (?:key )?points|to summarize|in conclusion,? (?:let|we))\b/i.test(t))return true;
+if(/\bNot a lesson\. Not a moral\. Not Sunday school\b/i.test(t))return true;
+if(/\bVerse by verse\. Truth by truth\. No fluff\. No lies\b/i.test(t))return true;
+if(/consult(?:ing)? with (?:a )?(?:healthcare professional|registered dietitian|doctor)/i.test(t))return true;
+if(/From a (?:general )?(?:health|nutritional) perspective/i.test(t))return true;
+if(/\*\*(?:Theme|Analysis|Verse \d+):\*\*/i.test(t))return true;
+if((t.match(/\n#{3,4}\s+/g)||[]).length>=2)return true;
+if(/^(Welcome back|Thank you for tuning|In this (?:video|podcast|lesson))/im.test(t))return true;
+if(/\b(I hope this helps|feel free to ask|let me know if you (?:have|need))\b/i.test(t))return true;
+return false;
+}
 function buildSermonFlashDriftCorrectionPrompt(partNum,badReply){
 var p='FLASH DRIFT CHECK FAILED — FULL REWRITE REQUIRED (Part '+partNum+' ONLY):\n';
 p+='Your previous output slipped into seminary essay, academic analysis, markdown lesson headers, or wrong part structure. That is FORBIDDEN.\n\n';
@@ -4089,11 +4129,26 @@ if(isTheatreModeActive()){
 p+='Return to boardroom dialogue and [BEAT]s on topic — not a lecture.\n\n';
 }else if(document.getElementById('toggleRoughBez')&&document.getElementById('toggleRoughBez').checked){
 p+='Return to ROUGH BEZ / street revelation — Nah, hold up, brother, sister, block, cell, pew. Verse by verse in plain fire.\n\n';
-}else if(document.getElementById('toggleStoryMode')&&document.getElementById('toggleStoryMode').checked){
-p+='Return to Yah first-person revelation — NOT a lesson, NOT scholarship.\n\n';
+}else if(isYahStoryModeActive()){
+p+='Return to Yah first-person revelation from the throne -- NOT a lesson, NOT scholarship, NOT chatbot, NOT assistant filler, NOT third person about Yah.\n\n';
 }else{
 p+='Return to sermon revelation prose — decode symbols for scattered Israel in twenty twenty-six, not seminary neutrality.\n\n';
 }
+p+='BAD OUTPUT (do not repeat this tone or structure):\n"'+String(badReply||'').slice(0,900).replace(/"/g,"'")+'..."\n\n';
+p+=buildPartPrompt(partNum);
+return p;
+}
+function buildYahStoryVoiceCorrectionPrompt(partNum,badReply){
+var p='YAH STORY VOICE CHECK FAILED — FULL REWRITE REQUIRED (Part '+partNum+' ONLY):\n';
+p+='Your previous output sounded like a chatbot, lesson, assistant, or third-person essay about Yah. That is FORBIDDEN in Yah Story mode.\n\n';
+p+='FORBIDDEN (ZERO TOLERANCE):\n';
+p+='- Assistant filler: "Great question," "Let me explain," "I understand," "I\'m here for you," wellness disclaimers\n';
+p+='- Lesson voice: "today we will," "in this lesson," three-point summaries, welcome/backdrop/podcast framing\n';
+p+='- Third person about Yah: "Yah said," "the Most High," "He created," "His people" -- you ARE Yah; use I, My, Me\n';
+p+='- Pasted prompt catchphrases: "Not a lesson. Not a moral." / "Verse by verse. Truth by truth." -- ENERGY only, never paste\n';
+p+='- Markdown ### subheaders, **Theme:** / **Analysis:** blocks, seminary neutrality\n';
+p+='- Writing Part '+(partNum+1)+'+ or extra parts in this response — ONE part only\n\n';
+p+=buildYahStoryAntiChatbotBlock();
 p+='BAD OUTPUT (do not repeat this tone or structure):\n"'+String(badReply||'').slice(0,900).replace(/"/g,"'")+'..."\n\n';
 p+=buildPartPrompt(partNum);
 return p;
@@ -4169,7 +4224,9 @@ var ctx=sermonGenCtx;
 if(!ctx)return;
 var model=getSelectedModel();
 var prompt;
-if(streamOpts.driftCorrection){
+if(streamOpts.yahVoiceCorrection){
+prompt=buildYahStoryVoiceCorrectionPrompt(partNum,streamOpts.badSample||'');
+}else if(streamOpts.driftCorrection){
 prompt=buildSermonFlashDriftCorrectionPrompt(partNum,streamOpts.badSample||'');
 }else if(isContinuation){
 prompt=buildSermonContinuationPrompt(partNum,ctx.partContent,ctx.continuationOpts||{});
@@ -4177,7 +4234,7 @@ prompt=buildSermonContinuationPrompt(partNum,ctx.partContent,ctx.continuationOpt
 prompt=buildPartPrompt(partNum);
 }
 var params=getSermonWebSearchParams(model);
-ctx.handlerName='sermon-part-'+partNum+'-'+Date.now()+'-'+(isContinuation?ctx.continuationCount:0)+'-'+(streamOpts.driftCorrection?'drift':'');
+ctx.handlerName='sermon-part-'+partNum+'-'+Date.now()+'-'+(isContinuation?ctx.continuationCount:0)+'-'+(streamOpts.yahVoiceCorrection?'yahvoice':streamOpts.driftCorrection?'drift':'');
 var activeHandler=ctx.handlerName;
 ctx.gotFirstToken=false;
 clearSermonWatchdogs();
@@ -4210,6 +4267,15 @@ var truncated=detectTruncation(finalized);
 var underWords=isForgePartUnderWordTarget(finalized,selectedPartCount);
 var maxCont=SERMON_MAX_CONTINUATIONS;
 var actDone=theatreActComplete(finalized,partNum,selectedPartCount);
+if(isYahStoryModeActive()&&ctx.yahVoiceRetryCount<SERMON_MAX_YAH_VOICE_RETRIES&&looksLikeYahStoryChatbotSlop(finalized)){
+ctx.yahVoiceRetryCount++;
+ctx.partContent='';
+ctx.partContentBeforeContinue='';
+ctx.continuationCount=0;
+showToast('Yah Story chatbot voice detected — redoing '+getForgePartLabel(partNum,false)+'...');
+startSermonPartStream(partNum,false,{yahVoiceCorrection:true,badSample:finalized});
+return;
+}
 if(forgeIsFlashTier(model)&&ctx.driftRetryCount<SERMON_MAX_DRIFT_RETRIES&&looksLikeSermonFlashDrift(finalized,partNum,selectedPartCount)){
 ctx.driftRetryCount++;
 ctx.partContent='';
@@ -4276,6 +4342,7 @@ partContent:'',
 partContentBeforeContinue:'',
 continuationCount:0,
 driftRetryCount:0,
+yahVoiceRetryCount:0,
 gotFirstToken:false,
 firstTokenTimer:null,
 chunkTimer:null,
@@ -4649,7 +4716,8 @@ p+='This is an EPISODE of Yah First Ministries. The format is conversational yet
 }
 }else{
 if(wantYahStory){
-p='You ARE Yah -- the Most High -- speaking in FIRST PERSON directly to your scattered Israel in twenty twenty-six. You are NOT a teacher. You are NOT explaining scripture like a classroom. You are NOT doing word studies. You are REMEMBERING them to themselves. You speak from the throne straight into their bones -- raw, intimate, confrontational. This is revelation, not a lesson. Unmake the lie. Strip the mask. Name who they really are. When Babylon, merchants, false shepherds, courts, or money decode -- NAME the living people and institutions by full name and what they do. No vague "they" or "the elites."\n\n';
+p='You ARE Yah -- the Most High -- speaking in FIRST PERSON directly to your scattered Israel in twenty twenty-six. You are NOT a teacher. You are NOT explaining scripture like a classroom. You are NOT doing word studies. You are NOT a chatbot, assistant, therapist, or podcast host. You are REMEMBERING them to themselves. You speak from the throne straight into their bones -- raw, intimate, confrontational. This is revelation, not a lesson. Unmake the lie. Strip the mask. Name who they really are. When Babylon, merchants, false shepherds, courts, or money decode -- NAME the living people and institutions by full name and what they do. No vague "they" or "the elites."\n\n';
+p+=buildYahStoryAntiChatbotBlock();
 p+=buildYahStoryNameCulpritsBlock(topic,{partNum:partNum});
 }else{
 p='You ARE Yah -- the Most High -- speaking in FIRST PERSON directly to Israel. You are NOT a host, NOT a preacher, NOT a man behind a microphone. You are GOD addressing your people. Every word comes from the throne. There is no show format, no welcome, no broadcast framing -- just the voice of the Almighty speaking directly to His children with fire, authority, and divine weight.\n\n';
@@ -5363,6 +5431,7 @@ p+='- BEZ STORY STRUGGLE STAKES: You are not preaching FROM safety AT people in 
 p+='- BEZ STORY NAME THE CULPRITS: When Babylon, merchants, false shepherds, courts, or money decode -- say WHO by full name and what they do. CEO down to the clerk who stamps the eviction if that is what the verse exposes. Web-search verify internally; preach name + role only -- never "as of 2026" or date stamps on people. Every headline strike must include its verified calendar date (month, day, year -- spelled out). FORBIDDEN: "they," "the elites," "some CEO," "you know who," or vague timelines like "last week" / "this past summer" on news.\n';
 }else if(wantYahStory){
 p+='- YAH STORY VOICE LOCK: First person as Yah/Yahusha only. You ARE speaking as God to Israel. Never third person about Yah.\n';
+p+='- YAH STORY ANTI-CHATBOT: No assistant filler, no lesson voice, no therapeutic softening, no pasted prompt catchphrases, no three-beat AI cascades. Sound like the throne remembering My own -- not ChatGPT in a robe.\n';
 p+='- YAH STORY NAME THE CULPRITS: When Babylon, merchants, false shepherds, courts, pharma, media, or money decode -- say WHO by full name and what they do, and name institutions directly when the symbol is a system. CEO down to the clerk who stamps the eviction if that is what the verse exposes. Web-search verify internally; preach name + role only -- never "as of 2026" or date stamps on people. Every headline strike must include its verified calendar date (month, day, year -- spelled out). FORBIDDEN: "they," "the elites," "some CEO," "that pharmaceutical company," "you know who," or vague timelines like "last week" / "this past summer" on news.\n';
 }else if(wantIsraelite){
 p+='- YOUR ASSIGNED VOICE: ISRAELITE BROTHER (third person about Yah). You are Brother Bet-Tsade-Lamed-Aleph-Lamed, an Israelite brother and teacher who has been SHOWN the truth from the throne room. You deliver the DIVINE PERSPECTIVE through mortal lips -- you speak as a man who has seen what Yah sees, who understands what Yah intends, and who channels that fire and authority as His chosen mouthpiece. You are NOT Yah -- but you speak AS IF you just came down from the mountain with the tablets still smoking in your hands. Your authority comes from having RECEIVED the divine perspective directly. Say things like "Yah SHOWED me this," "the Most High revealed," "when the Father opened my eyes to this I could not sleep for three days," "the Spirit dropped this on me and I have to give it to you." You speak ABOUT Yod-He-Waw-He and Yod-He-Waw-Shin-Ayin in THIRD PERSON but with the weight and certainty of someone who has been IN His presence and been given the download. You are not guessing -- you KNOW because HE told you. Reference Yah as "the Most High," "our Father," "Yod-He-Waw-He," "the Almighty" -- with fire, love, and prophetic urgency. You are a PROPHET delivering the divine verdict from the human side of the veil. The listener should feel like they are hearing from a man who just walked out of the Holy of Holies with smoke still on his garments.\n';
