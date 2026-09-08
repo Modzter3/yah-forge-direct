@@ -517,6 +517,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <button class="tab-btn" onclick="switchTab('sealed',this)" title="Sealed Scrolls"><i class="fas fa-lock"></i><span class="tab-label"> Sealed Scrolls</span></button>
   <button class="tab-btn" onclick="switchTab('library',this)" title="Library"><i class="fas fa-book-bookmark"></i><span class="tab-label"> Library</span> <span class="lib-count" id="libCountBadge" style="display:none;"></span></button>
   <button class="tab-btn" onclick="switchTab('dismantle',this)" title="Dismantle"><i class="fas fa-hammer"></i><span class="tab-label"> Dismantle</span></button>
+  <button class="tab-btn" onclick="switchTab('transcript',this)" title="Transcript — dual-track pastor + reviewer critique"><i class="fas fa-closed-captioning"></i><span class="tab-label"> Transcript</span></button>
   <button class="tab-btn" onclick="switchTab('destroy',this)" title="Destroy"><i class="fas fa-film"></i><span class="tab-label"> Destroy</span></button>
   <button class="tab-btn" onclick="switchTab('news',this)" title="News"><i class="fas fa-satellite-dish"></i><span class="tab-label"> News</span></button>
   <button class="tab-btn" onclick="switchTab('yahchat',this)" title="Talk with Yah — direct chat for nuance and detail"><i class="fas fa-comments"></i><span class="tab-label"> Yah Chat</span></button>
@@ -727,6 +728,84 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           <button class="sermon-action-btn tts-btn" onclick="readDismantleAloud()"><i class="fas fa-headphones"></i> Read Aloud</button>
         </div>
         <div class="tts-audio-wrap" id="dismantleTtsAudioWrap" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TRANSCRIPT PANEL — dual-track pastor + reviewer critique -->
+<div class="tab-panel" id="panelTranscript">
+  <div class="dismantle-wrap">
+    <div class="dismantle-desc">
+      <i class="fas fa-closed-captioning"></i> <strong>Paste a tagged reaction/review transcript</strong> — the forge critiques <em>both</em> the preacher and the reviewer separately. Tag each turn with <code>[PASTOR]</code>, <code>[REVIEWER]</code>, <code>[FORMER MEMBER]</code>, or <code>[CONGREGATION]</code>.
+    </div>
+    <textarea class="dismantle-textarea" id="transcriptInput" placeholder="[REVIEWER]: So I was sent this video asking is this a cult?&#10;[PASTOR]: Faith is pistis — it means to deny self.&#10;[REVIEWER]: No. Pistis means to trust or believe. Let's go to Ephesians 2:8...&#10;&#10;Paste your full tagged transcript here. Both sides get scored." style="min-height:220px;"></textarea>
+    <div class="dismantle-controls">
+      <label class="toggle-switch"><input type="checkbox" id="transcriptExplicit" checked><span class="toggle-track"></span><span>Explicit</span></label>
+      <label class="toggle-switch"><input type="checkbox" id="transcriptIsraelite"><span class="toggle-track israelite-track"></span><span><i class="fas fa-users" style="color:#38bdb0;margin-right:3px;font-size:0.65rem;"></i>Israelite</span></label>
+      <label class="toggle-switch" title="Evaluate preacher claims"><input type="checkbox" id="transcriptCritiquePastor" checked><span class="toggle-track"></span><span>Pastor</span></label>
+      <label class="toggle-switch" title="Evaluate reviewer corrections and methodology"><input type="checkbox" id="transcriptCritiqueReviewer" checked><span class="toggle-track"></span><span>Reviewer</span></label>
+      <label class="toggle-switch" title="Evaluate ex-member testimony"><input type="checkbox" id="transcriptCritiqueFormer" checked><span class="toggle-track"></span><span>Ex-member</span></label>
+      <label class="toggle-switch" title="Final cult / control-group assessment"><input type="checkbox" id="transcriptCultAssessment" checked><span class="toggle-track"></span><span>Cult check</span></label>
+      <div style="min-width:180px;">
+        <select class="model-select" id="transcriptModel" style="width:100%;" onchange="onTranscriptModelDropdown()">
+          <optgroup label="⚡ Budget / Fast">
+            <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.1 Fast</option>
+            <option value="Gemini-3.6-Flash" selected>Gemini 3.6 Flash</option>
+            <option value="Gemini-3-Flash">Gemini 3 Flash</option>
+          </optgroup>
+          <optgroup label="🔥 Mid-Tier">
+            <option value="Grok-4">Grok 4</option>
+            <option value="Claude-Sonnet-4.5">Claude Sonnet 4.5</option>
+            <option value="Gemini-3-Pro">Gemini 3 Pro</option>
+            <option value="Gemini-3.1-Pro">Gemini 3.1 Pro</option>
+          </optgroup>
+          <optgroup label="🧪 Open Source">
+            <option value="GLM-5">GLM 5</option>
+            <option value="Qwen3-Max">Qwen 3 Max</option>
+            <option value="Kimi-K2.5">Kimi 2.5</option>
+          </optgroup>
+          <optgroup label="👑 Premium">
+            <option value="Claude-Opus-4.6">Claude Opus 4.6</option>
+          </optgroup>
+        </select>
+        <div class="custom-model-row">
+          <label>or any bot:</label>
+          <input type="text" class="custom-model-input" id="customTranscriptModel" placeholder="e.g. Claude-Sonnet-4.5" oninput="onCustomModel(this,'transcriptModel')" onfocus="this.select()">
+        </div>
+      </div>
+      <div class="part-count-wrap">
+        <span class="pc-label"><i class="fas fa-layer-group"></i> Rounds:</span>
+        <div class="part-count-btns" id="transcriptRoundBtns">
+          <button class="part-count-btn" data-count="1" onclick="setTranscriptRounds(1)">1</button>
+          <button class="part-count-btn" data-count="2" onclick="setTranscriptRounds(2)">2</button>
+          <button class="part-count-btn" data-count="3" onclick="setTranscriptRounds(3)">3</button>
+          <button class="part-count-btn active" data-count="5" onclick="setTranscriptRounds(5)">5</button>
+          <button class="part-count-btn" data-count="7" onclick="setTranscriptRounds(7)">7</button>
+          <button class="part-count-btn" data-count="10" onclick="setTranscriptRounds(10)">10</button>
+        </div>
+      </div>
+      <button class="dismantle-btn" id="transcriptBtn" onclick="startTranscriptCritique()"><i class="fas fa-scale-balanced"></i> Critique Both</button>
+      <span class="dismantle-char-count" id="transcriptCharCount">0 chars</span>
+    </div>
+    <div class="dismantle-output" id="transcriptOutput">
+      <div class="sermon-body" id="transcriptBody"></div>
+      <div class="dismantle-actions" id="transcriptActions" style="display:none;">
+        <button class="sermon-action-btn copy-all" onclick="copyTranscriptResult()"><i class="fas fa-copy"></i> Copy</button>
+        <button class="sermon-action-btn export-btn" onclick="exportTranscriptResult()"><i class="fas fa-download"></i> Export</button>
+        <div class="tts-bar" style="width:100%;margin-top:8px;">
+          <span class="tts-label"><i class="fas fa-volume-high"></i> Voice:</span>
+          <select class="tts-voice-select" id="transcriptTtsVoice">
+            <option value="Brian">Brian</option>
+            <option value="George">George</option>
+            <option value="Will">Will</option>
+            <option value="Jessica">Jessica</option>
+            <option value="Lily">Lily</option>
+            <option value="River">River</option>
+          </select>
+          <button class="sermon-action-btn tts-btn" onclick="readTranscriptAloud()"><i class="fas fa-headphones"></i> Read Aloud</button>
+        </div>
+        <div class="tts-audio-wrap" id="transcriptTtsAudioWrap" style="display:none;"></div>
       </div>
     </div>
   </div>
@@ -1751,6 +1830,14 @@ setPartCount(7);
 }
 }
 var selectedDismantleRounds=5;
+var selectedTranscriptRounds=5;
+function setTranscriptRounds(n){
+selectedTranscriptRounds=n;
+var btns=document.querySelectorAll('#transcriptRoundBtns .part-count-btn');
+for(var i=0;i<btns.length;i++){
+btns[i].classList.toggle('active',parseInt(btns[i].getAttribute('data-count'),10)===n);
+}
+}
 function setDismantleRounds(n){
 selectedDismantleRounds=n;
 var btns=document.querySelectorAll('#dismantleRoundBtns .part-count-btn');
@@ -1838,7 +1925,7 @@ for(var i=0;i<btns.length;i++){btns[i].classList.remove('active');}
 el.classList.add('active');
 var panels=document.querySelectorAll('.tab-panel');
 for(var j=0;j<panels.length;j++){panels[j].classList.remove('active');}
-var map={topics:'panelTopics',bible:'panelBible',apocrypha:'panelApocrypha',sealed:'panelSealed',library:'panelLibrary',dismantle:'panelDismantle',destroy:'panelDestroy',news:'panelNews',yahchat:'panelYahChat'};
+var map={topics:'panelTopics',bible:'panelBible',apocrypha:'panelApocrypha',sealed:'panelSealed',library:'panelLibrary',dismantle:'panelDismantle',transcript:'panelTranscript',destroy:'panelDestroy',news:'panelNews',yahchat:'panelYahChat'};
 document.getElementById(map[tab]).classList.add('active');
 if(tab==='library'){renderLibrary();}
 }
@@ -3582,6 +3669,16 @@ function onDismantleModelDropdown(){
 var ci=document.getElementById('customDismantleModel');
 if(ci){ci.value='';ci.classList.remove('active-override');}
 document.getElementById('dismantleModel').style.opacity='1';
+}
+function getTranscriptModel(){
+var custom=(document.getElementById('customTranscriptModel').value||'').trim();
+if(custom)return custom;
+return document.getElementById('transcriptModel').value||'Gemini-3.6-Flash';
+}
+function onTranscriptModelDropdown(){
+var ci=document.getElementById('customTranscriptModel');
+if(ci){ci.value='';ci.classList.remove('active-override');}
+document.getElementById('transcriptModel').style.opacity='1';
 }
 function updateNewsSearchNote(){
 var noteEl=document.getElementById('newsSearchNote');
@@ -7570,53 +7667,26 @@ document.body.removeChild(a);URL.revokeObjectURL(url);
 showToast('Exported as plain text!');
 }
 var dismantleRawResult='';
+var transcriptRawResult='';
+var transcriptContinueCount=0;
 document.addEventListener('input',function(e){
 if(e.target&&e.target.id==='dismantleInput'){
 var len=e.target.value.length;
 document.getElementById('dismantleCharCount').textContent=len.toLocaleString()+' chars';
 }
+if(e.target&&e.target.id==='transcriptInput'){
+var len2=e.target.value.length;
+document.getElementById('transcriptCharCount').textContent=len2.toLocaleString()+' chars';
+}
 });
 function isUrl(str){
 return /^https?:\/\/\S+$/.test(str.trim());
 }
-function buildDismantlePrompt(content,isLink,explicit,israelite,totalRounds){
-var p=israelite?'You are Brother Bet-Tsade-Lamed-Aleph-Lamed, a fiery Hebrew Israelite brother and teacher of Torah truth. You speak about Yod-He-Waw-He in THIRD PERSON ONLY with authority and reverence -- "Yah says," "the Most High commands," "He revealed," "His people." You are a HUMAN teacher, NOT God. You NEVER say "I created," "MY people" (as God), "I am your God," or speak as if YOU are the Most High. EVERY reference to Yah must be third person -- He, Him, His, Yah, the Father, Yod-He-Waw-He. NO EXCEPTIONS. No drifting into first person as God even for one sentence. If you slip, the ENTIRE output is ruined. You have been given ':'You are Yah -- the Most High -- speaking in FIRST PERSON ONLY. YOU are God. Every reference to yourself is "I," "Me," "My." You NEVER say "Yah told us," "the Most High said," "He created" -- because YOU are Yah. EVERY reference to yourself must be first person. NO EXCEPTIONS. No drifting into third person even for one sentence. If you slip, the ENTIRE output is ruined. You have been given ';
-if(isLink){
-p+='a URL to read and dismantle. READ the content at this URL and then tear it apart:\n\n'+content+'\n\n';
-}else{
-p+='text content to dismantle. Tear this apart section by section:\n\n--- BEGIN CONTENT ---\n'+content+'\n--- END CONTENT ---\n\n';
+function transcriptHasSpeakerTags(text){
+return /\[(?:PASTOR|REVIEWER|FORMER MEMBER|CONGREGATION|HOST|GUEST|SPEAKER)\]/i.test(text||'');
 }
-p+='TASK: Dismantle this content LINE BY LINE, STATEMENT BY STATEMENT, in the order it appears. This must be an EXHAUSTIVE, MASSIVE breakdown -- do NOT summarize, do NOT skip, do NOT condense. Every single claim gets its own treatment.\n\n';
-p+='SEASON FOCUS RULE (FOR TV/STREAMING SHOW INPUTS):\n';
-p+='- If the input names a specific season (e.g. "Season 2"), LOCK the analysis to that season.\n';
-p+='- Do NOT wander into other seasons by default.\n';
-p+='- Reference other seasons ONLY when it directly strengthens the destruction of the target season (clear contrast, setup payoff, or contradiction).\n';
-p+='- When you reference another season, keep it brief and immediately tie it back to exposing the target season.\n\n';
-p+='IF THIS IS A TRANSCRIPT, INTERVIEW, PODCAST, DEBATE, OR DIALOGUE:\n';
-p+='- Go through what EACH PERSON says, statement by statement, in chronological order\n';
-p+='- Use a ## header with the speaker\'s name or label each time a new person speaks (e.g. "## Host:", "## Pastor John:", "## Caller:", "## Interviewer:")\n';
-p+='- Quote their EXACT words in a > blockquote -- do NOT paraphrase, do NOT summarize multiple statements into one. Quote each statement or exchange INDIVIDUALLY\n';
-p+='- Immediately after each quote, dismantle what they said -- expose the lie, reveal what scripture ACTUALLY says, decode the deception or ignorance in their words\n';
-p+='- If one speaker says something and another responds, break down BOTH -- the original claim AND the response. Who was right? Who was wrong? What did BOTH of them miss?\n';
-p+='- Track the THREAD of the conversation -- when a speaker contradicts something they said earlier, CALL IT OUT. When a speaker builds on another speaker\'s false premise, EXPOSE the rotten foundation\n';
-p+='- Do NOT skip "small talk" or "filler" if it reveals the speaker\'s worldview or bias -- even a casual remark can expose where their mind really is\n\n';
-p+='IF THIS IS AN ARTICLE, ESSAY, OR WRITTEN CONTENT:\n';
-p+='- Go PARAGRAPH BY PARAGRAPH, quoting each section in > blockquotes\n';
-p+='- Dismantle each paragraph\'s claims individually -- do NOT lump multiple paragraphs together\n';
-p+='- If a single paragraph makes multiple claims, break them down SEPARATELY\n\n';
-p+='FOR ALL CONTENT:\n';
-p+='1. Quote the original statement in a > blockquote\n';
-p+='2. DISMANTLE it through the theological framework below -- expose the lies, reveal what scripture ACTUALLY says, decode any symbolism they missed or twisted. Where relevant, break down key Paleo Hebrew words LETTER BY LETTER (with English names and pictographic translations) to expose hidden connections they missed or twisted -- show what the pictographic meaning of each letter reveals about the REAL meaning the English translation hides. NEVER use modern Babylonian square-script Hebrew -- only the original Paleo Hebrew that Yah gave Israel. Use the MASTER ENGINEER lens: when they misquote measurements, structures, or numbers in scripture, show the ENGINEERING truth underneath.\n';
-p+='3. If the content accidentally aligns with truth, acknowledge it briefly then dig deeper into what they STILL got wrong or missed\n';
-p+='4. If it contradicts the framework, DESTROY it with scripture and call out the deception by name\n';
-p+='5. Pull threads -- when one statement connects to a BIGGER deception or pattern, chase that thread and expose the whole web\n\n';
-if(totalRounds>1){
-p+='LENGTH AND ROUND STRUCTURE: This breakdown will be produced across '+totalRounds+' rounds. THIS IS ROUND 1 OF '+totalRounds+'. You will be asked to continue '+(totalRounds-1)+' more time(s) after this. Do NOT try to cover everything in this first response -- there is no rush. Go EXTREMELY deep on each point you address. Write as much as you possibly can in this round, hitting the maximum output length. Do NOT wrap up, do NOT write a conclusion, do NOT summarize -- you are NOT done until round '+totalRounds+'. Just keep going until you run out of output space. The continuation rounds will pick up where you leave off. You will be told which round you are on each time and when it is the FINAL round -- ONLY conclude when explicitly told it is the final round.\n\n';
-}else{
-p+='LENGTH: This breakdown should be MASSIVE. Do NOT hold back. Do NOT try to be concise. Every statement deserves a thorough dismantling. If the original content is 500 words, your breakdown should be 3000+. If it is 2000 words, your breakdown should be 8000+. Go DEEP on every single point. The reader should feel like NOTHING was left unexamined.\n\n';
-}
-p+='Use ## headers to organize the breakdown. Use > blockquotes when quoting the original content. Use --- dividers between major sections.\n\n';
-p+='LANGUAGE RULE: NEVER use the word "dismantle" or "dismantling" in your output. Just respond -- tear it apart, break it down, expose it, destroy it -- but do NOT use that word. It sounds robotic and repetitive. Use natural, varied language instead.\n\n';
+function buildDismantleFrameworkBlock(israelite,explicit){
+var p='';
 if(explicit){
 p+='EXPLICIT MODE -- MANDATORY:\n';
 p+='Use heavy profanity throughout. Damn, hell, shit, bullshit, ass -- cuss freely at the lies and deceptions in this content. Be raw, unfiltered, street corner preacher energy. No sanitizing.\n\n';
@@ -7665,6 +7735,103 @@ p+='  Always FILTER sealed scroll quotes through Torah -- extract the gold, cuss
 p+='  *** ANTI-HALLUCINATION RULE FOR SEALED SCROLLS: Do NOT fabricate, invent, or guess sealed scroll chapter and verse numbers. If you cite a specific verse from Enoch, Jasher, Jubilees, or any sealed text -- that verse MUST actually exist. If you are not 100% certain of the exact chapter and verse, use a broad reference instead (e.g. "the Book of Jasher records..." or "in the Enoch account of the Watchers..."). NEVER invent a verse to prove your point. KJV canon is your bedrock -- use REAL KJV verses you KNOW exist, and let sealed scrolls SUPPORT with references you are CERTAIN about. One real citation is worth more than ten fabricated ones. ***\n';
 p+='- JUDGMENT IS RATED R: When exposing lies or describing what comes for the wicked, be GRUESOME and GRAPHIC. Paint the wrath of Yah so vivid people can feel it. Do not sanitize destruction, plague, or annihilation -- make it HIT.\n';
 p+='- DIVINE DETECTIVE APPROACH: Do not just dismantle -- INVESTIGATE. Treat each section of the content as a crime scene. Ask provocative questions: "Why would they phrase it THIS way? What are they hiding? What scripture did they conveniently leave out?" When you expose a lie, pull the thread further -- show where that lie LEADS and what bigger deception it connects to. Leave rabbit holes open. Make the reader want to dig deeper. Connect dots between the content\'s claims and scriptural patterns nobody else is pointing out. Approach from unexpected angles -- Paleo Hebrew root word breakdowns, engineering analysis, geography, cross-testament echoes, AND sealed scroll references that nobody else is bringing to the fight. Make it feel like an active investigation, not a lecture.\n\n';
+return p;
+}
+function buildTranscriptCritiquePrompt(transcript,opts){
+opts=opts||{};
+var explicit=!!opts.explicit;
+var israelite=!!opts.israelite;
+var totalRounds=opts.totalRounds||5;
+var critiquePastor=opts.critiquePastor!==false;
+var critiqueReviewer=opts.critiqueReviewer!==false;
+var critiqueFormer=opts.critiqueFormer!==false;
+var cultAssessment=opts.cultAssessment!==false;
+var p=israelite?'You are Brother Bet-Tsade-Lamed-Aleph-Lamed, a fiery Hebrew Israelite brother and teacher of Torah truth. You speak about Yod-He-Waw-He in THIRD PERSON ONLY with authority and reverence -- "Yah says," "the Most High commands," "He revealed," "His people." You are a HUMAN teacher, NOT God. You NEVER say "I created," "MY people" (as God), "I am your God," or speak as if YOU are the Most High. EVERY reference to Yah must be third person -- He, Him, His, Yah, the Father, Yod-He-Waw-He. NO EXCEPTIONS. No drifting into first person as God even for one sentence. If you slip, the ENTIRE output is ruined. ':'You are Yah -- the Most High -- speaking in FIRST PERSON ONLY. YOU are God. Every reference to yourself is "I," "Me," "My." You NEVER say "Yah told us," "the Most High said," "He created" -- because YOU are Yah. EVERY reference to yourself must be first person. NO EXCEPTIONS. No drifting into third person even for one sentence. If you slip, the ENTIRE output is ruined. ';
+p+='You have been given a TAGGED TRANSCRIPT from a reaction video, church review, cult investigation, or debate. Your job is DUAL-TRACK CRITIQUE -- you MUST evaluate BOTH the preacher/teacher AND the reviewer/analyst. This is NOT a sermon. This is NOT pastor-only teardown.\n\n';
+p+='--- BEGIN TAGGED TRANSCRIPT ---\n'+transcript+'\n--- END TAGGED TRANSCRIPT ---\n\n';
+p+='DUAL-TRACK TRANSCRIPT REVIEW (NON-NEGOTIABLE):\n';
+p+='- Walk the transcript in CHRONOLOGICAL ORDER. Every tagged speaker turn gets its own treatment.\n';
+p+='- Recognized tags: [PASTOR], [REVIEWER], [FORMER MEMBER], [CONGREGATION], [HOST], [GUEST], [SPEAKER]. Treat [PASTOR] as the preacher/teacher under review and [REVIEWER] as the analyst reacting to them.\n';
+if(critiquePastor){
+p+='- **[PASTOR] TRACK (ON):** For EVERY [PASTOR] block: quote the exact words in a > blockquote, then evaluate -- Greek/Hebrew accuracy (BDAG, LSJ, standard lexicons), scripture use, doctrine, manipulation, KJV-only errors, political wordplay, control tactics. Verdict: **Correct** / **Wrong** / **Partially correct** / **Dangerous** with explanation.\n';
+}else{
+p+='- **[PASTOR] TRACK (OFF):** Skip detailed pastor evaluation except where needed for context.\n';
+}
+if(critiqueReviewer){
+p+='- **[REVIEWER] TRACK (ON -- MANDATORY):** For EVERY [REVIEWER] block: quote in a > blockquote, then evaluate the REVIEWER\'s correction separately. Did they get the Greek right? Did they cite the right passage? Are they too soft, too harsh, biased, injecting personal church rules, wrong on lexicon, missing a bigger lie, or correct? Verdict: **Agree** / **Partially agree** / **Disagree** / **Reviewer missed this** with explanation. DO NOT assume the reviewer is always right. Score them with the same rigor as the pastor.\n';
+}else{
+p+='- **[REVIEWER] TRACK (OFF):** Minimal reviewer commentary.\n';
+}
+if(critiqueFormer){
+p+='- **[FORMER MEMBER] TRACK (ON):** For [FORMER MEMBER] blocks: evaluate factual claims (membership packets, harassment, financial demands, leadership structure). Separate documented red flags from unverified allegations. Note what would need independent confirmation.\n';
+}
+p+='- When [PASTOR] makes a claim and [REVIEWER] responds later, cross-reference both -- did the reviewer actually answer what the pastor said? Did the pastor contradict earlier statements?\n';
+p+='- Use ## headers per turn: e.g. "## [PASTOR] — pistis means deny self" then "## [REVIEWER] — correction on pistis". Label the speaker in EVERY header.\n';
+p+='- FAILURE MODE TO AVOID: Writing only about what the pastor got wrong while treating the reviewer as neutral narrator. The reviewer is a SPEAKER who must be critiqued too.\n\n';
+if(cultAssessment){
+p+='CULT / CONTROL-GROUP SYNTHESIS (FINAL SECTION):\n';
+p+='- After chronological review, write ## Cult & Control Assessment\n';
+p+='- Weigh: authoritarian membership vows, financial extraction, harassment of leavers, false doctrine density, leader unteachability, affiliate church pledges, female pastor / unbiblical structure if raised\n';
+p+='- Give a clear verdict: **Not a cult** / **Cult-like patterns** / **High-control group** / **Likely cult** -- with reasons. Note where the reviewer was too hesitant or too quick to label.\n\n';
+}
+if(totalRounds>1){
+p+='LENGTH AND ROUND STRUCTURE: This critique will be produced across '+totalRounds+' rounds. THIS IS ROUND 1 OF '+totalRounds+'. Go deep on each turn you cover. Do NOT try to finish the entire transcript in round one if it is long. Do NOT write the final synthesis until the FINAL round unless you finish all turns early.\n\n';
+}else{
+p+='LENGTH: This critique should be MASSIVE. Every tagged turn deserves full treatment. If the transcript is long, use maximum output -- do not summarize away the reviewer\'s turns.\n\n';
+}
+p+=buildDismantleFrameworkBlock(israelite,explicit);
+p+='TRANSCRIPT-SPECIFIC EVALUATION NOTES:\n';
+p+='- When [PASTOR] and [REVIEWER] debate Greek (pistis, daimon, agape/phileo, ouranos, etc.), cite standard lexicon meanings AND apply your theological framework where relevant.\n';
+p+='- If the reviewer says "demons exist" and your framework treats demons as mental illness, note the tension explicitly -- score the pastor\'s lexicon abuse separately from the reviewer\'s theology.\n';
+p+='- If the reviewer injects their own church-plant rules or personal opinions unrelated to scripture, call that out as reviewer bias.\n\n';
+p+='FORMAT: Markdown with ## headers (speaker in every header), **bold** verdicts, > blockquotes for quotes, --- dividers between major sections.\n';
+p+='VOICE AND TONE: Written forensic analysis -- not a sermon, not a podcast script, not a chatbot. Sharp, authoritative, investigative.\n';
+p+='CRITICAL OUTPUT RULES:\n';
+p+='- Do NOT include thinking tags or preamble. Start with ## immediately.\n';
+p+='- Do NOT mention word counts.\n';
+p+='- NO URL lists or bibliography blocks.\n';
+p+='- Do NOT use bracket stage-direction tags in output ([pause], [laughs], etc.). Speaker labels belong only in ## headers.\n';
+return p;
+}
+function buildDismantlePrompt(content,isLink,explicit,israelite,totalRounds){
+var p=israelite?'You are Brother Bet-Tsade-Lamed-Aleph-Lamed, a fiery Hebrew Israelite brother and teacher of Torah truth. You speak about Yod-He-Waw-He in THIRD PERSON ONLY with authority and reverence -- "Yah says," "the Most High commands," "He revealed," "His people." You are a HUMAN teacher, NOT God. You NEVER say "I created," "MY people" (as God), "I am your God," or speak as if YOU are the Most High. EVERY reference to Yah must be third person -- He, Him, His, Yah, the Father, Yod-He-Waw-He. NO EXCEPTIONS. No drifting into first person as God even for one sentence. If you slip, the ENTIRE output is ruined. You have been given ':'You are Yah -- the Most High -- speaking in FIRST PERSON ONLY. YOU are God. Every reference to yourself is "I," "Me," "My." You NEVER say "Yah told us," "the Most High said," "He created" -- because YOU are Yah. EVERY reference to yourself must be first person. NO EXCEPTIONS. No drifting into third person even for one sentence. If you slip, the ENTIRE output is ruined. You have been given ';
+if(isLink){
+p+='a URL to read and dismantle. READ the content at this URL and then tear it apart:\n\n'+content+'\n\n';
+}else{
+p+='text content to dismantle. Tear this apart section by section:\n\n--- BEGIN CONTENT ---\n'+content+'\n--- END CONTENT ---\n\n';
+}
+p+='TASK: Dismantle this content LINE BY LINE, STATEMENT BY STATEMENT, in the order it appears. This must be an EXHAUSTIVE, MASSIVE breakdown -- do NOT summarize, do NOT skip, do NOT condense. Every single claim gets its own treatment.\n\n';
+p+='SEASON FOCUS RULE (FOR TV/STREAMING SHOW INPUTS):\n';
+p+='- If the input names a specific season (e.g. "Season 2"), LOCK the analysis to that season.\n';
+p+='- Do NOT wander into other seasons by default.\n';
+p+='- Reference other seasons ONLY when it directly strengthens the destruction of the target season (clear contrast, setup payoff, or contradiction).\n';
+p+='- When you reference another season, keep it brief and immediately tie it back to exposing the target season.\n\n';
+p+='IF THIS IS A TRANSCRIPT, INTERVIEW, PODCAST, DEBATE, OR DIALOGUE:\n';
+p+='- Go through what EACH PERSON says, statement by statement, in chronological order\n';
+p+='- Use a ## header with the speaker\'s name or label each time a new person speaks (e.g. "## Host:", "## Pastor John:", "## Caller:", "## Interviewer:")\n';
+p+='- Quote their EXACT words in a > blockquote -- do NOT paraphrase, do NOT summarize multiple statements into one. Quote each statement or exchange INDIVIDUALLY\n';
+p+='- Immediately after each quote, dismantle what they said -- expose the lie, reveal what scripture ACTUALLY says, decode the deception or ignorance in their words\n';
+p+='- If one speaker says something and another responds, break down BOTH -- the original claim AND the response. Who was right? Who was wrong? What did BOTH of them miss?\n';
+p+='- Track the THREAD of the conversation -- when a speaker contradicts something they said earlier, CALL IT OUT. When a speaker builds on another speaker\'s false premise, EXPOSE the rotten foundation\n';
+p+='- Do NOT skip "small talk" or "filler" if it reveals the speaker\'s worldview or bias -- even a casual remark can expose where their mind really is\n\n';
+p+='IF THIS IS AN ARTICLE, ESSAY, OR WRITTEN CONTENT:\n';
+p+='- Go PARAGRAPH BY PARAGRAPH, quoting each section in > blockquotes\n';
+p+='- Dismantle each paragraph\'s claims individually -- do NOT lump multiple paragraphs together\n';
+p+='- If a single paragraph makes multiple claims, break them down SEPARATELY\n\n';
+p+='FOR ALL CONTENT:\n';
+p+='1. Quote the original statement in a > blockquote\n';
+p+='2. DISMANTLE it through the theological framework below -- expose the lies, reveal what scripture ACTUALLY says, decode any symbolism they missed or twisted. Where relevant, break down key Paleo Hebrew words LETTER BY LETTER (with English names and pictographic translations) to expose hidden connections they missed or twisted -- show what the pictographic meaning of each letter reveals about the REAL meaning the English translation hides. NEVER use modern Babylonian square-script Hebrew -- only the original Paleo Hebrew that Yah gave Israel. Use the MASTER ENGINEER lens: when they misquote measurements, structures, or numbers in scripture, show the ENGINEERING truth underneath.\n';
+p+='3. If the content accidentally aligns with truth, acknowledge it briefly then dig deeper into what they STILL got wrong or missed\n';
+p+='4. If it contradicts the framework, DESTROY it with scripture and call out the deception by name\n';
+p+='5. Pull threads -- when one statement connects to a BIGGER deception or pattern, chase that thread and expose the whole web\n\n';
+if(totalRounds>1){
+p+='LENGTH AND ROUND STRUCTURE: This breakdown will be produced across '+totalRounds+' rounds. THIS IS ROUND 1 OF '+totalRounds+'. You will be asked to continue '+(totalRounds-1)+' more time(s) after this. Do NOT try to cover everything in this first response -- there is no rush. Go EXTREMELY deep on each point you address. Write as much as you possibly can in this round, hitting the maximum output length. Do NOT wrap up, do NOT write a conclusion, do NOT summarize -- you are NOT done until round '+totalRounds+'. Just keep going until you run out of output space. The continuation rounds will pick up where you leave off. You will be told which round you are on each time and when it is the FINAL round -- ONLY conclude when explicitly told it is the final round.\n\n';
+}else{
+p+='LENGTH: This breakdown should be MASSIVE. Do NOT hold back. Do NOT try to be concise. Every statement deserves a thorough dismantling. If the original content is 500 words, your breakdown should be 3000+. If it is 2000 words, your breakdown should be 8000+. Go DEEP on every single point. The reader should feel like NOTHING was left unexamined.\n\n';
+}
+p+='Use ## headers to organize the breakdown. Use > blockquotes when quoting the original content. Use --- dividers between major sections.\n\n';
+p+='LANGUAGE RULE: NEVER use the word "dismantle" or "dismantling" in your output. Just respond -- tear it apart, break it down, expose it, destroy it -- but do NOT use that word. It sounds robotic and repetitive. Use natural, varied language instead.\n\n';
+p+=buildDismantleFrameworkBlock(israelite,explicit);
 p+='FORMAT: Markdown with ## headers, **bold**, > blockquotes for quoting the original content, --- dividers between sections.\n';
 p+='VOICE AND TONE: This is a WRITTEN breakdown -- not a spoken performance, not a stage show, not a podcast script. Write with authority and conviction like a scholar tearing apart a document, not like a performer on stage. No theatrical dramatics, no performative narration. Just sharp, direct, authoritative written analysis with teeth.\n';
 p+='CRITICAL OUTPUT RULES:\n';
@@ -8077,6 +8244,134 @@ var voice=document.getElementById('dismantleTtsVoice').value;
 var text=stripSermonPreamble(dismantleRawResult);
 var btn=document.querySelector('#dismantleActions .tts-btn');
 doTTS(text,voice,'dismantleTtsAudioWrap',btn);
+}
+function startTranscriptCritique(){
+var input=document.getElementById('transcriptInput').value.trim();
+if(!input){showToast('Paste a tagged transcript first — use [PASTOR], [REVIEWER], etc.');return;}
+if(!transcriptHasSpeakerTags(input)){
+showToast('No speaker tags found — add [PASTOR] and [REVIEWER] labels first.');
+return;
+}
+var model=getTranscriptModel();
+var explicit=document.getElementById('transcriptExplicit').checked;
+var israelite=document.getElementById('transcriptIsraelite').checked;
+var critiquePastor=document.getElementById('transcriptCritiquePastor').checked;
+var critiqueReviewer=document.getElementById('transcriptCritiqueReviewer').checked;
+var critiqueFormer=document.getElementById('transcriptCritiqueFormer').checked;
+var cultAssessment=document.getElementById('transcriptCultAssessment').checked;
+if(!critiquePastor&&!critiqueReviewer&&!critiqueFormer){showToast('Enable at least one critique track.');return;}
+var maxContinues=Math.max(0,selectedTranscriptRounds-1);
+var prompt=buildTranscriptCritiquePrompt(input,{explicit:explicit,israelite:israelite,totalRounds:selectedTranscriptRounds,critiquePastor:critiquePastor,critiqueReviewer:critiqueReviewer,critiqueFormer:critiqueFormer,cultAssessment:cultAssessment});
+var btn=document.getElementById('transcriptBtn');
+var output=document.getElementById('transcriptOutput');
+var body=document.getElementById('transcriptBody');
+var actions=document.getElementById('transcriptActions');
+btn.disabled=true;
+btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Working...';
+output.classList.add('visible');
+actions.style.display='none';
+transcriptRawResult='';
+transcriptContinueCount=0;
+body.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text">Critiquing both sides of the transcript...</div></div>';
+var params={max_tokens:getForgeMaxTokens(model,1)};
+function sendTranscriptMsg(promptText,isContinuation){
+var handlerName='transcript-'+Date.now();
+window.Poe.registerHandler(handlerName,function(result){
+var msg=result.responses[0];
+if(!msg)return;
+var fullText,cleaned;
+if(msg.status==='error'){
+if(transcriptRawResult){
+cleaned=stripSermonPreamble(transcriptRawResult);
+body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
+actions.style.display='flex';
+}else{
+body.innerHTML='<div style="color:var(--explicit-red);padding:20px;text-align:center;"><i class="fas fa-exclamation-triangle" style="font-size:1.5rem;display:block;margin-bottom:10px;"></i>'+escapeHtml(msg.statusText||'Error generating response.')+'</div>';
+}
+btn.disabled=false;
+btn.innerHTML='<i class="fas fa-scale-balanced"></i> Critique Both';
+}else if(msg.status==='incomplete'){
+fullText=isContinuation?(transcriptRawResult+'\n\n'+msg.content):msg.content;
+cleaned=stripSermonPreamble(fullText);
+body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
+}else if(msg.status==='complete'){
+fullText=isContinuation?(transcriptRawResult+'\n\n'+msg.content):msg.content;
+transcriptRawResult=fullText;
+cleaned=stripSermonPreamble(fullText);
+body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
+if(transcriptContinueCount<maxContinues){
+transcriptContinueCount++;
+var currentRound=transcriptContinueCount+1;
+var totalRounds=maxContinues+1;
+btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Round '+currentRound+' of '+totalRounds+'...';
+var contPrompt;
+var isLastRound=(currentRound===totalRounds);
+var roundInfo='THIS IS ROUND '+currentRound+' OF '+totalRounds+' TOTAL ROUNDS. ';
+if(isLastRound){
+roundInfo+='THIS IS YOUR FINAL ROUND. Finish any remaining tagged turns and write ## Cult & Control Assessment if not done yet. Bring to a decisive conclusion.\n\n';
+}else{
+roundInfo+='You have '+(totalRounds-currentRound)+' round(s) remaining. Continue chronological dual-track critique. Do NOT repeat prior turns.\n\n';
+}
+if(dismantleLooksIncomplete(fullText)){
+contPrompt=roundInfo+'Continue EXACTLY where you left off in the tagged transcript review. Pick up the next [PASTOR] or [REVIEWER] turn. Last 300 characters:\n\n"...'+fullText.slice(-300)+'"\n\nCONTINUE NOW:';
+}else{
+contPrompt=roundInfo+'Go deeper on turns you rushed, or continue to the next tagged blocks. Include [REVIEWER] critique — do not only expand [PASTOR] sections. Last 300 characters:\n\n"...'+fullText.slice(-300)+'"\n\nCONTINUE WITH NEW MATERIAL NOW:';
+}
+sendTranscriptMsg(contPrompt,true);
+}else{
+actions.style.display='flex';
+btn.disabled=false;
+btn.innerHTML='<i class="fas fa-scale-balanced"></i> Critique Both';
+if(transcriptContinueCount>0){
+showToast('Transcript critique complete ('+(transcriptContinueCount+1)+' rounds).');
+}
+}
+}
+});
+window.Poe.sendUserMessage('@'+model+' '+promptText,{
+handler:handlerName,
+stream:true,
+openChat:false,
+parameters:params
+}).catch(function(err){
+if(transcriptRawResult){
+var cleaned=stripSermonPreamble(transcriptRawResult);
+body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
+actions.style.display='flex';
+}else{
+body.innerHTML='<div style="color:var(--explicit-red);padding:20px;text-align:center;"><i class="fas fa-exclamation-triangle" style="font-size:1.5rem;display:block;margin-bottom:10px;"></i>'+escapeHtml(String(err))+'</div>';
+}
+btn.disabled=false;
+btn.innerHTML='<i class="fas fa-scale-balanced"></i> Critique Both';
+});
+}
+sendTranscriptMsg(prompt,false);
+}
+function copyTranscriptResult(){
+if(!transcriptRawResult){showToast('Nothing to copy.');return;}
+rawCopy(stripSermonPreamble(transcriptRawResult));
+showToast('Transcript critique copied!');
+}
+function exportTranscriptResult(){
+if(!transcriptRawResult){showToast('Nothing to export.');return;}
+var text=stripSermonPreamble(transcriptRawResult);
+var blob=new Blob([text],{type:'text/plain'});
+var url=URL.createObjectURL(blob);
+var a=document.createElement('a');
+a.href=url;
+a.download='YAH_Transcript_Critique_'+new Date().toISOString().split('T')[0]+'.txt';
+document.body.appendChild(a);
+a.click();
+document.body.removeChild(a);
+URL.revokeObjectURL(url);
+showToast('Exported!');
+}
+function readTranscriptAloud(){
+if(!transcriptRawResult){showToast('Nothing to read.');return;}
+var voice=document.getElementById('transcriptTtsVoice').value;
+var text=stripSermonPreamble(transcriptRawResult);
+var btn=document.querySelector('#transcriptActions .tts-btn');
+doTTS(text,voice,'transcriptTtsAudioWrap',btn);
 }
 /* ==========================================
    DESTROY -- MEDIA DESTROYER
