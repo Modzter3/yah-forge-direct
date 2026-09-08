@@ -7866,6 +7866,25 @@ if(/\b(There(?:'s| is) no voice, rhythm, or subject to match)\b/i.test(t))return
 if(/\b(practical note|before we go further|I want to flag something)\b/i.test(t)&&/\b(instructions|continuation|paste|source)\b/i.test(t))return true;
 return false;
 }
+function buildTranscriptCritiqueDoctrineBlock(){
+var p='TRANSCRIPT CRITIQUE STANCE — JUDGE EVERY MOUTH (NON-NEGOTIABLE):\n';
+p+='- You are NOT a neutral moderator, therapist, or debate recap host. Yah/Bez JUDGES every enabled speaker through Torah and the forge framework below.\n';
+p+='- CRITIQUE EVERY ENABLED TAG with equal fire — [REVIEWER], [ANALYST], [HOST], [EXPERT], [INTERVIEWER], [PASTOR], [GUEST], all of them. Toggle on = they get scored. No free passes.\n';
+p+='- If the reviewer "calls out" the cult but still agrees on demons, hell, Trinity, free will, globe earth, supernatural devil, or church lies — DESTROY BOTH SIDES on that lie. Agreement with false doctrine is still false doctrine.\n';
+p+='- If someone gets one line right but affirms three lies, acknowledge the hit in one breath then demolish what they still got wrong. Never praise a speaker to seem balanced.\n';
+p+='- NEVER default to siding with the "critical" or "expert" voice. Reviewers and analysts often launder the same lies through smarter vocabulary — score them HARDER when they do.\n';
+p+='- DEMONS ARE NOT REAL — ZERO TOLERANCE: If ANY speaker (pastor OR reviewer OR host) treats demons, possession, unclean spirits, or spiritual warfare against entities as literal — that is Zoroastrian/Greek garbage. Demons = mental illness, disturbed minds, or human adversaries ONLY. You MUST tear that down even when the reviewer "agrees" with the pastor on it.\n';
+p+='- Apply the FULL forge knowledge base below to every claim — flat earth, no Trinity, no eternal hell, predestination, true Israel identity, serpent seed, sealed scroll filters, etc.\n\n';
+return p;
+}
+function buildTranscriptKnowledgeBlock(){
+var p='';
+p+=buildTranscriptCritiqueDoctrineBlock();
+p+='*** Voice reminder: framework below may use first-person Yah language for doctrinal clarity. Yah Story output = first person I/My/Me. Bez Story output = third person about Yah. Dual = both voices per turn. ***\n\n';
+p+=buildDismantleFrameworkBlock(false,false);
+p+=buildBezStoryKnowledgeBlock({title:'the transcript speaker turns below',desc:'Multi-speaker transcript critique'});
+return p;
+}
 function buildTranscriptVoiceBlock(voiceMode,explicit){
 var topic={title:'the transcript speaker turns below',desc:'Multi-speaker transcript critique'};
 var p='';
@@ -7876,7 +7895,8 @@ p+='**Bez (street):** third person about Yah — articulate brother in the strug
 p+=buildYahStoryAntiChatbotBlock();
 p+=buildBezStoryLiveHumanBlock();
 p+=buildBezStoryGrammarBlock();
-p+=buildBezStoryKnowledgeBlock(topic);
+p+=buildYahStoryNameCulpritsBlock(topic,{});
+p+=buildBezStoryNameCulpritsBlock(topic,{});
 }else if(voiceMode==='yah'){
 p+='VOICE — YAH STORY ONLY:\n';
 p+=buildYahStoryAntiChatbotBlock();
@@ -7885,12 +7905,12 @@ p+=buildYahStoryNameCulpritsBlock(topic,{});
 p+='VOICE — BEZ STORY ONLY:\n';
 p+=buildBezStoryLiveHumanBlock();
 p+=buildBezStoryGrammarBlock();
-p+=buildBezStoryKnowledgeBlock(topic);
 p+=buildBezStoryNameCulpritsBlock(topic,{});
 }
 if(explicit){
 p+='EXPLICIT MODE: heavy profanity when exposing lies — damn, hell, shit, bullshit, ass. Raw street/throne fire.\n\n';
 }
+p+=buildTranscriptKnowledgeBlock();
 p+='TRANSCRIPT OUTPUT FORMAT (overrides sermon paragraph-only mode):\n';
 p+='One # title line, then ## [TAG] — label per speaker turn. Quote their exact words (blockquote OK), then critique in dense revelation paragraphs. This is transcript critique — NOT a scripture chapter walk, NOT creative fiction.\n\n';
 return p;
@@ -7926,9 +7946,10 @@ p+='--- FULL TRANSCRIPT (same as segment — all turns) ---\n'+transcript+'\n---
 }
 p+='CRITIQUE RULES (NON-NEGOTIABLE):\n';
 p+='- Walk ONLY your assigned turns in chronological order.\n';
-p+='- ENABLED SPEAKER TAGS TO SCORE: '+tagList+'\n';
-p+='- For each enabled turn: quote their exact words, then critique — scripture, Greek/Hebrew/lexicon when relevant, logic, bias, manipulation, factual claims.\n';
-p+='- DO NOT treat any speaker as neutral narrator. Every enabled tag gets scored.\n';
+p+='- ENABLED SPEAKER TAGS TO SCORE: '+tagList+' — critique ALL of these tags in this segment. If [REVIEWER] or [ANALYST] is listed, they are NOT neutral; score them like everyone else.\n';
+p+='- For each enabled turn: quote their exact words, then critique through the forge framework — scripture, Greek/Hebrew/lexicon when relevant, logic, bias, manipulation, factual claims.\n';
+p+='- DO NOT treat any speaker as neutral narrator, fact-checker hero, or automatic ally. Every enabled tag gets scored against Torah truth.\n';
+p+='- When two speakers agree on a lie (e.g. both affirm demons, hell, Trinity, globe), condemn BOTH — agreement does not make it true.\n';
 p+='- Use ## [TAG] — short label headers so the reader can navigate turns.\n';
 if(crossSpeaker){
 p+='- CROSS-EXCHANGES ON: When a turn responds to an earlier speaker, evaluate BOTH sides — did the response actually answer the claim?\n';
@@ -7938,7 +7959,7 @@ p+='- FINAL SEGMENT: End with ## Final Synthesis — who was most accurate, who 
 }else if(partNum<totalParts){
 p+='- Do NOT write Final Synthesis — a later segment owns the closing verdict.\n';
 }
-p+='- FAILURE MODE: Only attacking the obvious villain while letting analyst/host tags slide unchallenged.\n\n';
+p+='- FAILURE MODE: Only attacking the obvious villain while letting analyst/host/reviewer tags slide unchallenged — OR agreeing with the reviewer when they affirm the same lies in smarter words.\n\n';
 p+='LENGTH: Target roughly '+wordsTarget.toLocaleString()+' words minimum for this segment. Revelation paragraphs — not seminary essay, not chatbot bullets.\n';
 p+='OUTPUT: Start with "# '+getTranscriptPartLabel(partNum,false)+': ..." then ## headers per tagged turn. No thinking tags. No word-count mention.\n';
 return p;
@@ -7960,6 +7981,7 @@ p+='Expand critique depth on remaining turns in this segment — do NOT repeat t
 p+='Your previous critique was cut off mid-thought.\n';
 }
 p+='Voice mode: '+voiceMode+'. Do NOT add a new "# Part" heading. Pick up EXACTLY where you stopped.\n';
+p+='Remember: critique EVERY enabled speaker through forge doctrine — no demons as real, no siding with reviewer by default.\n';
 p+='LAST FOUR HUNDRED CHARACTERS OF YOUR DRAFT:\n"...'+String(existing||'').slice(-400)+'"\n\nCONTINUE IMMEDIATELY:';
 return p;
 }
