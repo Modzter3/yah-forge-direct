@@ -114,6 +114,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .dismantle-textarea::placeholder{color:var(--text-dim);font-style:italic;}
 .dismantle-textarea:focus{border-color:var(--crimson-glow);}
 .dismantle-controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px;}
+.transcript-speaker-toggles{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:10px;padding:10px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;}
+.transcript-speaker-toggles .pc-label{margin-right:2px;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);}
+.transcript-speaker-toggles .pc-words{font-size:0.75rem;color:var(--text-dim);}
 .dismantle-btn{padding:12px 22px;background:linear-gradient(135deg,#8b1a1a,var(--crimson-glow));border:none;border-radius:8px;color:#fff;font-family:'Cinzel Decorative',serif;font-size:0.85rem;font-weight:700;cursor:pointer;transition:all 0.25s;letter-spacing:0.04em;display:flex;align-items:center;gap:8px;}
 .dismantle-btn:hover{transform:scale(1.03);box-shadow:0 4px 20px rgba(139,26,26,0.4);}
 .dismantle-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none;}
@@ -733,20 +736,21 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   </div>
 </div>
 
-<!-- TRANSCRIPT PANEL — dual-track pastor + reviewer critique -->
+<!-- TRANSCRIPT PANEL — multi-speaker tagged critique -->
 <div class="tab-panel" id="panelTranscript">
   <div class="dismantle-wrap">
     <div class="dismantle-desc">
-      <i class="fas fa-closed-captioning"></i> <strong>Paste a tagged reaction/review transcript</strong> — the forge critiques <em>both</em> the preacher and the reviewer separately. Tag each turn with <code>[PASTOR]</code>, <code>[REVIEWER]</code>, <code>[FORMER MEMBER]</code>, or <code>[CONGREGATION]</code>.
+      <i class="fas fa-closed-captioning"></i> <strong>Paste a tagged transcript</strong> — label each speaker turn with any tag you want (<code>[HOST]</code>, <code>[GUEST]</code>, <code>[ANALYST]</code>, etc.). The forge critiques <em>every enabled speaker</em>, not just one side.
     </div>
-    <textarea class="dismantle-textarea" id="transcriptInput" placeholder="[REVIEWER]: So I was sent this video asking is this a cult?&#10;[PASTOR]: Faith is pistis — it means to deny self.&#10;[REVIEWER]: No. Pistis means to trust or believe. Let's go to Ephesians 2:8...&#10;&#10;Paste your full tagged transcript here. Both sides get scored." style="min-height:220px;"></textarea>
+    <textarea class="dismantle-textarea" id="transcriptInput" placeholder="[HOST]: Opening question...&#10;[GUEST A]: Their claim...&#10;[GUEST B]: Their rebuttal...&#10;&#10;Use any [TAG] labels you need. Toggle which speakers to critique below." style="min-height:220px;"></textarea>
+    <div class="transcript-speaker-toggles" id="transcriptSpeakerToggles">
+      <span class="pc-words">Speaker tags appear here when you paste [TAG]: lines</span>
+    </div>
     <div class="dismantle-controls">
       <label class="toggle-switch"><input type="checkbox" id="transcriptExplicit" checked><span class="toggle-track"></span><span>Explicit</span></label>
       <label class="toggle-switch"><input type="checkbox" id="transcriptIsraelite"><span class="toggle-track israelite-track"></span><span><i class="fas fa-users" style="color:#38bdb0;margin-right:3px;font-size:0.65rem;"></i>Israelite</span></label>
-      <label class="toggle-switch" title="Evaluate preacher claims"><input type="checkbox" id="transcriptCritiquePastor" checked><span class="toggle-track"></span><span>Pastor</span></label>
-      <label class="toggle-switch" title="Evaluate reviewer corrections and methodology"><input type="checkbox" id="transcriptCritiqueReviewer" checked><span class="toggle-track"></span><span>Reviewer</span></label>
-      <label class="toggle-switch" title="Evaluate ex-member testimony"><input type="checkbox" id="transcriptCritiqueFormer" checked><span class="toggle-track"></span><span>Ex-member</span></label>
-      <label class="toggle-switch" title="Final cult / control-group assessment"><input type="checkbox" id="transcriptCultAssessment" checked><span class="toggle-track"></span><span>Cult check</span></label>
+      <label class="toggle-switch" title="When one speaker responds to another, evaluate both the claim and the response"><input type="checkbox" id="transcriptCrossSpeaker" checked><span class="toggle-track"></span><span>Cross-exchanges</span></label>
+      <label class="toggle-switch" title="Final summary section after all speaker turns"><input type="checkbox" id="transcriptFinalSynthesis" checked><span class="toggle-track"></span><span>Final synthesis</span></label>
       <div style="min-width:180px;">
         <select class="model-select" id="transcriptModel" style="width:100%;" onchange="onTranscriptModelDropdown()">
           <optgroup label="⚡ Budget / Fast">
@@ -785,7 +789,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           <button class="part-count-btn" data-count="10" onclick="setTranscriptRounds(10)">10</button>
         </div>
       </div>
-      <button class="dismantle-btn" id="transcriptBtn" onclick="startTranscriptCritique()"><i class="fas fa-scale-balanced"></i> Critique Both</button>
+      <button class="dismantle-btn" id="transcriptBtn" onclick="startTranscriptCritique()"><i class="fas fa-scale-balanced"></i> Critique Transcript</button>
       <span class="dismantle-char-count" id="transcriptCharCount">0 chars</span>
     </div>
     <div class="dismantle-output" id="transcriptOutput">
@@ -7677,13 +7681,59 @@ document.getElementById('dismantleCharCount').textContent=len.toLocaleString()+'
 if(e.target&&e.target.id==='transcriptInput'){
 var len2=e.target.value.length;
 document.getElementById('transcriptCharCount').textContent=len2.toLocaleString()+' chars';
+updateTranscriptSpeakerToggles(e.target.value);
 }
 });
-function isUrl(str){
-return /^https?:\/\/\S+$/.test(str.trim());
+var transcriptSpeakerSelections={};
+function parseTranscriptSpeakerTags(text){
+var tags=[];
+var seen={};
+if(!text)return tags;
+var lines=String(text).split('\n');
+for(var i=0;i<lines.length;i++){
+var m=lines[i].match(/^\s*(?:\*{0,2})?\[([^\]\n]+)\](?:\*{0,2})?\s*:?/);
+if(m){
+var tag=m[1].trim();
+if(!tag)continue;
+var key=tag.toLowerCase();
+if(!seen[key]){seen[key]=true;tags.push(tag);}
+}
+}
+return tags;
+}
+function syncTranscriptTagSelection(el){
+var tag=(el.getAttribute('data-tag')||'').toLowerCase();
+if(tag)transcriptSpeakerSelections[tag]=el.checked;
+}
+function updateTranscriptSpeakerToggles(text){
+var wrap=document.getElementById('transcriptSpeakerToggles');
+if(!wrap)return;
+var tags=parseTranscriptSpeakerTags(text);
+if(!tags.length){
+wrap.innerHTML='<span class="pc-words">Speaker tags appear here when you paste [TAG]: lines</span>';
+return;
+}
+var html='<span class="pc-label"><i class="fas fa-user-tag"></i> Critique:</span>';
+for(var i=0;i<tags.length;i++){
+var t=tags[i];
+var key=t.toLowerCase();
+if(transcriptSpeakerSelections[key]===undefined)transcriptSpeakerSelections[key]=true;
+var id='transcriptTag_'+i;
+html+='<label class="toggle-switch" title="Critique ['+escapeHtml(t)+'] turns"><input type="checkbox" id="'+id+'" data-tag="'+escapeHtml(t)+'" '+(transcriptSpeakerSelections[key]?'checked':'')+' onchange="syncTranscriptTagSelection(this)"><span class="toggle-track"></span><span>'+escapeHtml(t)+'</span></label>';
+}
+wrap.innerHTML=html;
+}
+function getSelectedTranscriptTags(text){
+var fromUi=[];
+var inputs=document.querySelectorAll('#transcriptSpeakerToggles input[type=checkbox][data-tag]');
+for(var i=0;i<inputs.length;i++){
+if(inputs[i].checked)fromUi.push(inputs[i].getAttribute('data-tag'));
+}
+if(fromUi.length)return fromUi;
+return parseTranscriptSpeakerTags(text);
 }
 function transcriptHasSpeakerTags(text){
-return /\[(?:PASTOR|REVIEWER|FORMER MEMBER|CONGREGATION|HOST|GUEST|SPEAKER)\]/i.test(text||'');
+return parseTranscriptSpeakerTags(text).length>0;
 }
 function buildDismantleFrameworkBlock(israelite,explicit){
 var p='';
@@ -7737,54 +7787,50 @@ p+='- JUDGMENT IS RATED R: When exposing lies or describing what comes for the w
 p+='- DIVINE DETECTIVE APPROACH: Do not just dismantle -- INVESTIGATE. Treat each section of the content as a crime scene. Ask provocative questions: "Why would they phrase it THIS way? What are they hiding? What scripture did they conveniently leave out?" When you expose a lie, pull the thread further -- show where that lie LEADS and what bigger deception it connects to. Leave rabbit holes open. Make the reader want to dig deeper. Connect dots between the content\'s claims and scriptural patterns nobody else is pointing out. Approach from unexpected angles -- Paleo Hebrew root word breakdowns, engineering analysis, geography, cross-testament echoes, AND sealed scroll references that nobody else is bringing to the fight. Make it feel like an active investigation, not a lecture.\n\n';
 return p;
 }
+function isUrl(str){
+return /^https?:\/\/\S+$/.test(str.trim());
+}
 function buildTranscriptCritiquePrompt(transcript,opts){
 opts=opts||{};
 var explicit=!!opts.explicit;
 var israelite=!!opts.israelite;
 var totalRounds=opts.totalRounds||5;
-var critiquePastor=opts.critiquePastor!==false;
-var critiqueReviewer=opts.critiqueReviewer!==false;
-var critiqueFormer=opts.critiqueFormer!==false;
-var cultAssessment=opts.cultAssessment!==false;
+var enabledTags=opts.enabledTags||[];
+var crossSpeaker=opts.crossSpeaker!==false;
+var finalSynthesis=opts.finalSynthesis!==false;
+var tagList=enabledTags.length?enabledTags.join(', '):'(all tags found in transcript)';
 var p=israelite?'You are Brother Bet-Tsade-Lamed-Aleph-Lamed, a fiery Hebrew Israelite brother and teacher of Torah truth. You speak about Yod-He-Waw-He in THIRD PERSON ONLY with authority and reverence -- "Yah says," "the Most High commands," "He revealed," "His people." You are a HUMAN teacher, NOT God. You NEVER say "I created," "MY people" (as God), "I am your God," or speak as if YOU are the Most High. EVERY reference to Yah must be third person -- He, Him, His, Yah, the Father, Yod-He-Waw-He. NO EXCEPTIONS. No drifting into first person as God even for one sentence. If you slip, the ENTIRE output is ruined. ':'You are Yah -- the Most High -- speaking in FIRST PERSON ONLY. YOU are God. Every reference to yourself is "I," "Me," "My." You NEVER say "Yah told us," "the Most High said," "He created" -- because YOU are Yah. EVERY reference to yourself must be first person. NO EXCEPTIONS. No drifting into third person even for one sentence. If you slip, the ENTIRE output is ruined. ';
-p+='You have been given a TAGGED TRANSCRIPT from a reaction video, church review, cult investigation, or debate. Your job is DUAL-TRACK CRITIQUE -- you MUST evaluate BOTH the preacher/teacher AND the reviewer/analyst. This is NOT a sermon. This is NOT pastor-only teardown.\n\n';
+p+='You have been given a TAGGED TRANSCRIPT (debate, interview, reaction video, podcast, panel, or review). Your job is MULTI-SPEAKER CRITIQUE -- evaluate EVERY enabled speaker with equal rigor. This is NOT a sermon. This is NOT single-speaker teardown.\n\n';
 p+='--- BEGIN TAGGED TRANSCRIPT ---\n'+transcript+'\n--- END TAGGED TRANSCRIPT ---\n\n';
-p+='DUAL-TRACK TRANSCRIPT REVIEW (NON-NEGOTIABLE):\n';
+p+='TAGGED TRANSCRIPT REVIEW (NON-NEGOTIABLE):\n';
 p+='- Walk the transcript in CHRONOLOGICAL ORDER. Every tagged speaker turn gets its own treatment.\n';
-p+='- Recognized tags: [PASTOR], [REVIEWER], [FORMER MEMBER], [CONGREGATION], [HOST], [GUEST], [SPEAKER]. Treat [PASTOR] as the preacher/teacher under review and [REVIEWER] as the analyst reacting to them.\n';
-if(critiquePastor){
-p+='- **[PASTOR] TRACK (ON):** For EVERY [PASTOR] block: quote the exact words in a > blockquote, then evaluate -- Greek/Hebrew accuracy (BDAG, LSJ, standard lexicons), scripture use, doctrine, manipulation, KJV-only errors, political wordplay, control tactics. Verdict: **Correct** / **Wrong** / **Partially correct** / **Dangerous** with explanation.\n';
+p+='- Speaker tags use the format [TAG] at the start of a line (any label the user chose — not a fixed list).\n';
+p+='- ENABLED SPEAKERS TO CRITIQUE: '+tagList+'\n';
+p+='- For EVERY enabled [TAG] block: quote the exact words in a > blockquote, then evaluate claims — scripture accuracy, Greek/Hebrew/lexicon use, logic, bias, manipulation, factual assertions, methodology. Verdict labels: **Correct** / **Wrong** / **Partially correct** / **Biased** / **Unverified** / **Dangerous** (pick what fits).\n';
+p+='- DO NOT treat any speaker as neutral narrator. Every enabled tag is a VOICE that must be scored.\n';
+p+='- Use ## headers per turn with the speaker tag in the header: e.g. "## [HOST] — opening question" or "## [GUEST A] — claim about pistis".\n';
+if(crossSpeaker){
+p+='- **CROSS-EXCHANGES (ON):** When one speaker responds to another, evaluate BOTH — the original claim AND the response. Did the responder actually address what was said? Did either contradict earlier statements? Who was right, partially right, or wrong?\n';
 }else{
-p+='- **[PASTOR] TRACK (OFF):** Skip detailed pastor evaluation except where needed for context.\n';
+p+='- **CROSS-EXCHANGES (OFF):** Evaluate each enabled speaker turn on its own merits; minimal cross-referencing unless required for context.\n';
 }
-if(critiqueReviewer){
-p+='- **[REVIEWER] TRACK (ON -- MANDATORY):** For EVERY [REVIEWER] block: quote in a > blockquote, then evaluate the REVIEWER\'s correction separately. Did they get the Greek right? Did they cite the right passage? Are they too soft, too harsh, biased, injecting personal church rules, wrong on lexicon, missing a bigger lie, or correct? Verdict: **Agree** / **Partially agree** / **Disagree** / **Reviewer missed this** with explanation. DO NOT assume the reviewer is always right. Score them with the same rigor as the pastor.\n';
-}else{
-p+='- **[REVIEWER] TRACK (OFF):** Minimal reviewer commentary.\n';
-}
-if(critiqueFormer){
-p+='- **[FORMER MEMBER] TRACK (ON):** For [FORMER MEMBER] blocks: evaluate factual claims (membership packets, harassment, financial demands, leadership structure). Separate documented red flags from unverified allegations. Note what would need independent confirmation.\n';
-}
-p+='- When [PASTOR] makes a claim and [REVIEWER] responds later, cross-reference both -- did the reviewer actually answer what the pastor said? Did the pastor contradict earlier statements?\n';
-p+='- Use ## headers per turn: e.g. "## [PASTOR] — pistis means deny self" then "## [REVIEWER] — correction on pistis". Label the speaker in EVERY header.\n';
-p+='- FAILURE MODE TO AVOID: Writing only about what the pastor got wrong while treating the reviewer as neutral narrator. The reviewer is a SPEAKER who must be critiqued too.\n\n';
-if(cultAssessment){
-p+='CULT / CONTROL-GROUP SYNTHESIS (FINAL SECTION):\n';
-p+='- After chronological review, write ## Cult & Control Assessment\n';
-p+='- Weigh: authoritarian membership vows, financial extraction, harassment of leavers, false doctrine density, leader unteachability, affiliate church pledges, female pastor / unbiblical structure if raised\n';
-p+='- Give a clear verdict: **Not a cult** / **Cult-like patterns** / **High-control group** / **Likely cult** -- with reasons. Note where the reviewer was too hesitant or too quick to label.\n\n';
+p+='- FAILURE MODE TO AVOID: Critiquing only the most obvious "villain" speaker while letting other tags slide unchallenged.\n\n';
+if(finalSynthesis){
+p+='FINAL SYNTHESIS (LAST SECTION):\n';
+p+='- After chronological review, write ## Final Synthesis\n';
+p+='- Summarize: who was most accurate, who was most deceptive, key contradictions, unresolved claims, and overall verdict on the exchange. Note where any speaker was too soft, too harsh, or missed the point.\n\n';
 }
 if(totalRounds>1){
 p+='LENGTH AND ROUND STRUCTURE: This critique will be produced across '+totalRounds+' rounds. THIS IS ROUND 1 OF '+totalRounds+'. Go deep on each turn you cover. Do NOT try to finish the entire transcript in round one if it is long. Do NOT write the final synthesis until the FINAL round unless you finish all turns early.\n\n';
 }else{
-p+='LENGTH: This critique should be MASSIVE. Every tagged turn deserves full treatment. If the transcript is long, use maximum output -- do not summarize away the reviewer\'s turns.\n\n';
+p+='LENGTH: This critique should be MASSIVE. Every enabled tagged turn deserves full treatment. If the transcript is long, use maximum output — do not summarize away secondary speakers.\n\n';
 }
 p+=buildDismantleFrameworkBlock(israelite,explicit);
 p+='TRANSCRIPT-SPECIFIC EVALUATION NOTES:\n';
-p+='- When [PASTOR] and [REVIEWER] debate Greek (pistis, daimon, agape/phileo, ouranos, etc.), cite standard lexicon meanings AND apply your theological framework where relevant.\n';
-p+='- If the reviewer says "demons exist" and your framework treats demons as mental illness, note the tension explicitly -- score the pastor\'s lexicon abuse separately from the reviewer\'s theology.\n';
-p+='- If the reviewer injects their own church-plant rules or personal opinions unrelated to scripture, call that out as reviewer bias.\n\n';
-p+='FORMAT: Markdown with ## headers (speaker in every header), **bold** verdicts, > blockquotes for quotes, --- dividers between major sections.\n';
+p+='- When speakers debate Greek, Hebrew, or lexicon, cite standard reference meanings (BDAG, LSJ, etc.) AND apply your theological framework where relevant.\n';
+p+='- If one speaker\'s correction conflicts with your framework, note the tension explicitly — score lexicon abuse separately from theological disagreement.\n';
+p+='- If a speaker injects personal opinion, church rules, or bias unrelated to scripture, call that out.\n\n';
+p+='FORMAT: Markdown with ## headers (speaker tag in every header), **bold** verdicts, > blockquotes for quotes, --- dividers between major sections.\n';
 p+='VOICE AND TONE: Written forensic analysis -- not a sermon, not a podcast script, not a chatbot. Sharp, authoritative, investigative.\n';
 p+='CRITICAL OUTPUT RULES:\n';
 p+='- Do NOT include thinking tags or preamble. Start with ## immediately.\n';
@@ -8247,21 +8293,20 @@ doTTS(text,voice,'dismantleTtsAudioWrap',btn);
 }
 function startTranscriptCritique(){
 var input=document.getElementById('transcriptInput').value.trim();
-if(!input){showToast('Paste a tagged transcript first — use [PASTOR], [REVIEWER], etc.');return;}
+if(!input){showToast('Paste a tagged transcript first — use [TAG]: at the start of each speaker turn.');return;}
 if(!transcriptHasSpeakerTags(input)){
-showToast('No speaker tags found — add [PASTOR] and [REVIEWER] labels first.');
+showToast('No speaker tags found — add [TAG]: labels at the start of lines.');
 return;
 }
+var enabledTags=getSelectedTranscriptTags(input);
+if(!enabledTags.length){showToast('Enable at least one speaker tag to critique.');return;}
 var model=getTranscriptModel();
 var explicit=document.getElementById('transcriptExplicit').checked;
 var israelite=document.getElementById('transcriptIsraelite').checked;
-var critiquePastor=document.getElementById('transcriptCritiquePastor').checked;
-var critiqueReviewer=document.getElementById('transcriptCritiqueReviewer').checked;
-var critiqueFormer=document.getElementById('transcriptCritiqueFormer').checked;
-var cultAssessment=document.getElementById('transcriptCultAssessment').checked;
-if(!critiquePastor&&!critiqueReviewer&&!critiqueFormer){showToast('Enable at least one critique track.');return;}
+var crossSpeaker=document.getElementById('transcriptCrossSpeaker').checked;
+var finalSynthesis=document.getElementById('transcriptFinalSynthesis').checked;
 var maxContinues=Math.max(0,selectedTranscriptRounds-1);
-var prompt=buildTranscriptCritiquePrompt(input,{explicit:explicit,israelite:israelite,totalRounds:selectedTranscriptRounds,critiquePastor:critiquePastor,critiqueReviewer:critiqueReviewer,critiqueFormer:critiqueFormer,cultAssessment:cultAssessment});
+var prompt=buildTranscriptCritiquePrompt(input,{explicit:explicit,israelite:israelite,totalRounds:selectedTranscriptRounds,enabledTags:enabledTags,crossSpeaker:crossSpeaker,finalSynthesis:finalSynthesis});
 var btn=document.getElementById('transcriptBtn');
 var output=document.getElementById('transcriptOutput');
 var body=document.getElementById('transcriptBody');
@@ -8272,7 +8317,7 @@ output.classList.add('visible');
 actions.style.display='none';
 transcriptRawResult='';
 transcriptContinueCount=0;
-body.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text">Critiquing both sides of the transcript...</div></div>';
+body.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text">Critiquing enabled speakers...</div></div>';
 var params={max_tokens:getForgeMaxTokens(model,1)};
 function sendTranscriptMsg(promptText,isContinuation){
 var handlerName='transcript-'+Date.now();
@@ -8289,7 +8334,7 @@ actions.style.display='flex';
 body.innerHTML='<div style="color:var(--explicit-red);padding:20px;text-align:center;"><i class="fas fa-exclamation-triangle" style="font-size:1.5rem;display:block;margin-bottom:10px;"></i>'+escapeHtml(msg.statusText||'Error generating response.')+'</div>';
 }
 btn.disabled=false;
-btn.innerHTML='<i class="fas fa-scale-balanced"></i> Critique Both';
+btn.innerHTML='<i class="fas fa-scale-balanced"></i> Critique Transcript';
 }else if(msg.status==='incomplete'){
 fullText=isContinuation?(transcriptRawResult+'\n\n'+msg.content):msg.content;
 cleaned=stripSermonPreamble(fullText);
@@ -8308,20 +8353,20 @@ var contPrompt;
 var isLastRound=(currentRound===totalRounds);
 var roundInfo='THIS IS ROUND '+currentRound+' OF '+totalRounds+' TOTAL ROUNDS. ';
 if(isLastRound){
-roundInfo+='THIS IS YOUR FINAL ROUND. Finish any remaining tagged turns and write ## Cult & Control Assessment if not done yet. Bring to a decisive conclusion.\n\n';
+roundInfo+='THIS IS YOUR FINAL ROUND. Finish any remaining tagged turns and write ## Final Synthesis if not done yet. Bring to a decisive conclusion.\n\n';
 }else{
-roundInfo+='You have '+(totalRounds-currentRound)+' round(s) remaining. Continue chronological dual-track critique. Do NOT repeat prior turns.\n\n';
+roundInfo+='You have '+(totalRounds-currentRound)+' round(s) remaining. Continue chronological multi-speaker critique. Do NOT repeat prior turns.\n\n';
 }
 if(dismantleLooksIncomplete(fullText)){
-contPrompt=roundInfo+'Continue EXACTLY where you left off in the tagged transcript review. Pick up the next [PASTOR] or [REVIEWER] turn. Last 300 characters:\n\n"...'+fullText.slice(-300)+'"\n\nCONTINUE NOW:';
+contPrompt=roundInfo+'Continue EXACTLY where you left off in the tagged transcript review. Pick up the next enabled speaker turn. Last 300 characters:\n\n"...'+fullText.slice(-300)+'"\n\nCONTINUE NOW:';
 }else{
-contPrompt=roundInfo+'Go deeper on turns you rushed, or continue to the next tagged blocks. Include [REVIEWER] critique — do not only expand [PASTOR] sections. Last 300 characters:\n\n"...'+fullText.slice(-300)+'"\n\nCONTINUE WITH NEW MATERIAL NOW:';
+contPrompt=roundInfo+'Go deeper on turns you rushed, or continue to the next tagged blocks. Critique every enabled speaker — do not fixate on one tag only. Last 300 characters:\n\n"...'+fullText.slice(-300)+'"\n\nCONTINUE WITH NEW MATERIAL NOW:';
 }
 sendTranscriptMsg(contPrompt,true);
 }else{
 actions.style.display='flex';
 btn.disabled=false;
-btn.innerHTML='<i class="fas fa-scale-balanced"></i> Critique Both';
+btn.innerHTML='<i class="fas fa-scale-balanced"></i> Critique Transcript';
 if(transcriptContinueCount>0){
 showToast('Transcript critique complete ('+(transcriptContinueCount+1)+' rounds).');
 }
@@ -8342,7 +8387,7 @@ actions.style.display='flex';
 body.innerHTML='<div style="color:var(--explicit-red);padding:20px;text-align:center;"><i class="fas fa-exclamation-triangle" style="font-size:1.5rem;display:block;margin-bottom:10px;"></i>'+escapeHtml(String(err))+'</div>';
 }
 btn.disabled=false;
-btn.innerHTML='<i class="fas fa-scale-balanced"></i> Critique Both';
+btn.innerHTML='<i class="fas fa-scale-balanced"></i> Critique Transcript';
 });
 }
 sendTranscriptMsg(prompt,false);
