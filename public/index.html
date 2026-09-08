@@ -1133,8 +1133,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           <button type="button" class="part-count-btn active" data-words="4000" onclick="setStandaloneWordCount(4000)">4k</button>
           <button type="button" class="part-count-btn" data-words="5000" onclick="setStandaloneWordCount(5000)">5k</button>
           <button type="button" class="part-count-btn" data-words="6000" onclick="setStandaloneWordCount(6000)">6k</button>
+          <button type="button" class="part-count-btn" data-words="7000" onclick="setStandaloneWordCount(7000)">7k</button>
+          <button type="button" class="part-count-btn" data-words="8000" onclick="setStandaloneWordCount(8000)">8k</button>
+          <button type="button" class="part-count-btn" data-words="10000" onclick="setStandaloneWordCount(10000)">10k</button>
         </div>
-        <span class="pc-words" title="Shorter 1-part runs reduce model refusal drift — use 1.5k–2k for tight Yah/Bez story beats, or split into multiple parts for long chapters">~4,000 words total</span>
+        <span class="pc-words" title="Shorter 1-part runs reduce model refusal drift — use 1.5k–2k for tight Yah/Bez story beats. 7k–10k needs Pro/Opus-tier models for full output. Split into multiple parts for very long chapters.">~4,000 words total</span>
       </div>
       <button class="gen-btn" id="generateBtn" onclick="generateSermon(true)"><i class="fas fa-fire"></i> Generate Series</button>
     </div>
@@ -1986,7 +1989,29 @@ return /^gpt-|^o\d/i.test(tail);
 function forgeSupportsWebBrowse(model){
 return forgeIsGemini(model)||forgeIsClaude(model)||forgeIsOpenAI(model);
 }
-function getSermonWebSearchParams(model){
+function getModelMaxOutputTokens(model){
+var s=forgeModelLower(model);
+if(s.indexOf('opus')!==-1)return 32768;
+if(forgeIsClaude(model))return 16384;
+if(forgeIsGemini(model)){
+if(s.indexOf('pro')!==-1||s.indexOf('3.1')!==-1)return 32768;
+return 16384;
+}
+if(forgeIsOpenAI(model))return 16384;
+if(s.indexOf('grok')!==-1)return 16384;
+if(s.indexOf('glm')!==-1||s.indexOf('qwen')!==-1||s.indexOf('kimi')!==-1)return 8192;
+return 16384;
+}
+function wordsToOutputTokens(wordTarget){
+return Math.ceil(wordTarget*1.45)+512;
+}
+function getForgeMaxTokens(model,totalParts){
+var words=getForgeWordsPerPart(totalParts||selectedPartCount||1);
+var need=wordsToOutputTokens(words);
+var cap=getModelMaxOutputTokens(model);
+return Math.min(Math.max(need,4096),cap);
+}
+function getSermonWebSearchParams(model,totalParts){
 var params={};
 var theatre=isTheatreModeActive();
 var webEl=document.getElementById('toggleWebResearch');
@@ -1997,6 +2022,7 @@ if(theatre&&forgeIsGemini(model)){
 if(isVeilUltraEliteCastRequested())params.thinking_level='high';
 else if(forgeIsFlashTier(model))params.thinking_level='medium';
 }
+params.max_tokens=getForgeMaxTokens(model,totalParts);
 return params;
 }
 function getYahChatParams(model){
@@ -4294,7 +4320,7 @@ prompt=buildSermonContinuationPrompt(partNum,ctx.partContent,ctx.continuationOpt
 }else{
 prompt=buildPartPrompt(partNum);
 }
-var params=getSermonWebSearchParams(model);
+var params=getSermonWebSearchParams(model,selectedPartCount);
 ctx.handlerName='sermon-part-'+partNum+'-'+Date.now()+'-'+(isContinuation?ctx.continuationCount:0)+'-'+(streamOpts.yahVoiceCorrection?'yahvoice':streamOpts.driftCorrection?'drift':'');
 var activeHandler=ctx.handlerName;
 ctx.gotFirstToken=false;
