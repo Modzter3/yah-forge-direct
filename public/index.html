@@ -295,6 +295,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .pc-always7{display:flex;align-items:center;gap:5px;margin-left:auto;}
 .pc-always7 label{font-size:0.68rem;color:var(--text-dim);font-family:'Fira Code',monospace;cursor:pointer;white-space:nowrap;}
 .pc-words{font-size:0.62rem;color:var(--text-dim);font-family:'Fira Code',monospace;margin-left:4px;white-space:nowrap;}
+.standalone-word-wrap{display:none;flex:1 1 100%;align-items:center;gap:8px;margin-top:2px;}
+.standalone-word-wrap .part-count-btn{min-width:42px;font-size:0.72rem;padding:0 6px;}
 
 .gen-btn{margin-left:auto;padding:10px 20px;background:linear-gradient(135deg,var(--crimson),var(--crimson-glow));border:none;border-radius:8px;color:#fff;font-family:'Cinzel Decorative',serif;font-size:0.82rem;font-weight:700;cursor:pointer;transition:all 0.25s;letter-spacing:0.04em;}
 .gen-btn:hover{transform:scale(1.03);box-shadow:0 4px 20px rgba(196,30,58,0.3);}
@@ -1121,6 +1123,19 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           <label><input type="checkbox" id="toggleAlways7" onchange="handleAlways7()"> Always 7</label>
         </div>
       </div>
+      <div class="part-count-wrap standalone-word-wrap" id="standaloneWordWrap">
+        <span class="pc-label"><i class="fas fa-text-width"></i> 1-Part Length:</span>
+        <div class="part-count-btns" id="standaloneWordBtns">
+          <button type="button" class="part-count-btn" data-words="1500" onclick="setStandaloneWordCount(1500)">1.5k</button>
+          <button type="button" class="part-count-btn" data-words="2000" onclick="setStandaloneWordCount(2000)">2k</button>
+          <button type="button" class="part-count-btn" data-words="2500" onclick="setStandaloneWordCount(2500)">2.5k</button>
+          <button type="button" class="part-count-btn" data-words="3000" onclick="setStandaloneWordCount(3000)">3k</button>
+          <button type="button" class="part-count-btn active" data-words="4000" onclick="setStandaloneWordCount(4000)">4k</button>
+          <button type="button" class="part-count-btn" data-words="5000" onclick="setStandaloneWordCount(5000)">5k</button>
+          <button type="button" class="part-count-btn" data-words="6000" onclick="setStandaloneWordCount(6000)">6k</button>
+        </div>
+        <span class="pc-words" title="Shorter 1-part runs reduce model refusal drift — use 1.5k–2k for tight Yah/Bez story beats, or split into multiple parts for long chapters">~4,000 words total</span>
+      </div>
       <button class="gen-btn" id="generateBtn" onclick="generateSermon(true)"><i class="fas fa-fire"></i> Generate Series</button>
     </div>
     <div class="series-progress" id="seriesProgress" style="display:none;">
@@ -1460,6 +1475,7 @@ var currentChapterSource=null;
 var isGenerating=false;
 var clipboardStore={};
 var selectedPartCount=5;
+var selectedStandaloneWords=4000;
 var currentChapterText=null;
 var currentChapterVerseCount=0;
 var currentNewsContext=null;
@@ -1691,13 +1707,39 @@ if(midCats[cat])return midCats[cat];
 if(topic.id===-1)return 3;
 return 3;
 }
+function setStandaloneWordCount(n){
+n=parseInt(n,10);
+if(isNaN(n))n=4000;
+if(n<800)n=800;
+if(n>12000)n=12000;
+selectedStandaloneWords=n;
+var btns=document.querySelectorAll('#standaloneWordBtns .part-count-btn');
+for(var i=0;i<btns.length;i++){
+var w=parseInt(btns[i].getAttribute('data-words'),10);
+btns[i].classList.toggle('active',w===n);
+}
+updatePartWordEstDisplay();
+}
+function updatePartWordEstDisplay(){
+var n=selectedPartCount;
+var estEl=document.getElementById('partWordEst');
+var wrap=document.getElementById('standaloneWordWrap');
+var subEl=wrap?wrap.querySelector('.pc-words'):null;
+if(wrap)wrap.style.display=n===1?'flex':'none';
+if(n===1){
+if(estEl)estEl.textContent='1 part';
+if(subEl)subEl.textContent='Target: ~'+selectedStandaloneWords.toLocaleString()+' words';
+}else{
+if(estEl)estEl.textContent='~'+(n*2000).toLocaleString()+' words (~2,000/part)';
+}
+}
 function setPartCount(n){
 selectedPartCount=n;
 var btns=document.querySelectorAll('#partCountBtns .part-count-btn');
 for(var i=0;i<btns.length;i++){
 btns[i].classList.toggle('active',parseInt(btns[i].getAttribute('data-count'))===n);
 }
-document.getElementById('partWordEst').textContent='~'+(n*2000).toLocaleString()+' words';
+updatePartWordEstDisplay();
 if(n!==7)document.getElementById('toggleAlways7').checked=false;
 }
 function handleAlways7(){
@@ -3402,6 +3444,7 @@ var htWrap=document.getElementById('hiddenThreads');
 if(htWrap){htWrap.classList.remove('visible');document.getElementById('hiddenThreadsBody').innerHTML='<div class="ht-loading"><div class="ht-loading-anim"></div><div class="ht-loading-text">Unearthing buried threads...</div></div>';}
 if(!opts.disableGenerateBtn)document.getElementById('generateBtn').disabled=false;
 if(!opts.skipPartRec)updatePartRecommendation();
+else updatePartWordEstDisplay();
 var epToggle=document.getElementById('toggleSermonEpisodeMode');
 if(epToggle&&looksLikeTvSeason(currentTopic))epToggle.checked=true;
 syncEpisodeModeToggles();
@@ -3942,7 +3985,7 @@ var SERMON_FIRST_TOKEN_MS=5*60*1000;
 var SERMON_CHUNK_STALL_MS=2*60*1000;
 var SERMON_MIN_WORD_RATIO=0.75;
 function getForgeWordsPerPart(totalParts){
-return totalParts===1?4000:2000;
+return totalParts===1?selectedStandaloneWords:2000;
 }
 function countForgeWords(text){
 return String(text||'').trim().split(/\s+/).filter(Boolean).length;
@@ -8494,6 +8537,7 @@ if(breakdownToggle)breakdownToggle.checked=false;
 }
 }
 document.addEventListener('DOMContentLoaded',function(){
+updatePartWordEstDisplay();
 syncEpisodeModeToggles();
 syncStoryModeToggles();
 syncCrossReferenceToggles();
