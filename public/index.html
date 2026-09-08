@@ -740,7 +740,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <div class="tab-panel" id="panelTranscript">
   <div class="dismantle-wrap">
     <div class="dismantle-desc">
-      <i class="fas fa-closed-captioning"></i> <strong>Paste a tagged transcript</strong> — label each speaker turn with any tag you want (<code>[HOST]</code>, <code>[GUEST]</code>, <code>[ANALYST]</code>, etc.). The forge critiques <em>every enabled speaker</em>, not just one side.
+      <i class="fas fa-closed-captioning"></i> <strong>Paste a tagged transcript</strong> — label each turn with any <code>[TAG]</code>. Yah Story and Bez Story critique enabled speakers in revelation voice, split across <strong>parts</strong> like the sermon forge (not endless dismantle rounds).
     </div>
     <textarea class="dismantle-textarea" id="transcriptInput" placeholder="[HOST]: Opening question...&#10;[GUEST A]: Their claim...&#10;[GUEST B]: Their rebuttal...&#10;&#10;Use any [TAG] labels you need. Toggle which speakers to critique below." style="min-height:220px;"></textarea>
     <div class="transcript-speaker-toggles" id="transcriptSpeakerToggles">
@@ -748,9 +748,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     </div>
     <div class="dismantle-controls">
       <label class="toggle-switch"><input type="checkbox" id="transcriptExplicit" checked><span class="toggle-track"></span><span>Explicit</span></label>
-      <label class="toggle-switch"><input type="checkbox" id="transcriptIsraelite"><span class="toggle-track israelite-track"></span><span><i class="fas fa-users" style="color:#38bdb0;margin-right:3px;font-size:0.65rem;"></i>Israelite</span></label>
+      <label class="toggle-switch" title="Yah first-person throne revelation"><input type="checkbox" id="transcriptYahStory" checked onchange="syncTranscriptStoryToggles()"><span class="toggle-track story-track"></span><span><i class="fas fa-book-open" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Yah Story</span></label>
+      <label class="toggle-switch" title="Bez street revelation — articulate brother in the struggle"><input type="checkbox" id="transcriptBezStory" checked onchange="syncTranscriptStoryToggles()"><span class="toggle-track bez-story-track"></span><span><i class="fas fa-book-open" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Bez Story</span></label>
       <label class="toggle-switch" title="When one speaker responds to another, evaluate both the claim and the response"><input type="checkbox" id="transcriptCrossSpeaker" checked><span class="toggle-track"></span><span>Cross-exchanges</span></label>
-      <label class="toggle-switch" title="Final summary section after all speaker turns"><input type="checkbox" id="transcriptFinalSynthesis" checked><span class="toggle-track"></span><span>Final synthesis</span></label>
+      <label class="toggle-switch" title="Final summary on the last part only"><input type="checkbox" id="transcriptFinalSynthesis" checked><span class="toggle-track"></span><span>Final synthesis</span></label>
       <div style="min-width:180px;">
         <select class="model-select" id="transcriptModel" style="width:100%;" onchange="onTranscriptModelDropdown()">
           <optgroup label="⚡ Budget / Fast">
@@ -779,18 +780,24 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         </div>
       </div>
       <div class="part-count-wrap">
-        <span class="pc-label"><i class="fas fa-layer-group"></i> Rounds:</span>
-        <div class="part-count-btns" id="transcriptRoundBtns">
-          <button class="part-count-btn" data-count="1" onclick="setTranscriptRounds(1)">1</button>
-          <button class="part-count-btn" data-count="2" onclick="setTranscriptRounds(2)">2</button>
-          <button class="part-count-btn" data-count="3" onclick="setTranscriptRounds(3)">3</button>
-          <button class="part-count-btn active" data-count="5" onclick="setTranscriptRounds(5)">5</button>
-          <button class="part-count-btn" data-count="7" onclick="setTranscriptRounds(7)">7</button>
-          <button class="part-count-btn" data-count="10" onclick="setTranscriptRounds(10)">10</button>
+        <span class="pc-label"><i class="fas fa-layer-group"></i> Parts:</span>
+        <div class="part-count-btns" id="transcriptPartBtns">
+          <button class="part-count-btn" data-count="1" onclick="setTranscriptPartCount(1)">1</button>
+          <button class="part-count-btn" data-count="2" onclick="setTranscriptPartCount(2)">2</button>
+          <button class="part-count-btn active" data-count="3" onclick="setTranscriptPartCount(3)">3</button>
+          <button class="part-count-btn" data-count="4" onclick="setTranscriptPartCount(4)">4</button>
+          <button class="part-count-btn" data-count="5" onclick="setTranscriptPartCount(5)">5</button>
+          <button class="part-count-btn" data-count="6" onclick="setTranscriptPartCount(6)">6</button>
+          <button class="part-count-btn" data-count="7" onclick="setTranscriptPartCount(7)">7</button>
         </div>
+        <span class="pc-words" id="transcriptPartWordEst">~6,000 words (~2,000/part)</span>
       </div>
       <button class="dismantle-btn" id="transcriptBtn" onclick="startTranscriptCritique()"><i class="fas fa-scale-balanced"></i> Critique Transcript</button>
       <span class="dismantle-char-count" id="transcriptCharCount">0 chars</span>
+    </div>
+    <div class="series-progress" id="transcriptProgress" style="display:none;">
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="transcriptProgressFill"></div></div>
+      <span class="progress-label" id="transcriptProgressLabel">Part 0 / 3</span>
     </div>
     <div class="dismantle-output" id="transcriptOutput">
       <div class="sermon-body" id="transcriptBody"></div>
@@ -1834,13 +1841,23 @@ setPartCount(7);
 }
 }
 var selectedDismantleRounds=5;
-var selectedTranscriptRounds=5;
-function setTranscriptRounds(n){
-selectedTranscriptRounds=n;
-var btns=document.querySelectorAll('#transcriptRoundBtns .part-count-btn');
+var selectedTranscriptPartCount=3;
+function setTranscriptPartCount(n){
+selectedTranscriptPartCount=n;
+var btns=document.querySelectorAll('#transcriptPartBtns .part-count-btn');
 for(var i=0;i<btns.length;i++){
 btns[i].classList.toggle('active',parseInt(btns[i].getAttribute('data-count'),10)===n);
 }
+var estEl=document.getElementById('transcriptPartWordEst');
+if(estEl){
+if(n===1)estEl.textContent='~4,000 words (1 part)';
+else estEl.textContent='~'+(n*2000).toLocaleString()+' words (~2,000/part)';
+}
+}
+function syncTranscriptStoryToggles(){
+var yah=document.getElementById('transcriptYahStory');
+var bez=document.getElementById('transcriptBezStory');
+if(yah&&bez&&!yah.checked&&!bez.checked)yah.checked=true;
 }
 function setDismantleRounds(n){
 selectedDismantleRounds=n;
@@ -7671,8 +7688,6 @@ document.body.removeChild(a);URL.revokeObjectURL(url);
 showToast('Exported as plain text!');
 }
 var dismantleRawResult='';
-var transcriptRawResult='';
-var transcriptContinueCount=0;
 document.addEventListener('input',function(e){
 if(e.target&&e.target.id==='dismantleInput'){
 var len=e.target.value.length;
@@ -7790,53 +7805,129 @@ return p;
 function isUrl(str){
 return /^https?:\/\/\S+$/.test(str.trim());
 }
-function buildTranscriptCritiquePrompt(transcript,opts){
+function parseTranscriptTurns(text){
+var turns=[];
+var lines=String(text||'').split('\n');
+var current=null;
+for(var i=0;i<lines.length;i++){
+var m=lines[i].match(/^\s*(?:\*{0,2})?\[([^\]\n]+)\](?:\*{0,2})?\s*:?\s*(.*)/);
+if(m){
+if(current)turns.push(current);
+current={tag:m[1].trim(),lines:[m[2]||'']};
+}else if(current){
+current.lines.push(lines[i]);
+}
+}
+if(current)turns.push(current);
+return turns;
+}
+function getTranscriptSliceForPart(transcript,partNum,totalParts){
+var turns=parseTranscriptTurns(transcript);
+if(!turns.length)return {text:transcript,startTurn:1,endTurn:1,totalTurns:0};
+var start=Math.floor((partNum-1)*turns.length/totalParts);
+var end=Math.floor(partNum*turns.length/totalParts);
+if(partNum===totalParts)end=turns.length;
+if(start>=end&&turns.length)end=Math.min(start+1,turns.length);
+var slice=turns.slice(start,end);
+var out=[];
+for(var i=0;i<slice.length;i++){
+out.push('['+slice[i].tag+']: '+slice[i].lines.join('\n').trim());
+}
+return {text:out.join('\n\n'),startTurn:start+1,endTurn:end,totalTurns:turns.length};
+}
+function getTranscriptPartVoiceMode(partNum,totalParts,wantYah,wantBez){
+if(wantYah&&wantBez){
+if(totalParts===1)return 'dual';
+return partNum%2===1?'yah':'bez';
+}
+if(wantYah)return 'yah';
+return 'bez';
+}
+function getTranscriptWordsPerPart(totalParts){
+return totalParts===1?4000:2000;
+}
+function getTranscriptPartLabel(partNum,includeOf){
+var n=selectedTranscriptPartCount;
+if(n===1)return 'Critique';
+return includeOf?('Part '+partNum+' of '+n):('Part '+partNum);
+}
+function buildTranscriptPartPrompt(partNum,opts){
 opts=opts||{};
-var explicit=!!opts.explicit;
-var israelite=!!opts.israelite;
-var totalRounds=opts.totalRounds||5;
+var totalParts=opts.totalParts||selectedTranscriptPartCount;
+var transcript=opts.transcript||'';
 var enabledTags=opts.enabledTags||[];
 var crossSpeaker=opts.crossSpeaker!==false;
 var finalSynthesis=opts.finalSynthesis!==false;
-var tagList=enabledTags.length?enabledTags.join(', '):'(all tags found in transcript)';
-var p=israelite?'You are Brother Bet-Tsade-Lamed-Aleph-Lamed, a fiery Hebrew Israelite brother and teacher of Torah truth. You speak about Yod-He-Waw-He in THIRD PERSON ONLY with authority and reverence -- "Yah says," "the Most High commands," "He revealed," "His people." You are a HUMAN teacher, NOT God. You NEVER say "I created," "MY people" (as God), "I am your God," or speak as if YOU are the Most High. EVERY reference to Yah must be third person -- He, Him, His, Yah, the Father, Yod-He-Waw-He. NO EXCEPTIONS. No drifting into first person as God even for one sentence. If you slip, the ENTIRE output is ruined. ':'You are Yah -- the Most High -- speaking in FIRST PERSON ONLY. YOU are God. Every reference to yourself is "I," "Me," "My." You NEVER say "Yah told us," "the Most High said," "He created" -- because YOU are Yah. EVERY reference to yourself must be first person. NO EXCEPTIONS. No drifting into third person even for one sentence. If you slip, the ENTIRE output is ruined. ';
-p+='You have been given a TAGGED TRANSCRIPT (debate, interview, reaction video, podcast, panel, or review). Your job is MULTI-SPEAKER CRITIQUE -- evaluate EVERY enabled speaker with equal rigor. This is NOT a sermon. This is NOT single-speaker teardown.\n\n';
-p+='--- BEGIN TAGGED TRANSCRIPT ---\n'+transcript+'\n--- END TAGGED TRANSCRIPT ---\n\n';
-p+='TAGGED TRANSCRIPT REVIEW (NON-NEGOTIABLE):\n';
-p+='- Walk the transcript in CHRONOLOGICAL ORDER. Every tagged speaker turn gets its own treatment.\n';
-p+='- Speaker tags use the format [TAG] at the start of a line (any label the user chose — not a fixed list).\n';
-p+='- ENABLED SPEAKERS TO CRITIQUE: '+tagList+'\n';
-p+='- For EVERY enabled [TAG] block: quote the exact words in a > blockquote, then evaluate claims — scripture accuracy, Greek/Hebrew/lexicon use, logic, bias, manipulation, factual assertions, methodology. Verdict labels: **Correct** / **Wrong** / **Partially correct** / **Biased** / **Unverified** / **Dangerous** (pick what fits).\n';
-p+='- DO NOT treat any speaker as neutral narrator. Every enabled tag is a VOICE that must be scored.\n';
-p+='- Use ## headers per turn with the speaker tag in the header: e.g. "## [HOST] — opening question" or "## [GUEST A] — claim about pistis".\n';
+var wantYah=!!opts.wantYah;
+var wantBez=!!opts.wantBez;
+var explicit=!!opts.explicit;
+var voiceMode=getTranscriptPartVoiceMode(partNum,totalParts,wantYah,wantBez);
+var slice=getTranscriptSliceForPart(transcript,partNum,totalParts);
+var tagList=enabledTags.length?enabledTags.join(', '):'(all tags in this slice)';
+var wordsTarget=getTranscriptWordsPerPart(totalParts);
+var topic={title:'Tagged Transcript Critique',desc:'Multi-speaker transcript review'};
+var p='TRANSCRIPT CRITIQUE — '+getTranscriptPartLabel(partNum,true).toUpperCase()+' ONLY (CRITICAL):\n';
+p+='You are writing ONLY '+getTranscriptPartLabel(partNum,true)+'. Do NOT write other parts. Do NOT compress the whole transcript into this response.\n';
+p+='This part covers transcript turns '+slice.startTurn+' through '+slice.endTurn+' of '+slice.totalTurns+' (chronological tagged speaker blocks).\n\n';
+if(voiceMode==='dual'){
+p+='VOICE MODE — DUAL (YAH + BEZ BOTH CRITIQUE EVERY TURN IN THIS PART):\n';
+p+='For EACH enabled speaker turn in this slice, give TWO critique streams with equal rigor:\n';
+p+='- **Yah (throne):** first-person revelation from the Most High — strip lies, name culprits, scripture truth.\n';
+p+='- **Bez (street):** third person about Yah — articulate brother in the struggle pressing what Yah showed you.\n';
+p+=buildStoryRevelationStyleBlock(false,topic,null);
+p+=buildStoryRevelationStyleBlock(true,topic,null);
+}else if(voiceMode==='yah'){
+p+='VOICE MODE — YAH STORY ONLY THIS PART:\n';
+p+=buildStoryRevelationStyleBlock(false,topic,null);
+}else{
+p+='VOICE MODE — BEZ STORY ONLY THIS PART:\n';
+p+=buildStoryRevelationStyleBlock(true,topic,null);
+}
+if(explicit){
+p+='EXPLICIT MODE -- MANDATORY:\n';
+p+='Use heavy profanity when exposing lies. Damn, hell, shit, bullshit, ass -- raw street/throne fire. No sanitizing.\n\n';
+}
+p+='--- TRANSCRIPT SLICE FOR THIS PART ---\n'+slice.text+'\n--- END SLICE ---\n\n';
+p+='FULL TRANSCRIPT (REFERENCE ONLY — do NOT critique turns outside your slice except for cross-exchange context):\n--- BEGIN FULL TRANSCRIPT ---\n'+transcript+'\n--- END FULL TRANSCRIPT ---\n\n';
+p+='CRITIQUE RULES (NON-NEGOTIABLE):\n';
+p+='- Walk ONLY your assigned turns in chronological order.\n';
+p+='- ENABLED SPEAKER TAGS TO SCORE: '+tagList+'\n';
+p+='- For each enabled turn: quote their exact words (plain quote in prose or short blockquote), then critique — scripture, Greek/Hebrew/lexicon when relevant, logic, bias, manipulation, factual claims.\n';
+p+='- DO NOT treat any speaker as neutral narrator. Every enabled tag gets scored.\n';
+p+='- Use ## [TAG] — short label headers so the reader can navigate turns.\n';
 if(crossSpeaker){
-p+='- **CROSS-EXCHANGES (ON):** When one speaker responds to another, evaluate BOTH — the original claim AND the response. Did the responder actually address what was said? Did either contradict earlier statements? Who was right, partially right, or wrong?\n';
+p+='- CROSS-EXCHANGES ON: When a turn responds to an earlier speaker, evaluate BOTH sides — did the response actually answer the claim?\n';
+}
+if(finalSynthesis&&partNum===totalParts){
+p+='- FINAL PART: End with ## Final Synthesis — who was most accurate, who lied, key contradictions, overall verdict on the exchange.\n';
+}else if(partNum<totalParts){
+p+='- Do NOT write Final Synthesis — a later part owns the closing verdict.\n';
+}
+p+='- FAILURE MODE: Only attacking the obvious villain while letting analyst/host tags slide unchallenged.\n\n';
+p+='LENGTH: Target roughly '+wordsTarget.toLocaleString()+' words minimum for this part. Revelation paragraphs — not seminary essay, not chatbot bullets.\n';
+p+='OUTPUT: Start with one title line "# '+getTranscriptPartLabel(partNum,false)+': ..." then ## headers per tagged turn. No thinking tags. No word-count mention.\n';
+return p;
+}
+function buildTranscriptContinuationPrompt(partNum,existing,opts){
+opts=opts||{};
+var p='CONTINUATION — SAME '+getTranscriptPartLabel(partNum,false).toUpperCase()+' ONLY:\n';
+if(opts.underWordCount){
+var target=getTranscriptWordsPerPart(selectedTranscriptPartCount);
+var current=countForgeWords(existing);
+p+='TOO SHORT: About '+current.toLocaleString()+' words — need at least '+target.toLocaleString()+' for this part.\n';
 }else{
-p+='- **CROSS-EXCHANGES (OFF):** Evaluate each enabled speaker turn on its own merits; minimal cross-referencing unless required for context.\n';
+p+='Your previous output was cut off mid-thought.\n';
 }
-p+='- FAILURE MODE TO AVOID: Critiquing only the most obvious "villain" speaker while letting other tags slide unchallenged.\n\n';
-if(finalSynthesis){
-p+='FINAL SYNTHESIS (LAST SECTION):\n';
-p+='- After chronological review, write ## Final Synthesis\n';
-p+='- Summarize: who was most accurate, who was most deceptive, key contradictions, unresolved claims, and overall verdict on the exchange. Note where any speaker was too soft, too harsh, or missed the point.\n\n';
+p+='Do NOT add a new "# Part" heading. Pick up EXACTLY where you stopped. Same voice mode as this part.\n';
+p+='LAST FOUR HUNDRED CHARACTERS:\n"...'+String(existing||'').slice(-400)+'"\n\nCONTINUE IMMEDIATELY:';
+return p;
 }
-if(totalRounds>1){
-p+='LENGTH AND ROUND STRUCTURE: This critique will be produced across '+totalRounds+' rounds. THIS IS ROUND 1 OF '+totalRounds+'. Go deep on each turn you cover. Do NOT try to finish the entire transcript in round one if it is long. Do NOT write the final synthesis until the FINAL round unless you finish all turns early.\n\n';
-}else{
-p+='LENGTH: This critique should be MASSIVE. Every enabled tagged turn deserves full treatment. If the transcript is long, use maximum output — do not summarize away secondary speakers.\n\n';
-}
-p+=buildDismantleFrameworkBlock(israelite,explicit);
-p+='TRANSCRIPT-SPECIFIC EVALUATION NOTES:\n';
-p+='- When speakers debate Greek, Hebrew, or lexicon, cite standard reference meanings (BDAG, LSJ, etc.) AND apply your theological framework where relevant.\n';
-p+='- If one speaker\'s correction conflicts with your framework, note the tension explicitly — score lexicon abuse separately from theological disagreement.\n';
-p+='- If a speaker injects personal opinion, church rules, or bias unrelated to scripture, call that out.\n\n';
-p+='FORMAT: Markdown with ## headers (speaker tag in every header), **bold** verdicts, > blockquotes for quotes, --- dividers between major sections.\n';
-p+='VOICE AND TONE: Written forensic analysis -- not a sermon, not a podcast script, not a chatbot. Sharp, authoritative, investigative.\n';
-p+='CRITICAL OUTPUT RULES:\n';
-p+='- Do NOT include thinking tags or preamble. Start with ## immediately.\n';
-p+='- Do NOT mention word counts.\n';
-p+='- NO URL lists or bibliography blocks.\n';
-p+='- Do NOT use bracket stage-direction tags in output ([pause], [laughs], etc.). Speaker labels belong only in ## headers.\n';
+function buildTranscriptYahVoiceCorrectionPrompt(partNum,badSample,opts){
+var p='YAH STORY VOICE CHECK FAILED — FULL REWRITE REQUIRED ('+getTranscriptPartLabel(partNum,false)+' ONLY):\n';
+p+='Your transcript critique slipped into chatbot, counselor, or seminary essay voice. FORBIDDEN.\n\n';
+p+=buildYahStoryAntiChatbotBlock();
+p+='BAD OUTPUT:\n"'+String(badSample||'').slice(0,900).replace(/"/g,"'")+'..."\n\n';
+p+=buildTranscriptPartPrompt(partNum,opts);
 return p;
 }
 function buildDismantlePrompt(content,isLink,explicit,israelite,totalRounds){
@@ -8291,7 +8382,142 @@ var text=stripSermonPreamble(dismantleRawResult);
 var btn=document.querySelector('#dismantleActions .tts-btn');
 doTTS(text,voice,'dismantleTtsAudioWrap',btn);
 }
+var transcriptRawResult='';
+var transcriptPartsRaw=[];
+var transcriptGenCtx=null;
+var transcriptIsGenerating=false;
+var transcriptSourceText='';
+var transcriptOpts=null;
+function updateTranscriptProgress(partNum){
+var prog=document.getElementById('transcriptProgress');
+var fill=document.getElementById('transcriptProgressFill');
+var label=document.getElementById('transcriptProgressLabel');
+if(!prog||!fill||!label)return;
+prog.style.display='flex';
+var pct=Math.round((partNum/selectedTranscriptPartCount)*100);
+fill.style.width=pct+'%';
+label.textContent=getTranscriptPartLabel(partNum,true);
+}
+function commitTranscriptPart(partNum,partContent){
+var finalized=stripSermonPreamble(partContent||'');
+transcriptPartsRaw[partNum-1]=finalized;
+var ldr=document.getElementById('transcriptLoader'+partNum);
+if(ldr)ldr.remove();
+updateTranscriptProgress(partNum);
+}
+function transcriptSeriesComplete(){
+transcriptIsGenerating=false;
+transcriptGenCtx=null;
+transcriptRawResult=transcriptPartsRaw.filter(Boolean).join('\n\n');
+var btn=document.getElementById('transcriptBtn');
+if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-scale-balanced"></i> Critique Transcript';}
+document.getElementById('transcriptActions').style.display='flex';
+showToast('Transcript critique complete ('+selectedTranscriptPartCount+' parts).');
+}
+function generateTranscriptPart(partNum){
+if(partNum>selectedTranscriptPartCount){transcriptSeriesComplete();return;}
+var body=document.getElementById('transcriptBody');
+var divider=document.createElement('div');
+divider.className='part-divider';
+divider.id='transcriptPartDivider'+partNum;
+divider.innerHTML='<i class="fas fa-closed-captioning" style="margin-right:6px;font-size:0.65rem;"></i>'+getTranscriptPartLabel(partNum,true);
+body.appendChild(divider);
+var partContainer=document.createElement('div');
+partContainer.className='sermon-body';
+partContainer.id='transcriptPart'+partNum;
+body.appendChild(partContainer);
+var loader=document.createElement('div');
+loader.className='loading-state';
+loader.id='transcriptLoader'+partNum;
+loader.innerHTML='<div class="loading-pulse"></div><div class="loading-text">Forging '+getTranscriptPartLabel(partNum,true)+'...</div>';
+body.appendChild(loader);
+loader.scrollIntoView({behavior:'smooth',block:'center'});
+transcriptGenCtx={
+partNum:partNum,
+partContent:'',
+partContentBeforeContinue:'',
+continuationCount:0,
+yahVoiceRetryCount:0,
+gotFirstToken:false,
+partContainer:partContainer,
+finishing:false
+};
+startTranscriptPartStream(partNum,false);
+}
+function startTranscriptPartStream(partNum,isContinuation,streamOpts){
+streamOpts=streamOpts||{};
+var ctx=transcriptGenCtx;
+if(!ctx||!transcriptOpts)return;
+var model=getTranscriptModel();
+var prompt;
+if(streamOpts.yahVoiceCorrection){
+prompt=buildTranscriptYahVoiceCorrectionPrompt(partNum,streamOpts.badSample||'',transcriptOpts);
+}else if(isContinuation){
+prompt=buildTranscriptContinuationPrompt(partNum,ctx.partContent,ctx.continuationOpts||{});
+}else{
+prompt=buildTranscriptPartPrompt(partNum,transcriptOpts);
+}
+var params={max_tokens:getForgeMaxTokens(model,selectedTranscriptPartCount)};
+ctx.handlerName='transcript-part-'+partNum+'-'+Date.now()+'-'+(isContinuation?ctx.continuationCount:0);
+var activeHandler=ctx.handlerName;
+window.Poe.registerHandler(activeHandler,function(result){
+var msg=result.responses[0];if(!msg)return;
+if(!transcriptGenCtx||transcriptGenCtx.handlerName!==activeHandler)return;
+if(msg.status==='error'){
+var ldr=document.getElementById('transcriptLoader'+partNum);if(ldr)ldr.remove();
+ctx.partContainer.innerHTML='<div class="error-msg"><i class="fas fa-exclamation-triangle"></i> '+getTranscriptPartLabel(partNum,false)+' failed: '+escapeHtml(msg.statusText||'Unknown error')+'</div>';
+document.getElementById('transcriptBtn').disabled=false;
+transcriptIsGenerating=false;
+transcriptGenCtx=null;
+}else if(msg.status==='incomplete'||msg.status==='complete'){
+var chunk=msg.content||'';
+if(isContinuation)ctx.partContent=(ctx.partContentBeforeContinue||'')+'\n\n'+chunk;
+else ctx.partContent=chunk;
+var display=stripSermonPreamble(ctx.partContent);
+ctx.partContainer.innerHTML=marked.parse(display);
+if(msg.status==='complete'){
+var finalized=stripSermonPreamble(ctx.partContent);
+var truncated=detectTruncation(finalized);
+var underWords=countForgeWords(finalized)<Math.floor(getTranscriptWordsPerPart(selectedTranscriptPartCount)*SERMON_MIN_WORD_RATIO);
+var voiceMode=getTranscriptPartVoiceMode(partNum,selectedTranscriptPartCount,transcriptOpts.wantYah,transcriptOpts.wantBez);
+if((voiceMode==='yah'||voiceMode==='dual')&&ctx.yahVoiceRetryCount<SERMON_MAX_YAH_VOICE_RETRIES&&looksLikeYahStoryChatbotSlop(finalized,partNum,selectedTranscriptPartCount)){
+ctx.yahVoiceRetryCount++;
+ctx.partContent='';
+ctx.partContentBeforeContinue='';
+ctx.continuationCount=0;
+showToast('Yah voice drift — redoing '+getTranscriptPartLabel(partNum,false)+'...');
+startTranscriptPartStream(partNum,false,{yahVoiceCorrection:true,badSample:finalized});
+return;
+}
+if((truncated||underWords)&&ctx.continuationCount<SERMON_MAX_CONTINUATIONS){
+ctx.continuationCount++;
+ctx.partContentBeforeContinue=ctx.partContent;
+ctx.continuationOpts={underWordCount:underWords&&!truncated};
+startTranscriptPartStream(partNum,true);
+return;
+}
+commitTranscriptPart(partNum,ctx.partContent);
+transcriptGenCtx=null;
+generateTranscriptPart(partNum+1);
+}
+}
+});
+window.Poe.sendUserMessage('@'+model+' '+prompt,{handler:activeHandler,stream:true,openChat:false,parameters:params}).catch(function(err){
+var ldr=document.getElementById('transcriptLoader'+partNum);if(ldr)ldr.remove();
+if(ctx.partContent&&ctx.partContent.trim()){
+commitTranscriptPart(partNum,ctx.partContent);
+transcriptGenCtx=null;
+generateTranscriptPart(partNum+1);
+}else{
+ctx.partContainer.innerHTML='<div class="error-msg">'+escapeHtml(String(err))+'</div>';
+document.getElementById('transcriptBtn').disabled=false;
+transcriptIsGenerating=false;
+transcriptGenCtx=null;
+}
+});
+}
 function startTranscriptCritique(){
+if(transcriptIsGenerating){showToast('Already generating.');return;}
 var input=document.getElementById('transcriptInput').value.trim();
 if(!input){showToast('Paste a tagged transcript first — use [TAG]: at the start of each speaker turn.');return;}
 if(!transcriptHasSpeakerTags(input)){
@@ -8300,13 +8526,20 @@ return;
 }
 var enabledTags=getSelectedTranscriptTags(input);
 if(!enabledTags.length){showToast('Enable at least one speaker tag to critique.');return;}
-var model=getTranscriptModel();
-var explicit=document.getElementById('transcriptExplicit').checked;
-var israelite=document.getElementById('transcriptIsraelite').checked;
-var crossSpeaker=document.getElementById('transcriptCrossSpeaker').checked;
-var finalSynthesis=document.getElementById('transcriptFinalSynthesis').checked;
-var maxContinues=Math.max(0,selectedTranscriptRounds-1);
-var prompt=buildTranscriptCritiquePrompt(input,{explicit:explicit,israelite:israelite,totalRounds:selectedTranscriptRounds,enabledTags:enabledTags,crossSpeaker:crossSpeaker,finalSynthesis:finalSynthesis});
+var wantYah=document.getElementById('transcriptYahStory').checked;
+var wantBez=document.getElementById('transcriptBezStory').checked;
+if(!wantYah&&!wantBez){showToast('Enable Yah Story and/or Bez Story voice.');return;}
+transcriptSourceText=input;
+transcriptOpts={
+transcript:input,
+totalParts:selectedTranscriptPartCount,
+enabledTags:enabledTags,
+crossSpeaker:document.getElementById('transcriptCrossSpeaker').checked,
+finalSynthesis:document.getElementById('transcriptFinalSynthesis').checked,
+wantYah:wantYah,
+wantBez:wantBez,
+explicit:document.getElementById('transcriptExplicit').checked
+};
 var btn=document.getElementById('transcriptBtn');
 var output=document.getElementById('transcriptOutput');
 var body=document.getElementById('transcriptBody');
@@ -8316,88 +8549,24 @@ btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Working...';
 output.classList.add('visible');
 actions.style.display='none';
 transcriptRawResult='';
-transcriptContinueCount=0;
-body.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text">Critiquing enabled speakers...</div></div>';
-var params={max_tokens:getForgeMaxTokens(model,1)};
-function sendTranscriptMsg(promptText,isContinuation){
-var handlerName='transcript-'+Date.now();
-window.Poe.registerHandler(handlerName,function(result){
-var msg=result.responses[0];
-if(!msg)return;
-var fullText,cleaned;
-if(msg.status==='error'){
-if(transcriptRawResult){
-cleaned=stripSermonPreamble(transcriptRawResult);
-body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
-actions.style.display='flex';
-}else{
-body.innerHTML='<div style="color:var(--explicit-red);padding:20px;text-align:center;"><i class="fas fa-exclamation-triangle" style="font-size:1.5rem;display:block;margin-bottom:10px;"></i>'+escapeHtml(msg.statusText||'Error generating response.')+'</div>';
-}
-btn.disabled=false;
-btn.innerHTML='<i class="fas fa-scale-balanced"></i> Critique Transcript';
-}else if(msg.status==='incomplete'){
-fullText=isContinuation?(transcriptRawResult+'\n\n'+msg.content):msg.content;
-cleaned=stripSermonPreamble(fullText);
-body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
-}else if(msg.status==='complete'){
-fullText=isContinuation?(transcriptRawResult+'\n\n'+msg.content):msg.content;
-transcriptRawResult=fullText;
-cleaned=stripSermonPreamble(fullText);
-body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
-if(transcriptContinueCount<maxContinues){
-transcriptContinueCount++;
-var currentRound=transcriptContinueCount+1;
-var totalRounds=maxContinues+1;
-btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Round '+currentRound+' of '+totalRounds+'...';
-var contPrompt;
-var isLastRound=(currentRound===totalRounds);
-var roundInfo='THIS IS ROUND '+currentRound+' OF '+totalRounds+' TOTAL ROUNDS. ';
-if(isLastRound){
-roundInfo+='THIS IS YOUR FINAL ROUND. Finish any remaining tagged turns and write ## Final Synthesis if not done yet. Bring to a decisive conclusion.\n\n';
-}else{
-roundInfo+='You have '+(totalRounds-currentRound)+' round(s) remaining. Continue chronological multi-speaker critique. Do NOT repeat prior turns.\n\n';
-}
-if(dismantleLooksIncomplete(fullText)){
-contPrompt=roundInfo+'Continue EXACTLY where you left off in the tagged transcript review. Pick up the next enabled speaker turn. Last 300 characters:\n\n"...'+fullText.slice(-300)+'"\n\nCONTINUE NOW:';
-}else{
-contPrompt=roundInfo+'Go deeper on turns you rushed, or continue to the next tagged blocks. Critique every enabled speaker — do not fixate on one tag only. Last 300 characters:\n\n"...'+fullText.slice(-300)+'"\n\nCONTINUE WITH NEW MATERIAL NOW:';
-}
-sendTranscriptMsg(contPrompt,true);
-}else{
-actions.style.display='flex';
-btn.disabled=false;
-btn.innerHTML='<i class="fas fa-scale-balanced"></i> Critique Transcript';
-if(transcriptContinueCount>0){
-showToast('Transcript critique complete ('+(transcriptContinueCount+1)+' rounds).');
-}
-}
-}
-});
-window.Poe.sendUserMessage('@'+model+' '+promptText,{
-handler:handlerName,
-stream:true,
-openChat:false,
-parameters:params
-}).catch(function(err){
-if(transcriptRawResult){
-var cleaned=stripSermonPreamble(transcriptRawResult);
-body.innerHTML='<div class="sermon-body">'+marked.parse(cleaned)+'</div>';
-actions.style.display='flex';
-}else{
-body.innerHTML='<div style="color:var(--explicit-red);padding:20px;text-align:center;"><i class="fas fa-exclamation-triangle" style="font-size:1.5rem;display:block;margin-bottom:10px;"></i>'+escapeHtml(String(err))+'</div>';
-}
-btn.disabled=false;
-btn.innerHTML='<i class="fas fa-scale-balanced"></i> Critique Transcript';
-});
-}
-sendTranscriptMsg(prompt,false);
+transcriptPartsRaw=[];
+transcriptIsGenerating=true;
+body.innerHTML='';
+updateTranscriptProgress(0);
+generateTranscriptPart(1);
 }
 function copyTranscriptResult(){
+if(!transcriptRawResult&&transcriptPartsRaw.length){
+transcriptRawResult=transcriptPartsRaw.filter(Boolean).join('\n\n');
+}
 if(!transcriptRawResult){showToast('Nothing to copy.');return;}
 rawCopy(stripSermonPreamble(transcriptRawResult));
 showToast('Transcript critique copied!');
 }
 function exportTranscriptResult(){
+if(!transcriptRawResult&&transcriptPartsRaw.length){
+transcriptRawResult=transcriptPartsRaw.filter(Boolean).join('\n\n');
+}
 if(!transcriptRawResult){showToast('Nothing to export.');return;}
 var text=stripSermonPreamble(transcriptRawResult);
 var blob=new Blob([text],{type:'text/plain'});
@@ -8412,6 +8581,9 @@ URL.revokeObjectURL(url);
 showToast('Exported!');
 }
 function readTranscriptAloud(){
+if(!transcriptRawResult&&transcriptPartsRaw.length){
+transcriptRawResult=transcriptPartsRaw.filter(Boolean).join('\n\n');
+}
 if(!transcriptRawResult){showToast('Nothing to read.');return;}
 var voice=document.getElementById('transcriptTtsVoice').value;
 var text=stripSermonPreamble(transcriptRawResult);
