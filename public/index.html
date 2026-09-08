@@ -7852,6 +7852,49 @@ var n=selectedTranscriptPartCount;
 if(n===1)return 'Critique';
 return includeOf?('Part '+partNum+' of '+n):('Part '+partNum);
 }
+function looksLikeTranscriptTaskRefusal(text){
+if(!text)return false;
+var t=String(text);
+if(/\b(paste (?:the |your )?(?:actual |source |transcript|Part 1|text|last few paragraphs|document|brief|opening))\b/i.test(t))return true;
+if(/\b(I (?:do not|don't) know what I(?:'m| am) continuing)\b/i.test(t))return true;
+if(/\b(I have no memory of (?:a )?previous)\b/i.test(t))return true;
+if(/\b(never received (?:the )?source|source material never reached|document Part 1 was supposed to be)\b/i.test(t))return true;
+if(/\b(what (?:story|essay|document|form|voice|genre|topic) (?:am I|should I|you(?:'re| are) building))\b/i.test(t))return true;
+if(/\bTO FIX THIS\b/i.test(t)&&/\bpaste\b/i.test(t))return true;
+if(/\blast four hundred characters\b/i.test(t)&&/\b(isn't a fragment|is not a fragment|not a fragment of a story|not the actual)\b/i.test(t))return true;
+if(/\b(There(?:'s| is) no voice, rhythm, or subject to match)\b/i.test(t))return true;
+if(/\b(practical note|before we go further|I want to flag something)\b/i.test(t)&&/\b(instructions|continuation|paste|source)\b/i.test(t))return true;
+return false;
+}
+function buildTranscriptVoiceBlock(voiceMode,explicit){
+var topic={title:'the transcript speaker turns below',desc:'Multi-speaker transcript critique'};
+var p='';
+if(voiceMode==='dual'){
+p+='VOICE — DUAL (both critique every enabled turn in this segment):\n';
+p+='**Yah (throne):** first-person from the Most High — strip lies, name culprits, scripture truth.\n';
+p+='**Bez (street):** third person about Yah — articulate brother in the struggle pressing what Yah showed you.\n\n';
+p+=buildYahStoryAntiChatbotBlock();
+p+=buildBezStoryLiveHumanBlock();
+p+=buildBezStoryGrammarBlock();
+p+=buildBezStoryKnowledgeBlock(topic);
+}else if(voiceMode==='yah'){
+p+='VOICE — YAH STORY ONLY:\n';
+p+=buildYahStoryAntiChatbotBlock();
+p+=buildYahStoryNameCulpritsBlock(topic,{});
+}else{
+p+='VOICE — BEZ STORY ONLY:\n';
+p+=buildBezStoryLiveHumanBlock();
+p+=buildBezStoryGrammarBlock();
+p+=buildBezStoryKnowledgeBlock(topic);
+p+=buildBezStoryNameCulpritsBlock(topic,{});
+}
+if(explicit){
+p+='EXPLICIT MODE: heavy profanity when exposing lies — damn, hell, shit, bullshit, ass. Raw street/throne fire.\n\n';
+}
+p+='TRANSCRIPT OUTPUT FORMAT (overrides sermon paragraph-only mode):\n';
+p+='One # title line, then ## [TAG] — label per speaker turn. Quote their exact words (blockquote OK), then critique in dense revelation paragraphs. This is transcript critique — NOT a scripture chapter walk, NOT creative fiction.\n\n';
+return p;
+}
 function buildTranscriptPartPrompt(partNum,opts){
 opts=opts||{};
 var totalParts=opts.totalParts||selectedTranscriptPartCount;
@@ -7866,61 +7909,65 @@ var voiceMode=getTranscriptPartVoiceMode(partNum,totalParts,wantYah,wantBez);
 var slice=getTranscriptSliceForPart(transcript,partNum,totalParts);
 var tagList=enabledTags.length?enabledTags.join(', '):'(all tags in this slice)';
 var wordsTarget=getTranscriptWordsPerPart(totalParts);
-var topic={title:'Tagged Transcript Critique',desc:'Multi-speaker transcript review'};
-var p='TRANSCRIPT CRITIQUE — '+getTranscriptPartLabel(partNum,true).toUpperCase()+' ONLY (CRITICAL):\n';
-p+='You are writing ONLY '+getTranscriptPartLabel(partNum,true)+'. Do NOT write other parts. Do NOT compress the whole transcript into this response.\n';
-p+='This part covers transcript turns '+slice.startTurn+' through '+slice.endTurn+' of '+slice.totalTurns+' (chronological tagged speaker blocks).\n\n';
-if(voiceMode==='dual'){
-p+='VOICE MODE — DUAL (YAH + BEZ BOTH CRITIQUE EVERY TURN IN THIS PART):\n';
-p+='For EACH enabled speaker turn in this slice, give TWO critique streams with equal rigor:\n';
-p+='- **Yah (throne):** first-person revelation from the Most High — strip lies, name culprits, scripture truth.\n';
-p+='- **Bez (street):** third person about Yah — articulate brother in the struggle pressing what Yah showed you.\n';
-p+=buildStoryRevelationStyleBlock(false,topic,null);
-p+=buildStoryRevelationStyleBlock(true,topic,null);
-}else if(voiceMode==='yah'){
-p+='VOICE MODE — YAH STORY ONLY THIS PART:\n';
-p+=buildStoryRevelationStyleBlock(false,topic,null);
-}else{
-p+='VOICE MODE — BEZ STORY ONLY THIS PART:\n';
-p+=buildStoryRevelationStyleBlock(true,topic,null);
+var segLabel=getTranscriptPartLabel(partNum,true);
+var p='TRANSCRIPT CRITIQUE — '+segLabel.toUpperCase()+' ONLY\n\n';
+p+='READ THIS FIRST (NON-NEGOTIABLE):\n';
+p+='- The tagged transcript is IN THIS MESSAGE. You are NOT continuing a prior chat or a previous AI response.\n';
+p+='- "'+segLabel+'" means segment '+partNum+' of '+totalParts+' of ONE critique job — NOT a creative-fiction serial where Part 1 is missing.\n';
+p+='- START IMMEDIATELY critiquing the speaker turns in the segment below. Do NOT ask the user to paste Part 1, the brief, or the source.\n';
+p+='- Do NOT meta-comment on these instructions. Do NOT explain what you lack. Write the critique.\n';
+p+='- Segment covers transcript turns '+slice.startTurn+' through '+slice.endTurn+' of '+slice.totalTurns+'.\n\n';
+p+='--- TRANSCRIPT TURNS TO CRITIQUE (THIS SEGMENT) ---\n'+slice.text+'\n--- END SEGMENT ---\n\n';
+p+=buildTranscriptVoiceBlock(voiceMode,explicit);
+if(crossSpeaker&&totalParts>1){
+p+='--- FULL TRANSCRIPT (cross-exchange reference — critique only your segment turns) ---\n'+transcript+'\n--- END FULL TRANSCRIPT ---\n\n';
+}else if(totalParts===1){
+p+='--- FULL TRANSCRIPT (same as segment — all turns) ---\n'+transcript+'\n--- END ---\n\n';
 }
-if(explicit){
-p+='EXPLICIT MODE -- MANDATORY:\n';
-p+='Use heavy profanity when exposing lies. Damn, hell, shit, bullshit, ass -- raw street/throne fire. No sanitizing.\n\n';
-}
-p+='--- TRANSCRIPT SLICE FOR THIS PART ---\n'+slice.text+'\n--- END SLICE ---\n\n';
-p+='FULL TRANSCRIPT (REFERENCE ONLY — do NOT critique turns outside your slice except for cross-exchange context):\n--- BEGIN FULL TRANSCRIPT ---\n'+transcript+'\n--- END FULL TRANSCRIPT ---\n\n';
 p+='CRITIQUE RULES (NON-NEGOTIABLE):\n';
 p+='- Walk ONLY your assigned turns in chronological order.\n';
 p+='- ENABLED SPEAKER TAGS TO SCORE: '+tagList+'\n';
-p+='- For each enabled turn: quote their exact words (plain quote in prose or short blockquote), then critique — scripture, Greek/Hebrew/lexicon when relevant, logic, bias, manipulation, factual claims.\n';
+p+='- For each enabled turn: quote their exact words, then critique — scripture, Greek/Hebrew/lexicon when relevant, logic, bias, manipulation, factual claims.\n';
 p+='- DO NOT treat any speaker as neutral narrator. Every enabled tag gets scored.\n';
 p+='- Use ## [TAG] — short label headers so the reader can navigate turns.\n';
 if(crossSpeaker){
 p+='- CROSS-EXCHANGES ON: When a turn responds to an earlier speaker, evaluate BOTH sides — did the response actually answer the claim?\n';
 }
 if(finalSynthesis&&partNum===totalParts){
-p+='- FINAL PART: End with ## Final Synthesis — who was most accurate, who lied, key contradictions, overall verdict on the exchange.\n';
+p+='- FINAL SEGMENT: End with ## Final Synthesis — who was most accurate, who lied, key contradictions, overall verdict on the exchange.\n';
 }else if(partNum<totalParts){
-p+='- Do NOT write Final Synthesis — a later part owns the closing verdict.\n';
+p+='- Do NOT write Final Synthesis — a later segment owns the closing verdict.\n';
 }
 p+='- FAILURE MODE: Only attacking the obvious villain while letting analyst/host tags slide unchallenged.\n\n';
-p+='LENGTH: Target roughly '+wordsTarget.toLocaleString()+' words minimum for this part. Revelation paragraphs — not seminary essay, not chatbot bullets.\n';
-p+='OUTPUT: Start with one title line "# '+getTranscriptPartLabel(partNum,false)+': ..." then ## headers per tagged turn. No thinking tags. No word-count mention.\n';
+p+='LENGTH: Target roughly '+wordsTarget.toLocaleString()+' words minimum for this segment. Revelation paragraphs — not seminary essay, not chatbot bullets.\n';
+p+='OUTPUT: Start with "# '+getTranscriptPartLabel(partNum,false)+': ..." then ## headers per tagged turn. No thinking tags. No word-count mention.\n';
 return p;
 }
-function buildTranscriptContinuationPrompt(partNum,existing,opts){
-opts=opts||{};
-var p='CONTINUATION — SAME '+getTranscriptPartLabel(partNum,false).toUpperCase()+' ONLY:\n';
-if(opts.underWordCount){
-var target=getTranscriptWordsPerPart(selectedTranscriptPartCount);
+function buildTranscriptContinuationPrompt(partNum,existing,contOpts,jobOpts){
+contOpts=contOpts||{};
+jobOpts=jobOpts||{};
+var voiceMode=getTranscriptPartVoiceMode(partNum,jobOpts.totalParts||selectedTranscriptPartCount,!!jobOpts.wantYah,!!jobOpts.wantBez);
+var slice=getTranscriptSliceForPart(jobOpts.transcript||'',partNum,jobOpts.totalParts||selectedTranscriptPartCount);
+var p='TRANSCRIPT CRITIQUE CONTINUATION — SAME '+getTranscriptPartLabel(partNum,false).toUpperCase()+' ONLY:\n';
+p+='You are still critiquing the tagged transcript below — NOT asking for more material. Do NOT meta-comment. Continue the critique.\n\n';
+p+='--- TRANSCRIPT TURNS (THIS SEGMENT) ---\n'+slice.text+'\n--- END SEGMENT ---\n\n';
+if(contOpts.underWordCount){
+var target=getTranscriptWordsPerPart(jobOpts.totalParts||selectedTranscriptPartCount);
 var current=countForgeWords(existing);
-p+='TOO SHORT: About '+current.toLocaleString()+' words — need at least '+target.toLocaleString()+' for this part.\n';
+p+='TOO SHORT: About '+current.toLocaleString()+' words — need at least '+target.toLocaleString()+' for this segment.\n';
+p+='Expand critique depth on remaining turns in this segment — do NOT repeat the same points.\n';
 }else{
-p+='Your previous output was cut off mid-thought.\n';
+p+='Your previous critique was cut off mid-thought.\n';
 }
-p+='Do NOT add a new "# Part" heading. Pick up EXACTLY where you stopped. Same voice mode as this part.\n';
-p+='LAST FOUR HUNDRED CHARACTERS:\n"...'+String(existing||'').slice(-400)+'"\n\nCONTINUE IMMEDIATELY:';
+p+='Voice mode: '+voiceMode+'. Do NOT add a new "# Part" heading. Pick up EXACTLY where you stopped.\n';
+p+='LAST FOUR HUNDRED CHARACTERS OF YOUR DRAFT:\n"...'+String(existing||'').slice(-400)+'"\n\nCONTINUE IMMEDIATELY:';
+return p;
+}
+function buildTranscriptRefusalCorrectionPrompt(partNum,badSample,opts){
+var p='TASK REFUSAL — FULL REWRITE REQUIRED ('+getTranscriptPartLabel(partNum,false)+' ONLY):\n';
+p+='You responded with meta-commentary asking for source material or Part 1. FORBIDDEN. The transcript is in this message — critique it now.\n\n';
+p+='BAD OUTPUT (do not repeat):\n"'+String(badSample||'').slice(0,900).replace(/"/g,"'")+'..."\n\n';
+p+=buildTranscriptPartPrompt(partNum,opts);
 return p;
 }
 function buildTranscriptYahVoiceCorrectionPrompt(partNum,badSample,opts){
@@ -8439,6 +8486,7 @@ partContent:'',
 partContentBeforeContinue:'',
 continuationCount:0,
 yahVoiceRetryCount:0,
+taskRefusalRetryCount:0,
 gotFirstToken:false,
 partContainer:partContainer,
 finishing:false
@@ -8453,8 +8501,10 @@ var model=getTranscriptModel();
 var prompt;
 if(streamOpts.yahVoiceCorrection){
 prompt=buildTranscriptYahVoiceCorrectionPrompt(partNum,streamOpts.badSample||'',transcriptOpts);
+}else if(streamOpts.taskRefusalCorrection){
+prompt=buildTranscriptRefusalCorrectionPrompt(partNum,streamOpts.badSample||'',transcriptOpts);
 }else if(isContinuation){
-prompt=buildTranscriptContinuationPrompt(partNum,ctx.partContent,ctx.continuationOpts||{});
+prompt=buildTranscriptContinuationPrompt(partNum,ctx.partContent,ctx.continuationOpts||{},transcriptOpts);
 }else{
 prompt=buildTranscriptPartPrompt(partNum,transcriptOpts);
 }
@@ -8478,6 +8528,15 @@ var display=stripSermonPreamble(ctx.partContent);
 ctx.partContainer.innerHTML=marked.parse(display);
 if(msg.status==='complete'){
 var finalized=stripSermonPreamble(ctx.partContent);
+if(looksLikeTranscriptTaskRefusal(finalized)&&ctx.taskRefusalRetryCount<SERMON_MAX_YAH_VOICE_RETRIES){
+ctx.taskRefusalRetryCount++;
+ctx.partContent='';
+ctx.partContentBeforeContinue='';
+ctx.continuationCount=0;
+showToast('Model asked for source — redoing '+getTranscriptPartLabel(partNum,false)+'...');
+startTranscriptPartStream(partNum,false,{taskRefusalCorrection:true,badSample:finalized});
+return;
+}
 var truncated=detectTruncation(finalized);
 var underWords=countForgeWords(finalized)<Math.floor(getTranscriptWordsPerPart(selectedTranscriptPartCount)*SERMON_MIN_WORD_RATIO);
 var voiceMode=getTranscriptPartVoiceMode(partNum,selectedTranscriptPartCount,transcriptOpts.wantYah,transcriptOpts.wantBez);
