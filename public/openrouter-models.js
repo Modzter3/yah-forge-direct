@@ -11,6 +11,7 @@
     'apocFetchModel',
     'sealedFetchModel',
     'dismantleModel',
+    'transcriptModel',
     'destroyModel',
     'yahChatModel',
     'newsModel',
