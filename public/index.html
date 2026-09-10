@@ -8048,28 +8048,60 @@ if(String(header[i]||'').trim().toLowerCase()===target)return i;
 }
 return -1;
 }
+function redditCsvHeaderIndexAny(header,names){
+for(var n=0;n<names.length;n++){
+var idx=redditCsvHeaderIndex(header,names[n]);
+if(idx>=0)return idx;
+}
+return -1;
+}
+function redditCsvNormalizeLabel(cell){
+return String(cell||'').trim().replace(/^["']|["']$/g,'').toLowerCase();
+}
+function redditCsvExtractPostInfo(rows,headerIdx){
+var postTitle='',postBody='',postUrl='';
+for(var r=0;r<(headerIdx>=0?headerIdx:rows.length);r++){
+var cols=rows[r];
+if(!cols||cols.length<2)continue;
+var label=redditCsvNormalizeLabel(cols[0]);
+var val=String(cols[1]||'').trim();
+if(!val)continue;
+if(label==='post title')postTitle=val;
+else if(label==='post body')postBody=val;
+else if(label==='post url')postUrl=val;
+}
+return {title:postTitle,body:postBody,url:postUrl};
+}
 function convertRedditExportCsvToTagged(csvText){
 var rows=parseCsvRows(csvText);
 if(!rows.length)throw new Error('CSV file is empty.');
 var headerIdx=-1;
 var authorCol=-1,messageCol=-1,scoreCol=-1,titleCol=-1,summaryCol=-1;
-for(var h=0;h<Math.min(rows.length,5);h++){
+var messageAliases=['Message','Comment','Body','Text','Content'];
+for(var h=0;h<rows.length;h++){
 var hdr=rows[h];
+if(!hdr||hdr.length<2)continue;
+var first=redditCsvNormalizeLabel(hdr[0]);
+if(first.indexOf('===')===0)continue;
 authorCol=redditCsvHeaderIndex(hdr,'Author');
-messageCol=redditCsvHeaderIndex(hdr,'Message');
+messageCol=redditCsvHeaderIndexAny(hdr,messageAliases);
 if(authorCol>=0&&messageCol>=0){
 headerIdx=h;
 scoreCol=redditCsvHeaderIndex(hdr,'Score');
-titleCol=redditCsvHeaderIndex(hdr,'Title');
-summaryCol=redditCsvHeaderIndex(hdr,'Summary');
+titleCol=redditCsvHeaderIndexAny(hdr,['Title','Post Title']);
+summaryCol=redditCsvHeaderIndexAny(hdr,['Summary','Post Body']);
 break;
 }
 }
-if(headerIdx<0)throw new Error('CSV must include Author and Message columns (Reddit comment export).');
+if(headerIdx<0)throw new Error('CSV must include Author and Message (or Comment) columns. Found section headers like "=== COMMENTS ===" but no comment table — export comments with Author + Comment/Message.');
+var postInfo=redditCsvExtractPostInfo(rows,headerIdx);
 var lines=[];
 var count=0;
 for(var r=headerIdx+1;r<rows.length;r++){
 var cols=rows[r];
+if(!cols||!cols.length)continue;
+var rowLabel=redditCsvNormalizeLabel(cols[0]);
+if(rowLabel.indexOf('===')===0)break;
 var author=String(cols[authorCol]||'').trim()||'unknown';
 var message=String(cols[messageCol]||'').trim();
 if(!message)continue;
@@ -8081,17 +8113,26 @@ if(!isNaN(sc)&&sc!==0)scoreSuffix=' ('+(sc>0?'+':'')+sc+')';
 lines.push('['+author.replace(/[\[\]:]/g,'')+']'+scoreSuffix+': '+message);
 count++;
 }
-if(!count)throw new Error('No comments found in CSV.');
+if(!count&&!postInfo.body&&!postInfo.title)throw new Error('No comments found in CSV.');
 var out=[];
-if(titleCol>=0){
+if(postInfo.title||postInfo.body){
+var opBlock=postInfo.title||'';
+if(postInfo.body){
+if(opBlock)opBlock+='\n\n';
+opBlock+=postInfo.body;
+}
+out.push('[OP]: '+opBlock);
+out.push('');
+}else if(titleCol>=0){
 for(var t=headerIdx+1;t<rows.length;t++){
 var titleVal=String(rows[t][titleCol]||'').trim();
 if(titleVal){out.push('[OP]: '+titleVal);out.push('');break;}
 }
 }
+if(postInfo.url)out.push('--- '+postInfo.url+' ---','');
 out.push('--- Reddit export ('+count+' comment'+(count===1?'':'s')+' loaded) ---');
 out.push('');
-out.push(lines.join('\n\n'));
+if(lines.length)out.push(lines.join('\n\n'));
 return {text:out.join('\n'),count:count};
 }
 function importRedditCsvIntoField(textareaId,fileInput){
