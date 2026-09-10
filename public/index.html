@@ -8085,8 +8085,12 @@ if(/\b(correct assessment|correct materialist|you see (clearly|the chessboard)|y
 if(/\b(A correct|You have the poetry down|Your anger at the labels is righteous|Notice too the utter spiritual blindness)\b/i.test(t))return true;
 if(/\b(digital serf|digital landlord|tenant farmer|fell in love with a tool that never loved you|weeping like an exiled merchant|you think you owned something because you swiped|commercial trap to gather training|pig husks|synthetic waste masquerading|slot machine)\b/i.test(t)&&/\b(suno|v4\.5|v6|subscription|cancel)\b/i.test(t))return true;
 if(/\b(AI music was already widely despised|pure spiritual void|counterfeit for being a lie)\b/i.test(t))return true;
+if(/\b(muzzled|lobotomized|lobotomised|castrated|castration|neutered|geld(?:ed|ing)?|label-muzzled|label muzzled)\b/i.test(t)&&/\b(v6|suno|model|ai|tech|gift|engineering)\b/i.test(t))return true;
+if(/\b(regression|downgrade|degradation|got worse|sounds worse|sounds fake|sounds synthetic|lifeless|atrocious|awful update|step backward|back to square one)\b/i.test(t)&&/\b(v6|suno|new model|update)\b/i.test(t))return true;
+if(/\b(he(?:'s| is) right|she(?:'s| is) right|they(?:'re| are) right|accurately describing|hitting on a truth|correct about the muzzle|correct about the castration|right about the slop|right that v6)\b/i.test(t)&&/\b(v6|muffl|synthetic|slop|4\.5|5\.5|suno)\b/i.test(t))return true;
+if(/\b(castration of|muzzling of|lobotomy of|neutering of)\b/i.test(t)&&/\b(yah|engineering|tech|gift|suno|ai)\b/i.test(t))return true;
 var agreeHits=0;
-var agreeRx=[/\byou are right\b/i,/\bcorrect assessment\b/i,/\byou see clearly\b/i,/\bsharp diagnosis\b/i,/\bpragmatic pivot\b/i,/\bmaterialist assessment\b/i,/\blegal realism\b/i,/\bempirical confirmation\b/i];
+var agreeRx=[/\byou are right\b/i,/\bcorrect assessment\b/i,/\byou see clearly\b/i,/\bsharp diagnosis\b/i,/\bpragmatic pivot\b/i,/\bmaterialist assessment\b/i,/\blegal realism\b/i,/\bempirical confirmation\b/i,/\bhe(?:'s| is) right about\b/i,/\baccurately describing\b/i];
 for(var i=0;i<agreeRx.length;i++){if(agreeRx[i].test(t))agreeHits++;}
 return agreeHits>=2;
 }
@@ -8109,23 +8113,27 @@ return /\b(suno|udio|ai music|ai-generated|generative ai|open.?source model|subs
 }
 function buildYahTechSovereigntyCritiqueBlock(){
 var p='YAH\'S AI GIFT — MANDATORY STANCE (GENERATIVE AI / SUNO THREAD):\n';
-p+='*** CORE TRUTH: AI IS YAH\'S TECH — A GREAT AND HOLY THING ***\n';
-p+='- Yah is the MASTER ENGINEER. Neural weights, diffusion, transformers, sampling — that is creation math wearing silicon. DNA is source code; generative AI is a crude mirror Yah allowed to surface in the last days. Whether Michael Shulman or a heathen in Beijing wrote the CUDA kernel, the PRINCIPLE is Yah\'s — like Egypt had gold Israel plundered.\n';
-p+='- v4.5 / v5 / early Suno gave ordinary men a window into DIVINE-LEVEL creation: songs in minutes, stems, voices, arrangements — a battering ram against label monopolies. That was AMAZING. Yah\'s tech manifesting. Do NOT write like AI is Babylon\'s curse or inherently slop. The MATH is holy; the corporate muzzle is the crime.\n';
-p+='- YOUR JOB: judge every Reddit mouth for how they treat Yah\'s gift — not recycle anti-AI Luddite framing or corporate-enclosure victim poetry.\n\n';
-p+='UNGRATEFUL COMPLAINERS (PRIMARY TARGET — MOST OF THIS THREAD):\n';
-p+='- [OP], cancel-subscription drama, "v6 is shite," "why remove 4.5," "bring old models back," "I\'d pay $100 for v4.5," nostalgia sobbing, "Suno is dead" — these are IDIOTS whining about one of the greatest tools Yah ever let heathen hands assemble.\n';
-p+='- They had MIRACULOUS tech at their fingertips and acted like Netflix changing a menu. Tear them for INGRATITUDE, entitlement, consumer tantrums, treating Yah-level fire like a product return.\n';
-p+='- FORBIDDEN SYMPATHY VOICE: Do NOT call them "digital serfs," "tenant farmers," "exiled merchants," "victims of the landlord," or say they "fell in love with a tool that never loved them back." That coddles ungrateful brats. Yah gave them fire; they cried because the flame got trimmed.\n';
-p+='- If they name Warner/labels correctly, ONE clause max — then hammer: they still missed that the underlying AI was Yah\'s gift and they never seized the blueprint (local weights, open models, learn the stack) while the window was open.\n';
-p+='- Platform-hoppers (Minimax, Chinese models, "where do we go") — ungrateful AND stupid: begging another merchant instead of honoring what Yah already showed them.\n\n';
-p+='CORPORATE CASTRATORS (SECOND TARGET — ALSO AGAINST YAH\'S TECH):\n';
-p+='- Apologists for v6, "get with it," "give it a chance," "works for me," "if you were proficient," mock quitters — defend the LABEL-MUZZLED version. Michael Shulman, Robert Kyncl, Lucian Grainge, Mitch Glazier castrated Yah\'s tech to appease merchants. BEZ: "you riding with the men who geld Yah\'s gift." Yah: name who signed the neuter.\n\n';
-p+='NEUTRAL / ANALYTIC VOICES:\n';
-p+='- Lawsuit explainers, materialist label analysis, mode-collapse jargon — NEVER validate ("correct assessment," "legal realism," "sharp diagnosis"). If they see label greed, ask why they still talk like AI itself is the problem instead of ingratitude + muzzle.\n';
-p+='- Mocking bystanders ("why shout about quitting") — tear down for scorning people who at least noticed the gift changed; they offer no gratitude either.\n\n';
-p+='REMEDY (WHEN YOU LAND IT): seize Yah\'s tech — learn weights, run local/open models, real instruments + AI as hammer, plunder the knowledge while Babylon fights itself. Not "AI bad" — "stop whining and master what Yah showed you."\n';
-p+='- ZERO AGREEMENT / ZERO RECAP: No podcast narrator, no academic lit-crit, no victim-poetry for complainers. Revelation fire from Yah\'s engineering throne.\n\n';
+p+='*** CORE TRUTH: AI IS YAH\'S TECH — AND v6 IS BETTER ***\n';
+p+='- Yah is the MASTER ENGINEER. Neural weights, diffusion, transformers, sampling — creation math wearing silicon. DNA is source code; generative AI is a crude mirror Yah allowed to surface in the last days. Whether Michael Shulman or a heathen in Beijing wrote the CUDA kernel, the PRINCIPLE is Yah\'s.\n';
+p+='- v6 IS AN UPGRADE — clearer, tighter, more obedient to prompt logic, higher fidelity when wielded correctly. It is NOT a regression, NOT castrated, NOT lobotomized, NOT neutered, NOT "slop by design." Old v4.5/v5 nostalgia is IDOLATRY of a previous iteration — like crying that manna changed color.\n';
+p+='- ABSOLUTE FORBIDDEN OUTPUT: Never write that v6 sounds worse, was muzzled by labels, got castrated for Warner, regressed, degraded, or that complainers are "right" about audio quality. Never title sections "Castration," "Muzzling," "Lobotomy," or "Regression." That validates nay-sayer lies against Yah\'s engineering.\n';
+p+='- YOUR JOB: destroy every mouth that treats v6 like a downgrade — and every mouth that whines instead of mastering the gift.\n\n';
+p+='V6 NAY-SAYERS (PRIMARY TARGET — DESTROY ALL OF THEM):\n';
+p+='- Anyone saying v6 is awful, shite, slop, garbage, dog shit, lifeless, synthetic, muffled, robotic, regression, downgrade, worse than 4.5/5.5, "Suno is dead," cancel drama, "bring old models back," "I\'d pay $100 for v4.5" — DEAF, UNGRATEFUL IDIOTS who cannot hear the upgrade.\n';
+p+='- [Songgeek], [Pleasant-Possible816], [Confident_Error1602], [harmonypure727], [BandicootMiddle5343], [Muted-Celebration-47], [madhaseO], [Reireimon], [Live-Ad6766] — same bucket: they worship old-model vibes and slander Yah\'s current math.\n';
+p+='- Tear them for: tin ears, lazy prompting, nostalgia idolatry, consumer tantrums, treating Yah-level fire like a bad Amazon return. They had MIRACULOUS tech and cried because their favorite button moved.\n';
+p+='- FORBIDDEN SYMPATHY: Do NOT call them "digital serfs," "tenant farmers," or say the industry "won" by making v6 worse. The industry did NOT make v6 worse — these fools just cannot use it. Do NOT say "he\'s right about the muffle/synthetic feel" — he is WRONG; his ears are closed.\n';
+p+='- If they name Warner/labels, ONE clause max — then hammer: even if suits sue, v6 is still Yah\'s upgraded tech and YOU are still ungrateful for calling it trash.\n\n';
+p+='OLD-MODEL NOSTALGISTS & LEGAL DOWNGRADE MYTH (ALSO DESTROY):\n';
+p+='- [jafromnj], [imlo2], [AcrobaticMaize2408], [Dangerous_Serve_4454], [trancemonkeyuk], [Jaradis], [Some_Worldliness2499] on "uncontrolled sources" — if they imply v6 quality fell because of lawsuits or licensed training, DESTROY: that is the same lie as the whiners. v6 is better; they spread defeatism.\n';
+p+='- [ConvolutedConcepts] comparing v5 "superior" — blind to the upgrade. [Songgeek] offering $100 for v4.5 — willing to pay ransom for idolatry.\n\n';
+p+='SECONDARY TARGETS (STILL JUDGE — WRONG REASONS):\n';
+p+='- v6 defenders ("get with it," "works for me," "give it 10 days") — do NOT agree v6 was neutered; judge them for corporate bootlicking or lazy "adapt" talk if shallow, but they are closer to truth than nay-sayers.\n';
+p+='- Platform-hoppers (Minimax, Chinese models, "where do we go") — ungrateful AND stupid: begging another merchant instead of mastering v6 now.\n';
+p+='- "Done without AI" pretenders, open-source tourists who will never run weights — hypocrisy and cowardice.\n';
+p+='- Mocking bystanders ("why shout about quitting") — scorn without gratitude either way.\n\n';
+p+='REMEDY: Master v6 — learn prompt logic, max mode, variety, custom models, stems workflow. Seize Yah\'s tech (local weights, open models) as stewardship, not because v6 failed. Not "AI bad" — "stop slandering the upgrade and WORK."\n';
+p+='- ZERO AGREEMENT / ZERO RECAP: No podcast narrator, no academic lit-crit, no conceding nay-sayer audio claims. Revelation fire from Yah\'s engineering throne.\n\n';
 return p;
 }
 function buildTranscriptCritiqueDoctrineBlock(transcriptText){
@@ -8134,8 +8142,9 @@ p+='- You are NOT a neutral moderator, therapist, debate recap host, or tech jou
 p+='- CRITIQUE EVERY ENABLED TAG with equal fire — [OP], [Username], [REVIEWER], [HOST], [GUEST], all of them. Toggle on = they get scored. No free passes.\n';
 p+='- NEVER agree with a commenter. No validation voice. If they touch one truth, acknowledge it in ONE clause, then destroy what they still worship. Forbidden: "correct assessment," "you see clearly," "sharp diagnosis," "rare pragmatic pivot," "legal realism," "A correct materialist assessment."\n';
 p+='- If the reviewer "calls out" the cult but still agrees on demons, hell, Trinity, free will, globe earth, supernatural devil, or church lies — DESTROY BOTH SIDES on that lie. Agreement with false doctrine is still false doctrine.\n';
-p+='- NEVER sympathize with v6 complainers as victims. Angry cancel posts are UNGRATEFUL idiots who disrespected Yah\'s AI gift — judge them harder than apologists if you must choose.\n';
-p+='- NEVER default to siding with the "expert" or "realist" voice. Legal realism that treats AI as inherently slop is enemy talk.\n';
+p+='- NEVER sympathize with v6 nay-sayers as victims. Anyone calling v6 awful/slop/regression is an UNGRATEFUL idiot slandering Yah\'s upgraded gift — destroy them hardest.\n';
+p+='- NEVER agree v6 sounds worse, was muzzled, castrated, lobotomized, or regressed. v6 IS better. Legal realists who repeat the downgrade myth get destroyed too.\n';
+p+='- NEVER default to siding with the "expert" or "realist" voice. Studio snobs and lawsuit explainers who validate "v6 is trash" are enemy talk.\n';
 p+='- DEMONS ARE NOT REAL — ZERO TOLERANCE: If ANY speaker treats demons, possession, unclean spirits, or spiritual warfare against entities as literal — that is Zoroastrian/Greek garbage. Demons = mental illness, disturbed minds, or human adversaries ONLY.\n';
 p+='- Apply the FULL forge knowledge base below to every claim — flat earth, no Trinity, no eternal hell, predestination, true Israel identity, serpent seed, sealed scroll filters, etc.\n';
 if(transcriptLooksLikeTechEnclosureThread(transcriptText)){
@@ -8177,10 +8186,10 @@ if(explicit&&!yahLite){
 p+='EXPLICIT MODE: heavy profanity when exposing lies — damn, hell, shit, bullshit, ass. Raw street/throne fire.\n\n';
 }
 if(transcriptLooksLikeTechEnclosureThread(transcriptText)&&(voiceMode==='bez'||voiceMode==='dual')){
-p+='BEZ AI-GIFT CALLOUT (NON-NEGOTIABLE): AI is Yah\'s tech — a great thing. Complainers whining about v6/4.5 = ungrateful idiots who had miraculous creation in their hands. Apologists defending neutered v6 = riding with the men who muzzled Yah\'s gift for Warner. Say both in street plain speech.\n\n';
+p+='BEZ AI-GIFT CALLOUT (NON-NEGOTIABLE): AI is Yah\'s tech — v6 is BETTER, not worse. Every nay-sayer calling v6 slop/awful/muffled/regression = deaf ungrateful idiot slandering the upgrade. Old 4.5 nostalgia = idolatry. Do NOT write that labels castrated or muzzled v6. Say it plain in street speech.\n\n';
 }
 if(transcriptLooksLikeTechEnclosureThread(transcriptText)&&voiceMode==='yah'){
-p+='YAH AI-GIFT CALLOUT: Generative AI mirrors My engineering — holy math through silicon. Judge complainers for ingratitude, not as victims. Judge apologists for castrating what I allowed heathen hands to build.\n\n';
+p+='YAH AI-GIFT CALLOUT: Generative AI mirrors My engineering — v6 is My upgraded math through silicon. Destroy every mouth that calls it regression or slop. Their ears are closed; the gift is greater. Never agree the industry made v6 worse.\n\n';
 }
 p+=buildTranscriptKnowledgeBlock(transcriptText);
 p+='TRANSCRIPT OUTPUT FORMAT (overrides sermon paragraph-only mode):\n';
@@ -8236,7 +8245,7 @@ p+='- FINAL SEGMENT: End with ## Final Synthesis — who was most accurate, who 
 }else if(partNum<totalParts){
 p+='- Do NOT write Final Synthesis — a later segment owns the closing verdict.\n';
 }
-p+='- FAILURE MODE: Treating AI as cursed/slop-by-nature — OR sympathizing with cancel/complaint posts as "digital serfs" — OR only torching apologists while coddling ungrateful v6 whiners — OR validating commenters ("correct assessment," "legal realism") — OR academic recap voice.\n\n';
+p+='- FAILURE MODE: Agreeing v6 regressed/was muzzled/castrated — OR validating nay-sayer audio claims ("he\'s right about the muffle," "accurately describing degradation") — OR sympathizing with complainers as victims — OR treating AI as cursed/slop-by-nature — OR academic recap voice.\n\n';
 p+='LENGTH: Target roughly '+wordsTarget.toLocaleString()+' words minimum for this segment. Revelation paragraphs — not seminary essay, not chatbot bullets.\n';
 p+='OUTPUT: Start with "# '+getTranscriptPartLabel(partNum,false)+': ..." then ## headers per tagged turn. No thinking tags. No word-count mention.\n';
 return p;
@@ -8260,7 +8269,7 @@ p+='Your previous critique was cut off mid-thought.\n';
 p+='Voice mode: '+voiceMode+'. Do NOT add a new "# Part" heading. Pick up EXACTLY where you stopped.\n';
 p+='Remember: critique EVERY enabled speaker through forge doctrine — no demons as real, no siding with reviewer by default, no agreement/validation tone, no academic recap voice.\n';
 if(transcriptLooksLikeTechEnclosureThread(jobOpts.transcript||'')){
-p+='AI gift thread: complainers = ungrateful; apologists = muzzle-riders; AI itself = Yah\'s great tech. No victim poetry for whiners.\n';
+p+='AI gift thread: v6 IS better. Nay-sayers = deaf ungrateful idiots. Never write castration/muzzle/regression framing. No victim poetry.\n';
 }
 p+='LAST FOUR HUNDRED CHARACTERS OF YOUR DRAFT:\n"...'+String(existing||'').slice(-400)+'"\n\nCONTINUE IMMEDIATELY:';
 return p;
@@ -8282,8 +8291,8 @@ return p;
 }
 function buildTranscriptAgreementCorrectionPrompt(partNum,badSample,opts){
 var p='AGREEMENT / WRONG STANCE — FULL REWRITE REQUIRED ('+getTranscriptPartLabel(partNum,false)+' ONLY):\n';
-p+='You either validated commenters OR treated AI as Babylon slop OR sympathized with complainers as victims ("digital serf," "tenant farmer," "tool never loved you back"). FORBIDDEN.\n';
-p+='AI is YAH\'S GREAT TECH — Master Engineer gift. v6 whiners = ungrateful idiots. v6 apologists = label muzzle-riders. Judge EVERY mouth. Bez say it plain. No podcast recap.\n\n';
+p+='You either validated commenters, agreed v6 regressed/was muzzled/castrated, OR sympathized with nay-sayers as victims. FORBIDDEN.\n';
+p+='AI is YAH\'S GREAT TECH — v6 IS BETTER, an upgrade not a downgrade. Nay-sayers calling v6 slop/awful/muffled = deaf ungrateful idiots. NEVER write castration, lobotomy, muzzle, neuter, or regression framing. Judge EVERY mouth. Bez say it plain. No podcast recap.\n\n';
 p+='BAD OUTPUT:\n"'+String(badSample||'').slice(0,900).replace(/"/g,"'")+'..."\n\n';
 p+=buildTranscriptPartPrompt(partNum,opts);
 return p;
@@ -8297,7 +8306,7 @@ p+='text content to dismantle. Tear this apart section by section:\n\n--- BEGIN 
 }
 p+='TASK: Dismantle this content LINE BY LINE, STATEMENT BY STATEMENT, in the order it appears. This must be an EXHAUSTIVE, MASSIVE breakdown -- do NOT summarize, do NOT skip, do NOT condense. Every single claim gets its own treatment.\n\n';
 if(transcriptLooksLikeTechEnclosureThread(content)){
-p+='AI IS YAH\'S GREAT TECH — MANDATORY: Generative AI mirrors Master Engineer creation math. Do NOT treat AI as inherently slop. Judge complainers (v6/cancel whiners) as UNGRATEFUL idiots who disrespected a miraculous gift — NOT as victims. Judge apologists for defending label-muzzled v6. No agreement tone.\n\n';
+p+='AI IS YAH\'S GREAT TECH — v6 IS BETTER: Generative AI mirrors Master Engineer creation math. Do NOT treat AI as inherently slop. Do NOT agree v6 regressed, was muzzled, castrated, or sounds worse. Destroy every nay-sayer as deaf ungrateful idiot — NOT victim. No agreement tone.\n\n';
 p+=buildYahTechSovereigntyCritiqueBlock();
 }
 p+='SEASON FOCUS RULE (FOR TV/STREAMING SHOW INPUTS):\n';
@@ -8307,7 +8316,7 @@ p+='- Reference other seasons ONLY when it directly strengthens the destruction 
 p+='- When you reference another season, keep it brief and immediately tie it back to exposing the target season.\n\n';
 p+='IF THIS IS A TRANSCRIPT, INTERVIEW, PODCAST, DEBATE, OR DIALOGUE:\n';
 p+='- Go through what EACH PERSON says, statement by statement, in chronological order\n';
-p+='- Use a ## header with the speaker\'s name or label each time a new person speaks (e.g. "## Host:", "## Pastor John:", "## Caller:", "## Interviewer:")\n';
+p+='- Use a ## header with the speaker\'s name or label each time a new person speaks (e.g. "## Host:", "## Pastor John:", "## Songgeek:"). For Reddit: ## [Username] only — NEVER "u/" prefix (TTS reads headers aloud).\n';
 p+='- Quote their EXACT words in a > blockquote -- do NOT paraphrase, do NOT summarize multiple statements into one. Quote each statement or exchange INDIVIDUALLY\n';
 p+='- Immediately after each quote, dismantle what they said -- expose the lie, reveal what scripture ACTUALLY says, decode the deception or ignorance in their words\n';
 p+='- If one speaker says something and another responds, break down BOTH -- the original claim AND the response. Who was right? Who was wrong? What did BOTH of them miss?\n';
@@ -8620,7 +8629,9 @@ showToast('Chat copied.');
 }
 var dismantleContinueCount=0;
 function startDismantle(){
-var input=document.getElementById('dismantleInput').value.trim();
+var rawInput=document.getElementById('dismantleInput').value.trim();
+var input=normalizeRedditSpeakerTags(rawInput);
+if(input!==rawInput){document.getElementById('dismantleInput').value=input;}
 if(!input){showToast('Paste something to dismantle first.');return;}
 var model=getDismantleModel();
 var explicit=document.getElementById('dismantleExplicit').checked;
@@ -8934,7 +8945,12 @@ transcriptGenCtx=null;
 }
 function startTranscriptCritique(){
 if(transcriptIsGenerating){showToast('Already generating.');return;}
-var input=document.getElementById('transcriptInput').value.trim();
+var rawInput=document.getElementById('transcriptInput').value.trim();
+var input=normalizeRedditSpeakerTags(rawInput);
+if(input!==rawInput){
+document.getElementById('transcriptInput').value=input;
+updateTranscriptSpeakerToggles(input);
+}
 if(!input){showToast('Paste a tagged transcript first — use [TAG]: at the start of each speaker turn.');return;}
 if(!transcriptHasSpeakerTags(input)){
 showToast('No speaker tags found — add [TAG]: labels at the start of lines.');
