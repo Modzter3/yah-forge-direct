@@ -105,6 +105,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .reddit-forge-btn{background:linear-gradient(135deg,#cc3700,#ff4500);}
 .reddit-forge-btn:hover{box-shadow:0 4px 20px rgba(255,69,0,0.35);}
 .reddit-forge-btn:disabled{opacity:0.55;transform:none;cursor:wait;}
+.reddit-csv-btn{background:linear-gradient(135deg,#8b4513,#cc7a00);}
+.reddit-csv-btn:hover{box-shadow:0 4px 20px rgba(204,122,0,0.35);}
 .veil-cast-options{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:0 16px 10px;margin-top:-2px;}
 .veil-cast-options label{display:flex;align-items:center;gap:6px;font-size:0.72rem;color:var(--text-muted);font-family:'Bitter',serif;cursor:pointer;white-space:nowrap;}
 .veil-cast-options label input[type=checkbox]{accent-color:#c9a227;}
@@ -673,6 +675,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <i class="fab fa-reddit custom-forge-icon"></i>
       <input type="url" id="dismantleRedditUrl" placeholder="Paste Reddit thread URL → extract post + comments into the box below..." class="custom-forge-input" style="min-height:42px;resize:none;" onkeydown="if(event.key==='Enter'){event.preventDefault();loadRedditIntoField('dismantleInput','dismantleRedditUrl','dismantleRedditBtn');}">
       <button class="custom-forge-btn reddit-forge-btn" id="dismantleRedditBtn" onclick="loadRedditIntoField('dismantleInput','dismantleRedditUrl','dismantleRedditBtn')"><i class="fab fa-reddit"></i> Load Thread</button>
+      <button class="custom-forge-btn reddit-csv-btn" onclick="document.getElementById('dismantleRedditCsvInput').click()"><i class="fas fa-file-csv"></i> Import CSV</button>
+      <input type="file" id="dismantleRedditCsvInput" accept=".csv,text/csv" style="display:none" onchange="importRedditCsvIntoField('dismantleInput',this)">
     </div>
     <textarea class="dismantle-textarea" id="dismantleInput" placeholder="Paste article text, a URL, or any content you want dismantled through the lens of scripture..."></textarea>
     <div class="dismantle-controls">
@@ -756,6 +760,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <i class="fab fa-reddit custom-forge-icon"></i>
       <input type="url" id="transcriptRedditUrl" placeholder="Paste Reddit thread URL → extract post + comments with speaker tags..." class="custom-forge-input" style="min-height:42px;resize:none;" onkeydown="if(event.key==='Enter'){event.preventDefault();loadRedditIntoField('transcriptInput','transcriptRedditUrl','transcriptRedditBtn');}">
       <button class="custom-forge-btn reddit-forge-btn" id="transcriptRedditBtn" onclick="loadRedditIntoField('transcriptInput','transcriptRedditUrl','transcriptRedditBtn')"><i class="fab fa-reddit"></i> Load Thread</button>
+      <button class="custom-forge-btn reddit-csv-btn" onclick="document.getElementById('transcriptRedditCsvInput').click()"><i class="fas fa-file-csv"></i> Import CSV</button>
+      <input type="file" id="transcriptRedditCsvInput" accept=".csv,text/csv" style="display:none" onchange="importRedditCsvIntoField('transcriptInput',this)">
     </div>
     <textarea class="dismantle-textarea" id="transcriptInput" placeholder="[HOST]: Opening question...&#10;[GUEST A]: Their claim...&#10;[GUEST B]: Their rebuttal...&#10;&#10;Use any [TAG] labels you need. Toggle which speakers to critique below." style="min-height:220px;"></textarea>
     <div class="transcript-speaker-toggles" id="transcriptSpeakerToggles">
@@ -7919,6 +7925,108 @@ showToast(String(err&&err.message?err.message:err));
 redditLoadInFlight=false;
 if(btn){btn.disabled=false;btn.innerHTML='<i class="fab fa-reddit"></i> Load Thread';}
 });
+}
+function parseCsvRows(text){
+var rows=[];
+var row=[];
+var field='';
+var i=0;
+var inQuotes=false;
+var s=String(text||'');
+while(i<s.length){
+var c=s[i];
+if(inQuotes){
+if(c==='"'){
+if(s[i+1]==='"'){field+='"';i+=2;continue;}
+inQuotes=false;i++;continue;
+}
+field+=c;i++;continue;
+}
+if(c==='"'){inQuotes=true;i++;continue;}
+if(c===','){row.push(field);field='';i++;continue;}
+if(c==='\n'||(c==='\r'&&s[i+1]==='\n')){
+row.push(field);
+if(row.length>1||field)rows.push(row);
+row=[];field='';
+i+=(c==='\r'?2:1);
+continue;
+}
+field+=c;i++;
+}
+if(field||row.length){row.push(field);rows.push(row);}
+return rows;
+}
+function redditCsvHeaderIndex(header,name){
+var target=String(name||'').toLowerCase();
+for(var i=0;i<header.length;i++){
+if(String(header[i]||'').trim().toLowerCase()===target)return i;
+}
+return -1;
+}
+function convertRedditExportCsvToTagged(csvText){
+var rows=parseCsvRows(csvText);
+if(!rows.length)throw new Error('CSV file is empty.');
+var headerIdx=-1;
+var authorCol=-1,messageCol=-1,scoreCol=-1,titleCol=-1,summaryCol=-1;
+for(var h=0;h<Math.min(rows.length,5);h++){
+var hdr=rows[h];
+authorCol=redditCsvHeaderIndex(hdr,'Author');
+messageCol=redditCsvHeaderIndex(hdr,'Message');
+if(authorCol>=0&&messageCol>=0){
+headerIdx=h;
+scoreCol=redditCsvHeaderIndex(hdr,'Score');
+titleCol=redditCsvHeaderIndex(hdr,'Title');
+summaryCol=redditCsvHeaderIndex(hdr,'Summary');
+break;
+}
+}
+if(headerIdx<0)throw new Error('CSV must include Author and Message columns (Reddit comment export).');
+var lines=[];
+var count=0;
+for(var r=headerIdx+1;r<rows.length;r++){
+var cols=rows[r];
+var author=String(cols[authorCol]||'').trim()||'unknown';
+var message=String(cols[messageCol]||'').trim();
+if(!message)continue;
+var scoreSuffix='';
+if(scoreCol>=0&&cols[scoreCol]!==''){
+var sc=parseInt(cols[scoreCol],10);
+if(!isNaN(sc)&&sc!==0)scoreSuffix=' ('+(sc>0?'+':'')+sc+')';
+}
+lines.push('[u/'+author.replace(/[\[\]:]/g,'')+']'+scoreSuffix+': '+message);
+count++;
+}
+if(!count)throw new Error('No comments found in CSV.');
+var out=[];
+if(titleCol>=0){
+for(var t=headerIdx+1;t<rows.length;t++){
+var titleVal=String(rows[t][titleCol]||'').trim();
+if(titleVal){out.push('[OP]: '+titleVal);out.push('');break;}
+}
+}
+out.push('--- Reddit export ('+count+' comment'+(count===1?'':'s')+' loaded) ---');
+out.push('');
+out.push(lines.join('\n\n'));
+return {text:out.join('\n'),count:count};
+}
+function importRedditCsvIntoField(textareaId,fileInput){
+var ta=document.getElementById(textareaId);
+if(!ta||!fileInput||!fileInput.files||!fileInput.files[0])return;
+var file=fileInput.files[0];
+var reader=new FileReader();
+reader.onload=function(){
+try{
+var converted=convertRedditExportCsvToTagged(reader.result||'');
+ta.value=converted.text;
+ta.dispatchEvent(new Event('input',{bubbles:true}));
+showToast('Imported '+converted.count+' comment'+(converted.count===1?'':'s')+' from CSV.');
+}catch(err){
+showToast(String(err&&err.message?err.message:err));
+}
+fileInput.value='';
+};
+reader.onerror=function(){showToast('Could not read CSV file.');fileInput.value='';};
+reader.readAsText(file);
 }
 function parseTranscriptTurns(text){
 var turns=[];
