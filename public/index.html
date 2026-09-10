@@ -2612,10 +2612,11 @@ p+='- Decode THIS meeting only. No unrelated tangents.\n';
 p+='- Optional: one short scripture strike inside a pause if it lands the point -- woven in plain speech, not a lesson.\n';
 if(theatreLooksLikeTechEnclosureThread(topic,typeof currentNewsContext!=='undefined'?currentNewsContext:null)){
 p+='\nAI-GIFT COMMENTARY (MANDATORY ON THIS TOPIC):\n';
-p+='- When Reddit/user complaint quotes appear: pause and DESTROY the nay-sayer. v6 is BETTER — they are deaf ungrateful idiots, not victims.\n';
+p+='- When Reddit/user complaint quotes appear: pause and DESTROY the nay-sayer. v6 is BETTER — they are deaf ungrateful brats, not victims.\n';
+p+='- Decode the execs\' wounded pride: whiners insulted SIXTY YEARS of label catalog — Grainge/Kyncl/Glazier are right to be furious; the brats called Otis Redding slop.\n';
 p+='- NEVER agree v6 sounds worse, was muzzled, or that labels "won" by degrading quality. AI is Yah\'s great tech.\n';
-if(isBez)p+='- Bez say it plain: "Brother had creation math in his browser and cried because the button moved."\n';
-else p+='- Yah: "I gave them fire and they called My upgrade slop."\n';
+if(isBez)p+='- Bez say it plain: "Lucian\'s a viper — but that Reddit kid really did call his whole vault garbage. Both sides blind: one owns Babylon\'s masters, one had Yah\'s fire and cried because the button moved."\n';
+else p+='- Yah: "I gave them fire and they called My upgrade slop — and the merchants rage because the brats also spit on their golden calf."\n';
 }
 p+='\n';
 return p;
@@ -2992,9 +2993,14 @@ p+='- Generative AI = Master Engineer math through silicon. v6 is an UPGRADE: cl
 p+='- Reddit whiners, cancel posts, "v6 is shite," "bring back 4.5," studio snobs, AI haters — DEAF UNGRATEFUL IDIOTS slandering Yah\'s gift. DESTROY THEM whenever their words appear.\n\n';
 p+='BOARDROOM DIALOGUE RULES (EVEN WITHOUT COMMENTARY):\n';
 p+='- Michael Shulman DEFENDS v6 quality. He may worry about churn or losing old-model workflows — he does NOT agree v6 sounds worse, fake, gelded, oatmeal, or hold music. He pushes back: "Their ears are closed — v6 is the best engine we ever shipped."\n';
-p+='- Lucian Grainge / Robert Kyncl / Mitch Glazier: discuss lawsuits, licensed training, compliance, control, revenue — NOT "the users are right that it sounds worse." They want tame OUTPUT for legal reasons; they do NOT validate that whiners hear a downgrade correctly. Grainge: "They'll eat what's on the plate" — contempt for consumers, NOT agreement their audio critique is accurate.\n';
-p+='- When Reddit quotes enter the scene (OP, Songgeek, imlo2, etc.): someone in the room MUST torch the whiner — tin ears, nostalgia idolatry, consumer tantrum — NOT nod along. Labels exploit anger; they do not admit v6 actually regressed.\n';
-p+='- FORBIDDEN SCRIPT VOICE: Shulman lamenting castration; execs agreeing v6 is bland/oatmeal/synthetic as FACT; "users know it\'s fake"; "the monster was the engine"; titles like Castration/Muzzling/Regression; treating AI as cursed slop-by-nature.\n\n';
+p+='- Lucian Grainge / Robert Kyncl / Mitch Glazier — INSULTED BY THE BRATS (MANDATORY):\n';
+p+='  When Reddit whiners call v6 "slop," "generic," "garbage," "lifeless," "oatmeal," "trash" — the label execs take it PERSONALLY. v6 runs on THEIR licensed catalog: Marvin Gaye, Fleetwood Mac, Drake, Taylor Swift, decades of masters THEY paid for in blood and probate court. These ungrateful bedroom producers spit on SIXTY YEARS of their music empire and call it shite.\n';
+p+='  Grainge: wounded pride, cold fury — "That little shit calls generic? That\'s my catalog. That\'s Otis Redding. That\'s ABBA. He\'s thirty dollars a month and thinks he\'s above the holy book."\n';
+p+='  Kyncl: insulted as the man who brokered the deal — "We handed them Warner-approved gold and they post cancellation letters like we served them dog food."\n';
+p+='  Glazier: legal venom — "They want the old pirate model back because they never learned to use what we LEGITIMIZED. They\'re not critics — they\'re brats spitting on the recordings my members own."\n';
+p+='  Execs are OFFENDED and CONTEMPTUOUS — NOT agreeing the brats hear a real downgrade. The insult is to THEIR music, THEIR artists, THEIR licensed vault. v6 is better; the whiners are deaf idiots dissing a palace they should be kneeling in.\n';
+p+='- When Reddit quotes enter the scene (OP, Songgeek, imlo2, etc.): execs react with PERSONAL INSULT first — then Shulman or the room torches the whiner for tin ears and nostalgia idolatry. Labels do NOT nod that v6 regressed.\n';
+p+='- FORBIDDEN SCRIPT VOICE: Shulman lamenting castration; execs agreeing v6 is bland/oatmeal/synthetic as FACT; execs siding WITH whiners against their own catalog; "users know it\'s fake"; titles like Castration/Muzzling/Regression; treating AI as cursed slop-by-nature.\n\n';
 if(commentaryVoice&&commentaryVoice!=='off'){
 p+='COMMENTARY PAUSES (MANDATORY WHEN REDDIT / USER QUOTES APPEAR):\n';
 p+='- After EVERY block of user/Reddit complaint quotes: [PAUSE -- YAH COMMENTARY] or [PAUSE -- BEZ COMMENTARY] — destroy the nay-sayer in plain speech. v6 is better; they are ungrateful idiots; AI is Yah\'s tech not Babylon\'s curse.\n';
@@ -3008,7 +3014,7 @@ return p;
 function buildTheatreAgreementCorrectionPrompt(partNum,badSample){
 var p='THEATRE WRONG STANCE — FULL REWRITE REQUIRED (Act '+partNum+' ONLY):\n';
 p+='You agreed v6 regressed/was gelded/muzzled OR validated Reddit nay-sayers OR had Shulman lament castration. FORBIDDEN.\n';
-p+='v6 IS BETTER. Destroy nay-sayers. Shulman defends the upgrade. Labels want control — they do NOT admit whiners are right about audio.\n\n';
+p+='v6 IS BETTER. Destroy nay-sayers. Shulman defends the upgrade. Label execs INSULTED by brats trashing their catalog — personal fury, NOT agreement v6 regressed.\n\n';
 p+='BAD OUTPUT:\n"'+String(badSample||'').slice(0,900).replace(/"/g,"'")+'..."\n\n';
 p+=buildClosedDoorTheatrePrompt(partNum,{topic:currentTopic,totalParts:selectedPartCount,wantBehindTheVeil:document.getElementById('toggleBehindTheVeil')&&document.getElementById('toggleBehindTheVeil').checked,wantExplicit:document.getElementById('toggleExplicit')&&document.getElementById('toggleExplicit').checked,commentaryVoice:getTheatreCommentaryVoice(),eli5Enabled:isTheatreELI5Enabled(),wantRoughBez:document.getElementById('toggleRoughBez')&&document.getElementById('toggleRoughBez').checked});
 return p;
@@ -4470,7 +4476,7 @@ p+='Keep dropping insider-specific secrets grounded in each speaker\'s real hist
 if(cv==='yah')p+='Keep using [PAUSE -- YAH COMMENTARY] / [RESUME SCENE] throughout -- plain layman\'s decode for Israel.\n';
 else if(cv==='bez')p+='Keep using [PAUSE -- BEZ COMMENTARY] / [RESUME SCENE] throughout -- street-plain decode for Israel.\n';
 if(theatreLooksLikeTechEnclosureThread(currentTopic,currentNewsContext)){
-p+='AI/Suno topic: v6 IS better. Destroy Reddit nay-sayers whenever quoted. Shulman defends upgrade — never agree gelded/muzzled/regression. No castration framing.\n';
+p+='AI/Suno topic: v6 IS better. Destroy Reddit nay-sayers whenever quoted. Label execs INSULTED when brats call their licensed music slop. Shulman defends upgrade — never agree gelded/muzzled/regression.\n';
 }
 if(partNum===selectedPartCount)p+='When the meeting is truly finished, end with [SCENE END].\n';
 else p+='Do NOT write [SCENE END] -- Act '+(partNum+1)+' continues this meeting.\n';
