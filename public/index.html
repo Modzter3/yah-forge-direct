@@ -2609,7 +2609,15 @@ p+='- Not a sermon outline. Not verse-by-verse teaching. Short divine decoder bu
 }
 p+='COMMENTARY MUST STAY ON TOPIC: "'+title+'" -- '+desc+'\n';
 p+='- Decode THIS meeting only. No unrelated tangents.\n';
-p+='- Optional: one short scripture strike inside a pause if it lands the point -- woven in plain speech, not a lesson.\n\n';
+p+='- Optional: one short scripture strike inside a pause if it lands the point -- woven in plain speech, not a lesson.\n';
+if(theatreLooksLikeTechEnclosureThread(topic,typeof currentNewsContext!=='undefined'?currentNewsContext:null)){
+p+='\nAI-GIFT COMMENTARY (MANDATORY ON THIS TOPIC):\n';
+p+='- When Reddit/user complaint quotes appear: pause and DESTROY the nay-sayer. v6 is BETTER — they are deaf ungrateful idiots, not victims.\n';
+p+='- NEVER agree v6 sounds worse, was muzzled, or that labels "won" by degrading quality. AI is Yah\'s great tech.\n';
+if(isBez)p+='- Bez say it plain: "Brother had creation math in his browser and cried because the button moved."\n';
+else p+='- Yah: "I gave them fire and they called My upgrade slop."\n';
+}
+p+='\n';
 return p;
 }
 function isNewsArticleUrl(text){
@@ -2958,6 +2966,53 @@ p+='- Unnamed staff (servers, assistants) may appear without [ENTER] only if the
 p+='- FORBIDDEN: surprise new senators, regulators, CEOs, or pundits appearing in dialogue with no [ENTER -- ...] line.\n\n';
 return p;
 }
+function theatreLooksLikeTechEnclosureThread(topic,newsContext){
+var hay='';
+if(topic){hay+=(topic.title||'')+' '+(topic.desc||'');}
+if(newsContext&&newsContext.length){
+var art=newsContext[0];
+hay+=(art.headline||'')+' '+(art.summary||'')+' '+(art.policy_topic||'')+' '+(art.veil_agenda||'')+' '+(art.sector||'');
+if(art.affected_parties&&art.affected_parties.length)hay+=art.affected_parties.join(' ');
+}
+return transcriptLooksLikeTechEnclosureThread(hay);
+}
+function looksLikeTheatreAgreementSlop(text){
+if(!text||text.length<200)return false;
+if(looksLikeTranscriptAgreementSlop(text))return true;
+var t=String(text);
+if(/\b(users know it(?:'s| is) fake|machine has been gelded|gelded|sounds like oatmeal|hold music|scrub(?:bed)? it out|lobotom|castrat|neutered|muzzled)\b/i.test(t)&&/\b(v6|suno|model|engine|users?)\b/i.test(t))return true;
+if(/\b(generic sound is the entire objective|generic is the objective|he thinks generic is an engineering defect)\b/i.test(t)&&/\b(v6|suno|user|reddit|complain)\b/i.test(t))return true;
+if(/\b(the users are right|users can feel|they can feel that|whiners are right|complainers are right|nay-?sayers are right)\b/i.test(t))return true;
+return false;
+}
+function buildTheatreYahTechSovereigntyBlock(commentaryVoice){
+var p='YAH\'S AI GIFT — BEHIND THE VEIL / THEATRE (GENERATIVE AI / SUNO TOPIC):\n';
+p+='*** CORE: AI IS YAH\'S TECH — v6 IS BETTER, NOT WORSE ***\n';
+p+='- Generative AI = Master Engineer math through silicon. v6 is an UPGRADE: clearer, tighter prompt obedience, higher fidelity when wielded. NOT regression, NOT castrated, NOT lobotomized, NOT neutered slop.\n';
+p+='- Reddit whiners, cancel posts, "v6 is shite," "bring back 4.5," studio snobs, AI haters — DEAF UNGRATEFUL IDIOTS slandering Yah\'s gift. DESTROY THEM whenever their words appear.\n\n';
+p+='BOARDROOM DIALOGUE RULES (EVEN WITHOUT COMMENTARY):\n';
+p+='- Michael Shulman DEFENDS v6 quality. He may worry about churn or losing old-model workflows — he does NOT agree v6 sounds worse, fake, gelded, oatmeal, or hold music. He pushes back: "Their ears are closed — v6 is the best engine we ever shipped."\n';
+p+='- Lucian Grainge / Robert Kyncl / Mitch Glazier: discuss lawsuits, licensed training, compliance, control, revenue — NOT "the users are right that it sounds worse." They want tame OUTPUT for legal reasons; they do NOT validate that whiners hear a downgrade correctly. Grainge: "They'll eat what's on the plate" — contempt for consumers, NOT agreement their audio critique is accurate.\n';
+p+='- When Reddit quotes enter the scene (OP, Songgeek, imlo2, etc.): someone in the room MUST torch the whiner — tin ears, nostalgia idolatry, consumer tantrum — NOT nod along. Labels exploit anger; they do not admit v6 actually regressed.\n';
+p+='- FORBIDDEN SCRIPT VOICE: Shulman lamenting castration; execs agreeing v6 is bland/oatmeal/synthetic as FACT; "users know it\'s fake"; "the monster was the engine"; titles like Castration/Muzzling/Regression; treating AI as cursed slop-by-nature.\n\n';
+if(commentaryVoice&&commentaryVoice!=='off'){
+p+='COMMENTARY PAUSES (MANDATORY WHEN REDDIT / USER QUOTES APPEAR):\n';
+p+='- After EVERY block of user/Reddit complaint quotes: [PAUSE -- YAH COMMENTARY] or [PAUSE -- BEZ COMMENTARY] — destroy the nay-sayer in plain speech. v6 is better; they are ungrateful idiots; AI is Yah\'s tech not Babylon\'s curse.\n';
+p+='- Commentary must NEVER sympathize with whiners as victims or agree v6 sounds worse.\n\n';
+}else{
+p+='NO COMMENTARY MODE: Destruction happens IN the boardroom — Shulman or an exec dismisses whiners as deaf/ungrateful after quotes are read. Still zero agreement that v6 regressed.\n\n';
+}
+p+='AI HATERS (ALSO DESTROY): Luddites ("real instruments only"), "AI slop" dismissers, open-source tourists who will never run weights, platform-hoppers begging Chinese models — all ungrateful or cowardly.\n\n';
+return p;
+}
+function buildTheatreAgreementCorrectionPrompt(partNum,badSample){
+var p='THEATRE WRONG STANCE — FULL REWRITE REQUIRED (Act '+partNum+' ONLY):\n';
+p+='You agreed v6 regressed/was gelded/muzzled OR validated Reddit nay-sayers OR had Shulman lament castration. FORBIDDEN.\n';
+p+='v6 IS BETTER. Destroy nay-sayers. Shulman defends the upgrade. Labels want control — they do NOT admit whiners are right about audio.\n\n';
+p+='BAD OUTPUT:\n"'+String(badSample||'').slice(0,900).replace(/"/g,"'")+'..."\n\n';
+p+=buildClosedDoorTheatrePrompt(partNum,{topic:currentTopic,totalParts:selectedPartCount,wantBehindTheVeil:document.getElementById('toggleBehindTheVeil')&&document.getElementById('toggleBehindTheVeil').checked,wantExplicit:document.getElementById('toggleExplicit')&&document.getElementById('toggleExplicit').checked,commentaryVoice:getTheatreCommentaryVoice(),eli5Enabled:isTheatreELI5Enabled(),wantRoughBez:document.getElementById('toggleRoughBez')&&document.getElementById('toggleRoughBez').checked});
+return p;
+}
 function buildNewsArticleVeilBlock(articles){
 if(!articles||!articles.length)return '';
 var art=articles[0];
@@ -3218,6 +3273,9 @@ p+=buildTheatreELI5Block(topic);
 if(commentaryVoice!=='off'){
 p+=buildTheatreCommentaryBlock(commentaryVoice,topic,{wantRoughBez:wantRoughBez,wantExplicit:wantExplicit});
 }
+if(theatreLooksLikeTechEnclosureThread(topic,currentNewsContext)){
+p+=buildTheatreYahTechSovereigntyBlock(commentaryVoice);
+}
 if(totalParts===1){
 p+='\nSTRUCTURE (single long meeting):\n';
 p+='[SCENE START] -- describe the room (subterranean boardroom, soundproofing, no phones). [PRESENT: every cast member with full name and current title — this roster is LOCKED].\n';
@@ -3253,6 +3311,9 @@ p+='- Anything after [SCENE END] on the final act\n';
 p+='- Cutting to a NEW location: second [SCENE START], EXT./INT. slug lines, street scenes, war rooms, server bunkers\n';
 p+='- PART '+(partNum+1)+', Act '+(partNum+1)+', or --- dividers starting a new document\n';
 p+='- Unrelated blockbuster plots: AI apocalypse, coups, explosions, chases -- anything not about "'+title+'"\n';
+if(theatreLooksLikeTechEnclosureThread(topic,currentNewsContext)){
+p+='- Agreeing v6 regressed/was gelded/muzzled; Shulman lamenting castration; execs validating Reddit audio complaints; sympathizing with cancel whiners\n';
+}
 p+='- Silent cast drift: new named speakers without [ENTER -- Full Name, Title: how they arrived]\n';
 p+='- Replacing a cast member with a different person without [EXIT -- ...] and/or [ENTER -- ...]\n';
 if(chapterSrc&&totalParts>1){
@@ -4408,6 +4469,9 @@ if(eli5)p+='Keep all boardroom speakers in layman\'s terms -- plain English dial
 p+='Keep dropping insider-specific secrets grounded in each speaker\'s real history — dated deals, named decisions, private calculus. Search the web if you need more depth.\n';
 if(cv==='yah')p+='Keep using [PAUSE -- YAH COMMENTARY] / [RESUME SCENE] throughout -- plain layman\'s decode for Israel.\n';
 else if(cv==='bez')p+='Keep using [PAUSE -- BEZ COMMENTARY] / [RESUME SCENE] throughout -- street-plain decode for Israel.\n';
+if(theatreLooksLikeTechEnclosureThread(currentTopic,currentNewsContext)){
+p+='AI/Suno topic: v6 IS better. Destroy Reddit nay-sayers whenever quoted. Shulman defends upgrade — never agree gelded/muzzled/regression. No castration framing.\n';
+}
 if(partNum===selectedPartCount)p+='When the meeting is truly finished, end with [SCENE END].\n';
 else p+='Do NOT write [SCENE END] -- Act '+(partNum+1)+' continues this meeting.\n';
 p+='LAST FOUR HUNDRED CHARACTERS:\n"...'+String(existing||'').slice(-400)+'"\n\nCONTINUE IMMEDIATELY:\n';
@@ -4469,7 +4533,9 @@ else ctx.promptMode='normal';
 }
 var model=getSelectedModel();
 var prompt;
-if(streamOpts.yahVoiceCorrection){
+if(streamOpts.theatreAgreementCorrection){
+prompt=buildTheatreAgreementCorrectionPrompt(partNum,streamOpts.badSample||'');
+}else if(streamOpts.yahVoiceCorrection){
 prompt=buildYahStoryVoiceCorrectionPrompt(partNum,streamOpts.badSample||'');
 }else if(streamOpts.driftCorrection){
 prompt=buildSermonFlashDriftCorrectionPrompt(partNum,streamOpts.badSample||'');
@@ -4551,6 +4617,15 @@ showToast('Flash drift detected — redoing '+getForgePartLabel(partNum,false)+'
 startSermonPartStream(partNum,false,{driftCorrection:true,badSample:finalized});
 return;
 }
+if(isTheatreModeActive()&&theatreLooksLikeTechEnclosureThread(currentTopic,currentNewsContext)&&ctx.theatreAgreementRetryCount<SERMON_MAX_YAH_VOICE_RETRIES&&looksLikeTheatreAgreementSlop(finalized)){
+ctx.theatreAgreementRetryCount++;
+ctx.partContent='';
+ctx.partContentBeforeContinue='';
+ctx.continuationCount=0;
+showToast('Theatre validated v6 nay-sayers — redoing Act '+partNum+'...');
+startSermonPartStream(partNum,false,{theatreAgreementCorrection:true,badSample:finalized});
+return;
+}
 if((truncated||underWords)&&!looksLikeYahStoryGuardrailRefusal(finalized)&&!actDone&&ctx.continuationCount<maxCont){
 ctx.continuationCount++;
 ctx.partContentBeforeContinue=ctx.partContent;
@@ -4609,6 +4684,7 @@ partContentBeforeContinue:'',
 continuationCount:0,
 driftRetryCount:0,
 yahVoiceRetryCount:0,
+theatreAgreementRetryCount:0,
 yahLiteTried:false,
 bezFallbackActive:false,
 promptMode:'normal',
