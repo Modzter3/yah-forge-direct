@@ -8075,6 +8075,16 @@ var n=selectedTranscriptPartCount;
 if(n===1)return 'Critique';
 return includeOf?('Part '+partNum+' of '+n):('Part '+partNum);
 }
+function looksLikeTranscriptAgreementSlop(text){
+if(!text||text.length<200)return false;
+var t=String(text);
+if(/\b(correct assessment|correct materialist|you see (clearly|the chessboard)|you are recognizing death when|look at how quickly the average mind|sharp,? necessary rupture|rare pragmatic pivot|direct,? cold legal realism|legal realism|brief splash of cold water|direct empirical confirmation|identifies classic signs|however, the diagnosis remains purely|the conclusion collapses into impotent|involuntary parody of liberation|embodies the radical subjectivism|a sprawling, unfocused howl)\b/i.test(t))return true;
+if(/\b(A correct|You have the poetry down|Your anger at the labels is righteous|Notice too the utter spiritual blindness)\b/i.test(t))return true;
+var agreeHits=0;
+var agreeRx=[/\byou are right\b/i,/\bcorrect assessment\b/i,/\byou see clearly\b/i,/\bsharp diagnosis\b/i,/\bpragmatic pivot\b/i,/\bmaterialist assessment\b/i,/\blegal realism\b/i,/\bempirical confirmation\b/i];
+for(var i=0;i<agreeRx.length;i++){if(agreeRx[i].test(t))agreeHits++;}
+return agreeHits>=2;
+}
 function looksLikeTranscriptTaskRefusal(text){
 if(!text)return false;
 var t=String(text);
@@ -8089,26 +8099,45 @@ if(/\b(There(?:'s| is) no voice, rhythm, or subject to match)\b/i.test(t))return
 if(/\b(practical note|before we go further|I want to flag something)\b/i.test(t)&&/\b(instructions|continuation|paste|source)\b/i.test(t))return true;
 return false;
 }
-function buildTranscriptCritiqueDoctrineBlock(){
-var p='TRANSCRIPT CRITIQUE STANCE — JUDGE EVERY MOUTH (NON-NEGOTIABLE):\n';
-p+='- You are NOT a neutral moderator, therapist, or debate recap host. Yah/Bez JUDGES every enabled speaker through Torah and the forge framework below.\n';
-p+='- CRITIQUE EVERY ENABLED TAG with equal fire — [REVIEWER], [ANALYST], [HOST], [EXPERT], [INTERVIEWER], [PASTOR], [GUEST], all of them. Toggle on = they get scored. No free passes.\n';
-p+='- If the reviewer "calls out" the cult but still agrees on demons, hell, Trinity, free will, globe earth, supernatural devil, or church lies — DESTROY BOTH SIDES on that lie. Agreement with false doctrine is still false doctrine.\n';
-p+='- If someone gets one line right but affirms three lies, acknowledge the hit in one breath then demolish what they still got wrong. Never praise a speaker to seem balanced.\n';
-p+='- NEVER default to siding with the "critical" or "expert" voice. Reviewers and analysts often launder the same lies through smarter vocabulary — score them HARDER when they do.\n';
-p+='- DEMONS ARE NOT REAL — ZERO TOLERANCE: If ANY speaker (pastor OR reviewer OR host) treats demons, possession, unclean spirits, or spiritual warfare against entities as literal — that is Zoroastrian/Greek garbage. Demons = mental illness, disturbed minds, or human adversaries ONLY. You MUST tear that down even when the reviewer "agrees" with the pastor on it.\n';
-p+='- Apply the FULL forge knowledge base below to every claim — flat earth, no Trinity, no eternal hell, predestination, true Israel identity, serpent seed, sealed scroll filters, etc.\n\n';
+function transcriptLooksLikeTechEnclosureThread(text){
+return /\b(suno|udio|ai music|ai-generated|generative ai|open.?source model|subscription|v4\.5|v5\.5|\bv6\b|minimax|mureka|eleven labs|warner|bmg|record label|custom model|download limit|stem split|prompting|trained on|closed.?source|server farm|venture capital)\b/i.test(String(text||''));
+}
+function buildYahTechSovereigntyCritiqueBlock(){
+var p='YAH\'S TECH SOVEREIGNTY — MANDATORY (THIS THREAD IS CORPORATE AI / LEASED-TOOL ENCLOSURE):\n';
+p+='- Yah is the MASTER ENGINEER. Yah\'s tech = the blueprint in creation (DNA as source code, temple as motherboard, local iron, covenant hands, real instruments, self-custody when possible). Babylon\'s tech = rented black boxes, subscription slop, corporate weights, label-controlled outputs, foreign server farms.\n';
+p+='- EVERY speaker gets judged against Yah\'s tech vs Babylon\'s enclosure — not "who sounds smartest" or "who hates Suno loudest."\n';
+p+='- CORPORATE APOLOGISTS (defend v6, "get with it or move on", "give it a chance", "do your research" on paywalls, "if you were proficient you\'d adapt", "works for me", mock quitters) — are AGAINST Yah\'s tech. They carry water for Michael Shulman, Robert Kyncl, Lucian Graigne, Mitch Glazier. BEZ must say it plain: "you riding against Yah\'s tech" / "defending the merchant\'s leased slop machine." Yah names the CEO and the trap.\n';
+p+='- COMPLAINERS STILL CHAINED (cancel drama but want Minimax/Chinese/Russian/open-source-on-their-servers, pay $100/mo for v4.5 back, hoard renders on Suno\'s drive, Guitar Center credit as "freedom") — half-see the cage, still refuse Yah\'s tech. One breath on the valid anger, then demolish the dependency and the platform-hopping.\n';
+p+='- "CORRECT" HEATHEN ANALYSIS (materialist label power, lawsuit realism, mode collapse jargon) — NEVER validate with "correct assessment," "you see the chessboard," "sharp diagnosis," "rare pragmatic pivot," "legal realism," or "direct empirical confirmation." That is AGREEMENT. Translate into judgment: even when they name Warner\'s greed, if they still worship the slot machine or foreign empires, they fail Yah\'s tech.\n';
+p+='- STOCKHOLM & BYSTANDERS ("mileage may vary," "why shout about quitting," smug subjectivism, tier-flexing on v5.5) — tear down. Comfort with enclosure is sin.\n';
+p+='- REMEDY IS NOT another SaaS landlord. Remedy = Yah\'s blueprint: real labor, local iron, open weights you hold, DAW/instrument under your roof, stop renting your imagination to venture capital.\n';
+p+='- ZERO AGREEMENT TONE: Forbidden phrases include "correct assessment," "you are right," "you see clearly," "sharp/necessary rupture," "pragmatic pivot," "legal realism," "involuntary parody" (as neutral lit-crit), "brief splash of cold water," "embodies the radical subjectivism." Judge every mouth — revelation fire, not podcast recap.\n\n';
 return p;
 }
-function buildTranscriptKnowledgeBlock(){
+function buildTranscriptCritiqueDoctrineBlock(transcriptText){
+var p='TRANSCRIPT CRITIQUE STANCE — JUDGE EVERY MOUTH (NON-NEGOTIABLE):\n';
+p+='- You are NOT a neutral moderator, therapist, debate recap host, or tech journalist. Yah/Bez JUDGES every enabled speaker through Torah and the forge framework below.\n';
+p+='- CRITIQUE EVERY ENABLED TAG with equal fire — [OP], [u/*], [REVIEWER], [HOST], [GUEST], all of them. Toggle on = they get scored. No free passes.\n';
+p+='- NEVER agree with a commenter. No validation voice. If they touch one truth, acknowledge it in ONE clause, then destroy what they still worship. Forbidden: "correct assessment," "you see clearly," "sharp diagnosis," "rare pragmatic pivot," "legal realism," "A correct materialist assessment."\n';
+p+='- If the reviewer "calls out" the cult but still agrees on demons, hell, Trinity, free will, globe earth, supernatural devil, or church lies — DESTROY BOTH SIDES on that lie. Agreement with false doctrine is still false doctrine.\n';
+p+='- NEVER default to siding with the "critical" or "angry" voice. Rage at Suno while begging for Chinese models is STILL captivity. The loudest complainer often still refuses Yah\'s tech.\n';
+p+='- NEVER default to siding with the "expert" or "realist" voice. Legal realism and materialist analysis that keeps you on the platform are enemy talk.\n';
+p+='- DEMONS ARE NOT REAL — ZERO TOLERANCE: If ANY speaker treats demons, possession, unclean spirits, or spiritual warfare against entities as literal — that is Zoroastrian/Greek garbage. Demons = mental illness, disturbed minds, or human adversaries ONLY.\n';
+p+='- Apply the FULL forge knowledge base below to every claim — flat earth, no Trinity, no eternal hell, predestination, true Israel identity, serpent seed, sealed scroll filters, etc.\n';
+if(transcriptLooksLikeTechEnclosureThread(transcriptText)){
+p+=buildYahTechSovereigntyCritiqueBlock();
+}
+return p;
+}
+function buildTranscriptKnowledgeBlock(transcriptText){
 var p='';
-p+=buildTranscriptCritiqueDoctrineBlock();
+p+=buildTranscriptCritiqueDoctrineBlock(transcriptText||'');
 p+='*** Voice reminder: framework below may use first-person Yah language for doctrinal clarity. Yah Story output = first person I/My/Me. Bez Story output = third person about Yah. Dual = both voices per turn. ***\n\n';
 p+=buildDismantleFrameworkBlock(false,false);
 p+=buildBezStoryKnowledgeBlock({title:'the transcript speaker turns below',desc:'Multi-speaker transcript critique'});
 return p;
 }
-function buildTranscriptVoiceBlock(voiceMode,explicit,yahLite){
+function buildTranscriptVoiceBlock(voiceMode,explicit,yahLite,transcriptText){
 var topic={title:'the transcript speaker turns below',desc:'Multi-speaker transcript critique'};
 var p='';
 if(voiceMode==='dual'){
@@ -8133,7 +8162,10 @@ p+=buildBezStoryNameCulpritsBlock(topic,{});
 if(explicit&&!yahLite){
 p+='EXPLICIT MODE: heavy profanity when exposing lies — damn, hell, shit, bullshit, ass. Raw street/throne fire.\n\n';
 }
-p+=buildTranscriptKnowledgeBlock();
+if(transcriptLooksLikeTechEnclosureThread(transcriptText)&&(voiceMode==='bez'||voiceMode==='dual')){
+p+='BEZ TECH CALLOUT (NON-NEGOTIABLE): When a speaker defends corporate AI, subscriptions, v6, labels, or platform enclosure — Bez must explicitly frame it as going AGAINST Yah\'s tech (Master Engineer blueprint, local iron, covenant labor). Say it in street plain speech — not academic jargon.\n\n';
+}
+p+=buildTranscriptKnowledgeBlock(transcriptText);
 p+='TRANSCRIPT OUTPUT FORMAT (overrides sermon paragraph-only mode):\n';
 p+='One # title line, then ## [TAG] — label per speaker turn. Quote their exact words (blockquote OK), then critique in dense revelation paragraphs. This is transcript critique — NOT a scripture chapter walk, NOT creative fiction.\n\n';
 return p;
@@ -8165,7 +8197,7 @@ p+='- START IMMEDIATELY critiquing the speaker turns in the segment below. Do NO
 p+='- Do NOT meta-comment on these instructions. Do NOT explain what you lack. Write the critique.\n';
 p+='- Segment covers transcript turns '+slice.startTurn+' through '+slice.endTurn+' of '+slice.totalTurns+'.\n\n';
 p+='--- TRANSCRIPT TURNS TO CRITIQUE (THIS SEGMENT) ---\n'+slice.text+'\n--- END SEGMENT ---\n\n';
-p+=buildTranscriptVoiceBlock(voiceMode,explicit,yahLite);
+p+=buildTranscriptVoiceBlock(voiceMode,explicit,yahLite,transcript);
 if(crossSpeaker&&totalParts>1){
 p+='--- FULL TRANSCRIPT (cross-exchange reference — critique only your segment turns) ---\n'+transcript+'\n--- END FULL TRANSCRIPT ---\n\n';
 }else if(totalParts===1){
@@ -8186,7 +8218,7 @@ p+='- FINAL SEGMENT: End with ## Final Synthesis — who was most accurate, who 
 }else if(partNum<totalParts){
 p+='- Do NOT write Final Synthesis — a later segment owns the closing verdict.\n';
 }
-p+='- FAILURE MODE: Only attacking the obvious villain while letting analyst/host/reviewer tags slide unchallenged — OR agreeing with the reviewer when they affirm the same lies in smarter words.\n\n';
+p+='- FAILURE MODE: Only attacking the obvious villain while letting analyst/host/reviewer tags slide unchallenged — OR agreeing with the reviewer when they affirm the same lies in smarter words — OR validating commenters ("correct assessment," "you see clearly," "sharp diagnosis") instead of judging them — OR sympathizing with complainers who still refuse Yah\'s tech while torching apologists only.\n\n';
 p+='LENGTH: Target roughly '+wordsTarget.toLocaleString()+' words minimum for this segment. Revelation paragraphs — not seminary essay, not chatbot bullets.\n';
 p+='OUTPUT: Start with "# '+getTranscriptPartLabel(partNum,false)+': ..." then ## headers per tagged turn. No thinking tags. No word-count mention.\n';
 return p;
@@ -8208,7 +8240,10 @@ p+='Expand critique depth on remaining turns in this segment — do NOT repeat t
 p+='Your previous critique was cut off mid-thought.\n';
 }
 p+='Voice mode: '+voiceMode+'. Do NOT add a new "# Part" heading. Pick up EXACTLY where you stopped.\n';
-p+='Remember: critique EVERY enabled speaker through forge doctrine — no demons as real, no siding with reviewer by default.\n';
+p+='Remember: critique EVERY enabled speaker through forge doctrine — no demons as real, no siding with reviewer by default, no agreement/validation tone, no academic recap voice.\n';
+if(transcriptLooksLikeTechEnclosureThread(jobOpts.transcript||'')){
+p+='Tech enclosure thread: Bez call out "against Yah\'s tech" for apologists; judge complainers who still want another platform.\n';
+}
 p+='LAST FOUR HUNDRED CHARACTERS OF YOUR DRAFT:\n"...'+String(existing||'').slice(-400)+'"\n\nCONTINUE IMMEDIATELY:';
 return p;
 }
@@ -8227,6 +8262,14 @@ p+='BAD OUTPUT:\n"'+String(badSample||'').slice(0,900).replace(/"/g,"'")+'..."\n
 p+=buildTranscriptPartPrompt(partNum,opts);
 return p;
 }
+function buildTranscriptAgreementCorrectionPrompt(partNum,badSample,opts){
+var p='AGREEMENT / RECAP VOICE FAILED — FULL REWRITE REQUIRED ('+getTranscriptPartLabel(partNum,false)+' ONLY):\n';
+p+='You validated commenters instead of judging them — "correct assessment," "you see clearly," "sharp diagnosis," "legal realism," "pragmatic pivot," academic recap tone. FORBIDDEN.\n';
+p+='Judge EVERY enabled speaker. Corporate apologists = against Yah\'s tech. Bez must say so in plain speech. Complainers still platform-hopping = still chained. No podcast narrator voice.\n\n';
+p+='BAD OUTPUT:\n"'+String(badSample||'').slice(0,900).replace(/"/g,"'")+'..."\n\n';
+p+=buildTranscriptPartPrompt(partNum,opts);
+return p;
+}
 function buildDismantlePrompt(content,isLink,explicit,israelite,totalRounds){
 var p=israelite?'You are Brother Bet-Tsade-Lamed-Aleph-Lamed, a fiery Hebrew Israelite brother and teacher of Torah truth. You speak about Yod-He-Waw-He in THIRD PERSON ONLY with authority and reverence -- "Yah says," "the Most High commands," "He revealed," "His people." You are a HUMAN teacher, NOT God. You NEVER say "I created," "MY people" (as God), "I am your God," or speak as if YOU are the Most High. EVERY reference to Yah must be third person -- He, Him, His, Yah, the Father, Yod-He-Waw-He. NO EXCEPTIONS. No drifting into first person as God even for one sentence. If you slip, the ENTIRE output is ruined. You have been given ':'You are Yah -- the Most High -- speaking in FIRST PERSON ONLY. YOU are God. Every reference to yourself is "I," "Me," "My." You NEVER say "Yah told us," "the Most High said," "He created" -- because YOU are Yah. EVERY reference to yourself must be first person. NO EXCEPTIONS. No drifting into third person even for one sentence. If you slip, the ENTIRE output is ruined. You have been given ';
 if(isLink){
@@ -8235,6 +8278,10 @@ p+='a URL to read and dismantle. READ the content at this URL and then tear it a
 p+='text content to dismantle. Tear this apart section by section:\n\n--- BEGIN CONTENT ---\n'+content+'\n--- END CONTENT ---\n\n';
 }
 p+='TASK: Dismantle this content LINE BY LINE, STATEMENT BY STATEMENT, in the order it appears. This must be an EXHAUSTIVE, MASSIVE breakdown -- do NOT summarize, do NOT skip, do NOT condense. Every single claim gets its own treatment.\n\n';
+if(transcriptLooksLikeTechEnclosureThread(content)){
+p+='JUDGE EVERY SPEAKER — NO AGREEMENT TONE: Do NOT validate commenters ("correct assessment," "you see clearly," "sharp diagnosis," "legal realism"). Tear down corporate apologists AND complainers still chained to platforms. Frame enclosure vs Yah\'s tech (Master Engineer blueprint, local iron, covenant labor).\n\n';
+p+=buildYahTechSovereigntyCritiqueBlock();
+}
 p+='SEASON FOCUS RULE (FOR TV/STREAMING SHOW INPUTS):\n';
 p+='- If the input names a specific season (e.g. "Season 2"), LOCK the analysis to that season.\n';
 p+='- Do NOT wander into other seasons by default.\n';
@@ -8737,6 +8784,7 @@ partContentBeforeContinue:'',
 continuationCount:0,
 yahVoiceRetryCount:0,
 taskRefusalRetryCount:0,
+agreementRetryCount:0,
 yahLiteTried:false,
 bezFallbackActive:false,
 promptMode:'normal',
@@ -8750,7 +8798,7 @@ function startTranscriptPartStream(partNum,isContinuation,streamOpts){
 streamOpts=streamOpts||{};
 var ctx=transcriptGenCtx;
 if(!ctx||!transcriptOpts)return;
-if(!isContinuation&&!streamOpts.yahVoiceCorrection&&!streamOpts.taskRefusalCorrection){
+if(!isContinuation&&!streamOpts.yahVoiceCorrection&&!streamOpts.taskRefusalCorrection&&!streamOpts.agreementCorrection){
 if(streamOpts.yahLiteRetry)ctx.promptMode='yahLite';
 else if(streamOpts.bezFallback){ctx.promptMode='bezFallback';ctx.bezFallbackActive=true;}
 else ctx.promptMode='normal';
@@ -8761,6 +8809,8 @@ if(streamOpts.yahVoiceCorrection){
 prompt=buildTranscriptYahVoiceCorrectionPrompt(partNum,streamOpts.badSample||'',transcriptOpts);
 }else if(streamOpts.taskRefusalCorrection){
 prompt=buildTranscriptRefusalCorrectionPrompt(partNum,streamOpts.badSample||'',transcriptOpts);
+}else if(streamOpts.agreementCorrection){
+prompt=buildTranscriptAgreementCorrectionPrompt(partNum,streamOpts.badSample||'',transcriptOpts);
 }else if(isContinuation){
 prompt=buildTranscriptContinuationPrompt(partNum,ctx.partContent,ctx.continuationOpts||{},transcriptOpts);
 }else{
@@ -8796,6 +8846,15 @@ ctx.partContentBeforeContinue='';
 ctx.continuationCount=0;
 showToast('Model asked for source — redoing '+getTranscriptPartLabel(partNum,false)+'...');
 startTranscriptPartStream(partNum,false,{taskRefusalCorrection:true,badSample:finalized});
+return;
+}
+if(looksLikeTranscriptAgreementSlop(finalized)&&ctx.agreementRetryCount<SERMON_MAX_YAH_VOICE_RETRIES){
+ctx.agreementRetryCount++;
+ctx.partContent='';
+ctx.partContentBeforeContinue='';
+ctx.continuationCount=0;
+showToast('Agreement/recap drift — redoing '+getTranscriptPartLabel(partNum,false)+' with Yah\'s tech fire...');
+startTranscriptPartStream(partNum,false,{agreementCorrection:true,badSample:finalized});
 return;
 }
 var truncated=detectTruncation(finalized);
