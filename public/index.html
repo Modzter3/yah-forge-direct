@@ -754,7 +754,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <div class="tab-panel" id="panelTranscript">
   <div class="dismantle-wrap">
     <div class="dismantle-desc">
-      <i class="fas fa-closed-captioning"></i> <strong>Paste a tagged transcript</strong> — label each turn with any <code>[TAG]</code>. Yah Story and Bez Story critique enabled speakers in revelation voice, split across <strong>parts</strong> like the sermon forge (not endless dismantle rounds). Or paste a <strong>Reddit thread URL</strong> below — post and comments load with <code>[OP]</code> / <code>[u/username]</code> tags.
+      <i class="fas fa-closed-captioning"></i> <strong>Paste a tagged transcript</strong> — label each turn with any <code>[TAG]</code>. Yah Story and Bez Story critique enabled speakers in revelation voice, split across <strong>parts</strong> like the sermon forge (not endless dismantle rounds). Or paste a <strong>Reddit thread URL</strong> below — post and comments load with <code>[OP]</code> / <code>[Username]</code> tags (no <code>u/</code> prefix).
     </div>
     <div class="custom-forge-inner reddit-url-inner">
       <i class="fab fa-reddit custom-forge-icon"></i>
@@ -7881,6 +7881,9 @@ return /^https?:\/\/\S+$/.test(str.trim());
 function isRedditUrl(str){
 return !!extractRedditPostIdClient(String(str||'').trim());
 }
+function normalizeRedditSpeakerTags(text){
+return String(text||'').replace(/\[OP\s*—\s*u\/([^\]\n]+)\]/gi,'[OP — $1]').replace(/\[u\/([^\]\n]+)\]/gi,'[$1]');
+}
 function extractRedditPostIdClient(url){
 var raw=String(url||'').trim();
 if(!raw)return null;
@@ -7911,7 +7914,7 @@ fetch('/api/reddit',{method:'POST',headers:{'Content-Type':'application/json'},b
 if(!result.ok||!result.data||!result.data.text){
 throw new Error((result.data&&result.data.error)||'Failed to load Reddit thread');
 }
-ta.value=result.data.text;
+ta.value=normalizeRedditSpeakerTags(result.data.text);
 ta.dispatchEvent(new Event('input',{bubbles:true}));
 var meta=result.data.meta||{};
 var msg='Loaded: '+(meta.commentCount||0)+' comment'+(meta.commentCount===1?'':'s');
@@ -7993,7 +7996,7 @@ if(scoreCol>=0&&cols[scoreCol]!==''){
 var sc=parseInt(cols[scoreCol],10);
 if(!isNaN(sc)&&sc!==0)scoreSuffix=' ('+(sc>0?'+':'')+sc+')';
 }
-lines.push('[u/'+author.replace(/[\[\]:]/g,'')+']'+scoreSuffix+': '+message);
+lines.push('['+author.replace(/[\[\]:]/g,'')+']'+scoreSuffix+': '+message);
 count++;
 }
 if(!count)throw new Error('No comments found in CSV.');
@@ -8017,7 +8020,7 @@ var reader=new FileReader();
 reader.onload=function(){
 try{
 var converted=convertRedditExportCsvToTagged(reader.result||'');
-ta.value=converted.text;
+ta.value=normalizeRedditSpeakerTags(converted.text);
 ta.dispatchEvent(new Event('input',{bubbles:true}));
 showToast('Imported '+converted.count+' comment'+(converted.count===1?'':'s')+' from CSV.');
 }catch(err){
@@ -8128,7 +8131,7 @@ return p;
 function buildTranscriptCritiqueDoctrineBlock(transcriptText){
 var p='TRANSCRIPT CRITIQUE STANCE — JUDGE EVERY MOUTH (NON-NEGOTIABLE):\n';
 p+='- You are NOT a neutral moderator, therapist, debate recap host, or tech journalist. Yah/Bez JUDGES every enabled speaker through Torah and the forge framework below.\n';
-p+='- CRITIQUE EVERY ENABLED TAG with equal fire — [OP], [u/*], [REVIEWER], [HOST], [GUEST], all of them. Toggle on = they get scored. No free passes.\n';
+p+='- CRITIQUE EVERY ENABLED TAG with equal fire — [OP], [Username], [REVIEWER], [HOST], [GUEST], all of them. Toggle on = they get scored. No free passes.\n';
 p+='- NEVER agree with a commenter. No validation voice. If they touch one truth, acknowledge it in ONE clause, then destroy what they still worship. Forbidden: "correct assessment," "you see clearly," "sharp diagnosis," "rare pragmatic pivot," "legal realism," "A correct materialist assessment."\n';
 p+='- If the reviewer "calls out" the cult but still agrees on demons, hell, Trinity, free will, globe earth, supernatural devil, or church lies — DESTROY BOTH SIDES on that lie. Agreement with false doctrine is still false doctrine.\n';
 p+='- NEVER sympathize with v6 complainers as victims. Angry cancel posts are UNGRATEFUL idiots who disrespected Yah\'s AI gift — judge them harder than apologists if you must choose.\n';
@@ -8181,7 +8184,8 @@ p+='YAH AI-GIFT CALLOUT: Generative AI mirrors My engineering — holy math thro
 }
 p+=buildTranscriptKnowledgeBlock(transcriptText);
 p+='TRANSCRIPT OUTPUT FORMAT (overrides sermon paragraph-only mode):\n';
-p+='One # title line, then ## [TAG] — label per speaker turn. Quote their exact words (blockquote OK), then critique in dense revelation paragraphs. This is transcript critique — NOT a scripture chapter walk, NOT creative fiction.\n\n';
+p+='One # title line, then ## [TAG] — label per speaker turn. Quote their exact words (blockquote OK), then critique in dense revelation paragraphs. This is transcript critique — NOT a scripture chapter walk, NOT creative fiction.\n';
+p+='- REDDIT SPEAKER HEADERS (TTS): Never write "u/" in headers or prose. Use ## [Songgeek] — Title, not ## [u/Songgeek]. Use [OP] for original poster. Say "Songgeek said" not "u slash Songgeek."\n\n';
 return p;
 }
 function buildTranscriptPartPrompt(partNum,opts){

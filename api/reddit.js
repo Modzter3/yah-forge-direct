@@ -219,7 +219,7 @@ function flattenRedditListing(listing, opts) {
   const title = cleanText(post.title || '');
   const selftext = cleanText(post.selftext || '');
 
-  lines.push(`[OP — u/${authorTag}]: ${title}`);
+  lines.push(`[OP — ${authorTag}]: ${title}`);
   if (selftext) {
     lines.push('');
     lines.push(selftext);
@@ -282,7 +282,7 @@ function walkComments(children, lines, state, maxComments) {
       const tag = sanitizeSpeakerTag(author);
       const scoreSuffix =
         typeof d.score === 'number' && d.score !== 0 ? ` (${d.score > 0 ? '+' : ''}${d.score})` : '';
-      lines.push(`[u/${tag}]${scoreSuffix}: ${body}`);
+      lines.push(`[${tag}]${scoreSuffix}: ${body}`);
       state.count += 1;
     }
 
