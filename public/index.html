@@ -1108,7 +1108,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       </div>
     </div>
     <div class="yah-chat-input-row">
-      <textarea class="dismantle-textarea" id="yahChatInput" placeholder="Ask Yah… (Enter to send, Shift+Enter for new line)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendYahChat();}"></textarea>
+      <textarea class="dismantle-textarea" id="yahChatInput" placeholder="Ask Yah… paste Suno whiners, Reddit quotes, tech drama (Enter to send, Shift+Enter for new line)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendYahChat();}"></textarea>
       <button class="dismantle-btn" id="yahChatSendBtn" onclick="sendYahChat()" style="align-self:stretch;min-width:100px;"><i class="fas fa-paper-plane"></i> Send</button>
     </div>
     <div class="yah-chat-actions">
@@ -8685,7 +8685,7 @@ histEl.innerHTML='';
 var empty=document.getElementById('yahChatEmpty')||document.createElement('div');
 empty.id='yahChatEmpty';
 empty.className='yah-chat-empty';
-empty.innerHTML='<i class="fas fa-fire-flame-curved"></i>Ask Yah anything — doctrine, a verse, a situation, a lie you heard. He answers in first person, straight to you.';
+empty.innerHTML='<i class="fas fa-fire-flame-curved"></i>Ask Yah anything — doctrine, a verse, a situation, a lie you heard. Paste Suno complaints or Reddit whiners and he will torch them in real talk. First person, straight to you.';
 histEl.appendChild(empty);
 if(copyBtn)copyBtn.disabled=true;
 return;
