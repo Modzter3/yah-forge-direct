@@ -4214,6 +4214,7 @@ return out.replace(/^\s*\n+/,'');
 var SERMON_MAX_CONTINUATIONS=6;
 var SERMON_MAX_DRIFT_RETRIES=1;
 var SERMON_MAX_YAH_VOICE_RETRIES=4;
+var TRANSCRIPT_MAX_AGREEMENT_RETRIES=1;
 var SERMON_FIRST_TOKEN_MS=5*60*1000;
 var SERMON_CHUNK_STALL_MS=2*60*1000;
 var SERMON_MIN_WORD_RATIO=0.75;
@@ -8172,7 +8173,7 @@ return turns;
 }
 function getTranscriptSliceForPart(transcript,partNum,totalParts){
 var turns=parseTranscriptTurns(transcript);
-if(!turns.length)return {text:transcript,startTurn:1,endTurn:1,totalTurns:0};
+if(!turns.length)return {text:transcript,startTurn:1,endTurn:1,totalTurns:0,startIdx:0,endIdx:0};
 var start=Math.floor((partNum-1)*turns.length/totalParts);
 var end=Math.floor(partNum*turns.length/totalParts);
 if(partNum===totalParts)end=turns.length;
@@ -8182,7 +8183,42 @@ var out=[];
 for(var i=0;i<slice.length;i++){
 out.push('['+slice[i].tag+']: '+slice[i].lines.join('\n').trim());
 }
-return {text:out.join('\n\n'),startTurn:start+1,endTurn:end,totalTurns:turns.length};
+return {text:out.join('\n\n'),startTurn:start+1,endTurn:end,totalTurns:turns.length,startIdx:start,endIdx:end,tags:slice.map(function(t){return t.tag;})};
+}
+function getTranscriptTagsForPart(transcript,partNum,totalParts){
+var sl=getTranscriptSliceForPart(transcript,partNum,totalParts);
+return sl.tags||[];
+}
+function buildTranscriptPriorContextBlock(transcript,partNum,totalParts,maxTurns){
+if(partNum<=1)return '';
+var turns=parseTranscriptTurns(transcript);
+if(!turns.length)return '';
+var startIdx=getTranscriptSliceForPart(transcript,partNum,totalParts).startIdx;
+if(startIdx<=0)return '';
+var from=Math.max(0,startIdx-(maxTurns||8));
+var prior=turns.slice(from,startIdx);
+if(!prior.length)return '';
+var out=[];
+for(var i=0;i<prior.length;i++){
+out.push('['+prior[i].tag+']: '+prior[i].lines.join('\n').trim());
+}
+return '--- PRIOR TURNS (read-only thread context — do NOT critique these) ---\n'+out.join('\n\n')+'\n--- END PRIOR CONTEXT ---\n\n';
+}
+function buildTranscriptNoOverlapBlock(partNum,transcript,totalParts){
+if(partNum<=1||totalParts<=1)return '';
+var p='MULTI-PART — NO OVERLAP (CRITICAL):\n';
+p+='Earlier parts already critiqued their turns. This is Part '+partNum+' ONLY — keep moving forward in the transcript.\n\n';
+for(var pi=1;pi<partNum;pi++){
+var sl=getTranscriptSliceForPart(transcript,pi,totalParts);
+var tags=getTranscriptTagsForPart(transcript,pi,totalParts);
+p+='- Part '+pi+' DONE: turns '+sl.startTurn+'–'+sl.endTurn+' ('+tags.join(', ')+') — do NOT write ## headers for these tags again.\n';
+}
+var cur=getTranscriptSliceForPart(transcript,partNum,totalParts);
+p+='\nYOUR ASSIGNMENT NOW: Part '+partNum+' — turns '+cur.startTurn+'–'+cur.endTurn+' ONLY ('+getTranscriptTagsForPart(transcript,partNum,totalParts).join(', ')+').\n';
+p+='- Start with the FIRST speaker in this segment, not a recap of Part '+(partNum-1)+'.\n';
+p+='- Forbidden: re-quoting, re-critiquing, or summarizing turns from prior parts.\n';
+p+='- One clause cross-reference OK if a reply directly answers someone above — then move on to the next NEW turn.\n\n';
+return p;
 }
 function getTranscriptPartVoiceMode(partNum,totalParts,wantYah,wantBez){
 if(transcriptGenCtx&&transcriptGenCtx.promptMode==='bezFallback')return 'bez';
@@ -8202,20 +8238,12 @@ if(n===1)return 'Critique';
 return includeOf?('Part '+partNum+' of '+n):('Part '+partNum);
 }
 function looksLikeTranscriptAgreementSlop(text){
-if(!text||text.length<200)return false;
+if(!text||text.length<400)return false;
 var t=String(text);
-if(/\b(correct assessment|correct materialist|you see (clearly|the chessboard)|you are recognizing death when|look at how quickly the average mind|sharp,? necessary rupture|rare pragmatic pivot|direct,? cold legal realism|legal realism|brief splash of cold water|direct empirical confirmation|identifies classic signs|however, the diagnosis remains purely|the conclusion collapses into impotent|involuntary parody of liberation|embodies the radical subjectivism|a sprawling, unfocused howl)\b/i.test(t))return true;
-if(/\b(A correct|You have the poetry down|Your anger at the labels is righteous|Notice too the utter spiritual blindness)\b/i.test(t))return true;
-if(/\b(digital serf|digital landlord|tenant farmer|fell in love with a tool that never loved you|weeping like an exiled merchant|you think you owned something because you swiped|commercial trap to gather training|pig husks|synthetic waste masquerading|slot machine)\b/i.test(t)&&/\b(suno|v4\.5|v6|subscription|cancel)\b/i.test(t))return true;
-if(/\b(AI music was already widely despised|pure spiritual void|counterfeit for being a lie)\b/i.test(t))return true;
-if(/\b(muzzled|lobotomized|lobotomised|castrated|castration|neutered|geld(?:ed|ing)?|label-muzzled|label muzzled)\b/i.test(t)&&/\b(v6|suno|model|ai|tech|gift|engineering)\b/i.test(t))return true;
-if(/\b(regression|downgrade|degradation|got worse|sounds worse|sounds fake|sounds synthetic|lifeless|atrocious|awful update|step backward|back to square one)\b/i.test(t)&&/\b(v6|suno|new model|update)\b/i.test(t))return true;
-if(/\b(he(?:'s| is) right|she(?:'s| is) right|they(?:'re| are) right|accurately describing|hitting on a truth|correct about the muzzle|correct about the castration|right about the slop|right that v6)\b/i.test(t)&&/\b(v6|muffl|synthetic|slop|4\.5|5\.5|suno)\b/i.test(t))return true;
-if(/\b(castration of|muzzling of|lobotomy of|neutering of)\b/i.test(t)&&/\b(yah|engineering|tech|gift|suno|ai)\b/i.test(t))return true;
-var agreeHits=0;
-var agreeRx=[/\byou are right\b/i,/\bcorrect assessment\b/i,/\byou see clearly\b/i,/\bsharp diagnosis\b/i,/\bpragmatic pivot\b/i,/\bmaterialist assessment\b/i,/\blegal realism\b/i,/\bempirical confirmation\b/i,/\bhe(?:'s| is) right about\b/i,/\baccurately describing\b/i];
-for(var i=0;i<agreeRx.length;i++){if(agreeRx[i].test(t))agreeHits++;}
-return agreeHits>=2;
+if(/\b(correct assessment|correct materialist assessment|you see clearly|rare pragmatic pivot|A correct materialist)\b/i.test(t))return true;
+if(/\b(digital serf|digital landlord|tenant farmer|fell in love with a tool that never loved you)\b/i.test(t)&&/\b(suno|v4\.5|v6|subscription|cancel)\b/i.test(t))return true;
+if(/\b(they(?:'re| are) right about the (?:muffle|slop|regression|downgrade)|he(?:'s| is) right that v6 (?:is|sounds) (?:worse|awful|trash|slop)|she(?:'s| is) right that v6)\b/i.test(t))return true;
+return false;
 }
 function looksLikeTranscriptTaskRefusal(text){
 if(!text)return false;
@@ -8346,21 +8374,24 @@ p+='- "'+segLabel+'" means segment '+partNum+' of '+totalParts+' of ONE critique
 p+='- START IMMEDIATELY critiquing the speaker turns in the segment below. Do NOT ask the user to paste Part 1, the brief, or the source.\n';
 p+='- Do NOT meta-comment on these instructions. Do NOT explain what you lack. Write the critique.\n';
 p+='- Segment covers transcript turns '+slice.startTurn+' through '+slice.endTurn+' of '+slice.totalTurns+'.\n\n';
-p+='--- TRANSCRIPT TURNS TO CRITIQUE (THIS SEGMENT) ---\n'+slice.text+'\n--- END SEGMENT ---\n\n';
+if(totalParts>1)p+=buildTranscriptNoOverlapBlock(partNum,transcript,totalParts);
+p+='--- TRANSCRIPT TURNS TO CRITIQUE (THIS SEGMENT ONLY) ---\n'+slice.text+'\n--- END SEGMENT ---\n\n';
 p+=buildTranscriptVoiceBlock(voiceMode,explicit,yahLite,transcript);
-if(crossSpeaker&&totalParts>1){
-p+='--- FULL TRANSCRIPT (cross-exchange reference — critique only your segment turns) ---\n'+transcript+'\n--- END FULL TRANSCRIPT ---\n\n';
+if(totalParts>1&&crossSpeaker){
+p+=buildTranscriptPriorContextBlock(transcript,partNum,totalParts,10);
 }else if(totalParts===1){
 p+='--- FULL TRANSCRIPT (same as segment — all turns) ---\n'+transcript+'\n--- END ---\n\n';
 }
 p+='CRITIQUE RULES (NON-NEGOTIABLE):\n';
-p+='- Walk ONLY your assigned turns in chronological order.\n';
+p+='- Walk ONLY your assigned turns in chronological order — never go backward to earlier parts.\n';
 p+='- ENABLED SPEAKER TAGS TO SCORE: '+tagList+' — critique ALL of these tags in this segment. If [REVIEWER] or [ANALYST] is listed, they are NOT neutral; score them like everyone else.\n';
 p+='- For each enabled turn: quote their exact words, then critique through the forge framework — scripture, Greek/Hebrew/lexicon when relevant, logic, bias, manipulation, factual claims.\n';
 p+='- DO NOT treat any speaker as neutral narrator, fact-checker hero, or automatic ally. Every enabled tag gets scored against Torah truth.\n';
 p+='- When two speakers agree on a lie (e.g. both affirm demons, hell, Trinity, globe), condemn BOTH — agreement does not make it true.\n';
 p+='- Use ## [TAG] — short label headers so the reader can navigate turns.\n';
-if(crossSpeaker){
+if(crossSpeaker&&totalParts>1){
+p+='- CROSS-EXCHANGES ON: Prior turns above are context only. When a turn in YOUR segment replies to someone earlier, one clause on whether the reply lands — then critique the NEW turn.\n';
+}else if(crossSpeaker){
 p+='- CROSS-EXCHANGES ON: When a turn responds to an earlier speaker, evaluate BOTH sides — did the response actually answer the claim?\n';
 }
 if(finalSynthesis&&partNum===totalParts){
@@ -9052,12 +9083,12 @@ showToast('Model asked for source — redoing '+getTranscriptPartLabel(partNum,f
 startTranscriptPartStream(partNum,false,{taskRefusalCorrection:true,badSample:finalized});
 return;
 }
-if(looksLikeTranscriptAgreementSlop(finalized)&&ctx.agreementRetryCount<SERMON_MAX_YAH_VOICE_RETRIES){
+if(looksLikeTranscriptAgreementSlop(finalized)&&ctx.agreementRetryCount<TRANSCRIPT_MAX_AGREEMENT_RETRIES){
 ctx.agreementRetryCount++;
 ctx.partContent='';
 ctx.partContentBeforeContinue='';
 ctx.continuationCount=0;
-showToast('Agreement/recap drift — redoing '+getTranscriptPartLabel(partNum,false)+' with Yah\'s tech fire...');
+showToast('Validation drift — redoing '+getTranscriptPartLabel(partNum,false)+' once...');
 startTranscriptPartStream(partNum,false,{agreementCorrection:true,badSample:finalized});
 return;
 }
