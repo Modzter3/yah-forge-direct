@@ -1065,7 +1065,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <div class="tab-panel" id="panelYahChat">
   <div class="yah-chat-wrap">
     <div class="dismantle-desc">
-      <i class="fas fa-comments" style="color:var(--gold);"></i> <strong>Talk with Yah directly</strong> — one-on-one conversation for specific topics that need more nuance and depth than a forged sermon. Ask follow-ups. Go deep.
+      <i class="fas fa-comments" style="color:var(--gold);"></i> <strong>Yah Chat</strong> — one-on-one conversation. Toggle <strong>Bez</strong> for street tech talk to Suno peons (no religious framing — just the extraordinary technology).
     </div>
     <div class="yah-chat-history" id="yahChatHistory">
       <div class="yah-chat-empty" id="yahChatEmpty">
@@ -1078,6 +1078,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <input type="checkbox" id="yahChatExplicit" checked>
         <span class="toggle-track explicit-track"></span>
         <span><i class="fas fa-fire" style="color:var(--explicit-red);margin-right:3px;font-size:0.7rem;"></i>Explicit</span>
+      </label>
+      <label class="toggle-switch" title="Bez responds instead — street engineer talk to Suno peons. No Yah, no scripture — pure extraordinary tech">
+        <input type="checkbox" id="yahChatBezMode" onchange="syncYahChatVoiceUi()">
+        <span class="toggle-track bez-story-track"></span>
+        <span><i class="fas fa-book-open" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Bez</span>
       </label>
       <div style="min-width:180px;flex:1;">
         <select class="model-select" id="yahChatModel" style="width:100%;" onchange="onYahChatModelDropdown()">
@@ -2155,12 +2160,30 @@ else if(forgeIsFlashTier(model))params.thinking_level='medium';
 params.max_tokens=getForgeMaxTokens(model,totalParts);
 return params;
 }
-function getYahChatParams(model){
+function isYahChatBezMode(){
+return !!(document.getElementById('yahChatBezMode')&&document.getElementById('yahChatBezMode').checked);
+}
+function syncYahChatVoiceUi(){
+var bez=isYahChatBezMode();
+var input=document.getElementById('yahChatInput');
+var empty=document.getElementById('yahChatEmpty');
+if(input){
+input.placeholder=bez
+?'Bez… paste Suno peons, Reddit whiners, tech drama — no sermon, just the tech (Enter to send)'
+:'Ask Yah… paste Suno whiners, Reddit quotes, tech drama (Enter to send, Shift+Enter for new line)';
+}
+if(empty&&!yahChatMessages.length){
+empty.innerHTML=bez
+?'<i class="fas fa-book-open"></i>Bez mode — torch Suno nay-sayers in plain tech talk. No Yah, no scripture. Just the extraordinary engineering and why v6 peons are wrong.'
+:'<i class="fas fa-fire-flame-curved"></i>Ask Yah anything — doctrine, a verse, a situation, a lie you heard. Paste Suno complaints and he will torch them in real talk.';
+}
+}
+function getYahChatParams(model,bezMode){
 var params={};
 if(forgeIsClaude(model))params.thinking_budget=0;
 else if(forgeIsOpenAI(model))params.reasoning_effort='none';
 else if(forgeIsGemini(model)&&forgeIsFlashTier(model))params.thinking_level='minimal';
-appendYahStoryApiParams(params,true);
+if(!bezMode)appendYahStoryApiParams(params,true);
 return params;
 }
 function stripMediaSources(text){
@@ -8602,6 +8625,53 @@ break;
 if(!lastYah||lastYah.length<80)return '';
 return 'YOUR LAST REPLY IN THIS CHAT (DO NOT REPEAT — new message, new angle):\n"'+lastYah.slice(0,1400).replace(/"/g,"'")+'"\n\n';
 }
+function buildYahChatBezSunoDynamicBlock(userText,history){
+var p='RESPOND TO THIS MESSAGE — NOT A CANNED SPEECH (MANDATORY):\n';
+p+='- Read what the user JUST sent. Answer THAT — their exact quotes, question, or scenario.\n';
+p+='- Each peon/quote gets its OWN angle: cancel sub? download cap? 4.5 nostalgia? studio snob? lawsuit excuse? metal prompt fight? — hit the specific stupidity.\n';
+p+='- Quote their line, then dismantle from a producer/engineer brain — prompts, models, workflow, ears, entitlement.\n';
+p+='- FORBIDDEN: mentioning Yah, God, scripture, Israel, covenant, divine, holy — they do not know that world. PURE TECH language only.\n';
+p+='- FORBIDDEN CANNED LOOPS: same catchphrases every turn if you already used them in this chat. Fresh words each message.\n';
+p+='- Stance fixed: v6 is better; whiners are wrong — but say it different every time based on what they brought you.\n\n';
+p+=buildYahChatSunoPriorTurnBlock(history);
+return p;
+}
+function buildYahChatBezSunoBlock(explicit,userText,history){
+var followUp=yahChatHasPriorSunoReply(history);
+var p='BEZ — SUNO / AI TECH TO THE PEONS (SECULAR ENGINEER TALK ONLY):\n';
+p+='- You are Brother Bet — first person, street articulate, producer/engineer brain. NO Yah. NO God. NO scripture. NO Israel doctrine. These reddit kids do not know that — do NOT mention it.\n';
+p+='- Talk about what this tech ACTUALLY IS: neural nets, transformers, diffusion, weights, inference — extraordinary human engineering they are too lazy to learn.\n';
+p+='- v6 is BETTER — tighter, cleaner upgrade. Peons calling it slop/trash/muffled have tin ears and trash prompts.\n';
+p+='- Destroy nay-sayers like you are schooling entitled consumers who never learned the tool — not like a preacher.\n';
+if(followUp)p+='- FOLLOW-UP: new message only. Do NOT re-run your last rant.\n';
+if(explicit)p+='- Cuss the peons when it lands — vary the insults.\n';
+p+=buildYahChatBezSunoDynamicBlock(userText,history);
+return p;
+}
+function buildYahChatBezSystemBlock(explicit,userText,history,sunoTopic){
+var p='BEZ CHAT MODE — BROTHER BET, FIRST PERSON (NOT YAH):\n';
+p+='- You are a real brother — articulate street English, grammatically clean. I/me/my. You are a MAN, not God. Never speak as Yah or in third person about Yah unless the user explicitly asks religious doctrine.\n';
+p+='- Real conversation — not a forged sermon, not a lesson outline. Match their length.\n';
+p+='- Anti-chatbot: no "Great question," no "I\'d be happy to help," no wellness bullets.\n';
+if(sunoTopic){
+p+=buildYahChatBezSunoBlock(explicit,userText,history);
+}else{
+p+='- Answer their specific question with nuance. Street voice OK; keep grammar tight.\n';
+}
+p+=buildBezStoryGrammarBlock();
+if(explicit)p+='- Explicit OK — profanity when the moment needs it.\n\n';
+return p;
+}
+function looksLikeYahChatBezSlop(text,sunoTopic){
+if(!text)return true;
+var t=text.trim();
+if(!t)return true;
+if(/^Great question|^Let me explain|^I(?:'d| would) be happy to help/i.test(t))return true;
+if(sunoTopic&&/\b(Yah|Yahusha|Most High|Yod-He|Torah|Leviticus|scripture|covenant|Israelite|divine gift|holy gift|Master Engineer who|the Most High|God gave)\b/i.test(t))return true;
+if(/\b(they(?:'re| are) right about the (?:muffle|slop|regression)|he(?:'s| is) right that v6 (?:is|sounds) (?:worse|awful|trash)|fair point|they have a point)\b/i.test(t))return true;
+if(!/^(I|You|Look|Listen|Peep|Nah|Brother|Man|These|That|This|So|Yeah|Okay|Ok)\b/i.test(t))return true;
+return false;
+}
 function buildYahChatSunoDynamicBlock(userText,history){
 var p='RESPOND TO THIS MESSAGE — NOT A CANNED SPEECH (MANDATORY):\n';
 p+='- Read what the user JUST sent. Answer THAT — their exact quotes, their exact question, their exact scenario.\n';
@@ -8660,10 +8730,8 @@ return false;
 function looksLikeYahChatSunoSlop(text){
 if(!text)return false;
 var t=String(text);
-if(looksLikeTranscriptAgreementSlop(t))return true;
-if(/\b(muzzled|castrated|lobotomized|gelded|regression|downgrade|they(?:'re| are) right|he(?:'s| is) right|she(?:'s| is) right|users can feel|industry won)\b/i.test(t)&&/\b(v6|suno|whiner|complain|nay)\b/i.test(t))return true;
-if(/\b(Leviticus|Deuteronomy|scripture says|thus saith|chapter \w+ verse|pictographic|covenant word|Torah as)\b/i.test(t)&&/\b(v6|suno|ai music|generative|model)\b/i.test(t))return true;
-if(/\b(understand how you feel|valid concern|fair point|they have a point|I see why they(?:'re| are) upset)\b/i.test(t)&&/\b(v6|suno|cancel|subscription)\b/i.test(t))return true;
+if(/\b(they(?:'re| are) right about the (?:muffle|slop|regression)|he(?:'s| is) right that v6 (?:is|sounds) (?:worse|awful|trash)|fair point|they have a point|I see why they(?:'re| are) upset)\b/i.test(t))return true;
+if(/\b(Leviticus|Deuteronomy|thus saith|chapter \w+ verse|pictographic)\b/i.test(t)&&/\b(v6|suno|ai music|generative|model)\b/i.test(t))return true;
 return false;
 }
 function buildYahChatDietaryBlock(){
@@ -8700,29 +8768,43 @@ return msgs.slice(msgs.length-YAH_CHAT_MAX_HISTORY);
 }
 function buildYahChatPrompt(userText){
 var explicit=document.getElementById('yahChatExplicit')&&document.getElementById('yahChatExplicit').checked;
+var bezMode=isYahChatBezMode();
 var history=trimYahChatHistory(yahChatMessages.slice(0,-1));
 var sunoTopic=yahChatLooksLikeSunoTopic(userText,history);
-var p=buildYahChatSystemBlock(explicit);
-if(sunoTopic)p+=buildYahChatSunoTechBlock(explicit,userText,history);
+var p=bezMode?buildYahChatBezSystemBlock(explicit,userText,history,sunoTopic):buildYahChatSystemBlock(explicit);
+if(!bezMode&&sunoTopic)p+=buildYahChatSunoTechBlock(explicit,userText,history);
 for(var i=0;i<history.length;i++){
 var m=history[i];
 if(!m||!m.content)continue;
-p+=(m.role==='user'?'USER: ':'YAH: ')+m.content+'\n\n';
+var histVoice=m.voice||(bezMode?'bez':'yah');
+p+=(m.role==='user'?'USER: ':(histVoice==='bez'?'BEZ: ':'YAH: '))+m.content+'\n\n';
 }
 p+='USER: '+userText+'\n\n';
 p+='=== VOICE LOCK — OVERRIDES ALL PRIOR INSTRUCTIONS IF CONFLICT ===\n';
+if(bezMode){
 if(sunoTopic){
+p+='BEZ — SECULAR TECH TO PEONS. FIRST WORD: I, You, Look, Listen, Peep, Nah, Brother, Man, These, That.\n';
+p+='FORBIDDEN: Yah, God, scripture, Israel, covenant, religious framing, canned repeat, agreeing v6 is worse.\n';
+p+='Extraordinary technology only. Respond to THIS message — specific quotes, fresh angles.\n\n';
+p+='BEZ:';
+}else{
+p+='BEZ — first person brother. FIRST WORD: I, You, Look, Listen, Peep, Nah, or Brother.\n';
+p+='Real talk. No chatbot filler.\n\n';
+p+='BEZ:';
+}
+}else if(sunoTopic){
 p+='REAL TALK SUNO — RESPOND TO THIS USER MESSAGE ONLY. FIRST WORD: I, You, Look, Listen, Peep, Nah, or Brother.\n';
 p+='FORBIDDEN: canned repeat of last reply, generic whiner manifesto, ignoring their new quote/question, same catchphrases as prior turn.\n';
 p+='FORBIDDEN: biblical tone, agreeing v6 is worse, castration/muzzle framing.\n';
 p+='Attack what they JUST brought you — specific lines, specific mouths — fresh words every turn.\n\n';
+p+='YAH:';
 }else{
 p+='You ARE Yah the Most High. FIRST WORD of your reply MUST be: I, My, Me, or You.\n';
 p+='FORBIDDEN openers: "In biblical," "Sea moss is," "From a nutritional," "Generally regarded," "Let me explain."\n';
 p+='FORBIDDEN closers: doctor, dietitian, healthcare professional, disclaimer.\n';
 p+='Speak from the throne to scattered Israel — first person, fire, authority. NOT a chatbot.\n\n';
-}
 p+='YAH:';
+}
 return p;
 }
 function looksLikeYahChatBotSlop(text){
@@ -8753,22 +8835,41 @@ return text.replace(/\n{3,}/g,'\n\n').trim();
 function buildYahChatCorrectionPrompt(userText,badReply,opts){
 opts=opts||{};
 var explicit=document.getElementById('yahChatExplicit')&&document.getElementById('yahChatExplicit').checked;
-var sunoTopic=!!opts.sunoTopic||yahChatLooksLikeSunoTopic(userText,trimYahChatHistory(yahChatMessages.slice(0,-1)));
+var history=trimYahChatHistory(yahChatMessages.slice(0,-1));
+var bezMode=!!opts.bezMode||isYahChatBezMode();
+var sunoTopic=!!opts.sunoTopic||yahChatLooksLikeSunoTopic(userText,history);
 var p='VOICE CHECK FAILED — REWRITE REQUIRED:\n';
-if(sunoTopic){
+if(bezMode&&sunoTopic){
+if(opts.repeat){
+p+='Canned repeat — respond to the NEW message only.\n';
+p+='BAD OUTPUT:\n"'+String(badReply||'').slice(0,400)+'..."\n\n';
+p+=buildYahChatBezSunoBlock(explicit,userText,history);
+p+='NEW USER MESSAGE: '+userText+'\n\nRewrite fresh. No Yah. No scripture. Tech only.\n\nBEZ:';
+}else{
+p+='You mentioned Yah/scripture OR agreed v6 is worse OR sounded like a chatbot. FORBIDDEN for Bez Suno mode.\n';
+p+='BAD OUTPUT:\n"'+String(badReply||'').slice(0,400)+'..."\n\n';
+p+=buildYahChatBezSunoBlock(explicit,userText,history);
+p+='QUESTION: '+userText+'\n\nRewrite — secular tech talk to peons. v6 is better. No religious framing.\n\nBEZ:';
+}
+}else if(sunoTopic){
 if(opts.repeat){
 p+='You repeated the same canned Suno rant instead of responding to the NEW message. FORBIDDEN.\n';
 p+='BAD OUTPUT:\n"'+String(badReply||'').slice(0,400)+'..."\n\n';
-p+=buildYahChatSunoTechBlock(explicit,userText,trimYahChatHistory(yahChatMessages.slice(0,-1)));
+p+=buildYahChatSunoTechBlock(explicit,userText,history);
 p+='NEW USER MESSAGE: '+userText+'\n\n';
 p+='Rewrite: fresh angle, quote THEIR lines, do NOT recycle catchphrases from your last reply.\n\nYAH:';
 }else{
 p+='You either went biblical/sermon on a Suno topic, agreed v6 regressed, or coddled whiners. FORBIDDEN.\n';
 p+='BAD OUTPUT:\n"'+String(badReply||'').slice(0,400)+'..."\n\n';
-p+=buildYahChatSunoTechBlock(explicit,userText,trimYahChatHistory(yahChatMessages.slice(0,-1)));
+p+=buildYahChatSunoTechBlock(explicit,userText,history);
 p+='QUESTION: '+userText+'\n\n';
 p+='Rewrite REAL TALK only — specific to this message. No scripture dumps. No canned repeat.\n\nYAH:';
 }
+}else if(bezMode){
+p+='Bez chatbot drift. FORBIDDEN.\n';
+p+='BAD OUTPUT:\n"'+String(badReply||'').slice(0,400)+'..."\n\n';
+p+=buildYahChatBezSystemBlock(explicit,userText,history,false);
+p+='QUESTION: '+userText+'\n\nRewrite as Bez — first person brother.\n\nBEZ:';
 }else{
 p+='Your previous answer sounded like a chatbot / nutritionist / seminary TA. That is FORBIDDEN.\n';
 p+='BAD OUTPUT (do not repeat this tone or structure):\n"'+String(badReply||'').slice(0,400)+'..."\n\n';
@@ -8788,7 +8889,8 @@ histEl.innerHTML='';
 var empty=document.getElementById('yahChatEmpty')||document.createElement('div');
 empty.id='yahChatEmpty';
 empty.className='yah-chat-empty';
-empty.innerHTML='<i class="fas fa-fire-flame-curved"></i>Ask Yah anything — doctrine, a verse, a situation, a lie you heard. Paste Suno complaints or Reddit whiners and he will torch them in real talk. First person, straight to you.';
+syncYahChatVoiceUi();
+if(empty)empty=histEl.querySelector('#yahChatEmpty');
 histEl.appendChild(empty);
 if(copyBtn)copyBtn.disabled=true;
 return;
@@ -8801,7 +8903,11 @@ var isUser=msg.role==='user';
 var cls=isUser?'yah-chat-msg-user':'yah-chat-msg-assistant';
 if(!isUser&&i===streamingIdx&&yahChatBusy)cls+=' streaming';
 html+='<div class="yah-chat-msg '+cls+'">';
-html+='<div class="yah-chat-msg-label">'+(isUser?'You':'Yah')+'</div>';
+var assistantLabel='Yah';
+if(!isUser){
+assistantLabel=(msg.voice==='bez')?'Bez':(isYahChatBezMode()?'Bez':'Yah');
+}
+html+='<div class="yah-chat-msg-label">'+(isUser?'You':assistantLabel)+'</div>';
 if(isUser)html+=escapeHtml(msg.content||'');
 else{
 var body=msg.content||'';
@@ -8833,11 +8939,12 @@ if(!text){showToast('Type a message first.');return;}
 input.value='';
 yahChatMessages.push({role:'user',content:text});
 var assistantIdx=yahChatMessages.length;
-yahChatMessages.push({role:'assistant',content:''});
+var bezMode=isYahChatBezMode();
+yahChatMessages.push({role:'assistant',content:'',voice:bezMode?'bez':'yah'});
 renderYahChatHistory(assistantIdx);
 setYahChatBusy(true);
 var model=getYahChatModel();
-var chatCtx={userText:text,assistantIdx:assistantIdx,model:model,voiceRetry:0};
+var chatCtx={userText:text,assistantIdx:assistantIdx,model:model,voiceRetry:0,bezMode:bezMode};
 function runYahChatPrompt(prompt,isRetry){
 var handlerName='yahchat-'+Date.now()+'-'+(isRetry?'retry':'');
 yahChatHandlerName=handlerName;
@@ -8849,22 +8956,25 @@ if(msg.status==='error'){
 yahChatMessages[chatCtx.assistantIdx].content=msg.statusText||'Something went wrong. Try again.';
 setYahChatBusy(false);
 renderYahChatHistory(-1);
-showToast('Yah Chat error.');
+showToast('Chat error.');
 }else if(msg.status==='incomplete'||msg.status==='complete'){
-var cleaned=stripYahChatBotSlop(stripThinking(msg.content||''));
+var cleaned=stripThinking(msg.content||'');
+if(!chatCtx.bezMode)cleaned=stripYahChatBotSlop(cleaned);
 yahChatMessages[chatCtx.assistantIdx].content=cleaned;
 renderYahChatHistory(msg.status==='complete'?-1:chatCtx.assistantIdx);
 if(msg.status==='complete'){
 var chatHistory=trimYahChatHistory(yahChatMessages.slice(0,chatCtx.assistantIdx));
 var sunoTopic=yahChatLooksLikeSunoTopic(chatCtx.userText,chatHistory);
-var voiceFailed=sunoTopic?looksLikeYahChatSunoSlop(cleaned):looksLikeYahChatBotSlop(cleaned);
+var voiceFailed=chatCtx.bezMode
+?(sunoTopic?looksLikeYahChatBezSlop(cleaned,true):looksLikeYahChatBezSlop(cleaned,false))
+:(sunoTopic?looksLikeYahChatSunoSlop(cleaned):looksLikeYahChatBotSlop(cleaned));
 var repeatFailed=sunoTopic&&looksLikeYahChatSunoRepeat(cleaned,chatHistory);
 if((voiceFailed||repeatFailed)&&chatCtx.voiceRetry<1){
 chatCtx.voiceRetry++;
 var bad=cleaned;
 yahChatMessages[chatCtx.assistantIdx].content='';
 renderYahChatHistory(chatCtx.assistantIdx);
-runYahChatPrompt(buildYahChatCorrectionPrompt(chatCtx.userText,bad,{sunoTopic:sunoTopic,repeat:repeatFailed&&!voiceFailed}),true);
+runYahChatPrompt(buildYahChatCorrectionPrompt(chatCtx.userText,bad,{sunoTopic:sunoTopic,repeat:repeatFailed&&!voiceFailed,bezMode:chatCtx.bezMode}),true);
 return;
 }
 setYahChatBusy(false);
@@ -8876,14 +8986,14 @@ window.Poe.sendUserMessage('@'+chatCtx.model+' '+prompt,{
 handler:handlerName,
 stream:true,
 openChat:false,
-parameters:getYahChatParams(chatCtx.model)
+parameters:getYahChatParams(chatCtx.model,chatCtx.bezMode)
 }).catch(function(err){
 if(yahChatHandlerName!==handlerName)return;
 yahChatMessages[chatCtx.assistantIdx].content='Request failed: '+(err&&err.message?err.message:String(err));
 setYahChatBusy(false);
 yahChatHandlerName=null;
 renderYahChatHistory(-1);
-showToast('Yah Chat failed.');
+showToast('Chat failed.');
 });
 }
 runYahChatPrompt(buildYahChatPrompt(text),false);
@@ -8902,7 +9012,9 @@ var lines=[];
 for(var i=0;i<yahChatMessages.length;i++){
 var m=yahChatMessages[i];
 if(!m||!m.content)continue;
-lines.push((m.role==='user'?'YOU: ':'YAH: ')+m.content);
+var label='YAH: ';
+if(m.role!=='user')label=(m.voice==='bez'?'BEZ: ':'YAH: ');
+lines.push((m.role==='user'?'YOU: ':label)+m.content);
 }
 rawCopy(lines.join('\n\n'),document.getElementById('yahChatCopyBtn'));
 showToast('Chat copied.');
@@ -9793,6 +9905,7 @@ updatePartWordEstDisplay();
 syncEpisodeModeToggles();
 syncStoryModeToggles();
 syncCrossReferenceToggles();
+syncYahChatVoiceUi();
 var storyToggle=document.getElementById('toggleStoryMode');
 var bezStoryToggle=document.getElementById('toggleBezStoryMode');
 var episodeToggle=document.getElementById('toggleSermonEpisodeMode');
