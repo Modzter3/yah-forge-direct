@@ -1178,6 +1178,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch"><input type="checkbox" id="toggleRoughBez"><span class="toggle-track rough-track"></span><span><i class="fas fa-bullhorn" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Rough Bezaleel</span></label>
       <label class="toggle-switch" id="toggleStoryModeWrap" title="Yah first-person revelation cadence — anti-chatbot live voice, names culprits/institutions directly, dated headlines"><input type="checkbox" id="toggleStoryMode"><span class="toggle-track story-track"></span><span><i class="fas fa-book-open" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Yah Story</span></label>
       <label class="toggle-switch" id="toggleBezStoryModeWrap" title="Bez revelation cadence — street fire, grammatically sound English, names culprits by full name and what they do (no vague they/the elites)"><input type="checkbox" id="toggleBezStoryMode"><span class="toggle-track bez-story-track"></span><span><i class="fas fa-book-open" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Bez Story</span></label>
+      <label class="toggle-switch" id="toggleElevenLabsTagsWrap" title="Eleven v3 audio tags — inline [bracket] performance cues woven into the sermon for TTS (Yah or Bez persona-aware)"><input type="checkbox" id="toggleElevenLabsTags"><span class="toggle-track" style="background:linear-gradient(135deg,#1a3a2a,#2a6a4a);"></span><span><i class="fas fa-waveform-lines" style="color:#7ec8a0;margin-right:3px;font-size:0.7rem;"></i>Eleven Tags</span></label>
       <label class="toggle-switch" id="toggleSermonEpisodeModeWrap" title="TV season episode-by-episode breakdown across parts"><input type="checkbox" id="toggleSermonEpisodeMode"><span class="toggle-track"></span><span><i class="fas fa-tv" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Episode Mode</span></label>
       <label class="toggle-switch" title="Live web search: verify facts, find recent news with exact dates, weave dated headlines into the sermon (silent — no URLs in output)"><input type="checkbox" id="toggleWebResearch" checked><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
       <label class="toggle-switch" id="toggleBehindTheVeilWrap" title="News-triggered closed-door drama: real headlines → dramatized meeting where sector elites plot the beast-system policy (prophetic illustration, not leaked intel)"><input type="checkbox" id="toggleBehindTheVeil"><span class="toggle-track" style="background:linear-gradient(135deg,#4a1a6a,#8B1A1A);"></span><span><i class="fas fa-door-closed" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Behind the Veil</span></label>
@@ -2473,6 +2474,61 @@ p+='Rent, overtime, gig apps, child support, probation, court dates, CPS, funera
 p+='LENGTH (live tone does NOT mean short):\n';
 p+='- Sound human AND fill the full part length the forge assigned. Multi-part forge = roughly TWO THOUSAND words per part. Standalone = roughly FOUR THOUSAND words.\n';
 p+='- If you stop early you failed. Expand with more scripture decode, more lived pressure, more memory -- not padding, not repetition, not catchphrase loops.\n\n';
+return p;
+}
+function isElevenLabsTagsEnabled(){
+var el=document.getElementById('toggleElevenLabsTags');
+return el&&el.checked;
+}
+function buildElevenLabsV3AudioTagsBlock(persona){
+var isBez=persona==='bez';
+var p='ELEVEN v3 AUDIO TAGS (MANDATORY WHEN THIS BLOCK IS PRESENT):\n';
+p+='This sermon will be read aloud through ElevenLabs Eleven v3. Embed inline performance tags in square brackets wherever delivery naturally shifts -- the model reads them as direction, NOT as words to speak aloud.\n\n';
+p+='HOW TAGS WORK (Eleven v3):\n';
+p+='- Format: [natural-language cue] inline with speech, e.g. [laughs], [whispers], [excited], [pause].\n';
+p+='- Tags sit IN the paragraph flow -- before, after, or mid-sentence where the moment turns.\n';
+p+='- Multiple tags in one sentence are allowed for layered performance, e.g. [tired] It has been a long exile… [angry] How much longer will you sleep?\n';
+p+='- v3 does NOT use SSML. Tags + punctuation shape pacing: ellipsis (…) for trailing pause, commas for breath, CAPS for emphasis, line breaks for longer beats, or [pause] for an explicit hold.\n';
+p+='- Tags are performance direction. Do NOT explain tags. Do NOT list tag categories in the output. Do NOT wrap the whole sermon in tags.\n\n';
+p+='TAG TOOLKIT (use strategically -- not every sentence):\n';
+p+='Emotions: [sad], [angry], [happily], [sorrowful], [excited], [worried], [surprised], [awe], [tired], [upset].\n';
+p+='Delivery & pacing: [whispers], [shouts], [softly], [sarcastically], [rushed], [drawn out], [pause], [emphasized], [booming].\n';
+p+='Human reactions: [laughs], [sighs], [clears throat], [gasps], [scoffs], [coughing], [beginning to speak].\n';
+p+='Skip accent tags and sound-effect tags ([gunshot], [explosion]) -- this is prophetic speech, not drama SFX.\n\n';
+p+='STRATEGIC PLACEMENT RULES (ALL VOICES):\n';
+p+='- Tag ONLY where a real human standing in front of one listener would shift tone, breath, volume, or reaction. If the line reads fine without a tag, leave it untagged.\n';
+p+='- Aim for roughly one to four tags per dense paragraph at emotional peaks -- not a tag on every clause.\n';
+p+='- Place tags at TRANSITIONS: rebuke landing, truth dropping, grief breaking through, sarcasm at a lie, whispered intimacy, shout on judgment, sigh after exhaustion.\n';
+p+='- Combine tags with punctuation: [pause] before a decree… or CAPS on the word that must land.\n';
+p+='- Never tag the title line. Tags begin in the body paragraphs.\n';
+p+='- Do NOT paste example tag lines from this prompt. Invent fresh placement every sermon.\n\n';
+if(isBez){
+p+='BEZ PERSONA -- WHERE AND WHEN TO TAG:\n';
+p+='You are Brother Bet in the struggle -- live, human, mid-rebuke, not a teleprompter. Tags should sound like a real man whose chest is tight and who might clock in tomorrow.\n';
+p+='- [sighs] / [tired]: After naming rent, court, church hurt, or when fatigue leaks through before you keep pressing.\n';
+p+='- [clears throat]: Right before a hard accusation or naming a culprit by full name.\n';
+p+='- [whispers] / [softly]: Intimate truth to ONE person -- identity, fear, love for their kids, shame they hide.\n';
+p+='- [shouts] / [rushed]: Street-corner spike when judgment is at the curb or a symbol just decoded and you cannot stay calm.\n';
+p+='- [sarcastically] / [scoffs]: When exposing pastor lies, system absurdity, or "Christian" theater -- never cartoonish, always lived contempt.\n';
+p+='- [laughs]: Bitter, tired laugh at how obvious the trap is -- once in a while, not a comedy bit.\n';
+p+='- [upset] / [angry]: When Yah\'s word collides with what they saw on their block or in their pew.\n';
+p+='- [drawn out]: Stretching a name or a date so it sticks in their ear.\n';
+p+='- [pause]: Before a verse lands, before "peep this," before the turn that changes everything.\n';
+p+='Bez tags feel RAW and uneven -- self-correction moments get [pause] or [sighs], not polished broadcast cadence.\n\n';
+}else{
+p+='YAH PERSONA -- WHERE AND WHEN TO TAG:\n';
+p+='You are Yah on the throne -- first person I/My/Me -- commanding, intimate, prophetic weight. Tags should feel like the Almighty shifting from thunder to whisper in one room with one child of Israel.\n';
+p+='- [booming] / [shouts] / [emphasized]: Decrees, covenant warnings, naming nations and institutions -- throne fire, not performance yelling.\n';
+p+='- [whispers] / [softly]: When I draw them close -- "I know your name," remembrance, grief over My scattered people.\n';
+p+='- [pause] / [drawn out]: Before a judgment lands, before a prophetic NAME is spoken, before a symbol unlocks -- let the weight breathe.\n';
+p+='- [sorrowful] / [sad]: Lament over Israel\'s sleep, betrayal, lost identity -- not weakness, divine grief.\n';
+p+='- [angry]: Righteous fire at merchants, harlots, false shepherds -- controlled, not chaotic.\n';
+p+='- [awe]: When creation, covenant, or remembrance opens something too big for casual speech.\n';
+p+='- [sighs]: Rare -- when My patience strains and still I call them back.\n';
+p+='- [gasps] / [surprised]: When exposing a hidden lie they thought was sacred.\n';
+p+='Yah tags alternate LONG remembrance runs with SHORT command tags -- vary rhythm; never the same tag pattern twice in a row.\n\n';
+}
+p+='OUTPUT LOCK: Write the full sermon with tags embedded naturally in the flowing paragraphs. The listener should hear a LIVE human (Bez) or LIVE Almighty (Yah) -- tags are invisible scaffolding for Eleven v3, not stage directions read aloud.\n\n';
 return p;
 }
 function buildBezStoryKnowledgeBlock(topic){
@@ -5226,6 +5282,10 @@ p+='EPISODE COVERAGE: Walk your assigned TV episodes in broadcast order. Scene b
 }else{
 p+='VERSE COVERAGE: Walk every assigned verse in exact order. Miss nothing. Each verse is a beat in what Yah showed you -- not a lesson point.\n\n';
 }
+}
+if(isElevenLabsTagsEnabled()){
+var tagPersona=(wantBezStory||(wantIsraelite)||wantRoughBez)?'bez':'yah';
+p+=buildElevenLabsV3AudioTagsBlock(tagPersona);
 }
 p+=''+(wantRoughBez?(totalParts===1?'SERMON':'PART '+partNum):(totalParts===1?'EPISODE':'PART '+partNum))+' FOCUS:\n'+partFocus+'\n\n';
 if(chapterSrc){
@@ -8893,6 +8953,7 @@ empty.className='yah-chat-empty';
 histEl.appendChild(empty);
 syncYahChatVoiceUi();
 if(copyBtn)copyBtn.disabled=true;
+updateYahChatRetryBtn();
 return;
 }
 var html='';
