@@ -1159,6 +1159,34 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   </div>
 </div>
 
+<!-- === ELEVEN TAG PASTE MODAL === -->
+<div class="modal-overlay" id="elevenTagModal">
+  <div class="modal-content" style="max-width:920px;">
+    <div class="modal-header">
+      <div>
+        <div class="topic-title"><i class="fas fa-waveform-lines" style="color:#7ec8a0;margin-right:6px;"></i>Eleven Tag Existing Sermon</div>
+        <div class="topic-desc">Paste a finished sermon — tags are inserted only, no rewrite. Splits on PART 1, PART 2, etc.</div>
+      </div>
+      <button class="modal-close" onclick="closeElevenTagModal()">&times;</button>
+    </div>
+    <div style="padding:0 4px 12px;">
+      <div class="model-select-wrap" style="margin-bottom:10px;">
+        <label><i class="fas fa-user"></i> Persona:</label>
+        <select class="model-select" id="elevenTagPersonaSelect" style="max-width:220px;">
+          <option value="auto">Auto-detect Yah / Bez</option>
+          <option value="bez">Bez — street brother</option>
+          <option value="yah">Yah — throne fire</option>
+        </select>
+      </div>
+      <textarea id="elevenTagPasteArea" rows="16" placeholder="Paste your full sermon here (all parts)..." style="width:100%;min-height:320px;padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text);font-family:inherit;font-size:0.88rem;line-height:1.55;resize:vertical;"></textarea>
+      <div class="vc-actions" style="margin-top:12px;">
+        <button class="vc-btn confirm" onclick="runElevenTagPaste()"><i class="fas fa-waveform-lines" style="margin-right:4px;"></i>Eleven Tag This Sermon</button>
+        <button class="vc-btn cancel" onclick="closeElevenTagModal()"><i class="fas fa-times" style="margin-right:4px;"></i>Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- === SERMON MODAL === -->
 <div class="modal-overlay" id="sermonModal">
   <div class="modal-content">
@@ -1271,6 +1299,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <button class="sermon-action-btn copy-all" onclick="copyAllSermon()"><i class="fas fa-copy"></i> Copy All</button>
       <button class="sermon-action-btn copy-all" onclick="copyAllSermonPlain()" style="border-color:var(--gold-dim);color:var(--gold-dim);background:transparent;"><i class="fas fa-align-left"></i> Copy Plain</button>
       <button class="sermon-action-btn export-btn" onclick="exportSermon()"><i class="fas fa-download"></i> Export to File</button>
+      <button class="sermon-action-btn" id="elevenTagBtn" onclick="elevenTagCurrentSermon()" style="border-color:#7ec8a0;color:#7ec8a0;background:rgba(126,200,160,0.08);" title="Add Eleven v3 [bracket] tags to existing sermon — no rewrite"><i class="fas fa-waveform-lines"></i> Eleven Tag</button>
       <div class="tts-bar">
         <span class="tts-label"><i class="fas fa-volume-high"></i> Voice:</span>
         <select class="tts-voice-select" id="ttsVoice">
@@ -2530,6 +2559,173 @@ p+='Yah tags alternate LONG remembrance runs with SHORT command tags -- vary rhy
 }
 p+='OUTPUT LOCK: Write the full sermon with tags embedded naturally in the flowing paragraphs. The listener should hear a LIVE human (Bez) or LIVE Almighty (Yah) -- tags are invisible scaffolding for Eleven v3, not stage directions read aloud.\n\n';
 return p;
+}
+function detectElevenTagPersona(text){
+var roughBez=document.getElementById('toggleRoughBez')&&document.getElementById('toggleRoughBez').checked;
+var bezStory=document.getElementById('toggleBezStoryMode')&&document.getElementById('toggleBezStoryMode').checked;
+if(roughBez||bezStory)return 'bez';
+var yahStory=document.getElementById('toggleStoryMode')&&document.getElementById('toggleStoryMode').checked;
+if(yahStory)return 'yah';
+var sample=String(text||'').slice(0,12000);
+var bezSignals=0,yahSignals=0;
+if(/\bbrother\b|\bpeep this\b|\bcousin of mine\b|\byah showed you\b|\bblock\b|\bstreet\b|\bpunk-ass preachers\b/i.test(sample))bezSignals+=3;
+if(/\bi am yah\b|\bfrom the throne\b|\bmy people\b|\bi have called thee\b|\bfirst person.*\bi, my, me\b/i.test(sample))yahSignals+=3;
+if(/\byah showed me\b|\bclock in tomorrow\b|\bisraelite brother\b/i.test(sample))bezSignals+=2;
+return bezSignals>=yahSignals?'bez':'yah';
+}
+function buildElevenLabsRetrofitPrompt(persona,text,partNum,totalParts){
+var p='ELEVEN v3 AUDIO TAG RETROFIT — EXISTING SERMON (TAGS ONLY):\n';
+p+='Add ElevenLabs Eleven v3 inline [bracket] performance tags to the sermon below.\n';
+p+='CRITICAL: Do NOT rewrite, shorten, expand, paraphrase, summarize, or delete ANY existing words. ONLY insert [tags].\n';
+p+='Do NOT add preamble, notes, markdown fences, or explanation. Output the tagged sermon text only — begin with the first character of the original.\n\n';
+p+=buildElevenLabsV3AudioTagsBlock(persona);
+p+='RETROFIT LOCK:\n';
+p+='- Every original word stays in the same order.\n';
+p+='- Tags are insertions only — [pause], [sighs], [whispers], [shouts], [clears throat], etc.\n';
+p+='- Preserve ALL headers, PART titles, divider lines (===), and formatting exactly.\n';
+p+='- Do NOT tag markdown # title lines unless they are clearly spoken openers.\n';
+p+='- If the text contains meta-errors or assistant refusals, tag them too — do not remove them.\n\n';
+if(totalParts>1)p+='SCOPE: Part '+partNum+' of '+totalParts+' — output this part only, fully tagged.\n\n';
+p+='ORIGINAL TEXT:\n'+text+'\n\n';
+p+='Return the full original with strategic Eleven v3 tags embedded. Begin immediately:';
+return p;
+}
+function splitPastedSermonIntoParts(text){
+var raw=String(text||'').trim();
+if(!raw)return [];
+var re=/\n(?=PART\s+\d+\s*[-–—:])/gi;
+var chunks=raw.split(re);
+if(chunks.length<=1)return [raw];
+return chunks.map(function(c){return c.trim();}).filter(function(c){return c.length>0;});
+}
+function renderSermonFromParts(){
+var output=document.getElementById('sermonOutput');
+if(!output||!sermonPartsRaw.length)return;
+var html='';
+for(var i=0;i<sermonPartsRaw.length;i++){
+html+='<div class="part-divider" id="partDivider'+(i+1)+'"><i class="fas fa-scroll" style="margin-right:6px;font-size:0.65rem;"></i>'+escapeHtml(getForgePartLabel(i+1,true))+'</div>';
+html+='<div class="sermon-body" id="sermonPart'+(i+1)+'">'+marked.parse(sermonPartsRaw[i])+'</div>';
+}
+output.innerHTML=html;
+sermonPartsCombined=buildCombinedTextFromParts(sermonPartsRaw,sermonPartsTitles);
+var actions=document.getElementById('sermonActions');
+if(actions)actions.style.display='flex';
+populateTtsPartSelect('ttsPartSelect',sermonPartsRaw.length);
+}
+var elevenTagRunning=false;
+function runElevenTagOnParts(parts,persona,onPartDone,onComplete){
+if(elevenTagRunning){showToast('Eleven Tag already running.');return;}
+if(!parts||!parts.length){showToast('No text to tag.');return;}
+elevenTagRunning=true;
+var model=getSelectedModel();
+var total=parts.length;
+var idx=0;
+var tagged=[];
+function next(){
+if(idx>=total){
+elevenTagRunning=false;
+if(onComplete)onComplete(tagged);
+return;
+}
+var partNum=idx+1;
+var prompt=buildElevenLabsRetrofitPrompt(persona,parts[idx],partNum,total);
+if(onPartDone)onPartDone(partNum,total,'tagging');
+var handlerName='eleven-tag-'+partNum+'-'+Date.now();
+window.Poe.registerHandler(handlerName,function(result){
+var msg=result.responses[0];
+if(!msg)return;
+if(msg.status==='error'){
+elevenTagRunning=false;
+showToast('Eleven Tag failed on part '+partNum+': '+(msg.statusText||'error'));
+if(onPartDone)onPartDone(partNum,total,'error');
+return;
+}
+if(msg.status==='complete'){
+var out=stripThinking(msg.content||'').trim();
+tagged.push(out||parts[idx]);
+if(onPartDone)onPartDone(partNum,total,'done');
+idx++;
+next();
+}
+});
+window.Poe.sendUserMessage('@'+model+' '+prompt,{handler:handlerName,stream:false,openChat:false}).catch(function(err){
+elevenTagRunning=false;
+showToast('Eleven Tag error: '+String(err));
+});
+}
+next();
+}
+function resetElevenTagBtn(){
+var btn=document.getElementById('elevenTagBtn');
+if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-waveform-lines"></i> Eleven Tag';}
+}
+function elevenTagCurrentSermon(){
+if(elevenTagRunning){showToast('Eleven Tag already running.');return;}
+if(!sermonPartsRaw.length){
+openElevenTagPasteModal();
+return;
+}
+var persona=detectElevenTagPersona(sermonPartsCombined||sermonPartsRaw[0]);
+var btn=document.getElementById('elevenTagBtn');
+if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Tagging...';}
+showToast('Eleven Tag: '+persona.toUpperCase()+' persona — '+sermonPartsRaw.length+' part(s)...');
+runElevenTagOnParts(sermonPartsRaw.slice(),persona,function(partNum,total,status){
+if(status==='tagging'){
+var el=document.getElementById('sermonPart'+partNum);
+if(el)el.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text"><i class="fas fa-waveform-lines"></i> Eleven Tagging part '+partNum+' of '+total+'...</div></div>';
+}
+},function(tagged){
+for(var i=0;i<tagged.length;i++)sermonPartsRaw[i]=tagged[i];
+renderSermonFromParts();
+resetElevenTagBtn();
+showToast('Eleven Tags applied to all '+tagged.length+' parts!');
+var tagToggle=document.getElementById('toggleElevenLabsTags');
+if(tagToggle)tagToggle.checked=true;
+});
+}
+function openElevenTagPasteModal(){
+var area=document.getElementById('elevenTagPasteArea');
+if(area)area.value='';
+document.getElementById('elevenTagModal').classList.add('open');
+document.body.style.overflow='hidden';
+}
+function closeElevenTagModal(){
+document.getElementById('elevenTagModal').classList.remove('open');
+document.body.style.overflow='';
+}
+function runElevenTagPaste(){
+if(elevenTagRunning){showToast('Eleven Tag already running.');return;}
+var text=(document.getElementById('elevenTagPasteArea').value||'').trim();
+if(!text){showToast('Paste your sermon first.');return;}
+var personaEl=document.getElementById('elevenTagPersonaSelect');
+var persona=personaEl?personaEl.value:'auto';
+if(persona==='auto')persona=detectElevenTagPersona(text);
+var parts=splitPastedSermonIntoParts(text);
+closeElevenTagModal();
+sermonPartsRaw=[];
+sermonPartsTitles=[];
+for(var i=0;i<parts.length;i++){
+sermonPartsTitles.push(extractPartTitle(parts[i],i+1)||('Part '+(i+1)));
+sermonPartsRaw.push(parts[i]);
+}
+selectedPartCount=parts.length;
+renderSermonFromParts();
+var btn=document.getElementById('elevenTagBtn');
+if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Tagging...';}
+showToast('Eleven Tag: '+persona.toUpperCase()+' — '+parts.length+' part(s) detected...');
+runElevenTagOnParts(sermonPartsRaw.slice(),persona,function(partNum,total,status){
+if(status==='tagging'){
+var el=document.getElementById('sermonPart'+partNum);
+if(el)el.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text"><i class="fas fa-waveform-lines"></i> Eleven Tagging part '+partNum+' of '+total+'...</div></div>';
+}
+},function(tagged){
+for(var i=0;i<tagged.length;i++)sermonPartsRaw[i]=tagged[i];
+renderSermonFromParts();
+resetElevenTagBtn();
+showToast('Eleven Tags applied — copy or export when ready.');
+var tagToggle=document.getElementById('toggleElevenLabsTags');
+if(tagToggle)tagToggle.checked=true;
+});
 }
 function buildBezStoryKnowledgeBlock(topic){
 var p='BEZ STORY KNOWLEDGE BASE (SAME SUBSTANCE AS ALL VOICES -- STREET DELIVERY ONLY):\n';
