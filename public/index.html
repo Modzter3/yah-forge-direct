@@ -1117,6 +1117,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <button class="dismantle-btn" id="yahChatSendBtn" onclick="sendYahChat()" style="align-self:stretch;min-width:100px;"><i class="fas fa-paper-plane"></i> Send</button>
     </div>
     <div class="yah-chat-actions">
+      <button type="button" class="sermon-action-btn export-btn" id="yahChatRetryBtn" onclick="retryYahChatLastReply()" disabled title="Regenerate the last Yah/Bez reply"><i class="fas fa-rotate-right"></i> Retry Last Reply</button>
       <button type="button" class="sermon-action-btn export-btn" id="yahChatClearBtn" onclick="clearYahChat()"><i class="fas fa-eraser"></i> Clear Chat</button>
       <button type="button" class="sermon-action-btn copy-all" id="yahChatCopyBtn" onclick="copyYahChat()" disabled><i class="fas fa-copy"></i> Copy All</button>
     </div>
@@ -8886,12 +8887,11 @@ var copyBtn=document.getElementById('yahChatCopyBtn');
 if(!histEl)return;
 if(!yahChatMessages.length){
 histEl.innerHTML='';
-var empty=document.getElementById('yahChatEmpty')||document.createElement('div');
+var empty=document.createElement('div');
 empty.id='yahChatEmpty';
 empty.className='yah-chat-empty';
-syncYahChatVoiceUi();
-if(empty)empty=histEl.querySelector('#yahChatEmpty');
 histEl.appendChild(empty);
+syncYahChatVoiceUi();
 if(copyBtn)copyBtn.disabled=true;
 return;
 }
@@ -8918,7 +8918,20 @@ html+='</div>';
 }
 histEl.innerHTML=html;
 if(copyBtn)copyBtn.disabled=false;
+updateYahChatRetryBtn();
 histEl.scrollTop=histEl.scrollHeight;
+}
+function updateYahChatRetryBtn(){
+var btn=document.getElementById('yahChatRetryBtn');
+if(!btn)return;
+var hasReply=false;
+for(var i=yahChatMessages.length-1;i>=0;i--){
+if(yahChatMessages[i].role==='assistant'&&yahChatMessages[i].content&&yahChatMessages[i].content.trim()){
+hasReply=true;
+break;
+}
+}
+btn.disabled=yahChatBusy||!hasReply;
 }
 function setYahChatBusy(on){
 yahChatBusy=!!on;
@@ -8929,24 +8942,11 @@ sendBtn.disabled=on;
 sendBtn.innerHTML=on?'<i class="fas fa-spinner fa-spin"></i> ...':'<i class="fas fa-paper-plane"></i> Send';
 }
 if(input)input.disabled=on;
+updateYahChatRetryBtn();
 }
-function sendYahChat(){
-if(yahChatBusy)return;
-var input=document.getElementById('yahChatInput');
-if(!input)return;
-var text=(input.value||'').trim();
-if(!text){showToast('Type a message first.');return;}
-input.value='';
-yahChatMessages.push({role:'user',content:text});
-var assistantIdx=yahChatMessages.length;
-var bezMode=isYahChatBezMode();
-yahChatMessages.push({role:'assistant',content:'',voice:bezMode?'bez':'yah'});
-renderYahChatHistory(assistantIdx);
-setYahChatBusy(true);
-var model=getYahChatModel();
-var chatCtx={userText:text,assistantIdx:assistantIdx,model:model,voiceRetry:0,bezMode:bezMode};
-function runYahChatPrompt(prompt,isRetry){
-var handlerName='yahchat-'+Date.now()+'-'+(isRetry?'retry':'');
+function yahChatRunGeneration(chatCtx,initialPrompt){
+function runYahChatPrompt(prompt){
+var handlerName='yahchat-'+Date.now();
 yahChatHandlerName=handlerName;
 window.Poe.registerHandler(handlerName,function(result){
 if(yahChatHandlerName!==handlerName)return;
@@ -8963,20 +8963,6 @@ if(!chatCtx.bezMode)cleaned=stripYahChatBotSlop(cleaned);
 yahChatMessages[chatCtx.assistantIdx].content=cleaned;
 renderYahChatHistory(msg.status==='complete'?-1:chatCtx.assistantIdx);
 if(msg.status==='complete'){
-var chatHistory=trimYahChatHistory(yahChatMessages.slice(0,chatCtx.assistantIdx));
-var sunoTopic=yahChatLooksLikeSunoTopic(chatCtx.userText,chatHistory);
-var voiceFailed=chatCtx.bezMode
-?(sunoTopic?looksLikeYahChatBezSlop(cleaned,true):looksLikeYahChatBezSlop(cleaned,false))
-:(sunoTopic?looksLikeYahChatSunoSlop(cleaned):looksLikeYahChatBotSlop(cleaned));
-var repeatFailed=sunoTopic&&looksLikeYahChatSunoRepeat(cleaned,chatHistory);
-if((voiceFailed||repeatFailed)&&chatCtx.voiceRetry<1){
-chatCtx.voiceRetry++;
-var bad=cleaned;
-yahChatMessages[chatCtx.assistantIdx].content='';
-renderYahChatHistory(chatCtx.assistantIdx);
-runYahChatPrompt(buildYahChatCorrectionPrompt(chatCtx.userText,bad,{sunoTopic:sunoTopic,repeat:repeatFailed&&!voiceFailed,bezMode:chatCtx.bezMode}),true);
-return;
-}
 setYahChatBusy(false);
 yahChatHandlerName=null;
 }
@@ -8996,7 +8982,61 @@ renderYahChatHistory(-1);
 showToast('Chat failed.');
 });
 }
-runYahChatPrompt(buildYahChatPrompt(text),false);
+runYahChatPrompt(initialPrompt);
+}
+function sendYahChat(){
+if(yahChatBusy)return;
+var input=document.getElementById('yahChatInput');
+if(!input)return;
+var text=(input.value||'').trim();
+if(!text){showToast('Type a message first.');return;}
+input.value='';
+yahChatMessages.push({role:'user',content:text});
+var assistantIdx=yahChatMessages.length;
+var bezMode=isYahChatBezMode();
+yahChatMessages.push({role:'assistant',content:'',voice:bezMode?'bez':'yah'});
+renderYahChatHistory(assistantIdx);
+setYahChatBusy(true);
+yahChatRunGeneration({
+userText:text,
+assistantIdx:assistantIdx,
+model:getYahChatModel(),
+bezMode:bezMode
+},buildYahChatPrompt(text));
+}
+function retryYahChatLastReply(){
+if(yahChatBusy)return;
+var assistantIdx=-1;
+for(var i=yahChatMessages.length-1;i>=0;i--){
+if(yahChatMessages[i].role==='assistant'){assistantIdx=i;break;}
+}
+if(assistantIdx<=0||yahChatMessages[assistantIdx-1].role!=='user'){
+showToast('Nothing to retry.');
+return;
+}
+var userText=yahChatMessages[assistantIdx-1].content;
+var badReply=yahChatMessages[assistantIdx].content||'';
+var bezMode=isYahChatBezMode();
+yahChatMessages[assistantIdx].content='';
+yahChatMessages[assistantIdx].voice=bezMode?'bez':'yah';
+renderYahChatHistory(assistantIdx);
+setYahChatBusy(true);
+var history=trimYahChatHistory(yahChatMessages.slice(0,assistantIdx));
+var sunoTopic=yahChatLooksLikeSunoTopic(userText,history);
+var prompt;
+if(badReply.trim().length>80){
+var repeatFailed=sunoTopic&&looksLikeYahChatSunoRepeat(badReply,history);
+prompt=buildYahChatCorrectionPrompt(userText,badReply,{sunoTopic:sunoTopic,repeat:repeatFailed,bezMode:bezMode});
+}else{
+prompt=buildYahChatPrompt(userText);
+}
+yahChatRunGeneration({
+userText:userText,
+assistantIdx:assistantIdx,
+model:getYahChatModel(),
+bezMode:bezMode
+},prompt);
+showToast('Retrying last reply…');
 }
 function clearYahChat(){
 if(yahChatBusy){showToast('Wait for Yah to finish.');return;}
