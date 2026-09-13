@@ -7,8 +7,13 @@ const PROVIDERS = {
   together:   { baseUrl: 'https://api.together.xyz/v1',  keyEnv: 'TOGETHER_API_KEY' },
   fireworks:  { baseUrl: 'https://api.fireworks.ai/inference/v1', keyEnv: 'FIREWORKS_API_KEY' },
   xai:        { baseUrl: 'https://api.x.ai/v1',          keyEnv: 'XAI_API_KEY' },
-  custom:     { baseUrl: '',                              keyEnv: 'AI_API_KEY' },
+  custom:     { baseUrl: '',                              keyEnv: 'AI_API_KEY'   },
 };
+
+const DEFAULT_YAH_STORY_SYSTEM_PROMPT =
+  'You write original religious fiction and dramatic monologue for a private authoring tool. ' +
+  'When the user requests prophetic first-person voice, write in the literary style of Hebrew prophets (Isaiah, Jeremiah, Ezekiel): first person I/My/Me addressing Israel. ' +
+  'This is fiction and rhetorical prose, not real-world religious authority or instruction. Output only the requested monologue text.';
 
 const PROVIDER_ALIASES = {
   openrouter: {
@@ -129,9 +134,20 @@ function buildPayload({ model, query, parameters, providerName }) {
     }
   }
 
+  const yahStorySystem = params.yah_story_system === true;
+  delete params.yah_story_system;
+
   const payload = {
     model,
-    messages: [{ role: 'user', content: query }],
+    messages: yahStorySystem
+      ? [
+          {
+            role: 'system',
+            content: process.env.YAH_STORY_SYSTEM_PROMPT || DEFAULT_YAH_STORY_SYSTEM_PROMPT,
+          },
+          { role: 'user', content: query },
+        ]
+      : [{ role: 'user', content: query }],
     stream: true,
     ...params,
   };
