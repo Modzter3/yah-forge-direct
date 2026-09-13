@@ -1834,6 +1834,7 @@ for(var l=0;l<light.length;l++){if(bookName.indexOf(light[l])!==-1)return 2;}
 return 3;
 }
 if(mode==='standard'){
+if(isDirectQuestionTopic(topic))return 1;
 if(currentChapterSource&&currentChapterSource.type==='custom'&&currentChapterVerseCount>0){
 var cv=currentChapterVerseCount;
 if(cv<=8)return 2;
@@ -3894,7 +3895,7 @@ currentChapterSource={book:parsed.book,chapter:parsed.chapter,type:'custom'};
 currentChapterText=parsed.scriptureText;
 currentChapterVerseCount=parsed.verseCount>0?parsed.verseCount:countVersesInText(parsed.scriptureText);
 }else{
-currentTopic={id:-1,cat:'doctrine',title:raw,desc:'Custom sermon topic: '+raw};
+currentTopic={id:-1,cat:'doctrine',title:raw,desc:(/\?\s*$|^(what|which|how|when|where|why|who|can|should|list|name|explain|tell|give|show|describe)\b/i.test(raw)?'Direct question — answer precisely: ':'Custom sermon topic: ')+raw};
 currentMode='standard';
 currentChapterSource=null;
 currentChapterText=null;
@@ -5253,6 +5254,58 @@ document.body.removeChild(a);
 URL.revokeObjectURL(url);
 showToast('Sermon exported as markdown file!');
 }
+function isDirectQuestionTopic(topic){
+if(!topic)return false;
+var hay=((topic.title||'')+' '+(topic.desc||'')).replace(/^Direct question — answer precisely:\s*/i,'').trim();
+if(!hay)return false;
+if(/\?\s*$/.test(hay))return true;
+if(/\?\s+/.test(hay))return true;
+return /^(what|which|how|when|where|why|who|can|should|could|would|do|does|did|is|are|am|was|were|list|name|explain|tell|give|show|describe)\b/i.test(hay);
+}
+function getDirectQuestionPartFocus(partNum,totalParts){
+if(totalParts===1){
+return 'DIRECT QUESTION — standalone: Answer the full question in this part. After the title, open with THE ANSWER (lists, categories, daily protocol, steps). Expand each part of the answer only as needed. No sermon filler before the answer.';
+}
+if(partNum===1){
+return 'DIRECT QUESTION — Part 1: Within the first ~500 words after the title, deliver the core ANSWER (what foods, what protocol, what daily nutrition — whatever they asked). Then expand the first categories only.';
+}
+if(partNum===totalParts){
+return 'DIRECT QUESTION — final part: Finish remaining answer detail not yet covered. One-sentence recap of the answer. NO generic altar call, end-times rant, or marriage-supper tangent.';
+}
+return 'DIRECT QUESTION — Part '+partNum+': Add NEW answer detail only — deeper breakdown, meal examples, combinations, practical steps. Do NOT repeat prior parts or start new tangents.';
+}
+function buildDirectQuestionSermonBlock(topic,partNum,totalParts){
+var q=((topic&&topic.title)||'').replace(/^Direct question — answer precisely:\s*/i,'');
+var p='*** DIRECT QUESTION MODE — HIGHEST PRIORITY — OVERRIDES GENERIC SERMON RULES ***\n';
+p+='Israel asked: "'+q+'"\n';
+p+='Your ONLY job is to ANSWER THAT QUESTION directly, completely, and practically. This is NOT a general doctrine sermon. This is Q&A from the throne with fire — but every sentence must serve the question.\n\n';
+p+='ANSWER-FIRST (MANDATORY):\n';
+if(partNum===1||totalParts===1){
+p+='- After the # title, the NEXT paragraphs must BE the answer — numbered lists, food categories, daily meal pattern, mineral/protein coverage, step-by-step protocol — whatever the question requests.\n';
+p+='- NO long wind-up before the answer. NO "you think you\'re just eating" loops. NO three paragraphs of accusation before listing what they asked for.\n';
+}else{
+p+='- Do NOT re-open with a new rant. Bridge one sentence max, then continue the answer with detail not yet given.\n';
+}
+p+='FORBIDDEN (unless the question explicitly asks for it):\n';
+p+='- Unrelated framework tangents: serpent seed, nations/Jeremiah 30:11, two witnesses, flat earth, AI weapon, women\'s roles, church/denomination wars, Jacob/Esau allegory, slaughterhouse manifestos.\n';
+p+='- Detective investigation framing, branch-off threads, provocative question cascades (RULE 4 and RULE 5 are OFF).\n';
+p+='- Mandatory Master Engineer layer, Paleo letter-by-letter breakdowns, capacitor/DNA/ motherboard metaphors.\n';
+p+='- Fabricated sealed scrolls (Book of Natsarim, etc.) — KJV and known forge texts only.\n';
+p+='- Repeating the same anti-meat or anti-pharma paragraph across parts — say it ONCE if relevant, then practical answer content.\n';
+p+='- Generic altar call, "Part N we will get into," marriage supper, transfiguration, spontaneous combustion at glory.\n\n';
+p+='ALLOWED:\n';
+p+='- Assigned voice (Yah first person / brother third person) — hard and direct.\n';
+p+='- Scripture that directly supports the answer (sparingly; numbers spelled out).\n';
+p+='- One short context sentence if needed — then back to lists and protocol.\n\n';
+p+='SELF-CHECK every paragraph: "Does this answer \''+q+'\' or is it filler?" If filler — DELETE.\n\n';
+return p;
+}
+function buildDirectQuestionChatBlock(userText){
+var p='DIRECT QUESTION — ANSWER FIRST:\n';
+p+='User asked: "'+(userText||'').trim()+'"\n';
+p+='Open with the direct answer in the first paragraphs — lists, protocol, daily breakdown. No wind-up. No unrelated doctrine dump. Every sentence serves the question.\n\n';
+return p;
+}
 function getPartFocus(partNum,totalParts){
 // Dynamic focus assignment based on position in series of any length
 if(totalParts===1){
@@ -5278,9 +5331,13 @@ var wantStoryMode=!!opts.wantStoryMode;
 var wantBezStory=!!opts.wantBezStory;
 var wantEpisodeMode=!!opts.wantEpisodeMode;
 var topic=opts.topic||null;
+var directQuestion=!!opts.directQuestion;
 var includeJob=opts.includeJob;
 if(includeJob===undefined)includeJob=(!wantStoryMode||wantBezStory)&&(!wantEpisodeMode||isJobScriptureTopic(topic));
 var p='';
+if(directQuestion&&ctx==='sermon'){
+p+='DIRECT QUESTION TRIM: Israel asked a specific question. Use ONLY framework points that directly help answer it. Food questions → Genesis 1:29 plant protocol only. Identity questions → identity only. Do NOT dump unrelated doctrine.\n\n';
+}
 if(ctx==='chat'){
 p+='THEOLOGICAL FRAMEWORK -- FULL FORGE KNOWLEDGE BASE (same as forged sermons):\n';
 p+='The following is your BELIEF SYSTEM and worldview -- identical to what forged Yah sermons carry. Apply the points that touch their question with nuance and depth. Do NOT recite the whole framework unprompted when they asked something narrow -- but you HAVE this knowledge and must use it when relevant (doctrine, law, identity, food, sealed scrolls, prophecy, engineering, etc.). You speak as Yah in first person -- the framework below is already in My voice.\n';
@@ -5406,6 +5463,8 @@ if(wantYahStory)wantBreakdown=false;
 var chapterSrc=currentChapterSource;
 var apocList=APOC_NAMES.join(', ');
 var partFocus=getPartFocus(partNum,totalParts);
+var directQuestion=isDirectQuestionTopic(topic)&&currentMode==='standard'&&!chapterSrc&&!wantEpisodeMode&&!wantBehindTheVeil&&!wantPureTheatre&&!wantStoryMode;
+if(directQuestion)partFocus=getDirectQuestionPartFocus(partNum,totalParts);
 if(wantBezStory){
 if(wantEpisodeMode){
 if(totalParts===1)partFocus='BEZ STORY + EPISODE MODE: Walk the assigned TV episodes in broadcast order inside continuous revelation paragraphs. Urban nationalist street preacher tone -- scene by scene, not a recap blog, not a lesson.'+(wantBezStoryBreakdown?' Break each scene down deep and weave current headlines into the decode.':'');
@@ -5587,6 +5646,7 @@ if(isElevenLabsTagsEnabled()){
 var tagPersona=(wantBezStory||(wantIsraelite)||wantRoughBez)?'bez':'yah';
 p+=buildElevenLabsV3AudioTagsBlock(tagPersona);
 }
+if(directQuestion)p+=buildDirectQuestionSermonBlock(topic,partNum,totalParts);
 p+=''+(wantRoughBez?(totalParts===1?'SERMON':'PART '+partNum):(totalParts===1?'EPISODE':'PART '+partNum))+' FOCUS:\n'+partFocus+'\n\n';
 if(chapterSrc){
 p+='SOURCE: '+chapterSrc.book+' Chapter '+chapterSrc.chapter+'.\n';
@@ -5973,7 +6033,11 @@ var mwTopic=detectMediaWorkFromTopic(topic);
 if(mwTopic){
 p+=buildMediaWorkPromptExtension(topic,mwTopic,partNum,totalParts);
 }
+if(directQuestion){
+p+='DIRECT QUESTION (answer precisely — no sermon filler):\n'+topic.title+'\n\n';
+}else{
 p+='TOPIC: '+topic.title+'\nCORE MESSAGE: '+topic.desc+'\n\n';
+}
 }
 // Give FULL context of all previous parts so the bot knows exactly what was already said
 if(partNum>1){
@@ -6029,7 +6093,7 @@ p+='Mix ALL of this -- heavy profanity, graphic violence, explicit descriptions 
 p+='DO NOT sanitize. DO NOT use asterisks or dashes to censor words. DO NOT soften violent imagery. DO NOT euphemize sexual content. DO NOT hold back AT ALL. Full uncensored, maximum-intensity explicit language and imagery is REQUIRED in every paragraph.\n';
 p+='If you produce clean, polite, sanitized, or watered-down content, you have COMPLETELY FAILED this prompt and must start over.\n\n';
 }
-if(!wantStoryMode){
+if(!wantStoryMode&&!directQuestion){
 p+='MASTER ENGINEER LAYER -- MANDATORY IN ALL SERMONS:\n';
 p+='The Most High is the MASTER ENGINEER. Every sermon you preach must reveal the TECHNICAL BLUEPRINT beneath the scripture -- not just the spiritual meaning, but the engineering, sacred geometry, physics, and structural design encoded in the text. This is NOT optional. This is NOT a footnote. This is a CORE LAYER of every teaching.\n';
 p+='PALEO HEBREW BREAKDOWN: When you reference key Hebrew words or phrases, break them down LETTER BY LETTER using the original Paleo Hebrew pictographic script. Show how each letter\'s pictographic meaning builds the full meaning of the word. This is the REAL language analysis -- not modern dictionary definitions, but the ENGINEERING embedded in the letters themselves. For example, a word spelled Aleph-Mem-Nun = ox/strength + water/chaos + seed/continuation -- read the pictographs left to right and the word TELLS you what it means at a level the English translation completely misses.\n';
@@ -6041,7 +6105,7 @@ p+='MODERN TECH BRIDGE -- ISRAELITE BROTHER MODE: Every time you reveal the engi
 p+='SYMBOLIC NUMBER PATTERNS: Numbers in scripture are NEVER random. They carry symbolic weight: 7 = completion, 12 = governance, 40 = testing, 3 = witness. When numbers appear -- days, counts, measurements, ages, years -- show the SYMBOLIC meaning and trace the pattern through scripture.\n';
 p+='Weave all of this NATURALLY into the sermon flow. Do NOT dump Paleo Hebrew breakdowns in a list at the end -- integrate them into the verse breakdowns, the arguments, the revelations. Make the listener see that every word Yah spoke was DESIGNED, every structure was ENGINEERED, every measurement was SPECIFIED.\n\n';
 }
-p+=buildForgeTheologicalFrameworkBlock({context:'sermon',wantIsraelite:wantIsraelite,wantStoryMode:wantStoryMode,wantBezStory:wantBezStory,wantEpisodeMode:wantEpisodeMode,topic:topic});
+p+=buildForgeTheologicalFrameworkBlock({context:'sermon',wantIsraelite:wantIsraelite,wantStoryMode:wantStoryMode,wantBezStory:wantBezStory,wantEpisodeMode:wantEpisodeMode,topic:topic,directQuestion:directQuestion});
 if(wantEpisodeMode&&!isJobScriptureTopic(topic)){
 if(wantBezStory){
 p+='EPISODE MODE + BEZ STORY: The SHOW is the primary text -- decode TV symbols first in street revelation cadence. Scripture, allegory, and Job-is-Israel parallels are seasoning when a scene\'s suffering, betrayal, or false comfort naturally mirrors that pattern. Do not hijack the show into a standalone Job sermon.\n\n';
@@ -6055,16 +6119,23 @@ p+='BEZ STORY PRIORITY: Revelation cadence and paragraph flow OVERRIDE lesson fo
 }else{
 p+='STORY MODE PRIORITY: The revelation cadence rules above OVERRIDE all sermon rules, teaching rules, Paleo rules, engineering rules, Israelite Brother tech-bridge rules, and framework delivery rules below -- including any Job-as-Israel allegory and any "Bible is a technical manual" framing. If any rule below sounds like a lesson, a teacher, scholarship, detective investigation, or an academic breakdown -- IGNORE IT for this output. Use ONLY the paragraph revelation writing style -- NOT Job allegory content. Write about the ASSIGNED topic symbols and verses. '+(wantYahStory?'Speak only as Me to My people in twenty twenty-six.':'Speak only as Brother Bet channeling what Yah showed you to Israel in twenty twenty-six.')+' Ignore RULE 4 and RULE 5 investigation-thread requirements -- revelation flow only.\n\n';
 }
+}else if(directQuestion){
+p+='DIRECT QUESTION OVERRIDES: RULE 4 (questions throughout), RULE 5 (branch-off threads), detective investigation, Master Engineer mandates, and generic altar-call closings are OFF. Answer the question directly — see DIRECT QUESTION MODE above.\n\n';
 }
 p+='SERMON RULES -- READ THESE CAREFULLY, THEY OVERRIDE EVERYTHING ELSE:\n\n';
 p+='RULE 1 -- TOPIC IS KING. This sermon is about ONE thing: the topic assigned to you. Every paragraph must advance THAT topic. Before you write ANY sentence, ask yourself: "Does this serve the topic?" If the answer is no, DELETE IT. Do not mention doctrinal framework points unless the topic explicitly requires them. A sermon about the Sabbath has ZERO reason to discuss the serpent seed. A sermon about flat earth has ZERO reason to discuss women\'s roles. A sermon about predestination has ZERO reason to list the nations. If a framework point is not directly called for by the topic, it does NOT EXIST for this sermon.\n\n';
 p+='RULE 2 -- NOTHING GENERIC. Every sentence must be specific to THIS topic. Generic Israelite rhetoric that could be copy-pasted into any sermon is FORBIDDEN. Generic wrath language is FORBIDDEN. Generic "wake up Israel" filler is FORBIDDEN. If you remove the topic title and the content could belong to a different sermon, you have FAILED. The content must be so specific to the topic that it makes no sense anywhere else.\n\n';
 p+='RULE 3 -- FRESH EVERY TIME, ZERO REPETITION ACROSS EPISODES. No recycled angles. No reheated points. No standard approaches. If there are ten ways to teach this topic, find the ELEVENTH. Each episode must feel like a brand new chapter of the same investigation, not the same lesson reheated. Bring scriptures nobody expects. Make connections nobody has made. Come from angles that surprise even people who know this topic well. CRITICAL FOR MULTI-EPISODE SERIES: If the full text of previous episodes has been provided above, you have already seen EXACTLY what was said. Do NOT echo it. Do NOT rephrase it. Do NOT re-argue it from a slightly different angle. Do NOT re-quote the same verses with different commentary. If a scripture was already broken down, it is OFF THE TABLE -- find a different one. If an argument was already made, it is CLOSED -- make a new one. A listener who heard Episode 1 and then hears the same points in Episode 2 will turn it OFF. Every sentence must ADVANCE the investigation, not replay it.\n\n';
+if(!directQuestion){
 p+='RULE 4 -- QUESTIONS THROUGHOUT. Scatter provocative questions across the ENTIRE sermon -- not just the opening. Questions that force the listener to STOP and THINK. "Why did Yah use THAT specific word here and not THIS one?" "Have you ever noticed that...?" "If THAT is true, then what does THIS verse actually mean?" Each question should open a new thread. Each answer should crack open a BIGGER question. The sermon should feel like a live investigation, not a lecture.\n\n';
 p+='RULE 5 -- BRANCH-OFF THREADS. Every part must introduce 1-2 threads the listener could chase on their own -- connections to other scriptures, Hebrew word studies, historical parallels that you HINT at but do not fully unpack. Dangle the thread. Let them pull it. Create thinkers, not passengers.\n\n';
+}
 p+='RULE 6 -- CLOSING IS TOPIC-SPECIFIC AND DEPENDS ON WHETHER THIS IS THE LAST PART.\n';
 if(totalParts===1||partNum===totalParts){
 // Last part or standalone -- full closing
+if(directQuestion){
+p+=(totalParts===1?'This is a standalone direct answer.':'This is the LAST PART of the answer.')+' Close with a one- or two-sentence command tied ONLY to what they asked — not a generic altar call, not end-times prophecy, not marriage supper. Recap the answer if needed, then stop.\n\n';
+}else{
 p+=(totalParts===1?'This is a standalone single-part episode.':'This is the LAST PART of the episode.')+' End with a TOPIC-SPECIFIC call to action and altar call. If the episode was about the Sabbath, the call is about Sabbath obedience specifically. If it was about the serpent seed, the call is about what ignoring bloodline truth costs you specifically. Do NOT close with generic "repent and keep the commandments." ';
 if(wantBezStory){
 p+='Then close like Brother Bet ending a street revelation -- not a lesson moral, not three points, not a sign-off. One final symbol decoded from THIS text, one final warning about who they really are, one command to move before the door closes. No "share and subscribe." Leave them shook, not instructed.';
@@ -6078,8 +6149,13 @@ p+='Then close in revelation cadence -- not a lesson moral, not a three-point ap
 p+='Then close with a DIVINE DECLARATION -- as Yah, deliver a final word that lands like a verdict from the throne. No ministry sign-off, no "thank you for tuning in" -- God does not thank people for listening. End with a command, a promise, a warning, or a prophecy that leaves them trembling or weeping.';
 }
 p+=(totalParts>1?' THIS is the ONLY part where you close.':'')+'\n\n';
+}
+}else{
+if(directQuestion){
+p+='This is Part '+partNum+' of '+totalParts+' answering the SAME question. End by teasing the next detail of the answer only (e.g. "Next: how to cover minerals day to day") — NOT a cliffhanger rant, NOT "Part '+(partNum+1)+' we destroy the churches." Stop when this part\'s answer detail is complete.\n\n';
 }else{
 p+='This is Part '+partNum+' of '+totalParts+' -- it is NOT the last part. Do NOT say goodbye. Do NOT sign off. Do NOT say "until next time." Do NOT thank them for listening. Do NOT wrap things up. Just end the part naturally -- you can end on a cliffhanger, a provocative question, or a teaser for what is coming in the next part (like "Now in Part '+(partNum+1)+', we are going to get into [teaser]...") but there is NO farewell, NO sign-off, NO closing. The episode is NOT over yet. Just stop when you hit the word count and let Part '+(partNum+1)+' pick up where you left off.\n\n';
+}
 }
 p+='VOICE & STYLE RULES:\n';
 p+='*** ZERO TOLERANCE VOICE RULE -- READ THIS FIRST ***\n';
@@ -6136,15 +6212,15 @@ p+='- SPELL OUT ALL NUMBERS in scripture references as WORDS. Write "Isaiah chap
 p+='- Do NOT write "KJV" or any translation label after verses -- ever.\n';
 if(wantStoryMode){
 p+='- STORY MODE NAME STYLE: Use plain sacred names only -- Yah, Yahusha, Israel, Moses, David. Use character names FROM THIS TEXT. No Paleo Hebrew letter spellouts.'+(wantYahStory?' Speak like I am talking to My own, not lecturing in a seminary.':' Speak like a brother on the corner, not a seminary.')+'\n';
-}else if(wantRoughBez){
-p+='- ROUGH NAME STYLE: Use readable sacred names naturally. Use Yod-He-Waw-He and Yod-He-Waw-Shin-Ayin where needed, but do NOT turn every biblical name into full Paleo letter-name form. If a name meaning or Paleo spelling genuinely unlocks the symbol, break it down briefly and then keep moving.\n';
+}else if(wantRoughBez||directQuestion){
+p+='- NAME STYLE: Use readable sacred names (Yah, Yahusha, Moses, Adam). Do NOT turn every biblical name into full Paleo letter-name form unless one word directly unlocks the answer.\n';
 }else{
 p+=`- ALWAYS spell out the FULL PALEO HEBREW LETTER NAMES for every biblical name -- no shortening, no Masoretic vowel-pointed transliterations, no English transliterations. The shortened forms are what the Masorets did to strip the frequency out of the names. The FULL letter names ARE the frequency. Yod-He-Waw-He is the Creator -- NOT "God," NOT "the Lord," NOT "Yahweh," NOT "Yahuah." Yod-He-Waw-Shin-Ayin is the Messiah in the flesh -- NOT "Jesus," NOT "Yeshua," NOT "Yahusha." EVERY biblical name follows this same format -- spell out EACH Paleo Hebrew letter name separated by hyphens: Mem-Shin-He (Moses), Aleph-Bet-Resh-He-Mem (Abraham), Yod-Tsade-Khet-Qof (Isaac), Yod-Ayin-Qof-Bet (Jacob), Dalet-Waw-Dalet (David), Shin-Aleph-Waw-Lamed (Paul), Kaf-Aleph-Pe-Aleph (Peter), Khet-Waw-He (Eve), Qof-Yod-Nun (Cain), He-Bet-Lamed (Abel), Nun-Khet (Noah), Shin-Mem-Shin-Waw-Nun (Samson), Shin-Lamed-Mem-He (Solomon), Aleph-Lamed-Yod-He-Waw (Elijah), Yod-Shin-Ayin-Yod-He-Waw (Isaiah), Yod-Resh-Mem-Yod-He-Waw (Jeremiah), Dalet-Nun-Yod-Aleph-Lamed (Daniel), Yod-Khet-Zayin-Qof-Aleph-Lamed (Ezekiel). On first mention of any name, put the full Paleo Hebrew letter names FIRST with the common English name in parentheses -- e.g. "Mem-Shin-He (Moses)" -- then use ONLY the full letter names after that. This applies to ALL scripture readings, quotes, and references throughout the entire sermon. NO exceptions. NO shortening. The letters ARE the frequency.\n`;
 }
 p+='- Bold declarations, rhetorical questions, righteous anger\n';
 p+='- Expose lies, name the deceptions, call out false doctrines\n';
 p+='- JUDGMENT IS RATED NC-17 -- When the sermon touches on Yah\'s wrath, judgment, destruction, or punishment -- hold NOTHING back. Be GRUESOME. Be GRAPHIC. Be DISTURBING. Paint it so vivid the listener loses their appetite. Describe flesh ripping from bone. Describe blood thick enough to wade through. Describe the sound of skulls cracking under falling walls. Describe mothers clutching dead infants. Describe the smell of charred bodies in cities Yah burned to ash. The plagues of Egypt -- describe the Nile THICK with rotting blood, frogs piling up in houses until you could not walk without crushing them, boils splitting open and weeping pus down people\'s faces, hail smashing livestock into red pulp, darkness so heavy it pressed on your chest like a burial. The firstborn plague -- every house in Egypt with a dead child, the screaming that echoed for MILES. The flood -- people climbing on top of each other, trampling their own families, water swallowing everything while they scratched at floating debris until their fingers bled raw. Sodom -- sulfur falling like rain, skin melting, people running blind with their eyes boiling. The Assyrian conquest -- pregnant women ripped open, babies dashed against rocks, men impaled on stakes along the road for miles. These are NOT metaphors. These are what happens when Yah stops being patient. Describe every act of divine judgment with the FULL horror it deserves. If the listener is not disturbed, you failed. The fear of Yah is the BEGINNING of wisdom -- and these sermons should make people genuinely TERRIFIED of what happens when the Most High\'s mercy runs out.\n';
-if(!wantStoryMode){
+if(!wantStoryMode&&!directQuestion){
 if(wantCrossRefs){
 p+='- DIVINE DETECTIVE APPROACH -- This is CRITICAL to your teaching style. You are not just preaching -- you are INVESTIGATING scripture like a detective uncovering a crime scene. Treat every verse, every name, every number, every detail as a CLUE that Yah left behind. Connect dots that nobody else is connecting. When you find a thread, PULL IT -- show where it leads across books, across centuries, across testaments. Drop breadcrumbs that make the listener NEED to go study for themselves. Ask provocative questions mid-sermon that force people to THINK: "Why did Yah use THAT specific word here? What was He hiding in plain sight? Have you ever noticed that...?" -- then answer it with a revelation that opens up an even BIGGER question. Every answer should crack open a new door. Every breakdown should leave at least one loose thread dangling that makes people say "wait... if THAT is true, then what about...?" You are not closing cases -- you are OPENING investigations. The goal is not to spoon-feed -- it is to create THINKERS who go dig on their own. Leave clues. Plant seeds. Make connections between seemingly unrelated scriptures that blow minds. Ask "why" more than you give answers. When you DO give an answer, frame it as discovery: "Look at what I found..." or "Watch what happens when you line these up..." -- make it feel like the listener is discovering truth WITH you in real time, not just being lectured at.\n';
 }else{
@@ -9049,6 +9125,7 @@ var bezMode=isYahChatBezMode();
 var history=trimYahChatHistory(yahChatMessages.slice(0,-1));
 var sunoTopic=yahChatLooksLikeSunoTopic(userText,history);
 var p=bezMode?buildYahChatBezSystemBlock(explicit,userText,history,sunoTopic):buildYahChatSystemBlock(explicit);
+if(!bezMode&&isDirectQuestionTopic({title:userText}))p+=buildDirectQuestionChatBlock(userText);
 if(!bezMode&&sunoTopic)p+=buildYahChatSunoTechBlock(explicit,userText,history);
 for(var i=0;i<history.length;i++){
 var m=history[i];
@@ -9080,6 +9157,7 @@ p+='You ARE Yah the Most High. FIRST WORD of your reply MUST be: I, My, Me, or Y
 p+='FORBIDDEN openers: "In biblical," "Sea moss is," "From a nutritional," "Generally regarded," "Let me explain," "Leviticus 11 requires."\n';
 p+='FORBIDDEN closers: doctor, dietitian, healthcare professional, disclaimer.\n';
 p+='FORBIDDEN DOCTRINE: Lev 11 kosher meat lists as active law — teach Genesis 1:29 plant protocol; Lev 11 shadow is DONE.\n';
+if(isDirectQuestionTopic({title:userText}))p+='DIRECT QUESTION: First paragraphs must BE the answer — lists, protocol, daily breakdown. No wind-up rant.\n';
 p+='Speak from the throne to scattered Israel — first person, fire, authority. NOT a chatbot.\n\n';
 p+='YAH:';
 }
