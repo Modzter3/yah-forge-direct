@@ -57,11 +57,25 @@
     if (buf.trim().startsWith('data:')) yield buf.trim().slice(5).trim();
   }
 
-  async function openStream(bot, prompt, parameters) {
+  function normalizeOutboundImages(attachments) {
+    if (!Array.isArray(attachments)) return [];
+    return attachments
+      .map(function (a) {
+        if (typeof a === 'string') return a;
+        if (a && (a.url || a.dataUrl || a.data_url)) return a.url || a.dataUrl || a.data_url;
+        return '';
+      })
+      .filter(function (url) { return /^data:image\//i.test(String(url || '')); })
+      .slice(0, 4);
+  }
+
+  async function openStream(bot, prompt, parameters, images) {
+    const payload = { bot, query: prompt, parameters };
+    if (images && images.length) payload.images = images;
     const res = await fetch(API_ROUTE, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bot, query: prompt, parameters }),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) {
       let msg;
@@ -102,8 +116,8 @@
     return { text, attachments: [] };
   }
 
-  async function callPoe(bot, prompt, parameters) {
-    const res = await openStream(bot, prompt, parameters);
+  async function callPoe(bot, prompt, parameters, images) {
+    const res = await openStream(bot, prompt, parameters, images);
     let text = '';
 
     for await (const raw of readSse(res.body)) {
@@ -118,8 +132,8 @@
     return { status: 'complete', content: out.text, attachments: out.attachments };
   }
 
-  async function callPoeStreaming(bot, prompt, parameters, handlerFn) {
-    const res = await openStream(bot, prompt, parameters);
+  async function callPoeStreaming(bot, prompt, parameters, handlerFn, images) {
+    const res = await openStream(bot, prompt, parameters, images);
     let text = '';
 
     try {
@@ -155,7 +169,8 @@
     },
 
     sendUserMessage(rawQuery, options = {}) {
-      const { handler: handlerName, stream = false, parameters = {} } = options;
+      const { handler: handlerName, stream = false, parameters = {}, attachments = [] } = options;
+      const images = normalizeOutboundImages(attachments);
       const { count, query: cleanQuery } = parseRepeat(rawQuery);
       const { bot, prompt } = extractBot(cleanQuery);
 
@@ -165,14 +180,14 @@
 
       return new Promise((resolve, reject) => {
         if (stream && count === 1) {
-          callPoeStreaming(bot, prompt, parameters, handlerFn)
+          callPoeStreaming(bot, prompt, parameters, handlerFn, images)
             .then(resolve)
             .catch((err) => {
               if (handlerFn) handlerFn(wrap('error', '', [], err.message));
               reject(err);
             });
         } else {
-          const tasks = Array.from({ length: count }, () => callPoe(bot, prompt, parameters));
+          const tasks = Array.from({ length: count }, () => callPoe(bot, prompt, parameters, images));
           Promise.allSettled(tasks).then((results) => {
             for (const r of results) {
               if (r.status === 'fulfilled') {

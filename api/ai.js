@@ -58,10 +58,11 @@ export default async function handler(req) {
     return jsonError('Invalid JSON body', 400);
   }
 
-  const { bot, query, parameters = {} } = body || {};
+  const { bot, query, parameters = {}, images = [] } = body || {};
   if (!query || typeof query !== 'string') {
     return jsonError('Missing required field: query', 400);
   }
+  const imageList = normalizeImageInputs(images);
 
   const providerName = (process.env.AI_PROVIDER || 'openrouter').trim().toLowerCase();
   const provider     = PROVIDERS[providerName] || PROVIDERS.custom;
@@ -83,8 +84,14 @@ export default async function handler(req) {
   if (!resolvedModel) {
     return jsonError('No model provided. Prefix prompts with @model or set DEFAULT_TEXT_MODEL.', 400);
   }
+  if (imageList.length && !supportsVision(resolvedModel)) {
+    return jsonError(
+      `Model "${resolvedModel}" may not support image input. Try Gemini 3.6 Flash, Gemini 3 Pro, Claude Sonnet, or GPT-4.1.`,
+      400
+    );
+  }
 
-  const payload = buildPayload({ model: resolvedModel, query, parameters, providerName });
+  const payload = buildPayload({ model: resolvedModel, query, parameters, providerName, images: imageList });
 
   let upstream;
   try {
@@ -118,7 +125,43 @@ export default async function handler(req) {
   return jsonFromProviderToSse(parsed, providerName, resolvedModel);
 }
 
-function buildPayload({ model, query, parameters, providerName }) {
+function normalizeImageInputs(images) {
+  if (!Array.isArray(images)) return [];
+  const out = [];
+  for (const item of images) {
+    const url = typeof item === 'string'
+      ? item
+      : (item && (item.url || item.dataUrl || item.data_url));
+    if (typeof url !== 'string') continue;
+    const trimmed = url.trim();
+    if (!/^data:image\/(?:png|jpe?g|webp|gif);base64,/i.test(trimmed)) continue;
+    if (trimmed.length > 6_000_000) continue;
+    out.push(trimmed);
+    if (out.length >= 4) break;
+  }
+  return out;
+}
+
+function supportsVision(model) {
+  const m = String(model || '').toLowerCase();
+  if (!m) return false;
+  if (/gemini|gpt-4|gpt-4\.1|gpt-5|claude|grok-4|qwen.*vl|llama.*vision|pixtral|mistral.*pix/i.test(m)) {
+    return true;
+  }
+  return false;
+}
+
+function buildUserMessageContent(query, images) {
+  const list = Array.isArray(images) ? images : [];
+  if (!list.length) return query;
+  const parts = [{ type: 'text', text: query }];
+  for (const url of list) {
+    parts.push({ type: 'image_url', image_url: { url } });
+  }
+  return parts;
+}
+
+function buildPayload({ model, query, parameters, providerName, images = [] }) {
   const params = stripUndefined(parameters || {});
 
   // OpenRouter ignores ad-hoc `web_search`; enable real retrieval via the web plugin
@@ -137,6 +180,7 @@ function buildPayload({ model, query, parameters, providerName }) {
   const yahStorySystem = params.yah_story_system === true;
   delete params.yah_story_system;
 
+  const userContent = buildUserMessageContent(query, images);
   const payload = {
     model,
     messages: yahStorySystem
@@ -145,9 +189,9 @@ function buildPayload({ model, query, parameters, providerName }) {
             role: 'system',
             content: process.env.YAH_STORY_SYSTEM_PROMPT || DEFAULT_YAH_STORY_SYSTEM_PROMPT,
           },
-          { role: 'user', content: query },
+          { role: 'user', content: userContent },
         ]
-      : [{ role: 'user', content: query }],
+      : [{ role: 'user', content: userContent }],
     stream: true,
     ...params,
   };

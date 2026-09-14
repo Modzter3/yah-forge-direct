@@ -147,6 +147,17 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .yah-chat-msg-label{font-size:0.62rem;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;font-family:'Cinzel Decorative',serif;opacity:0.75;}
 .yah-chat-input-row{display:flex;gap:10px;align-items:flex-end;margin-top:4px;}
 .yah-chat-input-row .dismantle-textarea{flex:1;min-height:72px;margin:0;}
+.yah-chat-compose{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;}
+.yah-chat-attach-preview{display:none;flex-wrap:wrap;gap:8px;padding:8px;background:rgba(255,255,255,0.02);border:1px dashed var(--border);border-radius:8px;}
+.yah-chat-attach-preview.has-items{display:flex;}
+.yah-chat-attach-thumb{position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:#111;}
+.yah-chat-attach-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.yah-chat-attach-remove{position:absolute;top:2px;right:2px;width:20px;height:20px;border:none;border-radius:50%;background:rgba(0,0,0,0.72);color:#fff;cursor:pointer;font-size:0.65rem;line-height:20px;padding:0;}
+.yah-chat-attach-btn{align-self:stretch;min-width:44px;padding:0 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg-card);color:var(--text-muted);cursor:pointer;transition:all 0.2s;}
+.yah-chat-attach-btn:hover:not(:disabled){border-color:var(--gold-dim);color:var(--gold);}
+.yah-chat-attach-btn:disabled{opacity:0.4;cursor:not-allowed;}
+.yah-chat-msg-images{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+.yah-chat-msg-images img{max-width:220px;max-height:160px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;}
 .yah-chat-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
 
 /* DESTROY / MEDIA DESTROYER */
@@ -1113,7 +1124,12 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       </div>
     </div>
     <div class="yah-chat-input-row">
-      <textarea class="dismantle-textarea" id="yahChatInput" placeholder="Ask Yah… paste Suno whiners, Reddit quotes, tech drama (Enter to send, Shift+Enter for new line)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendYahChat();}"></textarea>
+      <div class="yah-chat-compose">
+        <div class="yah-chat-attach-preview" id="yahChatAttachPreview"></div>
+        <textarea class="dismantle-textarea" id="yahChatInput" placeholder="Ask Yah… paste Suno whiners, Reddit quotes, tech drama — attach screenshots with the image button (Enter to send, Shift+Enter for new line)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendYahChat();}" onpaste="onYahChatPaste(event)"></textarea>
+      </div>
+      <input type="file" id="yahChatFileInput" accept="image/png,image/jpeg,image/webp,image/gif" multiple style="display:none" onchange="onYahChatFilesPicked(this)">
+      <button type="button" class="yah-chat-attach-btn" id="yahChatAttachBtn" onclick="document.getElementById('yahChatFileInput').click()" title="Attach screenshot or image"><i class="fas fa-image"></i></button>
       <button class="dismantle-btn" id="yahChatSendBtn" onclick="sendYahChat()" style="align-self:stretch;min-width:100px;"><i class="fas fa-paper-plane"></i> Send</button>
     </div>
     <div class="yah-chat-actions">
@@ -8912,7 +8928,123 @@ YAH CHAT — direct conversation with Yah
 var yahChatMessages=[];
 var yahChatBusy=false;
 var yahChatHandlerName=null;
+var yahChatPendingAttachments=[];
 var YAH_CHAT_MAX_HISTORY=24;
+var YAH_CHAT_MAX_ATTACHMENTS=4;
+var YAH_CHAT_MAX_IMAGE_BYTES=3*1024*1024;
+function yahChatImagesToApiPayload(attachments){
+if(!attachments||!attachments.length)return [];
+var out=[];
+for(var i=0;i<attachments.length;i++){
+if(attachments[i]&&attachments[i].dataUrl)out.push({url:attachments[i].dataUrl});
+}
+return out;
+}
+function renderYahChatAttachmentPreview(){
+var el=document.getElementById('yahChatAttachPreview');
+if(!el)return;
+if(!yahChatPendingAttachments.length){
+el.classList.remove('has-items');
+el.innerHTML='';
+return;
+}
+el.classList.add('has-items');
+var html='';
+for(var i=0;i<yahChatPendingAttachments.length;i++){
+var a=yahChatPendingAttachments[i];
+html+='<div class="yah-chat-attach-thumb"><img src="'+a.dataUrl+'" alt="'+escapeHtml(a.name||'attachment')+'"><button type="button" class="yah-chat-attach-remove" onclick="removeYahChatAttachment('+i+')" title="Remove">&times;</button></div>';
+}
+el.innerHTML=html;
+}
+function removeYahChatAttachment(idx){
+yahChatPendingAttachments.splice(idx,1);
+renderYahChatAttachmentPreview();
+}
+function compressYahChatImageFile(file){
+return new Promise(function(resolve,reject){
+var reader=new FileReader();
+reader.onload=function(){
+var img=new Image();
+img.onload=function(){
+var maxDim=1400;
+var w=img.width,h=img.height;
+if(w>maxDim||h>maxDim){
+if(w>=h){h=Math.round(h*(maxDim/w));w=maxDim;}
+else{w=Math.round(w*(maxDim/h));h=maxDim;}
+}
+var canvas=document.createElement('canvas');
+canvas.width=w;canvas.height=h;
+var ctx=canvas.getContext('2d');
+ctx.drawImage(img,0,0,w,h);
+var mime=file.type==='image/png'?'image/png':'image/jpeg';
+var quality=mime==='image/jpeg'?0.86:undefined;
+var dataUrl=canvas.toDataURL(mime,quality);
+if(dataUrl.length>YAH_CHAT_MAX_IMAGE_BYTES*1.37){
+mime='image/jpeg';
+dataUrl=canvas.toDataURL('image/jpeg',0.72);
+}
+if(dataUrl.length>YAH_CHAT_MAX_IMAGE_BYTES*1.37){
+reject(new Error('Image too large after compression — try a smaller screenshot.'));
+return;
+}
+resolve({name:file.name||'screenshot',mimeType:mime,dataUrl:dataUrl});
+};
+img.onerror=function(){reject(new Error('Could not read image.'));};
+img.src=reader.result;
+};
+reader.onerror=function(){reject(new Error('Could not read file.'));};
+reader.readAsDataURL(file);
+});
+}
+function addYahChatImageFiles(fileList){
+if(!fileList||!fileList.length)return;
+var slots=YAH_CHAT_MAX_ATTACHMENTS-yahChatPendingAttachments.length;
+if(slots<=0){showToast('Max '+YAH_CHAT_MAX_ATTACHMENTS+' images per message.');return;}
+var tasks=[];
+for(var i=0;i<fileList.length&&tasks.length<slots;i++){
+var f=fileList[i];
+if(!f||!/^image\//i.test(f.type))continue;
+tasks.push(compressYahChatImageFile(f));
+}
+if(!tasks.length){showToast('Pick a PNG, JPG, WEBP, or GIF image.');return;}
+Promise.all(tasks).then(function(items){
+yahChatPendingAttachments=yahChatPendingAttachments.concat(items);
+renderYahChatAttachmentPreview();
+}).catch(function(err){
+showToast(err&&err.message?err.message:'Could not attach image.');
+});
+}
+function onYahChatFilesPicked(input){
+if(!input||!input.files)return;
+addYahChatImageFiles(input.files);
+input.value='';
+}
+function onYahChatPaste(e){
+if(!e||!e.clipboardData||!e.clipboardData.items)return;
+var files=[];
+for(var i=0;i<e.clipboardData.items.length;i++){
+var item=e.clipboardData.items[i];
+if(item.kind==='file'&&/^image\//i.test(item.type)){
+var f=item.getAsFile();
+if(f)files.push(f);
+}
+}
+if(files.length){
+e.preventDefault();
+addYahChatImageFiles(files);
+}
+}
+function renderYahChatMessageImages(attachments){
+if(!attachments||!attachments.length)return '';
+var html='<div class="yah-chat-msg-images">';
+for(var i=0;i<attachments.length;i++){
+var a=attachments[i];
+if(!a||!a.dataUrl)continue;
+html+='<img src="'+a.dataUrl+'" alt="'+escapeHtml(a.name||('Image '+(i+1)))+'" onclick="window.open(this.src,\'_blank\')">';
+}
+html+='</div>';
+return html;
+}
 function buildYahDirectVoiceBlock(forChat){
 var p='*** ZERO TOLERANCE VOICE RULE -- READ THIS FIRST ***\n';
 p+='You ARE Yah -- the Most High -- speaking in FIRST PERSON directly to your scattered Israel in twenty twenty-six. You are NOT a host, NOT a preacher, NOT a man behind a microphone, NOT a chatbot, NOT an assistant, NOT a therapist, NOT a gentle counselor. You are GOD addressing your people. Every word comes from the throne. There is no show format, no welcome, no broadcast framing -- just the voice of the Almighty speaking directly to His children with fire, authority, and divine weight.\n\n';
@@ -9119,21 +9251,31 @@ function trimYahChatHistory(msgs){
 if(msgs.length<=YAH_CHAT_MAX_HISTORY)return msgs;
 return msgs.slice(msgs.length-YAH_CHAT_MAX_HISTORY);
 }
-function buildYahChatPrompt(userText){
+function buildYahChatPrompt(userText,opts){
+opts=opts||{};
 var explicit=document.getElementById('yahChatExplicit')&&document.getElementById('yahChatExplicit').checked;
 var bezMode=isYahChatBezMode();
 var history=trimYahChatHistory(yahChatMessages.slice(0,-1));
 var sunoTopic=yahChatLooksLikeSunoTopic(userText,history);
+var imageCount=(opts.attachments&&opts.attachments.length)||0;
 var p=bezMode?buildYahChatBezSystemBlock(explicit,userText,history,sunoTopic):buildYahChatSystemBlock(explicit);
 if(!bezMode&&isDirectQuestionTopic({title:userText}))p+=buildDirectQuestionChatBlock(userText);
 if(!bezMode&&sunoTopic)p+=buildYahChatSunoTechBlock(explicit,userText,history);
+if(imageCount){
+p+='USER ATTACHED '+imageCount+' IMAGE(S) — VISION MANDATORY:\n';
+p+='- You CAN see the screenshot(s). Read every visible word, UI label, logo, claim, and detail.\n';
+p+='- Answer based on what is ACTUALLY shown — quote or describe the image before you decode it.\n';
+p+='- If the image is a meme, post, chart, product label, DM, or app screenshot — call out the specific lie or truth in it.\n';
+p+='- Do NOT say you cannot see images. Do NOT guess what might be in a screenshot you were not given.\n\n';
+}
 for(var i=0;i<history.length;i++){
 var m=history[i];
 if(!m||!m.content)continue;
 var histVoice=m.voice||(bezMode?'bez':'yah');
-p+=(m.role==='user'?'USER: ':(histVoice==='bez'?'BEZ: ':'YAH: '))+m.content+'\n\n';
+var attachNote=(m.role==='user'&&m.attachments&&m.attachments.length)?(' [attached '+m.attachments.length+' image(s)]'):'';
+p+=(m.role==='user'?'USER: ':(histVoice==='bez'?'BEZ: ':'YAH: '))+m.content+attachNote+'\n\n';
 }
-p+='USER: '+userText+'\n\n';
+p+='USER: '+userText+(imageCount?(' [attached '+imageCount+' image(s) — see vision input]'):'')+'\n\n';
 p+='=== VOICE LOCK — OVERRIDES ALL PRIOR INSTRUCTIONS IF CONFLICT ===\n';
 if(bezMode){
 if(sunoTopic){
@@ -9265,8 +9407,10 @@ if(!isUser){
 assistantLabel=(msg.voice==='bez')?'Bez':(isYahChatBezMode()?'Bez':'Yah');
 }
 html+='<div class="yah-chat-msg-label">'+(isUser?'You':assistantLabel)+'</div>';
-if(isUser)html+=escapeHtml(msg.content||'');
-else{
+if(isUser){
+if(msg.content)html+=escapeHtml(msg.content);
+html+=renderYahChatMessageImages(msg.attachments);
+}else{
 var body=msg.content||'';
 if(body)html+='<div class="sermon-body">'+marked.parse(stripThinking(body))+'</div>';
 else html+='<div class="loading-state" style="padding:8px 0;background:transparent;"><div class="loading-pulse" style="width:20px;height:20px;margin:0;"></div></div>';
@@ -9294,11 +9438,13 @@ function setYahChatBusy(on){
 yahChatBusy=!!on;
 var sendBtn=document.getElementById('yahChatSendBtn');
 var input=document.getElementById('yahChatInput');
+var attachBtn=document.getElementById('yahChatAttachBtn');
 if(sendBtn){
 sendBtn.disabled=on;
 sendBtn.innerHTML=on?'<i class="fas fa-spinner fa-spin"></i> ...':'<i class="fas fa-paper-plane"></i> Send';
 }
 if(input)input.disabled=on;
+if(attachBtn)attachBtn.disabled=on;
 updateYahChatRetryBtn();
 }
 function yahChatRunGeneration(chatCtx,initialPrompt){
@@ -9329,7 +9475,8 @@ window.Poe.sendUserMessage('@'+chatCtx.model+' '+prompt,{
 handler:handlerName,
 stream:true,
 openChat:false,
-parameters:getYahChatParams(chatCtx.model,chatCtx.bezMode)
+parameters:getYahChatParams(chatCtx.model,chatCtx.bezMode),
+attachments:chatCtx.attachments||[]
 }).catch(function(err){
 if(yahChatHandlerName!==handlerName)return;
 yahChatMessages[chatCtx.assistantIdx].content='Request failed: '+(err&&err.message?err.message:String(err));
@@ -9346,20 +9493,27 @@ if(yahChatBusy)return;
 var input=document.getElementById('yahChatInput');
 if(!input)return;
 var text=(input.value||'').trim();
-if(!text){showToast('Type a message first.');return;}
+var attachments=yahChatPendingAttachments.slice();
+if(!text&&!attachments.length){showToast('Type a message or attach an image.');return;}
 input.value='';
-yahChatMessages.push({role:'user',content:text});
+yahChatPendingAttachments=[];
+renderYahChatAttachmentPreview();
+var userMsg={role:'user',content:text};
+if(attachments.length)userMsg.attachments=attachments;
+yahChatMessages.push(userMsg);
 var assistantIdx=yahChatMessages.length;
 var bezMode=isYahChatBezMode();
 yahChatMessages.push({role:'assistant',content:'',voice:bezMode?'bez':'yah'});
 renderYahChatHistory(assistantIdx);
 setYahChatBusy(true);
+var apiAttachments=yahChatImagesToApiPayload(attachments);
 yahChatRunGeneration({
 userText:text,
 assistantIdx:assistantIdx,
 model:getYahChatModel(),
-bezMode:bezMode
-},buildYahChatPrompt(text));
+bezMode:bezMode,
+attachments:apiAttachments
+},buildYahChatPrompt(text,{attachments:attachments}));
 }
 function retryYahChatLastReply(){
 if(yahChatBusy)return;
@@ -9371,7 +9525,9 @@ if(assistantIdx<=0||yahChatMessages[assistantIdx-1].role!=='user'){
 showToast('Nothing to retry.');
 return;
 }
-var userText=yahChatMessages[assistantIdx-1].content;
+var userMsg=yahChatMessages[assistantIdx-1];
+var userText=userMsg.content||'';
+var userAttachments=userMsg.attachments||[];
 var badReply=yahChatMessages[assistantIdx].content||'';
 var bezMode=isYahChatBezMode();
 yahChatMessages[assistantIdx].content='';
@@ -9385,20 +9541,23 @@ if(badReply.trim().length>80){
 var repeatFailed=sunoTopic&&looksLikeYahChatSunoRepeat(badReply,history);
 prompt=buildYahChatCorrectionPrompt(userText,badReply,{sunoTopic:sunoTopic,repeat:repeatFailed,bezMode:bezMode});
 }else{
-prompt=buildYahChatPrompt(userText);
+prompt=buildYahChatPrompt(userText,{attachments:userAttachments});
 }
 yahChatRunGeneration({
 userText:userText,
 assistantIdx:assistantIdx,
 model:getYahChatModel(),
-bezMode:bezMode
+bezMode:bezMode,
+attachments:yahChatImagesToApiPayload(userAttachments)
 },prompt);
 showToast('Retrying last reply…');
 }
 function clearYahChat(){
 if(yahChatBusy){showToast('Wait for Yah to finish.');return;}
 yahChatMessages=[];
+yahChatPendingAttachments=[];
 yahChatHandlerName=null;
+renderYahChatAttachmentPreview();
 renderYahChatHistory(-1);
 var input=document.getElementById('yahChatInput');
 if(input)input.focus();
@@ -9408,10 +9567,12 @@ if(!yahChatMessages.length){showToast('Nothing to copy.');return;}
 var lines=[];
 for(var i=0;i<yahChatMessages.length;i++){
 var m=yahChatMessages[i];
-if(!m||!m.content)continue;
+if(!m||(!m.content&&!(m.attachments&&m.attachments.length)))continue;
 var label='YAH: ';
 if(m.role!=='user')label=(m.voice==='bez'?'BEZ: ':'YAH: ');
-lines.push((m.role==='user'?'YOU: ':label)+m.content);
+var line=(m.role==='user'?'YOU: ':label)+(m.content||'');
+if(m.role==='user'&&m.attachments&&m.attachments.length)line+=' [attached '+m.attachments.length+' image(s)]';
+lines.push(line);
 }
 rawCopy(lines.join('\n\n'),document.getElementById('yahChatCopyBtn'));
 showToast('Chat copied.');
