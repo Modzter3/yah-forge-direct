@@ -1076,7 +1076,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <div class="tab-panel" id="panelYahChat">
   <div class="yah-chat-wrap">
     <div class="dismantle-desc">
-      <i class="fas fa-comments" style="color:var(--gold);"></i> <strong>Yah Chat</strong> — one-on-one conversation. Toggle <strong>Bez</strong> for street tech talk to Suno peons (no religious framing — just the extraordinary technology).
+      <i class="fas fa-comments" style="color:var(--gold);"></i> <strong>Yah Chat</strong> — one-on-one conversation. Toggle <strong>Web Research</strong> so Yah can look up current facts. Toggle <strong>Bez</strong> for street tech talk to Suno peons (no religious framing — just the extraordinary technology).
     </div>
     <div class="yah-chat-history" id="yahChatHistory">
       <div class="yah-chat-empty" id="yahChatEmpty">
@@ -1089,6 +1089,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <input type="checkbox" id="yahChatExplicit" checked>
         <span class="toggle-track explicit-track"></span>
         <span><i class="fas fa-fire" style="color:var(--explicit-red);margin-right:3px;font-size:0.7rem;"></i>Explicit</span>
+      </label>
+      <label class="toggle-switch" title="Live web search: verify facts, look up news, names, dates, and current events (silent — no URLs in output)">
+        <input type="checkbox" id="yahChatWebResearch" checked>
+        <span class="toggle-track"></span>
+        <span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span>
       </label>
       <label class="toggle-switch" title="Bez responds instead — street engineer talk to Suno peons. No Yah, no scripture — pure extraordinary tech">
         <input type="checkbox" id="yahChatBezMode" onchange="syncYahChatVoiceUi()">
@@ -2211,6 +2216,10 @@ return params;
 function isYahChatBezMode(){
 return !!(document.getElementById('yahChatBezMode')&&document.getElementById('yahChatBezMode').checked);
 }
+function isYahChatWebResearchEnabled(){
+var el=document.getElementById('yahChatWebResearch');
+return !!(el&&el.checked);
+}
 function syncYahChatVoiceUi(){
 var bez=isYahChatBezMode();
 var input=document.getElementById('yahChatInput');
@@ -2231,8 +2240,32 @@ var params={};
 if(forgeIsClaude(model))params.thinking_budget=0;
 else if(forgeIsOpenAI(model))params.reasoning_effort='none';
 else if(forgeIsGemini(model)&&forgeIsFlashTier(model))params.thinking_level='minimal';
+if(isYahChatWebResearchEnabled()&&forgeSupportsWebBrowse(model))params.web_search=true;
 if(!bezMode)appendYahStoryApiParams(params,true);
 return params;
+}
+function buildYahChatWebResearchBlock(userText,bezMode,sunoTopic){
+if(!isYahChatWebResearchEnabled())return '';
+var p='WEB RESEARCH (SILENT — MANDATORY WHEN ENABLED):\n';
+p+='Use live web search BEFORE answering when the user\'s question needs current or verified facts.\n';
+p+='Search when they ask about: news, headlines, dates, legislation, people in power, company or product facts, court cases, prices, statistics, health claims, "what happened with X," or anything that may have changed since your training data.\n';
+p+='If they pasted a quote or screenshot text, search to verify whether it is real, outdated, or fabricated.\n';
+p+='Research stays INTERNAL — do NOT paste URLs, hyperlinks, footnotes, "Sources," or "according to [outlet]." Speak the facts in plain voice.\n\n';
+p+='RULES:\n';
+p+='- VERIFY names, titles, dates, numbers, and whether something is still current law or policy before you claim it.\n';
+p+='- For news/events: when citing a specific event, state its verified calendar date (month, day, year — spelled out for TTS).\n';
+p+='- For people: full name + what they do NOW — verify current role by search. No "as of" date stamps on people.\n';
+p+='- If search cannot confirm something, say you could not verify — do NOT invent headlines, stats, or quotes.\n';
+p+='- Weave findings into your answer — answer their question first; do not dump an unrelated news recap.\n';
+if(bezMode&&sunoTopic){
+p+='- Bez Suno mode: search product specs, model versions, company statements, lawsuit filings, and thread context — tech facts only, no scripture.\n';
+}else if(bezMode){
+p+='- Bez mode: search real-world facts when needed — secular voice unless they asked religious doctrine.\n';
+}else{
+p+='- Yah mode: tie verified current events to scripture only where it naturally sharpens THIS answer — doctrine first, dated proof second.\n';
+}
+p+='\n';
+return p;
 }
 function stripMediaSources(text){
 return stripDestroyUrlsAndSources(text);
@@ -9259,6 +9292,7 @@ var history=trimYahChatHistory(yahChatMessages.slice(0,-1));
 var sunoTopic=yahChatLooksLikeSunoTopic(userText,history);
 var imageCount=(opts.attachments&&opts.attachments.length)||0;
 var p=bezMode?buildYahChatBezSystemBlock(explicit,userText,history,sunoTopic):buildYahChatSystemBlock(explicit);
+if(isYahChatWebResearchEnabled())p+=buildYahChatWebResearchBlock(userText,bezMode,sunoTopic);
 if(!bezMode&&isDirectQuestionTopic({title:userText}))p+=buildDirectQuestionChatBlock(userText);
 if(!bezMode&&sunoTopic)p+=buildYahChatSunoTechBlock(explicit,userText,history);
 if(imageCount){
@@ -9338,6 +9372,7 @@ var history=trimYahChatHistory(yahChatMessages.slice(0,-1));
 var bezMode=!!opts.bezMode||isYahChatBezMode();
 var sunoTopic=!!opts.sunoTopic||yahChatLooksLikeSunoTopic(userText,history);
 var p='VOICE CHECK FAILED — REWRITE REQUIRED:\n';
+if(isYahChatWebResearchEnabled())p+=buildYahChatWebResearchBlock(userText,bezMode,sunoTopic);
 if(bezMode&&sunoTopic){
 if(opts.repeat){
 p+='Canned repeat — respond to the NEW message only.\n';
@@ -9463,6 +9498,7 @@ showToast('Chat error.');
 }else if(msg.status==='incomplete'||msg.status==='complete'){
 var cleaned=stripThinking(msg.content||'');
 if(!chatCtx.bezMode)cleaned=stripYahChatBotSlop(cleaned);
+if(isYahChatWebResearchEnabled())cleaned=stripMediaSources(cleaned);
 yahChatMessages[chatCtx.assistantIdx].content=cleaned;
 renderYahChatHistory(msg.status==='complete'?-1:chatCtx.assistantIdx);
 if(msg.status==='complete'){
