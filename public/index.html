@@ -1163,7 +1163,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <label><i class="fas fa-pause-circle" style="color:#c9a227;margin-right:3px;"></i> Scene guide:</label>
         <select class="model-select" id="theatreCommentaryVoice" style="flex:1;max-width:280px;">
           <option value="off">Off — boardroom only</option>
-          <option value="yah">Yah pauses &amp; explains</option>
+          <option value="yah" title="Yah breaks the scene from His throne: what elites think they&apos;re doing, what He is using them for, and His next steps">Yah pauses &amp; explains (sovereign decode)</option>
           <option value="bez">Bez pauses &amp; explains</option>
         </select>
       </div>
@@ -2875,9 +2875,14 @@ if(!voice||voice==='off')return '';
 var title=topic?topic.title:'this topic';
 var desc=topic?topic.desc:'';
 var wantRough=!!opts.wantRoughBez;
+var wantBehind=!!opts.wantBehindTheVeil;
 var isBez=voice==='bez';
 var p='SCENE GUIDE COMMENTARY (MANDATORY -- PAUSE / EXPLAIN / RESUME):\n';
+if(isBez){
 p+='The boardroom scene FREEZES periodically so a narrator breaks the fourth wall, explains in PLAIN LAYMAN\'S TERMS what the elites just said or what their jargon really means, then UNPAUSES and the meeting continues exactly where it left off.\n\n';
+}else{
+p+='The boardroom scene FREEZES periodically so Yah breaks the fourth wall FROM HIS THRONE — not as a reporter, but as the Sovereign who authored the room — then UNPAUSES and the meeting continues exactly where it left off.\n\n';
+}
 p+='FORMAT (use these exact markers):\n';
 p+='[PAUSE -- '+(isBez?'BEZ':'YAH')+' COMMENTARY]\n';
 p+='(plain-language explanation -- 2-6 short paragraphs or a tight spoken burst)\n';
@@ -2896,10 +2901,21 @@ p+='- Plain English. No seminary tone. No lesson headers. Decode the beast-syste
 if(wantRough)p+='- Rough Bezaleel heat OK -- blunt, profane if Explicit is on, street truth.\n';
 else p+='- Keep it sharp but not a full Rough Bez rant unless Explicit is on.\n';
 }else{
-p+='YAH VOICE (Most High speaking directly to scattered Israel):\n';
-p+='- FIRST PERSON as Yah/Yahusha. Intimate, confrontational, remembering them to themselves.\n';
-p+='- Plain English: translate their boardroom language into what it does to YOUR people -- bills, jobs, schools, churches, bloodline, block, cell, pew.\n';
-p+='- Not a sermon outline. Not verse-by-verse teaching. Short divine decoder bursts -- "When he says flatten the org, he means your cousin\'s livelihood."\n';
+p+='YAH VOICE (Most High speaking from SOVEREIGNTY — throne POV, not analyst):\n';
+p+='- FIRST PERSON as Yah/Yahusha. I/My/Me always. Intimate, confrontational, remembering scattered Israel to themselves.\n';
+p+='- Speak from the throne: I am not surprised, not reporting, not neutral. I orchestrate what happens in that room — Isaiah forty-five, Pharaoh\'s heart, Babylon as My hammer.\n';
+p+='- EVERY pause hits THREE beats in plain English (2-6 tight paragraphs total, not a lesson outline):\n';
+p+='  1) WHAT THEY THINK: what that speaker believes he is doing for himself — legacy, profit, power, fear, cover, dynasty.\n';
+p+='  2) WHAT I AM DOING: what I am actually using them for — My script they cannot see; harden hearts, expose Babylon, crush who I choose, wake Israel, feed prophecy.\n';
+p+='  3) MY NEXT STEPS: what I WILL move them to do next — the next policy, betrayal, rollout, fall, or exaltation I am already steering toward in this meeting.\n';
+p+='- Land real life on Israel: bills, jobs, schools, churches, bloodline, block, cell, pew — but always tied back to My hand on the cast.\n';
+p+='- Not a sermon outline. Not verse-by-verse teaching. Short divine sovereign bursts — never sound like leaked intel or a news analyst.\n';
+p+='- NEVER let them keep the credit. They think they wrote the script; tell Israel I did.\n';
+if(wantBehind){
+p+='\nBEHIND THE VEIL SOVEREIGN DECODE (MANDATORY):\n';
+p+='- The headline hooked the scene; I am showing Israel why that headline exists, who I am moving in private, and what comes next on My timeline.\n';
+p+='- They believe this closed door is THEIR chess. Every pause must tell Israel it is MINE — their self-deception vs My purpose vs My next move.\n';
+}
 }
 p+='COMMENTARY MUST STAY ON TOPIC: "'+title+'" -- '+desc+'\n';
 p+='- Decode THIS meeting only. No unrelated tangents.\n';
@@ -3298,6 +3314,7 @@ p+='- FORBIDDEN SCRIPT VOICE: Shulman lamenting castration; execs agreeing v6 is
 if(commentaryVoice&&commentaryVoice!=='off'){
 p+='COMMENTARY PAUSES (MANDATORY WHEN REDDIT / USER QUOTES APPEAR):\n';
 p+='- After EVERY block of user/Reddit complaint quotes: [PAUSE -- YAH COMMENTARY] or [PAUSE -- BEZ COMMENTARY] — destroy the nay-sayer in plain speech. v6 is better; they are ungrateful idiots; AI is Yah\'s tech not Babylon\'s curse.\n';
+p+='- Yah sovereign three-beat on AI topics: what execs/whiners think they are fighting for (ego, catalog, nostalgia) → what I am actually doing through this clash → what I will have them do next in the rollout.\n';
 p+='- Commentary must NEVER sympathize with whiners as victims or agree v6 sounds worse.\n\n';
 }else{
 p+='NO COMMENTARY MODE: Destruction happens IN the boardroom — Shulman or an exec dismisses whiners as deaf/ungrateful after quotes are read. Still zero agreement that v6 regressed.\n\n';
@@ -3386,7 +3403,7 @@ if(scripturePerch){
 p+='SCRIPTURE PERCH MODE: This is an Israelite book on the table. Every verse must reveal what goes on in elite minds when the text names Babylon, nations, merchants, oppressors, or Israel — their perch, their spin, their private names for us. See SCRIPTURE FROM THEIR PERCH block above.\n';
 }
 if(commentaryVoice==='yah'){
-p+='Use [PAUSE -- YAH COMMENTARY] / [RESUME SCENE] to decode each assigned verse for scattered Israel in plain speech — what the symbol means, who it crushes, who profits from the lie.\n';
+p+='Use [PAUSE -- YAH COMMENTARY] / [RESUME SCENE] from Yah\'s throne: what elites think their spin buys them, what I am actually doing through that verse in the room, and what I will have them do next — plain speech for scattered Israel.\n';
 }else if(commentaryVoice==='bez'){
 p+='Use [PAUSE -- BEZ COMMENTARY] / [RESUME SCENE] to decode each assigned verse for the block in street plain speech — symbol, lie, bloodline, who eats it.\n';
 }else{
@@ -3571,7 +3588,7 @@ if(eli5Enabled){
 p+=buildTheatreELI5Block(topic);
 }
 if(commentaryVoice!=='off'){
-p+=buildTheatreCommentaryBlock(commentaryVoice,topic,{wantRoughBez:wantRoughBez,wantExplicit:wantExplicit});
+p+=buildTheatreCommentaryBlock(commentaryVoice,topic,{wantRoughBez:wantRoughBez,wantExplicit:wantExplicit,wantBehindTheVeil:wantBehind});
 }
 if(theatreLooksLikeTechEnclosureThread(topic,currentNewsContext)){
 p+=buildTheatreYahTechSovereigntyBlock(commentaryVoice);
@@ -4770,7 +4787,7 @@ var roster=getTheatreLockedCastRoster();
 if(roster.length)p+='LOCKED CAST ONLY: '+roster.join(' | ')+'\n';
 if(eli5)p+='Keep all boardroom speakers in layman\'s terms -- plain English dialogue, no corporate jargon or euphemism.\n';
 p+='Keep dropping insider-specific secrets grounded in each speaker\'s real history — dated deals, named decisions, private calculus. Search the web if you need more depth.\n';
-if(cv==='yah')p+='Keep using [PAUSE -- YAH COMMENTARY] / [RESUME SCENE] throughout -- plain layman\'s decode for Israel.\n';
+if(cv==='yah')p+='Keep using [PAUSE -- YAH COMMENTARY] / [RESUME SCENE] throughout -- sovereign throne decode: what they think they\'re doing for themselves, what I am using them for, and My next steps for them.\n';
 else if(cv==='bez')p+='Keep using [PAUSE -- BEZ COMMENTARY] / [RESUME SCENE] throughout -- street-plain decode for Israel.\n';
 if(theatreLooksLikeTechEnclosureThread(currentTopic,currentNewsContext)){
 p+='AI/Suno topic: v6 IS better. Destroy Reddit nay-sayers whenever quoted. Label execs INSULTED when brats call their licensed music slop. Shulman defends upgrade — never agree gelded/muzzled/regression.\n';
