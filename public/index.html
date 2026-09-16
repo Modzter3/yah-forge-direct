@@ -1261,30 +1261,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       </div>
       <div class="model-select-block">
         <div class="model-select-wrap">
-          <label><i class="fas fa-robot"></i> Model:</label>
+          <label><i class="fas fa-robot"></i> OpenRouter model:</label>
           <select class="model-select" id="modelSelect" onchange="onSermonModelDropdown()">
-            <optgroup label="⚡ Budget / Fast">
-              <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.20 -- Fast &amp; Raw</option>
-              <option value="Grok-4.1-Fast-Reasoning">Grok 4.20 Reasoning</option>
-              <option value="Grok-4.3">Grok 4.3 -- Strict filter</option>
-              <option value="Gemini-3.6-Flash" selected>Gemini 3.6 Flash -- Fast &amp; Brutal</option>
-              <option value="Gemini-3-Flash">Gemini 3 Flash -- Legacy Fast</option>
-              <option value="Grok-Code-Fast-1">Grok Code Fast -- Budget</option>
-            </optgroup>
-            <optgroup label="🔥 Mid-Tier">
-              <option value="Grok-4">Grok 4 -- Unfiltered King</option>
-              <option value="Claude-Sonnet-4.5">Claude Sonnet 4.5 -- Smart</option>
-              <option value="Gemini-3-Pro">Gemini 3 Pro -- Deep Context</option>
-              <option value="Gemini-3.1-Pro">Gemini 3.1 Pro -- 2x Reasoning</option>
-            </optgroup>
-            <optgroup label="🧪 Open Source / Test">
-              <option value="GLM-5">GLM 5 -- Opus-Class Open Source</option>
-              <option value="Qwen3-Max">Qwen 3 Max -- Multilingual Beast</option>
-              <option value="Kimi-K2.5">Kimi 2.5 -- Moonshot Flagship</option>
-            </optgroup>
-            <optgroup label="👑 Premium">
-              <option value="Claude-Opus-4.6">Claude Opus 4.6 -- Maximum Power</option>
-            </optgroup>
+            <option value="google/gemini-3.6-flash" selected>Loading OpenRouter catalog...</option>
           </select>
         </div>
         <div class="custom-model-row">
@@ -4099,7 +4078,7 @@ MODEL SELECTOR HELPER
 function getSelectedModel(){
 var custom=(document.getElementById('customModelInput').value||'').trim();
 if(custom)return custom;
-return document.getElementById('modelSelect').value||'Gemini-3.6-Flash';
+return document.getElementById('modelSelect').value||'google/gemini-3.6-flash';
 }
 function getImagePromptModel(){
 var custom=(document.getElementById('customImagePromptModel').value||'').trim();

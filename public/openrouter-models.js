@@ -6,7 +6,7 @@
   var MODELS_URL = 'https://openrouter.ai/api/v1/models';
 
   var SELECT_IDS = [
-    // modelSelect: keep curated sermon list + custom OpenRouter ID field (see index.html)
+    'modelSelect',
     'scriptureFetchModel',
     'apocFetchModel',
     'sealedFetchModel',
