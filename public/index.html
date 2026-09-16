@@ -3565,6 +3565,8 @@ if(wantBehind){
 p+='\nBEHIND THE VEIL -- NEWS TRIGGER (MANDATORY):\n';
 if(currentNewsContext&&currentNewsContext.length>0&&currentNewsContext[0].source_url){
 p+=buildNewsArticleVeilBlock(currentNewsContext);
+}else if(topic&&topic.briefingText){
+p+=buildPastedBriefingVeilBlock(topic);
 }else{
 p+=buildWebResearchPromptBlock(topic,{partNum:partNum,totalParts:totalParts,wantEpisodeMode:false,chapterSrc:null,wantStoryMode:false,wantBezStoryBreakdown:false,currentMode:currentMode});
 p+='- AFTER internal news research: open or anchor this act on a REAL recent headline tied to "'+title+'". The meeting dramatizes HOW that headline was produced -- who signed off, who profits, what they call the public in private.\n';
@@ -3576,8 +3578,12 @@ p+='- Do NOT read news like a anchor. The headline is the HOOK; the room is the 
 p+='- No URLs, no outlet bibliography in the script.\n';
 }else{
 p+='\nPURE THEATRE -- NO MANDATORY NEWS:\n';
+if(topic&&topic.briefingText){
+p+=buildPastedBriefingVeilBlock(topic);
+}else{
 p+='- No headline required. This is the meeting that WOULD happen for this policy whether or not it made tonight\'s feed.\n';
 p+='- Optional: brief reference to current events only if it sharpens the scene -- never a news recap.\n';
+}
 if(ultraElite){
 p+='- ULTRA ELITE: dynastic family boardroom only — see CASTING block. Private bloodline POV on "'+title+'".\n';
 }else{
@@ -3929,7 +3935,14 @@ currentChapterSource={book:parsed.book,chapter:parsed.chapter,type:'custom'};
 currentChapterText=parsed.scriptureText;
 currentChapterVerseCount=parsed.verseCount>0?parsed.verseCount:countVersesInText(parsed.scriptureText);
 }else{
-currentTopic={id:-1,cat:'doctrine',title:raw,desc:(/\?\s*$|^(what|which|how|when|where|why|who|can|should|list|name|explain|tell|give|show|describe)\b/i.test(raw)?'Direct question — answer precisely: ':'Custom sermon topic: ')+raw};
+var paste=parseCustomTopicPaste(raw);
+if(paste.isBriefing){
+currentTopic={id:-1,cat:'doctrine',title:paste.headline,desc:'Closed-door dramatization hook — source briefing pasted by user.',briefingText:paste.body,isBriefing:true};
+}else if(paste.isQuestion){
+currentTopic={id:-1,cat:'doctrine',title:raw,desc:'Direct question — answer precisely: '+raw};
+}else{
+currentTopic={id:-1,cat:'doctrine',title:raw.length>140?paste.headline:raw,desc:'Custom sermon topic: '+raw};
+}
 currentMode='standard';
 currentChapterSource=null;
 currentChapterText=null;
@@ -5296,13 +5309,75 @@ document.body.removeChild(a);
 URL.revokeObjectURL(url);
 showToast('Sermon exported as markdown file!');
 }
+function looksLikePastedBriefingOrArticle(text){
+if(!text)return false;
+var t=String(text).trim();
+if(t.length<180)return false;
+var paras=t.split(/\n\s*\n/).filter(function(p){return p.trim().length>0;});
+if(paras.length>=2)return true;
+if(/\#[a-z0-9_]{3,}/i.test(t))return true;
+if((t.match(/[.!?]\s+[A-Z]/g)||[]).length>=4)return true;
+if(t.length>=450&&(t.match(/\b(said|reports|according to|officials|forecast|temperature|heat wave|heatwave|record|degrees|meteorolog|bureau|agency|administration|policy|statement|announced)\b/i)))return true;
+return t.length>=900;
+}
+function parseCustomTopicPaste(raw){
+raw=String(raw||'').trim();
+if(!raw)return {headline:'',body:'',isBriefing:false,isQuestion:false};
+var isBriefing=looksLikePastedBriefingOrArticle(raw);
+var lines=raw.split(/\n+/).map(function(l){return l.trim();}).filter(Boolean);
+var headline=lines[0]||raw;
+if(headline.length>140){
+var m=headline.match(/^[^.!?]{10,140}[.!?]?/);
+headline=(m?m[0].trim():headline.substring(0,120).trim())+(headline.length>120?'…':'');
+}
+var isQuestion=!isBriefing&&isDirectQuestionText(raw);
+return {headline:headline,body:raw,isBriefing:isBriefing,isQuestion:isQuestion};
+}
+function isDirectQuestionText(text){
+if(!text)return false;
+var t=String(text).trim();
+if(looksLikePastedBriefingOrArticle(t))return false;
+if(t.length>320)return false;
+if(/\?\s*$/.test(t))return true;
+return /^(what|which|how|when|where|why|who|can|should|could|would|do|does|did|is|are|am|was|were|list|name|explain|tell|give|show|describe)\b/i.test(t);
+}
 function isDirectQuestionTopic(topic){
 if(!topic)return false;
-var hay=((topic.title||'')+' '+(topic.desc||'')).replace(/^Direct question — answer precisely:\s*/i,'').trim();
+if(topic.isBriefing||topic.briefingText)return false;
+var hay=((topic.title||'')+' '+(topic.desc||'')).replace(/^Direct question — answer precisely:\s*/i,'').replace(/^Custom sermon topic:\s*/i,'').replace(/^Closed-door dramatization hook[^.]*\.\s*/i,'').trim();
 if(!hay)return false;
-if(/\?\s*$/.test(hay))return true;
-if(/\?\s+/.test(hay))return true;
-return /^(what|which|how|when|where|why|who|can|should|could|would|do|does|did|is|are|am|was|were|list|name|explain|tell|give|show|describe)\b/i.test(hay);
+if(looksLikePastedBriefingOrArticle(hay))return false;
+return isDirectQuestionText(hay);
+}
+function buildPastedBriefingVeilBlock(topic){
+if(!topic||!topic.briefingText)return '';
+var p='\nPASTED SOURCE BRIEFING — BEHIND THE VEIL HOOK (MANDATORY):\n';
+p+='The user pasted a news brief, social post, or article excerpt. This is HEADLINE + CONTEXT for a closed-door dramatization — NOT a question to answer, NOT a science lesson, NOT a recap sermon for Israel.\n\n';
+p+='ZERO TOLERANCE:\n';
+p+='- Do NOT answer rhetorical questions embedded in the paste ("wait a minute, it doesn\'t seem that hot").\n';
+p+='- Do NOT explain the jargon line by line (500 mb, heat dome, dm contour, etc.) as teaching content.\n';
+p+='- Do NOT write a meteorology explainer or "here\'s why the East Coast feels cooler" lesson.\n';
+p+='- The paste is the PUBLIC FACE of the story; your script is the PRIVATE ROOM where elites shaped how this plays.\n\n';
+p+='HEADLINE ON THE TABLE: '+topic.title+'\n';
+p+='FULL BRIEFING (context only — weave into boardroom dialogue, never lecture it):\n'+topic.briefingText+'\n\n';
+p+='CAST: Use web search if needed — sector power players who would be in the room for THIS story (media, energy, insurance, government, tech, etc.).\n';
+p+='- Dramatize who profits, who gets sacrificed, public lie vs private admission. The meeting is the spine — not a Q&A about the paste.\n\n';
+return p;
+}
+function buildPastedBriefingSermonBlock(topic){
+if(!topic||!topic.briefingText)return '';
+var p='*** PASTED BRIEFING — NOT A QUESTION (HIGHEST PRIORITY — OVERRIDES DIRECT QUESTION MODE) ***\n';
+p+='The user pasted source material — a news brief, caption, or article chunk. This is TOPIC FUEL for prophetic decode, NOT something Israel asked you to explain literally.\n\n';
+p+='FORBIDDEN:\n';
+p+='- Answering embedded rhetorical questions from the paste as if Israel asked them.\n';
+p+='- Reciting the paste as a meteorology, policy, or news explainer.\n';
+p+='- Treating "you may be thinking..." or "sorry to say..." lines as prompts to teach the science.\n\n';
+p+='REQUIRED:\n';
+p+='- Prophetic decode for scattered Israel — beast-system angle, who runs the narrative, what it means for Israel in twenty twenty-six, Yah\'s sovereignty over the event.\n';
+p+='- Use the briefing as evidence — do not make the sermon a line-by-line response to the paste.\n\n';
+p+='HEADLINE: '+topic.title+'\n';
+p+='SOURCE BRIEFING (context — do not copy verbatim as the sermon body):\n'+topic.briefingText+'\n\n';
+return p;
 }
 function getDirectQuestionPartFocus(partNum,totalParts){
 if(totalParts===1){
@@ -5688,7 +5763,8 @@ if(isElevenLabsTagsEnabled()){
 var tagPersona=(wantBezStory||(wantIsraelite)||wantRoughBez)?'bez':'yah';
 p+=buildElevenLabsV3AudioTagsBlock(tagPersona);
 }
-if(directQuestion)p+=buildDirectQuestionSermonBlock(topic,partNum,totalParts);
+if(topic&&topic.briefingText)p+=buildPastedBriefingSermonBlock(topic);
+else if(directQuestion)p+=buildDirectQuestionSermonBlock(topic,partNum,totalParts);
 p+=''+(wantRoughBez?(totalParts===1?'SERMON':'PART '+partNum):(totalParts===1?'EPISODE':'PART '+partNum))+' FOCUS:\n'+partFocus+'\n\n';
 if(chapterSrc){
 p+='SOURCE: '+chapterSrc.book+' Chapter '+chapterSrc.chapter+'.\n';
@@ -6075,7 +6151,9 @@ var mwTopic=detectMediaWorkFromTopic(topic);
 if(mwTopic){
 p+=buildMediaWorkPromptExtension(topic,mwTopic,partNum,totalParts);
 }
-if(directQuestion){
+if(topic&&topic.briefingText){
+p+='TOPIC (headline hook — NOT a question to answer):\n'+topic.title+'\n\n';
+}else if(directQuestion){
 p+='DIRECT QUESTION (answer precisely — no sermon filler):\n'+topic.title+'\n\n';
 }else{
 p+='TOPIC: '+topic.title+'\nCORE MESSAGE: '+topic.desc+'\n\n';
