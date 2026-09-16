@@ -295,7 +295,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .model-select-wrap{display:flex;align-items:center;gap:6px;flex:1 1 100%;}
 .model-select-block{display:flex;flex-direction:column;gap:4px;flex:1 1 100%;min-width:0;}
 .model-select-block>.model-select-wrap{flex:0 0 auto;}
-.model-select-block .custom-model-row{margin-top:0;}
+.model-select-block .custom-model-row{margin-top:0;width:100%;}
+.model-select-block .custom-model-input{min-width:0;width:100%;}
+.model-select-block .custom-model-hint{width:100%;}
 .model-select-wrap label{font-size:0.72rem;color:var(--text-dim);font-family:'Fira Code',monospace;letter-spacing:0.04em;white-space:nowrap;}
 .model-select{padding:7px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:'Fira Code',monospace;font-size:16px;outline:none;flex:1;min-width:0;appearance:auto;-webkit-appearance:auto;transition:border-color 0.2s;}
 .model-select:focus{border-color:var(--gold-dim);}
@@ -1274,10 +1276,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           </select>
         </div>
         <div class="custom-model-row">
-          <label><i class="fas fa-keyboard" style="margin-right:2px;font-size:0.6rem;"></i> Custom OpenRouter ID:</label>
-          <input type="text" class="custom-model-input" id="customModelInput" placeholder="e.g. cognitivecomputations/dolphin-mistral-24b-venice-edition" oninput="onCustomModel(this,'modelSelect')" onfocus="this.select()">
+          <label><i class="fas fa-keyboard" style="margin-right:2px;font-size:0.6rem;"></i> Or paste any OpenRouter model:</label>
+          <input type="text" class="custom-model-input" id="customModelInput" placeholder="provider/model — e.g. x-ai/grok-4.1-fast or cognitivecomputations/dolphin-mistral-24b-venice-edition" oninput="onCustomModel(this,'modelSelect')" onfocus="this.select()">
         </div>
-        <div class="custom-model-hint">Paste any model id from openrouter.ai/models — overrides the dropdown above when filled</div>
+        <div class="custom-model-hint">Any id from openrouter.ai/models overrides the dropdown. Use this for Venice Dolphin, Grok, or models not listed above.</div>
       </div>
       <div class="part-count-wrap">
         <span class="pc-label"><i class="fas fa-layer-group"></i> Parts:</span>
