@@ -339,7 +339,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .loading-text{margin-top:10px;font-size:0.78rem;color:var(--text-muted);font-family:'Fira Code',monospace;}
 
 /* SERMON BODY */
-.sermon-body{line-height:1.75;font-size:0.9rem;word-break:break-word;overflow-wrap:anywhere;}
+.sermon-body{line-height:1.75;font-size:0.9rem;}
 .sermon-body h1,.sermon-body h2,.sermon-body h3{font-family:'Cinzel Decorative',serif;color:var(--gold);margin:18px 0 8px;line-height:1.3;}
 .sermon-body h1{font-size:1.2rem;} .sermon-body h2{font-size:1.05rem;} .sermon-body h3{font-size:0.92rem;color:var(--crimson-glow);}
 .sermon-body p{margin-bottom:10px;}
@@ -516,10 +516,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 /* RESPONSIVE */
 @media(max-width:640px){
   .topics-grid{grid-template-columns:1fr;}
-  .modal-content{display:flex;flex-direction:column;max-height:calc(100dvh - 12px);overflow:hidden;}
-  .modal-header,.series-progress,.sermon-actions{flex:0 0 auto;}
-  .gen-options{flex:0 0 auto;max-height:min(38vh,300px);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;flex-direction:column;align-items:stretch;padding:10px 12px;gap:10px;}
-  .sermon-output{flex:1 1 auto;min-height:160px;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+  .gen-options{flex-direction:column;align-items:stretch;padding:10px 12px;gap:10px;}
   .gen-options .model-select-wrap{flex-direction:column;align-items:stretch;}
   .gen-options .model-select-wrap label{white-space:normal;}
   .gen-options .model-select-wrap .model-select{width:100%;}
@@ -4328,8 +4325,6 @@ btn.disabled=true;
 actions.style.display='none';
 progress.style.display='flex';
 output.innerHTML='';
-output._userPinned=false;
-bindSermonOutputScrollTrack();
 updateProgress(0);
 if(savedCustomScripture){
 currentChapterText=savedCustomScripture.text;
@@ -4651,54 +4646,10 @@ combined+=cleaned.length===1?'# '+pTitle+'\n\n'+body+'\n\n---\n\n':'# PART '+(i+
 }
 return combined;
 }
-var SERMON_STREAM_RENDER_MS=300;
-function isSermonOutputNearBottom(el,threshold){
-if(!el)return true;
-threshold=threshold!=null?threshold:80;
-return el.scrollHeight-el.scrollTop-el.clientHeight<=threshold;
-}
-function bindSermonOutputScrollTrack(){
-var output=document.getElementById('sermonOutput');
-if(!output||output._scrollTrackBound)return;
-output._scrollTrackBound=true;
-output.addEventListener('scroll',function(){
-if(!sermonGenCtx)return;
-if(isSermonOutputNearBottom(output,120)){
-output._userPinned=false;
-sermonGenCtx.autoScroll=true;
-}else{
-output._userPinned=true;
-sermonGenCtx.autoScroll=false;
-}
-},{passive:true});
-}
-function maybeAutoScrollSermonOutput(ctx){
-if(!ctx||ctx.autoScroll===false)return;
-var output=document.getElementById('sermonOutput');
-if(!output||output._userPinned)return;
-output.scrollTop=output.scrollHeight;
-}
-function flushSermonStreamRender(ctx,partNum){
-if(!ctx||!ctx.partContainer||!ctx.partContent)return;
-if(ctx.renderTimer){clearTimeout(ctx.renderTimer);ctx.renderTimer=null;}
-ctx.partContainer.innerHTML=marked.parse(finalizeSermonPartText(ctx.partContent,partNum));
-maybeAutoScrollSermonOutput(ctx);
-}
-function scheduleSermonStreamRender(ctx,partNum){
-if(!ctx||!ctx.partContainer)return;
-if(ctx.renderTimer)return;
-ctx.renderTimer=setTimeout(function(){
-ctx.renderTimer=null;
-if(!sermonGenCtx||sermonGenCtx!==ctx||!ctx.partContainer)return;
-ctx.partContainer.innerHTML=marked.parse(finalizeSermonPartText(ctx.partContent,partNum));
-maybeAutoScrollSermonOutput(ctx);
-},SERMON_STREAM_RENDER_MS);
-}
 function clearSermonWatchdogs(){
 if(!sermonGenCtx)return;
 if(sermonGenCtx.firstTokenTimer){clearTimeout(sermonGenCtx.firstTokenTimer);sermonGenCtx.firstTokenTimer=null;}
 if(sermonGenCtx.chunkTimer){clearTimeout(sermonGenCtx.chunkTimer);sermonGenCtx.chunkTimer=null;}
-if(sermonGenCtx.renderTimer){clearTimeout(sermonGenCtx.renderTimer);sermonGenCtx.renderTimer=null;}
 }
 function armSermonWatchdogs(onStall){
 clearSermonWatchdogs();
@@ -4877,7 +4828,6 @@ sermonGenCtx.finishing=true;
 clearSermonWatchdogs();
 var ctx=sermonGenCtx;
 var partNum=ctx.partNum;
-flushSermonStreamRender(ctx,partNum);
 var partContent=ctx.partContent||'';
 if(partContent.trim()){
 commitSermonPart(partNum,partContent);
@@ -4952,8 +4902,8 @@ if(ctx.firstTokenTimer){clearTimeout(ctx.firstTokenTimer);ctx.firstTokenTimer=nu
 armSermonWatchdogs(function(){finishCurrentSermonPart('stall');});
 if(isContinuation)ctx.partContent=(ctx.partContentBeforeContinue||'')+'\n\n'+chunk;
 else ctx.partContent=chunk;
-if(msg.status==='complete')flushSermonStreamRender(ctx,partNum);
-else scheduleSermonStreamRender(ctx,partNum);
+var display=finalizeSermonPartText(ctx.partContent,partNum);
+ctx.partContainer.innerHTML=marked.parse(display);
 if(msg.status==='complete'){
 clearSermonWatchdogs();
 var finalized=finalizeSermonPartText(ctx.partContent,partNum);
@@ -5050,12 +5000,7 @@ loader.id='loader'+partNum;
 loader.innerHTML='<div class="loading-pulse"></div><div class="loading-text">Forging '+getForgePartLabel(partNum,true)+'...</div>'
 +'<button type="button" class="vc-btn cancel" style="margin-top:12px;font-size:0.75rem;" onclick="forceNextSermonPart()"><i class="fas fa-forward" style="margin-right:4px;"></i>Stuck? Force next part</button>';
 output.appendChild(loader);
-bindSermonOutputScrollTrack();
-if(window.matchMedia('(max-width:640px)').matches){
-output.scrollTop=output.scrollHeight;
-}else{
 loader.scrollIntoView({behavior:'smooth',block:'center'});
-}
 sermonGenCtx={
 partNum:partNum,
 partContent:'',
@@ -5072,8 +5017,6 @@ promptMode:'normal',
 gotFirstToken:false,
 firstTokenTimer:null,
 chunkTimer:null,
-renderTimer:null,
-autoScroll:true,
 partContainer:partContainer,
 finishing:false
 };
@@ -10531,7 +10474,6 @@ if(breakdownToggle)breakdownToggle.checked=false;
 }
 }
 document.addEventListener('DOMContentLoaded',function(){
-bindSermonOutputScrollTrack();
 updatePartWordEstDisplay();
 syncEpisodeModeToggles();
 syncStoryModeToggles();
