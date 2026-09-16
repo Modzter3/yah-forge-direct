@@ -598,7 +598,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <option value="Gemini-3.1-Pro">Gemini 3.1 Pro</option>
         <option value="GPT-5.2">GPT 5.2</option>
         <option value="Claude-Sonnet-4.5">Claude Sonnet 4.5</option>
-        <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.1 Fast</option>
+        <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.3</option>
       </select>
     </div>
     <div style="margin-top:16px;">
@@ -625,7 +625,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <option value="Gemini-3-Pro">Gemini 3 Pro -- Web Search</option>
         <option value="GPT-5.2">GPT 5.2 -- Web Search</option>
         <option value="Claude-Sonnet-4.5">Claude Sonnet 4.5 -- Web Search</option>
-        <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.1 Fast (no web search)</option>
+        <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.3 (no web search)</option>
       </select>
     </div>
     <div style="margin-top:16px;">
@@ -654,7 +654,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <option value="Gemini-3-Pro">Gemini 3 Pro -- Web Search</option>
         <option value="GPT-5.2">GPT 5.2 -- Web Search</option>
         <option value="Claude-Sonnet-4.5">Claude Sonnet 4.5 -- Web Search</option>
-        <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.1 Fast (no web search)</option>
+        <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.3 (no web search)</option>
       </select>
     </div>
     <div style="margin-top:16px;">
@@ -701,7 +701,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <div style="min-width:180px;">
         <select class="model-select" id="dismantleModel" style="width:100%;" onchange="onDismantleModelDropdown()">
           <optgroup label="⚡ Budget / Fast">
-            <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.1 Fast</option>
+            <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.3</option>
             <option value="Gemini-3.6-Flash" selected>Gemini 3.6 Flash</option>
             <option value="Gemini-3-Flash">Gemini 3 Flash</option>
           </optgroup>
@@ -792,7 +792,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <div style="min-width:180px;">
         <select class="model-select" id="transcriptModel" style="width:100%;" onchange="onTranscriptModelDropdown()">
           <optgroup label="⚡ Budget / Fast">
-            <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.1 Fast</option>
+            <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.3</option>
             <option value="Gemini-3.6-Flash" selected>Gemini 3.6 Flash</option>
             <option value="Gemini-3-Flash">Gemini 3 Flash</option>
           </optgroup>
@@ -880,7 +880,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <div style="min-width:180px;">
         <select class="model-select" id="destroyModel" style="width:100%;" onchange="onDestroyModelDropdown()">
           <optgroup label="⚡ Budget / Fast">
-            <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.1 Fast</option>
+            <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.3</option>
             <option value="Gemini-3.6-Flash" selected>Gemini 3.6 Flash</option>
             <option value="Gemini-3-Flash">Gemini 3 Flash</option>
           </optgroup>
@@ -1108,7 +1108,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <div style="min-width:180px;flex:1;">
         <select class="model-select" id="yahChatModel" style="width:100%;" onchange="onYahChatModelDropdown()">
           <optgroup label="⚡ Budget / Fast">
-            <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.1 Fast</option>
+            <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.3</option>
             <option value="Gemini-3-Flash">Gemini 3 Flash</option>
           </optgroup>
           <optgroup label="🔥 Mid-Tier">
@@ -1253,8 +1253,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           <label><i class="fas fa-robot"></i> Model:</label>
           <select class="model-select" id="modelSelect" onchange="onSermonModelDropdown()">
             <optgroup label="⚡ Budget / Fast">
-              <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.1 Fast -- Free &amp; Raw</option>
-              <option value="Grok-4.1-Fast-Reasoning">Grok 4.1 Fast Reasoning</option>
+              <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.3 -- Free &amp; Raw</option>
+              <option value="Grok-4.1-Fast-Reasoning">Grok 4.3 Reasoning</option>
               <option value="Gemini-3.6-Flash" selected>Gemini 3.6 Flash -- Fast &amp; Brutal</option>
               <option value="Gemini-3-Flash">Gemini 3 Flash -- Legacy Fast</option>
               <option value="Grok-Code-Fast-1">Grok Code Fast -- Budget</option>
@@ -1277,7 +1277,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         </div>
         <div class="custom-model-row">
           <label><i class="fas fa-keyboard" style="margin-right:2px;font-size:0.6rem;"></i> Or paste any OpenRouter model:</label>
-          <input type="text" class="custom-model-input" id="customModelInput" placeholder="provider/model — e.g. x-ai/grok-4.1-fast or cognitivecomputations/dolphin-mistral-24b-venice-edition" oninput="onCustomModel(this,'modelSelect')" onfocus="this.select()">
+          <input type="text" class="custom-model-input" id="customModelInput" placeholder="provider/model — e.g. x-ai/grok-4.3 or cognitivecomputations/dolphin-mistral-24b-venice-edition" oninput="onCustomModel(this,'modelSelect')" onfocus="this.select()">
         </div>
         <div class="custom-model-hint">Any id from openrouter.ai/models overrides the dropdown. Use this for Venice Dolphin, Grok, or models not listed above.</div>
       </div>
@@ -1420,7 +1420,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
             <option value="Claude-Sonnet-4.5">Claude Sonnet 4.5</option>
             <option value="Claude-Opus-4.6">Claude Opus 4.6</option>
             <option value="GPT-5.2">GPT 5.2</option>
-            <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.1 Fast</option>
+            <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.3</option>
           </select>
           <input type="text" class="custom-model-input" id="customImagePromptModel" placeholder="or type a bot handle...">
         </div>

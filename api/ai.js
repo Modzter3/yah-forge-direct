@@ -24,8 +24,10 @@ const PROVIDER_ALIASES = {
     'Claude-Sonnet-4.5':            'anthropic/claude-sonnet-4',
     'Claude-Opus-4.6':              'anthropic/claude-opus-4',
     'GPT-5.2':                      'openai/gpt-4.1',
-    'Grok-4.1-Fast-Non-Reasoning':  'x-ai/grok-4.1-fast',
-    'Grok-4.1-Fast-Reasoning':      'x-ai/grok-4.1-fast',
+    'Grok-4.1-Fast-Non-Reasoning':  'x-ai/grok-4.3',
+    'Grok-4.1-Fast-Reasoning':      'x-ai/grok-4.3',
+    'Grok-4.3':                     'x-ai/grok-4.3',
+    'Grok-4.3-Reasoning':           'x-ai/grok-4.3',
     'Grok-Code-Fast-1':             'x-ai/grok-4-fast',
     'Grok-4':                       'x-ai/grok-4.20',
     'GLM-5':                        'z-ai/glm-5',
@@ -224,6 +226,19 @@ function resolveApiKey(providerName, provider) {
   return explicitByProvider[providerName] || '';
 }
 
+const DEPRECATED_MODEL_REDIRECTS = {
+  'x-ai/grok-4.1-fast': 'x-ai/grok-4.3',
+};
+
+function redirectDeprecatedModel(modelId) {
+  const key = String(modelId || '').trim().toLowerCase();
+  if (!key) return modelId;
+  for (const [oldId, newId] of Object.entries(DEPRECATED_MODEL_REDIRECTS)) {
+    if (key === oldId.toLowerCase()) return newId;
+  }
+  return modelId;
+}
+
 function resolveModel({ requestedModel, providerName }) {
   const model        = String(requestedModel || '').trim();
   const defaultModel = String(process.env.DEFAULT_TEXT_MODEL || '').trim();
@@ -232,11 +247,11 @@ function resolveModel({ requestedModel, providerName }) {
 
   const envAliases = parseJsonEnv('MODEL_ALIASES_JSON') || {};
   if (typeof envAliases[requested] === 'string' && envAliases[requested].trim()) {
-    return envAliases[requested].trim();
+    return redirectDeprecatedModel(envAliases[requested].trim());
   }
 
   const providerAliases = PROVIDER_ALIASES[providerName] || {};
-  return providerAliases[requested] || requested;
+  return redirectDeprecatedModel(providerAliases[requested] || requested);
 }
 
 function requestHeaders(providerName, apiKey) {
