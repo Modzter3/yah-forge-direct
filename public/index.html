@@ -602,15 +602,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <select id="bibleChapter" disabled><option value="">-- Chapter --</option></select>
     </div>
     <div class="scripture-fetch-model-row">
-      <label><i class="fas fa-download" style="margin-right:4px;font-size:0.65rem;"></i>Verse retrieval bot:</label>
+      <label><i class="fas fa-download" style="margin-right:4px;font-size:0.65rem;"></i>OpenRouter model:</label>
       <select id="scriptureFetchModel" class="fetch-model-select">
-        <option value="Gemini-3-Flash">Gemini 3 Flash (Fast)</option>
-        <option value="Gemini-3-Pro">Gemini 3 Pro</option>
-        <option value="Gemini-3.1-Pro">Gemini 3.1 Pro</option>
-        <option value="GPT-5.2">GPT 5.2</option>
-        <option value="Claude-Sonnet-4.5">Claude Sonnet 4.5</option>
-        <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.20</option>
-      </select>
+            <option value="google/gemini-3.6-flash" selected>Loading OpenRouter catalog...</option>
+          </select>
     </div>
     <div style="margin-top:16px;">
       <label style="display:block;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:6px;"><i class="fas fa-paste" style="margin-right:5px;font-size:0.65rem;"></i>Or paste verses manually (optional):</label>
@@ -630,14 +625,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <select id="apocChapter" disabled><option value="">-- Chapter --</option></select>
     </div>
     <div class="scripture-fetch-model-row">
-      <label><i class="fas fa-download" style="margin-right:4px;font-size:0.65rem;"></i>Verse retrieval bot:</label>
+      <label><i class="fas fa-download" style="margin-right:4px;font-size:0.65rem;"></i>OpenRouter model:</label>
       <select id="apocFetchModel" class="fetch-model-select">
-        <option value="Gemini-3-Flash">Gemini 3 Flash -- Web Search (Fast)</option>
-        <option value="Gemini-3-Pro">Gemini 3 Pro -- Web Search</option>
-        <option value="GPT-5.2">GPT 5.2 -- Web Search</option>
-        <option value="Claude-Sonnet-4.5">Claude Sonnet 4.5 -- Web Search</option>
-        <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.20 (no web search)</option>
-      </select>
+            <option value="google/gemini-3.6-flash" selected>Loading OpenRouter catalog...</option>
+          </select>
     </div>
     <div style="margin-top:16px;">
       <label style="display:block;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:6px;"><i class="fas fa-paste" style="margin-right:5px;font-size:0.65rem;"></i>Or paste verses manually (optional):</label>
@@ -659,14 +650,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     </div>
     <div id="sealedBookDesc" style="display:none;font-size:0.78rem;color:var(--text-muted);font-style:italic;padding:8px 12px;margin-top:8px;background:rgba(139,26,26,0.06);border-left:3px solid var(--crimson-glow);border-radius:0 6px 6px 0;line-height:1.5;"></div>
     <div class="scripture-fetch-model-row">
-      <label><i class="fas fa-download" style="margin-right:4px;font-size:0.65rem;"></i>Verse retrieval bot:</label>
+      <label><i class="fas fa-download" style="margin-right:4px;font-size:0.65rem;"></i>OpenRouter model:</label>
       <select id="sealedFetchModel" class="fetch-model-select">
-        <option value="Gemini-3-Flash">Gemini 3 Flash -- Web Search (Fast)</option>
-        <option value="Gemini-3-Pro">Gemini 3 Pro -- Web Search</option>
-        <option value="GPT-5.2">GPT 5.2 -- Web Search</option>
-        <option value="Claude-Sonnet-4.5">Claude Sonnet 4.5 -- Web Search</option>
-        <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.20 (no web search)</option>
-      </select>
+            <option value="google/gemini-3.6-flash" selected>Loading OpenRouter catalog...</option>
+          </select>
     </div>
     <div style="margin-top:16px;">
       <label style="display:block;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:6px;"><i class="fas fa-paste" style="margin-right:5px;font-size:0.65rem;"></i>Or paste text manually (optional):</label>
@@ -711,29 +698,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch"><input type="checkbox" id="dismantleIsraelite"><span class="toggle-track israelite-track"></span><span><i class="fas fa-users" style="color:#38bdb0;margin-right:3px;font-size:0.65rem;"></i>Israelite</span></label>
       <div style="min-width:180px;">
         <select class="model-select" id="dismantleModel" style="width:100%;" onchange="onDismantleModelDropdown()">
-          <optgroup label="⚡ Budget / Fast">
-            <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.20</option>
-            <option value="Gemini-3.6-Flash" selected>Gemini 3.6 Flash</option>
-            <option value="Gemini-3-Flash">Gemini 3 Flash</option>
-          </optgroup>
-          <optgroup label="🔥 Mid-Tier">
-            <option value="Grok-4">Grok 4</option>
-            <option value="Claude-Sonnet-4.5">Claude Sonnet 4.5</option>
-            <option value="Gemini-3-Pro">Gemini 3 Pro</option>
-            <option value="Gemini-3.1-Pro">Gemini 3.1 Pro</option>
-          </optgroup>
-          <optgroup label="🧪 Open Source">
-            <option value="GLM-5">GLM 5</option>
-            <option value="Qwen3-Max">Qwen 3 Max</option>
-            <option value="Kimi-K2.5">Kimi 2.5</option>
-          </optgroup>
-          <optgroup label="👑 Premium">
-            <option value="Claude-Opus-4.6">Claude Opus 4.6</option>
-          </optgroup>
-        </select>
+            <option value="google/gemini-3.6-flash" selected>Loading OpenRouter catalog...</option>
+          </select>
         <div class="custom-model-row">
-          <label>or any bot:</label>
-          <input type="text" class="custom-model-input" id="customDismantleModel" placeholder="e.g. Mistral-Large" oninput="onCustomModel(this,'dismantleModel')" onfocus="this.select()">
+          <label>Custom OpenRouter ID:</label>
+          <input type="text" class="custom-model-input" id="customDismantleModel" placeholder="e.g. mistralai/mistral-large-2512" oninput="onCustomModel(this,'dismantleModel')" onfocus="this.select()">
         </div>
       </div>
       <div class="part-count-wrap">
@@ -802,28 +771,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch" title="Final summary on the last part only"><input type="checkbox" id="transcriptFinalSynthesis" checked><span class="toggle-track"></span><span>Final synthesis</span></label>
       <div style="min-width:180px;">
         <select class="model-select" id="transcriptModel" style="width:100%;" onchange="onTranscriptModelDropdown()">
-          <optgroup label="⚡ Budget / Fast">
-            <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.20</option>
-            <option value="Gemini-3.6-Flash" selected>Gemini 3.6 Flash</option>
-            <option value="Gemini-3-Flash">Gemini 3 Flash</option>
-          </optgroup>
-          <optgroup label="🔥 Mid-Tier">
-            <option value="Grok-4">Grok 4</option>
-            <option value="Claude-Sonnet-4.5">Claude Sonnet 4.5</option>
-            <option value="Gemini-3-Pro">Gemini 3 Pro</option>
-            <option value="Gemini-3.1-Pro">Gemini 3.1 Pro</option>
-          </optgroup>
-          <optgroup label="🧪 Open Source">
-            <option value="GLM-5">GLM 5</option>
-            <option value="Qwen3-Max">Qwen 3 Max</option>
-            <option value="Kimi-K2.5">Kimi 2.5</option>
-          </optgroup>
-          <optgroup label="👑 Premium">
-            <option value="Claude-Opus-4.6">Claude Opus 4.6</option>
-          </optgroup>
-        </select>
+            <option value="google/gemini-3.6-flash" selected>Loading OpenRouter catalog...</option>
+          </select>
         <div class="custom-model-row">
-          <label>or any bot:</label>
+          <label>Custom OpenRouter ID:</label>
           <input type="text" class="custom-model-input" id="customTranscriptModel" placeholder="e.g. anthropic/claude-sonnet-4" oninput="onCustomModel(this,'transcriptModel')" onfocus="this.select()">
         </div>
         <div class="custom-model-hint">Type any OpenRouter model id (e.g. google/gemini-2.5-pro) to override the dropdown</div>
@@ -890,28 +841,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch"><input type="checkbox" id="destroyIsraelite"><span class="toggle-track israelite-track"></span><span><i class="fas fa-users" style="color:#38bdb0;margin-right:3px;font-size:0.65rem;"></i>Israelite</span></label>
       <div style="min-width:180px;">
         <select class="model-select" id="destroyModel" style="width:100%;" onchange="onDestroyModelDropdown()">
-          <optgroup label="⚡ Budget / Fast">
-            <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.20</option>
-            <option value="Gemini-3.6-Flash" selected>Gemini 3.6 Flash</option>
-            <option value="Gemini-3-Flash">Gemini 3 Flash</option>
-          </optgroup>
-          <optgroup label="🔥 Mid-Tier">
-            <option value="Grok-4">Grok 4</option>
-            <option value="Claude-Sonnet-4.5">Claude Sonnet 4.5</option>
-            <option value="Gemini-3-Pro">Gemini 3 Pro</option>
-            <option value="Gemini-3.1-Pro">Gemini 3.1 Pro</option>
-          </optgroup>
-          <optgroup label="🧪 Open Source">
-            <option value="GLM-5">GLM 5</option>
-            <option value="Qwen3-Max">Qwen 3 Max</option>
-            <option value="Kimi-K2.5">Kimi 2.5</option>
-          </optgroup>
-          <optgroup label="👑 Premium">
-            <option value="Claude-Opus-4.6">Claude Opus 4.6</option>
-          </optgroup>
-        </select>
+            <option value="google/gemini-3.6-flash" selected>Loading OpenRouter catalog...</option>
+          </select>
         <div class="custom-model-row">
-          <label>or any bot:</label>
+          <label>Custom OpenRouter ID:</label>
           <input type="text" class="custom-model-input" id="customDestroyModel" placeholder="e.g. anthropic/claude-sonnet-4" oninput="onCustomModel(this,'destroyModel')" onfocus="this.select()">
         </div>
         <div class="custom-model-hint">Type any OpenRouter model id (e.g. google/gemini-2.5-pro) to override the dropdown</div>
@@ -1011,17 +944,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="news-controls" style="flex-wrap:wrap;gap:10px;">
       <div style="flex:1;min-width:180px;">
         <select class="model-select" id="newsModel" style="width:100%;" onchange="onNewsModelDropdown()">
-          <optgroup label="🔍 Web Search (Real News)">
-            <option value="Gemini-3.6-Flash" selected>Gemini 3.6 Flash</option>
-            <option value="Gemini-3.1-Pro">Gemini 3.1 Pro</option>
-            <option value="Gemini-3-Pro">Gemini 3 Pro</option>
-            <option value="GPT-5.2">GPT 5.2</option>
-            <option value="Claude-Sonnet-4.5">Claude Sonnet 4.5</option>
-            <option value="Gemini-3-Flash">Gemini 3 Flash (Budget)</option>
-          </optgroup>
-        </select>
+            <option value="google/gemini-3.6-flash" selected>Loading OpenRouter catalog...</option>
+          </select>
         <div class="custom-model-row">
-          <label>or any bot:</label>
+          <label>Custom OpenRouter ID:</label>
           <input type="text" class="custom-model-input" id="customNewsModel" placeholder="e.g. Llama-4-Scout" oninput="onCustomModel(this,'newsModel')" onfocus="this.select()">
         </div>
       </div>
@@ -1118,28 +1044,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       </label>
       <div style="min-width:180px;flex:1;">
         <select class="model-select" id="yahChatModel" style="width:100%;" onchange="onYahChatModelDropdown()">
-          <optgroup label="⚡ Budget / Fast">
-            <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.20</option>
-            <option value="Gemini-3-Flash">Gemini 3 Flash</option>
-          </optgroup>
-          <optgroup label="🔥 Mid-Tier">
-            <option value="Grok-4">Grok 4</option>
-            <option value="Claude-Sonnet-4.5">Claude Sonnet 4.5</option>
-            <option value="Gemini-3-Pro">Gemini 3 Pro</option>
-            <option value="Gemini-3.1-Pro">Gemini 3.1 Pro</option>
-            <option value="Gemini-3.6-Flash" selected>Gemini 3.6 Flash</option>
-          </optgroup>
-          <optgroup label="🧪 Open Source">
-            <option value="GLM-5">GLM 5</option>
-            <option value="Qwen3-Max">Qwen 3 Max</option>
-            <option value="Kimi-K2.5">Kimi 2.5</option>
-          </optgroup>
-          <optgroup label="👑 Premium">
-            <option value="Claude-Opus-4.6">Claude Opus 4.6</option>
-          </optgroup>
-        </select>
+            <option value="google/gemini-3.6-flash" selected>Loading OpenRouter catalog...</option>
+          </select>
         <div class="custom-model-row">
-          <label>or any bot:</label>
+          <label>Custom OpenRouter ID:</label>
           <input type="text" class="custom-model-input" id="customYahChatModel" placeholder="e.g. google/gemini-3.6-flash" oninput="onCustomModel(this,'yahChatModel')" onfocus="this.select()">
         </div>
       </div>
@@ -1404,16 +1312,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           <label class="toggle-switch" style="margin:0;"><input type="checkbox" id="titleCardToggle"><span class="toggle-track"></span><span style="font-size:0.78rem;">Include Title Card Prompt</span></label>
         </div>
         <div class="model-select-wrap" style="margin-top:6px;">
-          <label><i class="fas fa-robot"></i> Prompt Model:</label>
+          <label><i class="fas fa-robot"></i> OpenRouter model:</label>
           <select class="model-select" id="imagePromptModel">
-            <option value="Gemini-3-Flash">Gemini 3 Flash</option>
-            <option value="Gemini-3-Pro">Gemini 3 Pro</option>
-            <option value="Claude-Sonnet-4.5">Claude Sonnet 4.5</option>
-            <option value="Claude-Opus-4.6">Claude Opus 4.6</option>
-            <option value="GPT-5.2">GPT 5.2</option>
-            <option value="Grok-4.1-Fast-Non-Reasoning">Grok 4.20</option>
+            <option value="google/gemini-3.6-flash" selected>Loading OpenRouter catalog...</option>
           </select>
-          <input type="text" class="custom-model-input" id="customImagePromptModel" placeholder="or type a bot handle...">
+          <input type="text" class="custom-model-input" id="customImagePromptModel" placeholder="provider/model override">
         </div>
         <div class="media-btn-row">
           <button class="media-btn primary-image" onclick="generateImagesInApp()"><i class="fas fa-wand-magic-sparkles"></i> Generate In-App</button>
@@ -4125,17 +4028,17 @@ return document.getElementById('imagePromptModel').value||'google/gemini-2.5-fla
 function getNewsModel(){
 var custom=(document.getElementById('customNewsModel').value||'').trim();
 if(custom)return custom;
-return document.getElementById('newsModel').value||'Gemini-3.6-Flash';
+return document.getElementById('newsModel').value||'google/gemini-3.6-flash';
 }
 function getDismantleModel(){
 var custom=(document.getElementById('customDismantleModel').value||'').trim();
 if(custom)return custom;
-return document.getElementById('dismantleModel').value||'Gemini-3.6-Flash';
+return document.getElementById('dismantleModel').value||'google/gemini-3.6-flash';
 }
 function getYahChatModel(){
 var custom=(document.getElementById('customYahChatModel').value||'').trim();
 if(custom)return custom;
-return document.getElementById('yahChatModel').value||'Gemini-3.6-Flash';
+return document.getElementById('yahChatModel').value||'google/gemini-3.6-flash';
 }
 function onYahChatModelDropdown(){
 var ci=document.getElementById('customYahChatModel');
@@ -4174,7 +4077,7 @@ document.getElementById('dismantleModel').style.opacity='1';
 function getTranscriptModel(){
 var custom=(document.getElementById('customTranscriptModel').value||'').trim();
 if(custom)return custom;
-return document.getElementById('transcriptModel').value||'Gemini-3.6-Flash';
+return document.getElementById('transcriptModel').value||'google/gemini-3.6-flash';
 }
 function onTranscriptModelDropdown(){
 var ci=document.getElementById('customTranscriptModel');
@@ -10239,7 +10142,7 @@ saveToLibrary(title,desc,'deception','destroy',model,parts,combined,titles);
 function getDestroyModel(){
 var custom=(document.getElementById('customDestroyModel').value||'').trim();
 if(custom)return custom;
-return document.getElementById('destroyModel').value||'Gemini-3.6-Flash';
+return document.getElementById('destroyModel').value||'google/gemini-3.6-flash';
 }
 function onDestroyModelDropdown(){
 var ci=document.getElementById('customDestroyModel');

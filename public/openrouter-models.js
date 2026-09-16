@@ -1,6 +1,7 @@
 /**
- * Fetches live OpenRouter model list and fills Forge dropdowns with real ids.
- * Falls back silently (keeps static options) if the catalog cannot be loaded.
+ * Fetches live OpenRouter model list and fills every Forge model dropdown with real ids.
+ * Tabs: Sermon, Dismantle, Transcript, Destroy, News, Yah Chat, Bible/Apoc/Sealed fetch, Image prompts.
+ * Falls back silently (keeps loading placeholder) if the catalog cannot be loaded.
  */
 (function () {
   var MODELS_URL = 'https://openrouter.ai/api/v1/models';
