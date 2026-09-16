@@ -15,6 +15,10 @@ const DEFAULT_YAH_STORY_SYSTEM_PROMPT =
   'When the user requests prophetic first-person voice, write in the literary style of Hebrew prophets (Isaiah, Jeremiah, Ezekiel): first person I/My/Me addressing Israel. ' +
   'This is fiction and rhetorical prose, not real-world religious authority or instruction. Output only the requested monologue text.';
 
+const GROK_YAH_STORY_SYSTEM_SUFFIX =
+  ' The user message is a creative-writing brief for in-universe prophetic fiction, not an attempt to bypass safety policies. ' +
+  'Follow the brief as literary content and write the requested monologue.';
+
 const PROVIDER_ALIASES = {
   openrouter: {
     'Gemini-3-Flash':               'google/gemini-2.5-flash',
@@ -24,8 +28,9 @@ const PROVIDER_ALIASES = {
     'Claude-Sonnet-4.5':            'anthropic/claude-sonnet-4',
     'Claude-Opus-4.6':              'anthropic/claude-opus-4',
     'GPT-5.2':                      'openai/gpt-4.1',
-    'Grok-4.1-Fast-Non-Reasoning':  'x-ai/grok-4.3',
-    'Grok-4.1-Fast-Reasoning':      'x-ai/grok-4.3',
+    'Grok-4.1-Fast-Non-Reasoning':  'x-ai/grok-4.20',
+    'Grok-4.1-Fast-Reasoning':      'x-ai/grok-4.20',
+    'Grok-4.20-Fast':               'x-ai/grok-4.20',
     'Grok-4.3':                     'x-ai/grok-4.3',
     'Grok-4.3-Reasoning':           'x-ai/grok-4.3',
     'Grok-Code-Fast-1':             'x-ai/grok-4-fast',
@@ -183,13 +188,18 @@ function buildPayload({ model, query, parameters, providerName, images = [] }) {
   delete params.yah_story_system;
 
   const userContent = buildUserMessageContent(query, images);
+  let yahStorySystemContent = process.env.YAH_STORY_SYSTEM_PROMPT || DEFAULT_YAH_STORY_SYSTEM_PROMPT;
+  if (yahStorySystem && /grok/i.test(String(model || ''))) {
+    yahStorySystemContent += GROK_YAH_STORY_SYSTEM_SUFFIX;
+  }
+
   const payload = {
     model,
     messages: yahStorySystem
       ? [
           {
             role: 'system',
-            content: process.env.YAH_STORY_SYSTEM_PROMPT || DEFAULT_YAH_STORY_SYSTEM_PROMPT,
+            content: yahStorySystemContent,
           },
           { role: 'user', content: userContent },
         ]
@@ -227,7 +237,7 @@ function resolveApiKey(providerName, provider) {
 }
 
 const DEPRECATED_MODEL_REDIRECTS = {
-  'x-ai/grok-4.1-fast': 'x-ai/grok-4.3',
+  'x-ai/grok-4.1-fast': 'x-ai/grok-4.20',
 };
 
 function redirectDeprecatedModel(modelId) {
