@@ -6964,7 +6964,7 @@ function generateVideoInApp(){
 if(!currentTopic){showToast('Open a topic first.');return;}
 var output=document.getElementById('outputVideo');
 var modelEl=document.getElementById('kieVideoModel');
-var model=modelEl&&modelEl.value?modelEl.value:'veo3_fast';
+var model=modelEl&&modelEl.value?modelEl.value:'kling-3.0/video';
 output.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text">Kie '+escapeHtml(model)+' — generating sermon video... this can take a few minutes.</div></div>';
 var vidPrompt='Cinematic sermon visual for "'+currentTopic.title+'": '+currentTopic.desc+'. All people shown must be dark-skinned Negro Israelites -- the worldwide scattered descendants of Israel -- with dark brown skin, strong features, and natural hair. Dark cinematic atmosphere, golden divine light rays, ancient scrolls and tablets, dramatic camera movement pushing in slowly, dust particles in light beams, Hebrew Israelite prophetic aesthetic, ultra dramatic, no text on screen.';
 runKieMediaJobs({kind:'video',model:model,prompt:vidPrompt,count:1,aspectRatio:'16:9'},output,function(urls){
