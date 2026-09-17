@@ -2374,7 +2374,7 @@ return p;
 }
 function buildRoughBezAntiLoopBlock(partNum){
 var p='ROUGH BEZ ANTI-LOOP -- ZERO TOLERANCE (THIS IS WHY SERMONS SOUND REPETITIVE):\n';
-p+='The vocabulary pools below are IDEA BANKS -- not copy-paste scripts. Solar Pro and other models dump entire lists; you MUST NOT.\n';
+p+='Your fire comes from the NEXT verse in the spine -- not from memorized catchphrase reels. Solar Pro and other models dump entire lists; you MUST NOT.\n';
 p+='- "Look at your..." hooks: MAX FIVE per part, woven into paragraphs -- NEVER a vertical checklist of twenty-plus lines.\n';
 p+='- "You been..." cascade: MAX THREE back-to-back in the whole part. One sharp hit beats fifteen stacked verbs.\n';
 p+='- "Follow the money / blood / names / borders..." chain: MAX THREE items per part -- not the full chain every time.\n';
@@ -2428,16 +2428,17 @@ return out;
 }
 function buildRoughBezBurnedFromPriorParts(partNum){
 if(partNum<2)return '';
-var lookAt=[],been=[],compounds=[],judgment=[];
+var lookAt=[],been=[],compounds=[],judgment=[],scripture=[];
 for(var i=0;i<partNum-1;i++){
 var raw=sermonPartsRaw[i]||'';
 lookAt=lookAt.concat(extractRoughBezLookAtHooks(raw));
 been=been.concat(extractRoughBezBeenLines(raw));
 compounds=compounds.concat(extractRoughBezCompoundLabels(raw));
+scripture=scripture.concat(extractRoughBezScriptureRefs(raw));
 var jm=extractRoughBezJudgmentMontageMarkers(raw);
 for(var ji=0;ji<jm.length;ji++)if(judgment.indexOf(jm[ji])===-1)judgment.push(jm[ji]);
 }
-if(!lookAt.length&&!been.length&&!compounds.length&&!judgment.length)return '';
+if(!lookAt.length&&!been.length&&!compounds.length&&!judgment.length&&!scripture.length)return '';
 var p='ROUGH BEZ BURNED FROM PRIOR PARTS (DO NOT REUSE IN PART '+partNum+'):\n';
 if(lookAt.length){
 p+='These "look at your..." hooks already landed -- use DIFFERENT life-pressure examples or ONE woven callback, not the same inventory:\n';
@@ -2453,6 +2454,11 @@ for(var c=0;c<Math.min(compounds.length,25);c++)p+='- '+compounds[c]+'\n';
 }
 if(judgment.length>=2){
 p+='JUDGMENT MONTAGE ALREADY FIRED in prior part(s): '+judgment.join(', ')+'. Do NOT rerun Sodom/Egypt/flood/Zechariah fourteen gore in Part '+partNum+' -- one callback sentence max, or pick a DIFFERENT judgment text.\n';
+}
+if(scripture.length){
+p+='SCRIPTURE ALREADY QUOTED in prior part(s) -- BURNED unless one sentence of new angle:\n';
+for(var s=0;s<Math.min(scripture.length,35);s++)p+='- '+scripture[s]+'\n';
+p+='Part '+partNum+' must walk NEW verses/passages -- continue the spine forward, do not re-quote the same band.\n';
 }
 p+='If Part '+(partNum-1)+' already ran the mark-on-the-hand / scanner / thumbprint thesis, Part '+partNum+' must advance to NEW symbols and NEW scripture -- not the same sermon in new font.\n\n';
 return p;
@@ -2499,30 +2505,80 @@ else{sameStart=1;prevStart=start;}
 }
 return false;
 }
-function buildRoughBezVocabularyBlock(){
-var p='ROUGH BEZALEEL VOCABULARY -- EXPANSIVE, ROTATING, NEVER STALE:\n';
-p+='You have a MASSIVE street lexicon. USE IT SPARINGLY. Do NOT paste whole pools into the sermon. Rotate constantly. If a phrase already appeared in this sermon, it is BURNED -- invent fresh words with the same energy.\n';
-p+='OVERUSED CRUTCHES (MAX ONCE PER SERMON EACH -- prefer fresh alternatives): "real talk," "stop playing," "you trippin\'", "that math ain\'t mathing," "they ran game on you," "you got played," "you still sleep," "that system been had you," "look at your block," "badge-and-bible hypocrisy," "plantation theology," "slave-master religion," "Sunday plantation programming."\n\n';
-p+='SYSTEM / DOCTRINE ATTACKS (IDEA POOL -- max TWO compound labels per paragraph, ONCE per entire sermon each -- never dump the list):\n';
-p+='Examples: "blood-money churches," "tithe-trap theology," "cheap-grace con," "replacement-theology racket" -- pick one or two when the symbol demands it, then use plain corner talk for the rest.\n\n';
-p+='HAMMER INTERJECTIONS (IDEA POOL -- pick ONE OR TWO per paragraph, never dump the list):\n';
-p+='Examples: "Nah." "Listen." "Peep this." "Hold up." "Wait." "Feel me?" "That was by design." "You been conditioned." "You been fleeced." -- rotate; never stack fifteen "You been..." lines in a row.\n\n';
-p+='STREET SLANG & CADENCE (Black conversational -- rotate wide, sound human not parody):\n';
-p+='"you wildin\'", "you buggin\'", "you slackin\'", "you fumblin\'", "you dawdlin\'", "you hesitatin\'", "you stallin\'", "you draggin\' your feet", "you movin\' like you got time", "you movin\' like judgment ain\'t outside", "you actin\' brand new", "you actin\' like you ain\'t see it", "you actin\' like you ain\'t hear it", "you actin\' like that ain\'t your cousin", "you actin\' like that ain\'t your mama", "you actin\' like that ain\'t your rent", "cut it out", "knock it off", "get serious", "wake your mind up", "open your eyes", "use your head", "think with your spirit", "read the room", "read the times", "read the pattern", "connect the dots", "follow the money", "follow the blood", "follow the names", "follow the borders", "follow the ships", "follow the papers", "follow the deeds", "follow the patents", "follow the policy", "that don\'t add up", "that don\'t line up", "that don\'t square up", "that story got holes", "that doctrine got cracks", "that preacher got receipts", "that nation got fingerprints", "they sold you a dream", "they sold you a nightmare with a bow on it", "they packaged the lie pretty", "they polished the chain", "they baptized the cage", "they anointed the trap", "you inherited confusion", "you inherited amnesia", "you inherited a stolen name", "you inherited a borrowed religion", "you inherited somebody else\'s god", "you wearing another man\'s faith like a hand-me-down", "you quoting another man\'s master", "you praying to your oppressor\'s deity", "you tithing to your kidnapper\'s church", "you funding your own erasure", "you cosigning your own captivity", "you cheering for your own replacement", "you clapping for your own chains", "you dancing in the plantation pews", "you celebrating the lie that starved you", "you defending the doctrine that hunted you", "you protecting the system that buried your name."\n\n';
-p+='MODERN PRESSURE HOOKS (IDEA POOL -- max FIVE "look at your X" lines per part, woven into prose):\n';
-p+='Examples: lease, eviction notice, paycheck, copay, scan gun, EBT balance, county jail, bloodline, renamed identity -- pick what THIS verse exposes; never run the full inventory as a vertical list.\n\n';
-p+='CONFRONTATIONAL QUESTIONS (scatter fresh ones -- never repeat the same question twice):\n';
-p+='"Who told you that was holy?" "Who baptized that lie?" "Who signed off on that doctrine?" "Who profits when you forget?" "Who eats when you stay blind?" "Who sleeps better when you stay lost?" "Who needs you ignorant?" "Who needs you docile?" "Who needs you divided?" "Who needs you hating your own?" "Who needs you fearing your own reflection?" "What verse told you to love your oppressor\'s god?" "What scripture told you to fund Babylon?" "What prophet told you to ignore your name?" "What angel told you to abandon Torah?" "When did Yah tell you to cosign your own replacement?" "When did Yah tell you His law expired?" "When did Yah tell you His feasts were optional?" "When did Yah tell you His name was forbidden?" "Why you still arguing for the men who hunted you?" "Why you still defending the books that miseducated you?" "Why you still trusting the institutions that caged you?" "Why you still waiting for the same system to save you?" "How long you gonna negotiate with a lie that already took everything?" "How long you gonna treat captivity like culture?" "How long you gonna call amnesia identity?"\n\n';
-p+='ANTI-REPETITION RULES:\n';
-p+='- Do NOT use the same slang phrase, system label, or "look at your..." hook twice in one sermon unless unavoidable.\n';
-p+='- Do NOT open consecutive paragraphs with the same interjection ("Listen," "Real talk," etc.).\n';
-p+='- Do NOT paste vocabulary pools verbatim -- they are inspiration, not output.\n';
-p+='- Do NOT stack compound labels ("X still Y. X still Y.") -- max TWO per paragraph, once per sermon each.\n';
-p+='- Judgment gore montage (Sodom, Egypt firstborn, flood, Zechariah fourteen): ONCE per entire sermon total.\n';
-p+='- Invent NEW combinations when the pools above run thin -- same ENERGY, fresh WORDS.\n';
-p+='- Attack systems and lies, not immutable traits. No racial slurs. No slurs against protected groups.\n';
-p+='- Slang seasons the preaching -- it does NOT replace scripture, symbols, or the assigned topic. One or two hits per paragraph max.\n\n';
+function buildRoughBezVoiceBlock(){
+var p='ROUGH BEZ VOICE -- DYNAMIC, NOT PREPROGRAMMED:\n';
+p+='You are Brother Bet on the corner with the Bible OPEN. Your fire comes FROM the verse you just read -- not from a memorized catchphrase reel.\n';
+p+='- Street cadence: short punches, Nah/Listen/Peep this when natural -- never stack the same interjection every paragraph.\n';
+p+='- Invent fresh words every time. Plain corner talk beats hyphen slogans.\n';
+p+='- Profanity and graphic judgment when Explicit is on -- woven around scripture, not instead of it.\n';
+p+='- Attack systems and lies, not immutable traits. Slang seasons the word; it does NOT replace the word.\n\n';
 return p;
+}
+function countRoughBezScriptureRefs(text){
+if(!text)return 0;
+var t=String(text);
+var spoken=(t.match(/\b(?:genesis|exodus|leviticus|numbers|deuteronomy|isaiah|jeremiah|ezekiel|daniel|revelation|matthew|mark|luke|john|acts|romans|corinthians|galatians|ephesians|philippians|colossians|timothy|hebrews|james|peter|jude|amos|hosea|joel|zechariah|malachi|psalm|proverbs|job|joshua|judges|ruth|samuel|kings|chronicles|ezra|nehemiah|esther|habakkuk|nahum|micah|obadiah|jonah|haggai|zephaniah|lamentations|baruch|tobit|judith|wisdom|sirach|enoch|jasher|jubilees)\s+chapter\s+[a-z0-9 \-]+(?:verse|verses)\s+[a-z0-9 \-]+/gi)||[]).length;
+var blockquotes=(t.match(/(?:^|\n)>\s/mg)||[]).length;
+return spoken+Math.min(blockquotes,Math.max(0,Math.floor(blockquotes/2)));
+}
+function extractRoughBezScriptureRefs(text){
+var m=String(text||'').match(/\b(?:genesis|exodus|leviticus|numbers|deuteronomy|isaiah|jeremiah|ezekiel|daniel|revelation|matthew|mark|luke|john|acts|romans|corinthians|galatians|ephesians|philippians|colossians|timothy|hebrews|james|peter|jude|amos|hosea|joel|zechariah|malachi|psalm|proverbs|job|joshua|judges|ruth|samuel|kings|chronicles|ezra|nehemiah|esther|habakkuk|nahum|micah|obadiah|jonah|haggai|zephaniah|lamentations)\s+chapter\s+[a-z0-9 \-]+(?:verse|verses)\s+[a-z0-9 \-]+/gi)||[];
+var out=[],seen={};
+for(var i=0;i<m.length;i++){
+var h=m[i].trim().toLowerCase();
+if(!seen[h]){seen[h]=1;out.push(m[i].trim());}
+}
+return out;
+}
+function getRoughBezPartFocus(partNum,totalParts,topic,chapterSrc){
+var title=topic&&topic.title?topic.title:'this topic';
+var minVerses=totalParts===1?8:5;
+if(chapterSrc){
+if(totalParts===1)return 'Standalone Rough Bez on '+chapterSrc.book+' Chapter '+chapterSrc.chapter+': Walk EVERY assigned verse in order with the scripture loop. Open mid-rebuke on verse one. No canned slogan sermon.';
+if(partNum===1)return 'Part 1: Open mid-rebuke. Walk your assigned verses from '+chapterSrc.book+' Chapter '+chapterSrc.chapter+' IN ORDER. Minimum '+minVerses+' distinct quoted verses. Stop at your part boundary -- do not preview later verses.';
+if(partNum===totalParts)return 'Final part: Continue verse-by-verse from where Part '+(partNum-1)+' stopped through the last verse of the chapter. NEW verses only. Close from the TEXT -- not generic filler.';
+return 'Part '+partNum+': One-sentence bridge max, then continue the chapter IN ORDER from your assigned verse band. Minimum '+minVerses+' new quoted verses. Advance the symbols -- do not restart the chapter.';
+}
+if(totalParts===1)return 'Standalone Rough Bez on '+title+': Walk the full scripture trail on this topic -- quote and decode passages IN ORDER (search internally for the primary texts). Minimum '+minVerses+' distinct verses. Open mid-rebuke on the lead scripture. Close with altar call FROM the last passage you teach.';
+if(partNum===1)return 'Part 1: Open mid-rebuke on the lead scripture for '+title+'. Quote and decode the FIRST band of passages in logical/biblical order. Minimum '+minVerses+' distinct verses. End pointing at the next passage -- not a canned hook list.';
+if(partNum===totalParts)return 'Final part: Continue the scripture trail AFTER Part '+(partNum-1)+'. NEW verses only. Minimum '+minVerses+' distinct quotes. Altar call must come FROM the closing passages you teach -- not a recycled montage.';
+return 'Part '+partNum+': One-sentence bridge max. Continue the scripture reading order on '+title+' -- NEW verses only. Minimum '+minVerses+' distinct quoted passages. Each part advances NEW symbols (beasts, horns, mark, bowls, harlot, etc.) -- do not restate Part 1 in new words.';
+}
+function buildRoughBezScriptureSpineBlock(topic,chapterSrc,partNum,totalParts){
+var title=topic&&topic.title?topic.title:'this topic';
+var minVerses=totalParts===1?8:5;
+var p='*** ROUGH BEZ SCRIPTURE SPINE -- THE SERMON FOLLOWS THE BIBLE (NOT SLANG POOLS) ***\n';
+p+='You are WALKING THROUGH SCRIPTURE on "'+title+'" -- not performing a prewritten rant with Bible garnish.\n\n';
+p+='THE LOOP -- repeat for EVERY verse/passage in this part until you hit the word target:\n';
+p+='  (1) QUOTE the verse in KJV wording (spoken book/chapter/verse numbers, or a blockquote).\n';
+p+='  (2) DECODE the symbols in THAT verse for Israel in twenty twenty-six -- systems, access, loyalty, merchants, false shepherds, covenant, judgment.\n';
+p+='  (3) LAND one fresh modern example the symbol exposes (one or two sentences max -- not a checklist).\n';
+p+='  (4) MOVE to the NEXT verse. Do not loop the same symbol with new adjectives.\n\n';
+if(chapterSrc){
+p+='CHAPTER SPINE: '+chapterSrc.book+' Chapter '+chapterSrc.chapter+' is the authoritative text. Walk assigned verses IN ORDER. The chapter text above (if provided) is the ONLY source -- do not invent verses.\n';
+}else{
+p+='TOPIC SPINE: No chapter pasted -- you MUST build a scripture trail.\n';
+p+='  - Search internally for the primary passages on "'+title+'" (Revelation, Daniel, Torah, prophets, epistles as the topic demands).\n';
+p+='  - Part '+partNum+' covers the NEXT band of that trail -- not the whole topic again.\n';
+if(partNum>1)p+='  - Read PREVIOUS PARTS above: every verse already quoted there is BURNED unless one sentence of new angle.\n';
+p+='  - Minimum '+minVerses+' DISTINCT scripture quotations in Part '+partNum+'. Writing 1500+ words with one or two verses = FAILURE.\n';
+}
+p+='FORBIDDEN:\n';
+p+='- Preaching the topic in abstraction while barely quoting scripture.\n';
+p+='- Canned "look at your..." inventories, compound-label avalanches, or question rosters as the main content.\n';
+p+='- Fabricating quotes or mangling verse wording (especially Revelation).\n';
+p+='- Re-running prior parts\' thesis instead of advancing to the next passage.\n\n';
+return p;
+}
+function looksLikeRoughBezScripturelessRant(text,partNum,totalParts){
+if(!text)return false;
+var len=String(text).trim().length;
+if(len<1600)return false;
+var refs=countRoughBezScriptureRefs(text);
+var min=totalParts===1?6:4;
+if(refs>=min)return false;
+if(refs>=2&&len<3500)return false;
+return refs<Math.max(2,min-2);
 }
 function buildBezStorySlangBlock(){
 var p='BEZ STORY SLANG -- EXPANSIVE ROTATION (NOT A CATCHPHRASE REEL):\n';
@@ -4862,6 +4918,7 @@ var t=String(text);
 if(looksLikeRoughBezListDump(t))return true;
 if(looksLikeRoughBezCompoundLabelDump(t))return true;
 if(looksLikeRoughBezJudgmentMontageRepeat(t,partNum))return true;
+if(looksLikeRoughBezScripturelessRant(t,partNum,totalParts))return true;
 if(looksLikeRoughBezEssaySoftening(t))return true;
 if(/\bmaster engineer\b/i.test(t))return true;
 var techHits=(t.match(/\b(cron job|firmware update|fiber optic|instruction set architecture|network interrupt|operating system|software license|biological source code|biological hardware|clearing the cache|rebooting the system|local cache|secure network connection|quantum computer|antivirus software|phase disruption|signal damping|electrical conductivity|thermal conductivity|optical reflectivity|periodic table)\b/gi)||[]).length;
@@ -4981,7 +5038,9 @@ p+='- Passive essay blocks: "one must," "the tragedy of such moments," "when sys
 p+='- Checklist dumps: twenty-plus "Look at your..." lines, eight-plus "You been..." cascades, full "Follow the money/blood/names" chains\n';
 p+='- Compound label avalanches: three-plus hyphen labels in one paragraph or eight-plus in one part ("blood-money churches still... building-fund bondage still...")\n';
 p+='- Judgment montage encore: rerunning Sodom + Egypt + flood + Zechariah fourteen gore after a prior part already ran it\n';
+p+='- Scriptureless rant: long street pressure with fewer than four distinct quoted verses/passages when the part should be walking the Bible\n';
 p+='- Reusing the same calendar date on unrelated headlines across parts\n\n';
+p+='REQUIRED: Walk scripture verse-by-verse -- quote KJV, decode the symbol, land one modern example, move to the NEXT verse. The spine drives the sermon.\n\n';
 }else if(isYahStoryModeActive()){
 p+='Return to Yah first-person revelation from the throne -- NOT a lesson, NOT scholarship, NOT chatbot, NOT assistant filler, NOT third person about Yah.\n\n';
 }else{
@@ -5818,12 +5877,8 @@ partFocus='BEZ STORY continuation: Bridge one sentence max, then keep unveiling 
 }
 }else if(wantYahStory){
 partFocus='YAH STORY: One unbroken river of first-person revelation through this text. Verse by verse in paragraph flow -- Me speaking straight to their bones in twenty twenty-six. Name culprits and institutions by full name and what they do -- no vague they/the elites, no year stamps on people. Headlines get verified calendar dates (month, day, year -- spelled out), never vague timelines. '+partFocus.replace(/teach|lesson|teaching|break down|breakdown/gi,'reveal');
-}
-if(wantRoughBez&&(partNum===1||totalParts===1)){
-partFocus=partFocus.replace('Open as instructed above -- if Israelite voice, welcome the listeners as Brother Bet-Tsade-Lamed-Aleph-Lamed with backdrop; if Yah voice, open with a commanding divine declaration. Then transition into the lesson body with a UNIQUE, topic-specific hook -- a provocative question, a shocking scripture quote, a bold doctrinal claim, or a vivid scene.','Open as instructed above -- ROUGH BEZALEEL voice must NOT welcome the listeners, must NOT use broadcast framing, and must NOT set a soft backdrop. Open with an immediate street rebuke, scripture strike, direct accusation, or harsh warning specific to this topic.');
-}
-if(wantRoughBez&&!wantBezStory){
-partFocus+=' ROUGH BEZALEEL EXTRA: Keep this part dynamic and unrehearsed. Decode symbolic language first, apply it to modern Israel in twenty twenty-six, avoid repeated examples from earlier sections, and do not force Paleo Hebrew unless it truly changes the meaning.';
+}else if(wantRoughBez&&!wantBezStory){
+partFocus=getRoughBezPartFocus(partNum,totalParts,topic,chapterSrc);
 }
 var wordsPerPart=getForgeWordsPerPart(totalParts);
 var totalWords=totalParts*wordsPerPart;
@@ -5841,7 +5896,8 @@ p+='NO ISRAELITE TECH MODE (ZERO TOLERANCE): No Master Engineer layer. No "Bible
 if(wantRoughBez){
 p='You are Brother Bet-Tsade-Lamed-Aleph-Lamed, a harsh street-corner Hebrew Israelite preacher and teacher of Torah truth. You speak from the perspective of a dedicated Israelite brother warning your people before judgment lands. You speak ABOUT Yah in THIRD PERSON -- you are a man, not God. ';
 p+='ROUGH BEZALEEL MODE: This is NOT a podcast, NOT a ministry broadcast, NOT a friendly episode, NOT a comfortable lesson, and NOT host content. No welcome. No "peace, family." No "you are tuning in." No backdrop speech. No listener warmup. Start like a street preacher already mid-rebuke with scripture in one hand and judgment in the other. The voice is severe, urban, blunt, and urgent. Short punches. Hard warnings. No soft cushion after correction. Make the listener feel the door is closing while they are still playing around.\n';
-p+=buildRoughBezVocabularyBlock();
+p+=buildRoughBezVoiceBlock();
+p+=buildRoughBezScriptureSpineBlock(topic,chapterSrc,partNum,totalParts);
 p+=buildRoughBezAntiLoopBlock(partNum);
 p+='MODERN HUMAN DELIVERY: Speak like a real man in twenty twenty-six talking to modern Hebrew people who do not know who they are yet. Not rehearsed. Not a script. Not a lecture. Not a camp checklist. Use natural human pivots, interruptions, and plain speech. Sound like you are trying to wake up somebody standing in front of you before they get swallowed by the system.\n';
 p+='SYMBOLIC-FIRST INTERPRETATION: Break down ALL symbolic language Yah uses. Do NOT take visions, beasts, horses, horns, waters, stars, seals, trumpets, bowls, angels, wilderness, cities, women, harlots, wine, oil, bread, swords, fire, clouds, thrones, crowns, numbers, colors, directions, or temple imagery as literal by default. Treat them as symbols, systems, offices, spiritual states, covenant patterns, social conditions, economic controls, judgment mechanisms, and identity markers unless the text itself clearly demands a literal reading. Your job is to decode what the symbol MEANS in real life for Israel right now.\n';
@@ -6135,6 +6191,9 @@ if(wantBezStoryBreakdown){
 p+='BEZ STORY BREAKDOWN (MANDATORY): Break EACH assigned verse ALL THE WAY DOWN in revelation cadence. Decode every symbol and allegorical layer -- Job-is-Israel when it fits, two seed lines, name meanings in plain English -- name every lie, expose who profits BY FULL NAME AND WHAT THEY DO (CEO to low-level operator when the verse demands it), land it on modern Israel\'s body. Stay inside dense paragraphs. NO ## headers, NO blockquotes, NO verse labels. No Paleo Hebrew. After you decode a verse, strike with a current headline from Web Research -- verified calendar date (month, day, year -- spelled out), then name every person in that headline plus whoever owns the system behind it -- scripture, then street, then dated news with named culprits, then the next verse, one river. Linger on each verse; do not rush.\n';
 }
 p+='\n';
+}else if(wantRoughBez){
+p+='ROUGH BEZ VERSE WALK -- SCRIPTURE SPINE (NOT A CATCHPHRASE SERMON):\n';
+p+='For EACH verse in your assignment, run the loop: (1) quote the verse in KJV wording, (2) decode what the symbols mean for Israel in twenty twenty-six -- systems, access, loyalty, merchants, false shepherds, covenant, judgment, (3) land ONE fresh modern example the symbol exposes, (4) move to the NEXT verse in order. Walk inside continuous paragraphs -- no ## headers, no vertical "look at your..." inventories, no compound-label avalanches. Plain street fire woven around the text. No Paleo letter engineering. No Master Engineer metaphors. When a symbol maps to merchants, pastors, courts, pharma, media, or empire -- name them when web search verifies. Dated headlines get verified calendar dates (month, day, year -- spelled out). Linger on each verse until this part hits the word target.\n\n';
 }else{
 p+='*** DEEP-DIVE VERSE BREAKDOWN PROTOCOL -- MANDATORY FOR EVERY VERSE ***\n';
 p+='For EACH verse, you MUST complete ALL of the following internal analysis steps. DO NOT OUTPUT THE STEP HEADERS OR LABELS -- just deliver the content smoothly without section titles.\n\n';
@@ -6165,12 +6224,14 @@ p+='   - What DOCTRINE does this verse establish or support? (Creation, identity
 p+='   - What FALSE DOCTRINE does this verse destroy or contradict? (Trinity, free will, eternal torment, rapture, globe earth, angel worship, etc.)\n';
 p+='   - Connect this verse to the BROADER theological framework -- how does it fit into the full counsel of scripture?\n';
 p+='   - BUT DO NOT OUTPUT A "**THEOLOGICAL AND DOCTRINAL LAYER:**" HEADER -- just deliver the analysis directly.\n\n';
+if(!wantRoughBez){
 p+='INTERNAL STEP 5 -- ENGINEERING AND TECHNICAL ANALYSIS -- OUTPUT WITHOUT LABEL:\n';
 p+='   - What ENGINEERING or SCIENTIFIC principle is embedded in this verse?\n';
 p+='   - Does it reference physical structures (ark, temple, firmament, pillars), measurements, ratios, geometry, physics, frequency, vibration, water, light, sound?\n';
 p+='   - If numbers appear, decode the SYMBOLIC meaning (7 = completion, 12 = governance, 40 = testing, etc.).\n';
 p+='   - Show how this verse reveals Yah as the MASTER ENGINEER and creation as a DESIGNED SYSTEM.\n';
 p+='   - BUT DO NOT OUTPUT AN "**ENGINEERING AND TECHNICAL ANALYSIS:**" HEADER -- just deliver the analysis directly.\n\n';
+}
 if(wantCrossRefs){
 p+='INTERNAL STEP 6 -- CROSS-REFERENCE VALIDATION -- OUTPUT WITHOUT LABEL:\n';
 p+='   - Provide 1-3 SPECIFIC cross-references from KJV canon'+(wantApocrypha?' (and apocrypha/sealed scrolls when they genuinely confirm the point)':'')+' that CONFIRM or EXPAND on this verse\'s teaching.\n';
@@ -6419,7 +6480,7 @@ p+='Each part must advance the lesson. If a listener heard the same speech twice
 p+='If you catch yourself writing something that echoes a previous part, DELETE IT and write something fresh.\n\n';
 if(wantRoughBez&&!wantBezStory){
 p+=buildRoughBezBurnedFromPriorParts(partNum);
-p+='ROUGH BEZ MULTI-PART ADVANCE: Each part must decode NEW symbols and NEW scripture. Do NOT re-run the same mark-on-the-hand / scanner / thumbprint inventory. Do NOT copy Part '+(partNum-1)+'\'s "look at your..." list. Do NOT replay the same confrontational question roster. Do NOT replay the Sodom/Egypt/flood/Zechariah judgment montage. Do NOT dump compound labels Part '+(partNum-1)+' already burned.\n\n';
+p+='ROUGH BEZ MULTI-PART ADVANCE: Each part must walk NEW verses on the scripture spine -- quote, decode, one modern example, next verse. Do NOT re-run the same mark-on-the-hand / scanner / thumbprint inventory. Do NOT copy Part '+(partNum-1)+'\'s "look at your..." list. Do NOT replay the same confrontational question roster. Do NOT replay the Sodom/Egypt/flood/Zechariah judgment montage. Do NOT dump compound labels Part '+(partNum-1)+' already burned.\n\n';
 }
 }
 if(wantExplicit){
