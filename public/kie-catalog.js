@@ -32,7 +32,27 @@
     { id: 'veo3_fast', name: 'Veo 3.1 Fast' },
     { id: 'veo3', name: 'Veo 3.1 Quality' },
     { id: 'veo3_lite', name: 'Veo 3.1 Lite' },
-    { id: 'grok-imagine/text-to-video', name: 'Grok Imagine Video' }
+    { id: 'grok-imagine/text-to-video', name: 'Grok Imagine Video' },
+    { id: 'grok-imagine-video-1-5-preview', name: 'Grok Imagine Video 1.5' },
+    { id: 'sora-2-text-to-video', name: 'Sora 2 Text to Video' },
+    { id: 'sora-2-text-to-video-stable', name: 'Sora 2 Text to Video (Stable)' },
+    { id: 'kling-2.6/text-to-video', name: 'Kling 2.6' },
+    { id: 'kling/v3-turbo-text-to-video', name: 'Kling V3 Turbo' },
+    { id: 'kling/v2-5-turbo-text-to-video-pro', name: 'Kling V2.5 Turbo Pro' },
+    { id: 'kling/v2-1-master-text-to-video', name: 'Kling V2.1 Master' },
+    { id: 'wan/2-7-text-to-video', name: 'Wan 2.7' },
+    { id: 'wan/2-6-text-to-video', name: 'Wan 2.6' },
+    { id: 'wan/2-5-text-to-video', name: 'Wan 2.5' },
+    { id: 'wan/2-2-a14b-text-to-video-turbo', name: 'Wan 2.2 Turbo' },
+    { id: 'bytedance/seedance-2', name: 'ByteDance Seedance 2' },
+    { id: 'bytedance/v1-pro-text-to-video', name: 'ByteDance V1 Pro' },
+    { id: 'bytedance/v1-lite-text-to-video', name: 'ByteDance V1 Lite' },
+    { id: 'hailuo/02-text-to-video-pro', name: 'Hailuo 02 Pro' },
+    { id: 'hailuo/02-text-to-video-standard', name: 'Hailuo 02 Standard' },
+    { id: 'pixverse-v6/text-to-video', name: 'PixVerse V6' },
+    { id: 'minimax-h3/text-to-video', name: 'MiniMax H3' },
+    { id: 'happyhorse/text-to-video', name: 'HappyHorse' },
+    { id: 'runway', name: 'Runway Gen-3' }
   ];
 
   function fillMediaSelect(id, models, preferred) {
