@@ -2584,9 +2584,18 @@ p+='- DIALOGUE must weaponize the deep_history, private_agenda, and insider_know
 p+='- No URLs in the script.\n\n';
 return p;
 }
+function looksLikeCorporateOrPolicyPaste(text){
+if(!text)return false;
+var t=String(text).trim();
+if(/\d+\s*%/.test(t)&&/\b(discount|off|cap|essentials|benefits|per hour|dollar|banking|amazon|whole foods|wage|pay|bonus|employee|prime|essentials)\b/i.test(t))return true;
+if(/\b(amazon banking|whole foods|per hour|no cap|for life|even after leaving|extra dollar|payroll|headcount|layoff|restructur)\b/i.test(t))return true;
+if(/\$\s*\d+|\d+\s*dollars?\b/i.test(t)&&/\b(hour|discount|cap|benefit|employee|wage|pay)\b/i.test(t))return true;
+return false;
+}
 function looksLikePastedBriefingOrArticle(text){
 if(!text)return false;
 var t=String(text).trim();
+if(looksLikeCorporateOrPolicyPaste(t))return true;
 if(t.length<180)return false;
 var paras=t.split(/\n\s*\n/).filter(function(p){return p.trim().length>0;});
 if(paras.length>=2)return true;
@@ -2615,6 +2624,7 @@ p+='ZERO TOLERANCE:\n';
 p+='- Do NOT answer rhetorical questions embedded in the paste ("wait a minute, it doesn\'t seem that hot").\n';
 p+='- Do NOT explain the jargon line by line (500 mb, heat dome, dm contour, etc.) as teaching content.\n';
 p+='- Do NOT write a meteorology explainer or "here\'s why the East Coast feels cooler" lesson.\n';
+p+='- Numbers in the paste (1 dollar, 20%, 10%, wage bumps, discounts, caps) are POLICY/BENEFITS math — NOT Bible verses. Do NOT verse-by-verse scripture breakdown. Do NOT quote KJV over percentages.\n';
 p+='- The paste is the PUBLIC FACE of the story; your script is the PRIVATE ROOM where elites shaped how this plays.\n\n';
 p+='HEADLINE ON THE TABLE: '+topic.title+'\n';
 p+='FULL BRIEFING (context only — weave into boardroom dialogue, never lecture it):\n'+topic.briefingText+'\n\n';
@@ -2698,6 +2708,9 @@ p+=buildTheatreWebResearchBlock(topic,partNum,totalParts,ultraElite);
 p+='\nSCENE ENGINE:\n';
 p+='- The TOPIC on the table: "'+title+'" -- '+desc+'\n';
 p+='- Show HOW this policy mindset gets engineered: who benefits, who gets crushed, public lie vs private admission.\n';
+if(topic&&(topic.briefingText||topic.isBriefing)){
+p+='- PASTED BRIEFING ONLY: This is corporate/news/policy text — NOT scripture. Do NOT invent Bible verses or verse-by-verse breakdown from numbers in the paste (percentages, dollar amounts, caps).\n';
+}
 if(eli5Enabled){
 p+='- LAYMAN\'S TERMS ON: speakers say who gets hurt in plain words — no "legacy populations" or corporate codewords.\n';
 }else{
@@ -2938,18 +2951,27 @@ if(seen[1]&&seen[2]&&seen[3]&&maxBrute>=5)return maxBrute;
 // Fallback: return best guess from any strategy
 return Math.max(maxFromCitations,maxFromLines,maxFromAll,maxBrute);
 }
+function isScriptureVerseMarkerLine(line){
+var L=String(line||'').trim();
+if(!L||L.length<4)return false;
+if(/^\d{1,3}\s*%/.test(L))return false;
+if(/^\d{1,3}\s*(extra|dollar|\$|per hour|percent|discount|off\b)/i.test(L))return false;
+if(/^\d{1,3}[\.\):]\s+\S/.test(L))return true;
+if(/^\d{1,3}\s+["'(A-Z]/.test(L))return true;
+return false;
+}
 function detectVerseMarkersInText(text){
-var lineMatches=text.match(/(?:^|\n)\s*\**(\d{1,3})\**[\.\):\s]/g)||[];
+var lines=String(text||'').split(/\n/);
 var nums={};
 var max=0;
-for(var i=0;i<lineMatches.length;i++){
-var n=lineMatches[i].match(/(\d+)/);
-if(n){
+for(var i=0;i<lines.length;i++){
+if(!isScriptureVerseMarkerLine(lines[i]))continue;
+var n=lines[i].match(/^\s*\**(\d{1,3})\**/);
+if(!n)continue;
 var v=parseInt(n[1],10);
 if(v>=1&&v<=200){
 nums[v]=true;
 if(v>max)max=v;
-}
 }
 }
 return {count:Object.keys(nums).length,max:max};
@@ -2958,11 +2980,14 @@ function looksLikePastedScripture(text){
 if(!text)return false;
 var t=String(text).trim();
 if(t.length<30)return false;
+if(looksLikePastedBriefingOrArticle(t))return false;
+if(looksLikeCorporateOrPolicyPaste(t))return false;
 var markers=detectVerseMarkersInText(t);
 if(markers.count>=2)return true;
 var cites=t.match(/[A-Za-z][A-Za-z0-9 .']+\s+\d+:\d+/g)||[];
 if(cites.length>=2)return true;
-if(markers.count>=1&&t.indexOf('\n')!==-1)return true;
+if(parseScriptureHeaderLine(t.split('\n')[0]))return true;
+if(markers.count>=3)return true;
 return false;
 }
 function parseScriptureHeaderLine(line){
@@ -3059,6 +3084,14 @@ forgeNewsUrlBehindTheVeil(raw);
 return;
 }
 currentNewsVeilFromUrl=false;
+var paste=parseCustomTopicPaste(raw);
+if(paste.isBriefing){
+currentTopic={id:-1,cat:'doctrine',title:paste.headline,desc:'Closed-door dramatization hook — source briefing pasted by user.',briefingText:paste.body,isBriefing:true};
+currentMode='standard';
+currentChapterSource=null;
+currentChapterText=null;
+currentChapterVerseCount=0;
+}else{
 var parsed=parseCustomScriptureInput(raw);
 if(parsed.isScripture){
 currentTopic={id:-1,cat:'doctrine',title:parsed.title,desc:'Custom scripture sermon: '+parsed.title};
@@ -3067,16 +3100,12 @@ currentChapterSource={book:parsed.book,chapter:parsed.chapter,type:'custom'};
 currentChapterText=parsed.scriptureText;
 currentChapterVerseCount=parsed.verseCount>0?parsed.verseCount:countVersesInText(parsed.scriptureText);
 }else{
-var paste=parseCustomTopicPaste(raw);
-if(paste.isBriefing){
-currentTopic={id:-1,cat:'doctrine',title:paste.headline,desc:'Closed-door dramatization hook — source briefing pasted by user.',briefingText:paste.body,isBriefing:true};
-}else{
 currentTopic={id:-1,cat:'doctrine',title:raw.length>140?paste.headline:raw,desc:'Custom sermon topic: '+raw};
-}
 currentMode='standard';
 currentChapterSource=null;
 currentChapterText=null;
 currentChapterVerseCount=0;
+}
 }
 openModal();
 }
