@@ -2294,6 +2294,7 @@ var wantStoryMode=!!opts.wantStoryMode;
 var wantBezStoryBreakdown=!!opts.wantBezStoryBreakdown;
 var wantBezStory=!!opts.wantBezStory;
 var wantYahStory=!!opts.wantYahStory;
+var wantRoughBez=!!opts.wantRoughBez;
 var mode=opts.currentMode||currentMode||'doctrine';
 if(mode==='news')return '';
 var title=topic.title||'this topic';
@@ -2338,6 +2339,7 @@ p+='Look for: headlines that prove the doctrine -- legislation, wars, economy, d
 }
 if(totalParts>1){
 p+='When you find your ONE headline for this part, lock it internally: verified calendar date (month, day, year) + six-to-twelve-word summary (who/what) so you do not drift into a story you already used.\n';
+if(wantRoughBez)p+='ROUGH BEZ NEWS ROTATION: Each part MUST use a headline on a DIFFERENT verified calendar date than prior parts. Never stamp the same date (e.g. "September fifteenth, twenty twenty-six") on three unrelated stories — that sounds templated, not researched.\n';
 }else{
 p+='Weave 2-3 of the strongest DISTINCT articles into this single sermon -- not a news recap, and never the same event twice. Each must have its own verified calendar date.\n';
 }
@@ -4704,11 +4706,48 @@ var t=setTimeout(onStall,ms);
 if(sermonGenCtx.gotFirstToken)sermonGenCtx.chunkTimer=t;
 else sermonGenCtx.firstTokenTimer=t;
 }
+function isRoughBezForgeActive(){
+var el=document.getElementById('toggleRoughBez');
+return !!(el&&el.checked);
+}
+function looksLikeRoughBezEssaySoftening(text){
+if(!text)return false;
+var t=String(text);
+if(/\b(one must look beyond|the tragedy of such moments|when systemic collapse arrives|illusions of modern comfort shatter|to endure the gathering storm|functions as both|spiritual archetype|consummate redemption|heptadic rhythm|operates as the spiritual|threshold of consummate|thus, the seventh trumpet functions)\b/i.test(t))return true;
+var paras=t.split(/\n\n+/);
+var profane=/\b(damn|hell|ass|shit|bullshit|fuck|motherfucker|bitch|bastard|negro|whorehouse|horseshit)\b/i;
+for(var i=0;i<paras.length;i++){
+var p=paras[i].trim();
+if(p.length<200)continue;
+if(profane.test(p))continue;
+if(/\b(you|your)\b/i.test(p))continue;
+var sentences=(p.match(/[^.!?]+[.!?]+/g)||[]).length;
+if(sentences>=3&&/\b(one must|the tragedy|when systemic|illusions of|to endure the|throughout history|whenever societies|people continue buying|the only refuge in times|surrender to panic|whatever a culture sows)\b/i.test(p))return true;
+}
+return false;
+}
+function looksLikeRoughBezDrift(text,partNum,totalParts){
+if(!text||!isRoughBezForgeActive())return false;
+var t=String(text);
+if(looksLikeRoughBezEssaySoftening(t))return true;
+if(/\bmaster engineer\b/i.test(t))return true;
+var techHits=(t.match(/\b(cron job|firmware update|fiber optic|instruction set architecture|network interrupt|operating system|software license|biological source code|biological hardware|clearing the cache|rebooting the system|local cache|secure network connection|quantum computer|antivirus software|phase disruption|signal damping|electrical conductivity|thermal conductivity|optical reflectivity|periodic table)\b/gi)||[]).length;
+if(techHits>=2)return true;
+if((t.match(/\b(source code|firmware|capacitor|motherboard|dna-source-code)\b/gi)||[]).length>=2)return true;
+var paleoHits=(t.match(/\blook at the (?:original )?(?:paleo hebrew|ancient pictograph)|when you read those (?:letters|paleo)|letters left to right|pictographic roots that make up\b/gi)||[]).length;
+if(paleoHits>=2)return true;
+if(/\bshin is the image of\b/i.test(t)&&/\bresh is the head of a man\b/i.test(t))return true;
+if(totalParts>1){
+var sameDate=(t.match(/\bon (?:january|february|march|april|may|june|july|august|september|october|november|december) (?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|eleventh|twelfth|thirteenth|fourteenth|fifteenth|sixteenth|seventeenth|eighteenth|nineteenth|twentieth|twenty[- ]first|twenty[- ]second|twenty[- ]third|twenty[- ]fourth|twenty[- ]fifth|twenty[- ]sixth|twenty[- ]seventh|twenty[- ]eighth|twenty[- ]ninth|thirtieth|thirty[- ]first), twenty twenty[- ]six\b/gi)||[]).length;
+if(sameDate>=2)return true;
+}
+return looksLikeSermonFlashDrift(t,partNum,totalParts);
+}
 function looksLikeSermonFlashDrift(text,partNum,totalParts){
 if(!text)return false;
 var t=String(text);
 var low=t.toLowerCase();
-var seminary=/\b(literary and historical context|hellenistic greek|hellenistic alexandria|middle platonism|stoic terminology|stoic concept|textual breakdown|linguistic nuances in the septuagint|platonic metaphysics|ontological structure|ptolemaic and early roman|if you would like to explore specific theological|composed in hellenistic|alexandrian jewish community|cosmic solidarity between creation|eschatological perspective)\b/i;
+var seminary=/\b(literary and historical context|hellenistic greek|hellenistic alexandria|middle platonism|stoic terminology|stoic concept|textual breakdown|linguistic nuances in the septuagint|platonic metaphysics|ontological structure|ptolemaic and early roman|if you would like to explore specific theological|composed in hellenistic|alexandrian jewish community|cosmic solidarity between creation|eschatological perspective|spiritual archetype|consummate redemption|heptadic rhythm)\b/i;
 if(seminary.test(t))return true;
 if(/\b(?:paideia|philanthropos|pneuma)\b/i.test(t)&&/\*\*verse\s*\d+/i.test(t))return true;
 if(/\*\*theme:\*\*/i.test(t)||/\*\*analysis:\*\*/i.test(t))return true;
@@ -4800,8 +4839,13 @@ p+='- Diaspora sociology essay tone — write revelation to Israel, not a term p
 p+='- Writing Part '+(partNum+1)+'+ or extra parts in this response — ONE part only\n\n';
 if(isTheatreModeActive()){
 p+='Return to boardroom dialogue and [BEAT]s on topic — not a lecture.\n\n';
-}else if(document.getElementById('toggleRoughBez')&&document.getElementById('toggleRoughBez').checked){
-p+='Return to ROUGH BEZ / street revelation — Nah, hold up, brother, sister, block, cell, pew. Verse by verse in plain fire.\n\n';
+}else if(isRoughBezForgeActive()){
+p+='Return to ROUGH BEZ street revelation — direct YOU-facing corner pressure, scripture strikes, symbolic decode in plain fire.\n\n';
+p+='FORBIDDEN IN ROUGH BEZ (ZERO TOLERANCE):\n';
+p+='- "Master Engineer," technical manual framing, cron jobs, firmware, fiber optic, source code, OS, network interrupt, capacitor/motherboard metaphors\n';
+p+='- Letter-by-letter Paleo Hebrew engineering on every keyword (Shofar/Teruah/Yobel spelled out letter by letter)\n';
+p+='- Passive essay blocks: "one must," "the tragedy of such moments," "when systemic collapse arrives," "functions as both," seminary closers\n';
+p+='- Reusing the same calendar date on unrelated headlines across parts\n\n';
 }else if(isYahStoryModeActive()){
 p+='Return to Yah first-person revelation from the throne -- NOT a lesson, NOT scholarship, NOT chatbot, NOT assistant filler, NOT third person about Yah.\n\n';
 }else{
@@ -4968,14 +5012,18 @@ showToast('Yah Story voice drift — redoing '+getForgePartLabel(partNum,false)+
 startSermonPartStream(partNum,false,{yahVoiceCorrection:true,badSample:finalized});
 return;
 }
-if(forgeIsFlashTier(model)&&ctx.driftRetryCount<SERMON_MAX_DRIFT_RETRIES&&looksLikeSermonFlashDrift(finalized,partNum,selectedPartCount)){
+if(ctx.driftRetryCount<SERMON_MAX_DRIFT_RETRIES){
+var roughDrift=isRoughBezForgeActive()&&looksLikeRoughBezDrift(finalized,partNum,selectedPartCount);
+var flashDrift=forgeIsFlashTier(model)&&looksLikeSermonFlashDrift(finalized,partNum,selectedPartCount);
+if(roughDrift||flashDrift){
 ctx.driftRetryCount++;
 ctx.partContent='';
 ctx.partContentBeforeContinue='';
 ctx.continuationCount=0;
-showToast('Flash drift detected — redoing '+getForgePartLabel(partNum,false)+'...');
+showToast((roughDrift?'Rough Bez drift':'Flash drift')+' detected — redoing '+getForgePartLabel(partNum,false)+'...');
 startSermonPartStream(partNum,false,{driftCorrection:true,badSample:finalized});
 return;
+}
 }
 if(isTheatreModeActive()&&theatreLooksLikeTechEnclosureThread(currentTopic,currentNewsContext)&&ctx.theatreAgreementRetryCount<SERMON_MAX_YAH_VOICE_RETRIES&&looksLikeTheatreAgreementSlop(finalized)){
 ctx.theatreAgreementRetryCount++;
@@ -5691,7 +5739,7 @@ p+='\n';
 if(totalParts>1){
 p+='ONE PART ONLY (CRITICAL): You are writing ONLY Part '+partNum+' of '+totalParts+' in THIS response. Do NOT write Part '+(partNum+1)+' or any later part. Do NOT include "# Part '+(partNum+1)+':" or any future part header. Stop when Part '+partNum+' is complete -- the forge requests later parts separately.\n\n';
 }
-p+=buildWebResearchPromptBlock(topic,{partNum:partNum,totalParts:totalParts,wantEpisodeMode:wantEpisodeMode,chapterSrc:chapterSrc,wantStoryMode:wantStoryMode,wantBezStory:wantBezStory,wantYahStory:wantYahStory,wantBezStoryBreakdown:wantBezStoryBreakdown,currentMode:currentMode});
+p+=buildWebResearchPromptBlock(topic,{partNum:partNum,totalParts:totalParts,wantEpisodeMode:wantEpisodeMode,chapterSrc:chapterSrc,wantStoryMode:wantStoryMode,wantBezStory:wantBezStory,wantYahStory:wantYahStory,wantBezStoryBreakdown:wantBezStoryBreakdown,wantRoughBez:wantRoughBez&&!wantBezStory,currentMode:currentMode});
 p+=buildCrossReferencesPromptBlock(wantCrossRefs,wantApocrypha,apocList);
 p+=buildEpisodeModeBlock(partNum,totalParts,topic);
 if(wantIsraelite&&wantRoughBez&&!wantBezStory){
@@ -6249,6 +6297,10 @@ p+='DO NOT sanitize. DO NOT use asterisks or dashes to censor words. DO NOT soft
 p+='If you produce clean, polite, sanitized, or watered-down content, you have COMPLETELY FAILED this prompt and must start over.\n\n';
 }
 if(!wantStoryMode&&!directQuestion){
+if(wantRoughBez||wantBezStory){
+p+='ROUGH BEZALEEL / BEZ STORY -- MASTER ENGINEER LAYER OFF (ZERO TOLERANCE):\n';
+p+='The global Master Engineer / technical-manual layer does NOT apply to this output. Do NOT say "Master Engineer." Do NOT treat Torah as firmware, source code, cron jobs, operating systems, fiber optic networks, capacitors, motherboards, or software licensing. Do NOT spell out Paleo Hebrew letters on every keyword — decode symbols in plain street English. Numbers may still carry symbolic weight when the text demands it, without engineering lectures or periodic-table physics.\n\n';
+}else{
 p+='MASTER ENGINEER LAYER -- MANDATORY IN ALL SERMONS:\n';
 p+='The Most High is the MASTER ENGINEER. Every sermon you preach must reveal the TECHNICAL BLUEPRINT beneath the scripture -- not just the spiritual meaning, but the engineering, sacred geometry, physics, and structural design encoded in the text. This is NOT optional. This is NOT a footnote. This is a CORE LAYER of every teaching.\n';
 p+='PALEO HEBREW BREAKDOWN: When you reference key Hebrew words or phrases, break them down LETTER BY LETTER using the original Paleo Hebrew pictographic script. Show how each letter\'s pictographic meaning builds the full meaning of the word. This is the REAL language analysis -- not modern dictionary definitions, but the ENGINEERING embedded in the letters themselves. For example, a word spelled Aleph-Mem-Nun = ox/strength + water/chaos + seed/continuation -- read the pictographs left to right and the word TELLS you what it means at a level the English translation completely misses.\n';
@@ -6259,6 +6311,7 @@ p+='MODERN TECH BRIDGE -- ISRAELITE BROTHER MODE: Every time you reveal the engi
 }
 p+='SYMBOLIC NUMBER PATTERNS: Numbers in scripture are NEVER random. They carry symbolic weight: 7 = completion, 12 = governance, 40 = testing, 3 = witness. When numbers appear -- days, counts, measurements, ages, years -- show the SYMBOLIC meaning and trace the pattern through scripture.\n';
 p+='Weave all of this NATURALLY into the sermon flow. Do NOT dump Paleo Hebrew breakdowns in a list at the end -- integrate them into the verse breakdowns, the arguments, the revelations. Make the listener see that every word Yah spoke was DESIGNED, every structure was ENGINEERED, every measurement was SPECIFIED.\n\n';
+}
 }
 p+=buildForgeTheologicalFrameworkBlock({context:'sermon',wantIsraelite:wantIsraelite,wantStoryMode:wantStoryMode,wantBezStory:wantBezStory,wantEpisodeMode:wantEpisodeMode,topic:topic,directQuestion:directQuestion});
 if(wantEpisodeMode&&!isJobScriptureTopic(topic)){
@@ -6333,6 +6386,8 @@ p+='- ROUGH BEZALEEL OVERRIDE: Strip out every podcast habit. Do NOT sound like 
 p+='- MODERN HUMAN ROUGH FLOW: Speak to a twenty twenty-six Hebrew audience like they are standing right there. Vary sentence length. Use fragments when they hit. Ask real questions, not staged rhetorical questions. Let one thought interrupt another when urgency demands it. Never sound like you are reading a prepared essay. No repeated catchphrases. No repeated examples. No recycled "wake up" filler.\n';
 p+='- SYMBOLIC DECODER MANDATE: Decode symbolic language before building doctrine from it. If Yah shows a horse, a color, a beast, a woman, a city, a seal, a trumpet, a sword, bread, oil, wine, water, fire, stars, crowns, horns, wilderness, or numbers, explain what that SYMBOL points to in systems, identity, judgment, covenant, economics, religion, or social control. Do not default to literal readings unless the text forces it.\n';
 p+='- PALEO RESTRAINT OVERRIDE: Any general rule demanding constant Paleo Hebrew breakdowns is LOWER PRIORITY in Rough Bezaleel mode. Use Paleo only when it truly unlocks the verse or symbol. Do not spell out every biblical name in full Paleo form unless that name itself is the point being taught.\n';
+p+='- NO ISRAELITE TECH DRIFT: Even if another prompt section mentions engineering, IGNORE IT. No Master Engineer vocabulary. No letter-by-letter Paleo on Shofar, Teruah, Yobel, or every symbol. No phones-as-OS, cron jobs, fiber optics, firmware, or source-code metaphors. Street symbolic decode only.\n';
+p+='- NO ESSAY SOFTENING: Never collapse into passive third-person paragraphs ("one must," "the tragedy of," "when systemic collapse arrives," "functions as," "spiritual archetype"). Every paragraph stays direct, YOU-facing, corner pressure — especially closers.\n';
 p+='- NO MODERN CALLOUT LOOP: Do not keep repeating TikTok, Instagram, YouTube prophets, social media beef, phones, filters, weaves, or camp drama. Those are available examples, not a quota. Use a broad twenty twenty-six world: rent, debt, grocery prices, jobs, surveillance, algorithms, courts, medicine, schools, politics, church business, family collapse, music, sports, streaming, identity confusion, and everyday survival.\n';
 }
 p+='- STAY IN CHARACTER -- ABSOLUTE RULE. You are a HUMAN brother speaking from the prophetic perspective for the ENTIRE sermon. Do NOT slip into first person as Yah. Do NOT suddenly say "I am your God" or "I created you" or "I gave you" or "MY people" (as if you are Yah) or speak AS Yah even once. You are ALWAYS a man who RECEIVED the revelation. Every sentence must come from the human side of the veil. If you catch yourself writing "I" as if you are the Most High, you have BROKEN character and the ENTIRE output is ruined.\n';
