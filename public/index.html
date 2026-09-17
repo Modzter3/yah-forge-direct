@@ -1323,6 +1323,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
             <option value="flux-2/flex-text-to-image">Flux-2 Flex</option>
             <option value="grok-imagine/text-to-image">Grok Imagine</option>
           </select>
+          <p style="font-size:0.72rem;color:var(--text-muted);margin:8px 0 0;line-height:1.45;">In-app generation sends a photoreal Israelite-sermon still: remnant faces, cinema camera, no church-mural, no on-screen text. Get Image Prompts writes copy-paste versions in that same grammar.</p>
         </div>
         <div class="model-select-wrap" style="margin-top:6px;">
           <label><i class="fas fa-robot"></i> Prompt writer (chat):</label>
@@ -1354,6 +1355,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
             <option value="bytedance/seedance-2-5">Seedance 2.5</option>
             <option value="veo3_fast">Veo 3.1 Fast</option>
           </select>
+          <p style="font-size:0.72rem;color:var(--text-muted);margin:8px 0 0;line-height:1.45;">In-app video uses the selected generator's shot grammar (Kling: one 5s move; Wan: continuous take, no invented speech; Seedance: timed beats). Get Video Prompts writes three copy-paste scenes in that grammar.</p>
         </div>
         <div class="media-btn-row">
           <button class="media-btn primary-video" onclick="generateVideoInApp()"><i class="fas fa-wand-magic-sparkles"></i> Generate In-App</button>
@@ -6941,6 +6943,141 @@ html+='</div>';
 });
 output.innerHTML=html;
 }
+function kieSermonPeopleLock(){
+return 'All people are dark-skinned Negro Israelites — the scattered remnant of Israel worldwide (Americas, Caribbean, Africa, Europe): deep brown skin, strong features, natural coils or locs, real pores, sweat, and fabric. Forbidden: European faces, pale Hollywood bible-movie extras, cartoon, anime, illustration, CGI plastic skin, extra fingers, on-screen text, captions, subtitles, watermarks, logos.';
+}
+function kieSermonNegatives(){
+return 'No church-mural composition. No floating holy glow. No stained-glass lighting. No winged angels. No European Jesus. No text in the frame.';
+}
+function kieSermonTopicLine(topic){
+var title=(topic&&topic.title)?topic.title:'the Word';
+var desc=(topic&&topic.desc)?String(topic.desc).replace(/\s+/g,' ').replace(/[.]+$/,''):'';
+var chapter=currentChapterSource?(currentChapterSource.book+' '+currentChapterSource.chapter):'';
+return 'Teaching "'+title+'"'+(chapter?' — '+chapter:'')+(desc?'. Meaning to visualize (never as on-screen text): '+desc:'');
+}
+function kieSelectedLabel(id){
+var el=document.getElementById(id);
+if(!el||!el.options||el.selectedIndex<0)return (el&&el.value)||'';
+return el.options[el.selectedIndex].text||el.value;
+}
+function kieHashStr(s){
+var h=0;s=String(s||'');
+for(var i=0;i<s.length;i++)h=((h<<5)-h)+s.charCodeAt(i)|0;
+return Math.abs(h);
+}
+function kieSermonMotif(topic){
+var t=(((topic&&topic.title)||'')+' '+((topic&&topic.desc)||'')).toLowerCase();
+if(/\bbeast\b|\bmark\b|antichrist|scanner|dollar|economy|checkout/.test(t))return {place:'a fluorescent supermarket checkout at dusk, automatic doors in the background',who:'a dark-skinned Negro Israelite woman in a worn coat',action:'holds her palm over a scanner pad and does not flinch as the red light washes her skin'};
+if(/sabbath|torah|\blaw\b|sunup|day starts|commandment/.test(t))return {place:'an east-facing stoop at first light on an empty street',who:'a dark-skinned Negro Israelite elder in a linen wrap',action:'opens a worn scroll as the first sun hits the page'};
+if(/\bserpent\b|\bseed\b|\bcain\b|\beve\b|\badam\b|bloodline/.test(t))return {place:'a dusty garden path at the edge of a city lot, two trees, evening',who:'a dark-skinned Negro Israelite man in work clothes',action:'looks from a crushed fruit in the dirt up toward a second figure in shadow at the fence'};
+if(/ashkenazi|impostor|identity|scattered|diaspora/.test(t))return {place:'a crowded city sidewalk under mixed flags and storefront lights',who:'a dark-skinned Negro Israelite remnant in real street clothes',action:'walks through the crowd carrying a worn Bible against the chest, not posing'};
+if(/babylon|empire|\bfall\b|judgment|desolation|skyline/.test(t))return {place:'a cracked overlook above a glass-and-steel skyline at blue hour',who:'a dark-skinned Negro Israelite watchman in a wool cloak',action:'stands small against the towers as wind lifts grit around his boots'};
+if(/\bai\b|weapon|\btool\b|\bscreen\b|information/.test(t))return {place:'a dim apartment desk at night, open Bible beside a laptop',who:'a dark-skinned Negro Israelite man in a hoodie',action:'reads the page, then looks at the glowing screen, jaw set'};
+if(/captivity|\bchain\b|egypt|slavery|\bslave\b/.test(t))return {place:'a warehouse loading dock at night, chain-link and sodium lamps',who:'a dark-skinned Negro Israelite laborer',action:'stops mid-step and looks up through the fence toward open sky'};
+if(/\bfire\b|\baltar\b|sacrifice|\bblood\b/.test(t))return {place:'a night camp on packed earth around a small fire, no temple set',who:'a dark-skinned Negro Israelite remnant seated in a circle',action:'an elder turns a page as sparks lift'};
+if(/\bangel\b|\bdemon\b|\bspirit\b|possession/.test(t))return {place:'an ordinary living room with one lamp, no fantasy creatures',who:'a dark-skinned Negro Israelite family',action:'an older woman sits with a Bible, watching a restless young man at the window — human, not winged'};
+return {place:'a cracked courtyard at golden hour, city beyond the wall',who:'a dark-skinned Negro Israelite elder in a wool cloak',action:'walks toward camera teaching from a street Bible, breath visible in cold air'};
+}
+var KIE_IMAGE_LENSES=[
+{lens:'ARRI Alexa 35, 24mm, f/4, wide establishing',framing:'wide: remnant small in a real place they live now'},
+{lens:'Cooke S4 50mm, f/2, eye-level medium',framing:'medium: one witness mid-teaching, face, hands, open scroll or street Bible'},
+{lens:'85mm portrait, f/1.8, shallow DOF',framing:'close: pores, a chain, a torn page, dust hanging in gold light'},
+{lens:'35mm documentary handheld, overcast',framing:'crowd of remnant listening — not posed, not smiling for camera'},
+{lens:'135mm compressed telephoto, dusk',framing:'lone figure compressed against empire architecture or a burning skyline'}
+];
+function kieImageEngine(model){
+var m=String(model||'');
+if(m.indexOf('gpt-image')!==-1)return 'GPT Image 2.5 photoreal 16:9 still, captured not illustrated';
+if(m.indexOf('flux')!==-1)return 'Flux-2 photoreal 16:9 still, cinema RAW photograph';
+if(m.indexOf('grok')!==-1)return 'Grok Imagine photoreal 16:9 still, documentary photograph';
+if(m.indexOf('nano-banana')!==-1)return 'Nano Banana photoreal 16:9 still, cinema photograph';
+return 'Photoreal 16:9 still, cinema photograph';
+}
+function buildKieSermonImagePrompt(topic,model,index){
+var shot=KIE_IMAGE_LENSES[index%KIE_IMAGE_LENSES.length];
+var motif=kieSermonMotif(topic);
+var variants=[
+motif.who+' '+motif.action+'. Location: '+motif.place,
+'Wide of '+motif.place+' — '+motif.who+' '+motif.action,
+'Close on the hands and face of '+motif.who+'. Location: '+motif.place+'. '+motif.action+'.',
+'Over-shoulder documentary still of remnant watching as '+motif.who+' '+motif.action+'. Location: '+motif.place,
+'Compressed telephoto of '+motif.who+' small in frame. Location: '+motif.place+'. '+motif.action+'.'
+];
+var beat=variants[index%variants.length];
+return kieImageEngine(model)+'. '+kieSermonTopicLine(topic)+'. Shot: '+shot.framing+'. Scene: '+beat+'. Camera: '+shot.lens+'. Lighting: golden hour, overcast, or practical indoor only — real dirt, real linen, real locations, film grain. '+kieSermonPeopleLock()+' '+kieSermonNegatives();
+}
+function kieVideoFamily(model){
+var m=String(model||'').toLowerCase();
+if(m.indexOf('kling')!==-1)return 'kling';
+if(m.indexOf('wan')!==-1)return 'wan';
+if(m.indexOf('seedance')!==-1)return 'seedance';
+if(m.indexOf('veo')!==-1)return 'veo';
+if(m.indexOf('sora')!==-1)return 'sora';
+if(m.indexOf('grok')!==-1)return 'grok';
+if(m.indexOf('runway')!==-1)return 'runway';
+return 'cinematic';
+}
+function kieVideoSeconds(model){
+var fam=kieVideoFamily(model);
+if(fam==='seedance')return 15;
+if(fam==='sora')return 10;
+if(fam==='grok'||fam==='veo')return 8;
+return 5;
+}
+function kieVideoHasNativeAudio(model){
+var m=String(model||'').toLowerCase();
+if(m==='kling-3.0/video')return true;
+if(m.indexOf('wan/3-0')!==-1)return true;
+if(m.indexOf('seedance')!==-1)return true;
+if(m.indexOf('veo')!==-1)return true;
+if(m.indexOf('sora')!==-1)return true;
+return false;
+}
+function kieVideoAudioLock(model){
+if(!kieVideoHasNativeAudio(model))return 'Silent picture — do not invent a narrator.';
+return 'Audio: real ambient only (wind, fabric, footsteps, distant city, fire). No voice lines in the whole video. No background music. No narrator.';
+}
+var KIE_VIDEO_CAMERAS=['slow dolly-in on a 35mm lens, tiny handheld micro-shake','locked-off 50mm tripod, subject walks into frame','lateral tracking at walking speed, 35mm','slow crane-down into a medium close-up','gentle handheld documentary drift, eye level'];
+function buildKieSermonVideoPrompt(topic,model,index){
+var fam=kieVideoFamily(model);
+var lock=kieSermonPeopleLock();
+var line=kieSermonTopicLine(topic);
+var motif=kieSermonMotif(topic);
+var cam=KIE_VIDEO_CAMERAS[(typeof index==='number'?index:kieHashStr(line))%KIE_VIDEO_CAMERAS.length];
+var sec=kieVideoSeconds(model);
+var audio=kieVideoAudioLock(model);
+var negs=kieSermonNegatives()+' Natural physics only. Photoreal filmic grade. No CGI bloom.'+(fam==='seedance'?'':' One continuous take, no cuts.');
+var body=motif.who+' '+motif.action+'. Location: '+motif.place+'. Cloth, hair, dust, and breath move.';
+if(fam==='kling'){
+return sec+'-second SINGLE SHOT cinematic video, 16:9, one continuous take, no cuts. Camera: '+cam+'. '+line+'. Action: '+body+' '+lock+' '+audio+' '+negs;
+}
+if(fam==='wan'){
+return 'One continuous '+sec+'-second take, 16:9, photoreal. '+line+'. Camera: '+cam+'. Action: '+body+' '+lock+' '+audio+' '+negs;
+}
+if(fam==='seedance'){
+return sec+'-second cinematic 16:9 video, photoreal. '+line+'. Shot 1 [0-5s]: wide of '+motif.place+', empty, then '+motif.who+' enters. Shot 2 [5-10s]: medium — '+motif.who+' '+motif.action+'. Shot 3 [10-'+sec+'s]: slow push-in on the face, gold practical light, dust. Camera overall: '+cam+'. '+lock+' '+audio+' '+negs;
+}
+if(fam==='veo'){
+return 'Photoreal Veo cinematic, 16:9, about '+sec+' seconds. Camera: '+cam+'. '+line+'. Action: '+body+' Real wind, real dust, real locations. '+lock+' '+audio+' '+negs;
+}
+if(fam==='sora'){
+return 'Landscape cinematic, continuous '+sec+'-second motion, 16:9. Camera: '+cam+'. '+line+'. Action: '+body+' Real gait, real bodies. '+lock+' '+audio+' '+negs;
+}
+if(fam==='grok'){
+return 'Short cinematic clip, 16:9, about '+sec+' seconds. Camera: '+cam+'. '+line+'. Action: '+body+' Moody, photoreal. '+lock+' '+audio+' '+negs;
+}
+return 'Cinematic 16:9 sermon visual, about '+sec+' seconds. Camera: '+cam+'. '+line+'. Action: '+body+' '+lock+' '+audio+' '+negs;
+}
+function kieAppendPromptCards(output,prompts,typeLabel){
+for(var i=0;i<prompts.length;i++){
+var clipId=(typeLabel||'prompt')+'-used-'+i+'-'+Date.now();
+clipboardStore[clipId]=prompts[i];
+var wrap=document.createElement('div');
+wrap.className='media-item';
+wrap.innerHTML='<div class="media-item-label"><i class="fas fa-copy"></i> '+escapeHtml(typeLabel||'Prompt')+' '+(i+1)+' <span style="font-size:0.6rem;color:var(--text-dim);margin-left:6px;">'+prompts[i].length+' chars</span></div><div class="prompt-text">'+escapeHtml(prompts[i])+'</div><button class="copy-btn" onclick="copyStored(\''+clipId+'\',this)"><i class="fas fa-copy"></i> Copy Prompt</button>';
+output.appendChild(wrap);
+}
+}
 function generateImagesInApp(){
 if(!currentTopic){showToast('Open a topic first.');return;}
 var count=parseInt(document.getElementById('imageCount').value)||3;
@@ -6948,16 +7085,32 @@ if(count<1)count=1;if(count>10)count=10;
 var output=document.getElementById('outputImages');
 var modelEl=document.getElementById('kieImageModel');
 var model=modelEl&&modelEl.value?modelEl.value:'nano-banana-2';
-output.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text">Kie '+escapeHtml(model)+' — generating '+count+' image(s)...</div></div>';
-var imgPrompt='Photorealistic photograph for sermon "'+currentTopic.title+'": '+currentTopic.desc+'. Shot on a high-end cinema camera. All people depicted must be dark-skinned Negro Israelites -- the scattered descendants of Israel found worldwide (Americas, Caribbean, Africa, Europe, and beyond) -- with dark brown skin, strong features, and natural hair. Photojournalistic realism, natural lighting with dramatic contrast, shallow depth of field, film grain, shot composition as if captured by a professional cinematographer on location. RAW photo quality, no illustration, no painting, no cartoon, no digital art, no CGI. Real skin texture, real fabric, real environments. If outdoors: golden hour or overcast natural light. If indoors: practical lighting sources only. No text overlays.';
-runKieMediaJobs({kind:'image',model:model,prompt:imgPrompt,count:count,aspectRatio:'16:9'},output,function(urls){
+output.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text">Kie '+escapeHtml(kieSelectedLabel('kieImageModel')||model)+' — generating '+count+' image(s)...</div></div>';
+var prompts=[];
+for(var i=0;i<count;i++)prompts.push(buildKieSermonImagePrompt(currentTopic,model,i));
+Promise.all(prompts.map(function(p){
+return new Promise(function(resolve,reject){
+runKieMediaJobs({kind:'image',model:model,prompt:p,count:1,aspectRatio:'16:9'},output,function(urls){resolve(urls||[]);},reject);
+});
+})).then(function(sets){
+var urls=[];
+for(var s=0;s<sets.length;s++){
+var set=sets[s]||[];
+for(var u=0;u<set.length;u++)if(urls.indexOf(set[u])===-1)urls.push(set[u]);
+}
 output.innerHTML='';
 for(var i=0;i<urls.length;i++){
 var item=document.createElement('div');item.className='media-item';
 var img=document.createElement('img');img.src=urls[i];img.style.cssText='max-width:100%;border-radius:8px;';
 item.appendChild(img);output.appendChild(item);
 }
-if(!urls.length)output.innerHTML='<div class="error-msg">Kie returned no image URLs.</div>';
+if(!urls.length){
+output.innerHTML='<div class="error-msg">Kie returned no image URLs.</div>';
+}else{
+kieAppendPromptCards(output,prompts,'Image prompt sent');
+}
+}).catch(function(err){
+output.innerHTML='<div class="error-msg">'+escapeHtml(String(err&&err.message?err.message:err))+'</div>';
 });
 }
 function generateVideoInApp(){
@@ -6965,17 +7118,18 @@ if(!currentTopic){showToast('Open a topic first.');return;}
 var output=document.getElementById('outputVideo');
 var modelEl=document.getElementById('kieVideoModel');
 var model=modelEl&&modelEl.value?modelEl.value:'kling-3.0/video';
-output.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text">Kie '+escapeHtml(model)+' — generating sermon video... this can take a few minutes.</div></div>';
-var vidPrompt='Cinematic sermon visual for "'+currentTopic.title+'": '+currentTopic.desc+'. All people shown must be dark-skinned Negro Israelites -- the worldwide scattered descendants of Israel -- with dark brown skin, strong features, and natural hair. Dark cinematic atmosphere, golden divine light rays, ancient scrolls and tablets, dramatic camera movement pushing in slowly, dust particles in light beams, Hebrew Israelite prophetic aesthetic, ultra dramatic, no text on screen.';
+var vidPrompt=buildKieSermonVideoPrompt(currentTopic,model,0);
+output.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text">Kie '+escapeHtml(kieSelectedLabel('kieVideoModel')||model)+' — generating sermon video... this can take a few minutes.</div></div>';
 runKieMediaJobs({kind:'video',model:model,prompt:vidPrompt,count:1,aspectRatio:'16:9'},output,function(urls){
 if(!urls.length){output.innerHTML='<div class="error-msg">Kie returned no video URL.</div>';return;}
 var item=document.createElement('div');item.className='media-item';
 var vid=document.createElement('video');vid.controls=true;vid.src=urls[0];vid.style.cssText='max-width:100%;border-radius:8px;';
 item.appendChild(vid);output.innerHTML='';output.appendChild(item);
+kieAppendPromptCards(output,[vidPrompt],'Video prompt sent');
 });
 }
 function kieSleep(ms){return new Promise(function(resolve){setTimeout(resolve,ms);});}
-function runKieMediaJobs(opts,output,onUrls){
+function runKieMediaJobs(opts,output,onUrls,onError){
 var kind=opts.kind||'image';
 fetch('/api/kie-media',{
 method:'POST',
@@ -6996,7 +7150,8 @@ for(var u=0;u<set.length;u++)if(urls.indexOf(set[u])===-1)urls.push(set[u]);
 }
 onUrls(urls);
 }).catch(function(err){
-output.innerHTML='<div class="error-msg">'+escapeHtml(String(err&&err.message?err.message:err))+'</div>';
+if(typeof onError==='function')onError(err);
+else output.innerHTML='<div class="error-msg">'+escapeHtml(String(err&&err.message?err.message:err))+'</div>';
 });
 }
 function pollKieMediaTask(task,kind,output){
@@ -7021,43 +7176,19 @@ var count=parseInt(document.getElementById('imageCount').value)||3;
 if(count<1)count=1;if(count>10)count=10;
 var wantTitleCard=document.getElementById('titleCardToggle').checked;
 var output=document.getElementById('outputImages');
-output.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text">Generating '+(wantTitleCard?count+' image prompt(s) + title card':count+' image prompt(s)')+'...</div></div>';
+var modelEl=document.getElementById('kieImageModel');
+var model=modelEl&&modelEl.value?modelEl.value:'nano-banana-2';
+var engineName=kieSelectedLabel('kieImageModel')||'Kie image';
+var ready=[];
+for(var i=0;i<count;i++)ready.push(buildKieSermonImagePrompt(currentTopic,model,i));
+output.innerHTML='';
+kieAppendPromptCards(output,ready,'Ready for '+engineName);
+if(wantTitleCard){
 var sermonTitle=currentTopic.title;
 var chapterLabel=currentChapterSource?(currentChapterSource.book+' Chapter '+currentChapterSource.chapter):'';
-var prompt='Generate exactly '+count+' distinct, highly detailed image generation prompts for the sermon topic "'+sermonTitle+'"'+(chapterLabel?' ('+chapterLabel+')':'')+' -- '+currentTopic.desc+'. ';
-prompt+='Each prompt must describe a PHOTOREALISTIC PHOTOGRAPH -- as if shot by a professional cinematographer on a high-end cinema camera (RED, ARRI Alexa, Sony Venice, etc.). ';
-prompt+='Include: specific lens choice (24mm wide, 50mm prime, 85mm portrait, 135mm telephoto -- pick whatever lens serves the shot), aperture/depth of field, lighting setup (natural golden hour, overcast diffused, practical indoor, campfire light, etc.), camera angle and composition. ';
-prompt+='STYLE: RAW photojournalistic realism. Real skin texture, real fabric, real dust, real sweat, real environments. Film grain, natural color grading. NEVER use words like illustration, painting, digital art, cartoon, render, CGI, artistic, stylized, or fantasy. Every image must look like it was CAPTURED, not created. ';
-prompt+='CRITICAL: All people in every image MUST be dark-skinned Negro Israelites -- the worldwide scattered descendants of Israel (Americas, Caribbean, Africa, Europe, and beyond) -- with dark brown skin, strong features, and natural hair. No exceptions. ';
-prompt+='Theme: Biblical realism, prophetic weight, documentary cinematography. No generic European Christian art. No fantasy illustration. ';
-if(wantTitleCard){
-prompt+='ADDITIONALLY, generate 1 TITLE CARD prompt as the LAST item. The title card should be: A bold, eye-catching graphic designed as a sermon title card/thumbnail. ';
-prompt+='The text on the card must read "'+(chapterLabel?chapterLabel+' -- ':'')+sermonTitle+'". ';
-prompt+='The font style should match the sermon theme -- dramatic, powerful, possibly ancient/Hebrew-inspired lettering. ';
-prompt+='Background should complement the topic with thematic imagery, cinematic lighting, and rich colors. ';
-prompt+='Format the title card as: ### [Title Card] Title Card\\n[the prompt]\\n\\n';
+var card=kieImageEngine(model)+'. 16:9 title-card photograph. The sermon title exists as PHYSICAL text in the scene (carved stone, burned wood, painted wall, or etched metal), reading "'+(chapterLabel?chapterLabel+' -- ':'')+sermonTitle+'". Background: '+kieSermonMotif(currentTopic).place+'. Cinema still, film grain, real location. '+kieSermonPeopleLock()+' '+kieSermonNegatives()+' No floating digital overlay text.';
+kieAppendPromptCards(output,[card],'Title card for '+engineName);
 }
-prompt+='OUTPUT FORMAT -- CRITICAL: Output ONLY the prompts. No introductions, no commentary, no explanations. For each image prompt output EXACTLY this format:\n';
-prompt+='===IMAGE [number]===\\n[the full prompt text]\\n===END===\\n\\n';
-if(wantTitleCard){
-prompt+='For the title card use: ===TITLECARD===\\n[the full prompt text]\\n===END===\\n\\n';
-}
-prompt+='Nothing else. Just the delimited prompts.';
-var handlerName='imgprompt-'+Date.now();
-window.Poe.registerHandler(handlerName,function(result){
-var msg=result.responses[0];if(!msg)return;
-if(msg.status==='error'){
-output.innerHTML='<div class="error-msg">'+escapeHtml(msg.statusText||'Failed')+'</div>';
-}else if(msg.status==='incomplete'){
-output.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text">Generating prompts...</div></div>';
-}else if(msg.status==='complete'){
-var raw=stripThinking(msg.content||'');
-parseAndDisplayPrompts(raw,output,'image');
-}
-});
-window.Poe.sendUserMessage('@'+getImagePromptModel()+' '+prompt,{handler:handlerName,stream:false,openChat:false,parameters:{}}).catch(function(err){
-output.innerHTML='<div class="error-msg">'+escapeHtml(String(err))+'</div>';
-});
 }
 function parseAndDisplayPrompts(raw,outputEl,type){
 var html='';
@@ -7123,7 +7254,7 @@ prompt+='STEP 2 -- TITLE CARD IMAGE PROMPT:\n';
 prompt+='Generate a detailed AI image generation prompt for a title card/thumbnail featuring that creative title. The prompt must describe a PHOTOREALISTIC scene:\n';
 prompt+='- Bold, eye-catching text layout with the sermon title rendered as if it were REAL PHYSICAL TEXT in the scene -- carved into stone, etched in metal, written in sand, burned into wood, projected in light, spraypainted on a wall -- NOT floating digital text. The text must feel like it EXISTS in the photograph.\n';
 prompt+='- A photorealistic background shot on a cinema camera -- real locations, real lighting, real atmosphere. Think documentary cinematography, not graphic design.\n';
-prompt+='- All people shown (if any) MUST be dark-skinned Negro Israelites -- worldwide descendants of Israel -- with dark brown skin, strong features, and natural hair. Real skin texture, real expressions, shot like a portrait photographer would capture them.\n';
+prompt+='- All people shown (if any) MUST be dark-skinned Negro Israelites -- the scattered remnant worldwide (Americas, Caribbean, Africa, Europe) -- deep brown skin, strong features, natural coils or locs, real pores. Forbidden: European faces, pale Hollywood bible extras, cartoon, CGI plastic skin, floating digital text.\n';
 prompt+='- Natural cinematic color grading -- not oversaturated. Moody, grounded, filmic.\n';
 prompt+='- Must look like a still frame from a high-budget documentary or film, not a designed graphic\n';
 prompt+='- 16:9 aspect ratio, shallow depth of field where appropriate\n\n';
@@ -7185,33 +7316,15 @@ outputEl.innerHTML=html;
 function generateVideoPrompts(){
 if(!currentTopic){showToast('Open a topic first.');return;}
 var output=document.getElementById('outputVideo');
-output.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text">Generating video prompts...</div></div>';
-var sermonTitle=currentTopic.title;
-var chapterLabel=currentChapterSource?(currentChapterSource.book+' Chapter '+currentChapterSource.chapter):'';
-var prompt='Generate 3 distinct, highly detailed video generation prompts for the sermon topic "'+sermonTitle+'"'+(chapterLabel?' ('+chapterLabel+')':'')+' -- '+currentTopic.desc+'. ';
-prompt+='Each prompt should be optimized for AI video generators (Sora, Runway, Veo, Kling). ';
-prompt+='Include: scene description, camera movement, lighting, mood, pacing, duration suggestion, aspect ratio. ';
-prompt+='Make each scene different: 1) An intro/establishing shot 2) A dramatic climax moment 3) A reflective outro. ';
-prompt+='CRITICAL: All people in every scene MUST be dark-skinned Negro Israelites -- the worldwide scattered descendants of Israel -- with dark brown skin, strong features, and natural hair. No exceptions. ';
-prompt+='Theme: Hebrew Israelite prophetic aesthetic, cinematic biblical drama. No European depictions. ';
-prompt+='OUTPUT FORMAT -- CRITICAL: Output ONLY the prompts. No introductions, no commentary, no explanations. For each video prompt output EXACTLY this format:\n';
-prompt+='===SCENE [number]===\n[the full prompt text]\n===END===\n\n';
-prompt+='Nothing else. Just the delimited prompts.';
-var handlerName='vidprompt-'+Date.now();
-window.Poe.registerHandler(handlerName,function(result){
-var msg=result.responses[0];if(!msg)return;
-if(msg.status==='error'){
-output.innerHTML='<div class="error-msg">'+escapeHtml(msg.statusText||'Failed')+'</div>';
-}else if(msg.status==='incomplete'){
-output.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text">Generating video prompts...</div></div>';
-}else if(msg.status==='complete'){
-var raw=stripThinking(msg.content||'');
-parseAndDisplayPrompts(raw,output,'video');
-}
-});
-window.Poe.sendUserMessage('@'+getSelectedModel()+' '+prompt,{handler:handlerName,stream:false,openChat:false,parameters:{}}).catch(function(err){
-output.innerHTML='<div class="error-msg">'+escapeHtml(String(err))+'</div>';
-});
+var modelEl=document.getElementById('kieVideoModel');
+var model=modelEl&&modelEl.value?modelEl.value:'kling-3.0/video';
+var engineName=kieSelectedLabel('kieVideoModel')||'Kie video';
+var fam=kieVideoFamily(model);
+var sec=kieVideoSeconds(model);
+var ready=[];
+for(var i=0;i<3;i++)ready.push(buildKieSermonVideoPrompt(currentTopic,model,i));
+output.innerHTML='';
+kieAppendPromptCards(output,ready,'Ready for '+engineName);
 }
 var lyricsRawContent='';
 function buildSunoLyricsStylePrompt(){
