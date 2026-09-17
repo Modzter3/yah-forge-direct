@@ -8,6 +8,8 @@ const IMAGE_MODELS = {
   'flux-2/pro-text-to-image': { model: 'flux-2/pro-text-to-image', via: 'jobs', family: 'flux' },
   'flux-2/flex-text-to-image': { model: 'flux-2/flex-text-to-image', via: 'jobs', family: 'flux' },
   'grok-imagine/text-to-image': { model: 'grok-imagine/text-to-image', via: 'jobs', family: 'grok-image' },
+  'gpt-image-2-5-sunburst-text-to-image': { model: 'gpt-image-2-5-sunburst-text-to-image', via: 'jobs', family: 'gpt-image' },
+  'gpt-image-2-text-to-image': { model: 'gpt-image-2-text-to-image', via: 'jobs', family: 'gpt-image' },
 };
 
 const VIDEO_MODELS = {
@@ -21,6 +23,9 @@ function buildImageInput(spec, prompt, aspectRatio) {
   const ratio = aspectRatio || '16:9';
   if (spec.family === 'grok-image') {
     return { prompt, aspect_ratio: ratio, nsfw_checker: false };
+  }
+  if (spec.family === 'gpt-image') {
+    return { prompt, aspect_ratio: ratio, resolution: '1K' };
   }
   const input = { prompt, aspect_ratio: ratio, resolution: '1K' };
   if (spec.family === 'flux') input.nsfw_checker = false;
