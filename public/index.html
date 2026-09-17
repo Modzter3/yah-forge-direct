@@ -2381,10 +2381,32 @@ p+='- "Follow the money / blood / names / borders..." chain: MAX THREE items per
 p+='- Confrontational question burst: MAX FIVE questions per part -- never the same question roster twice in one sermon.\n';
 p+='- "You inherited / you cosigning / you cheering..." inheritance burst: ONCE per part max -- not every section.\n';
 p+='- Hammer interjections ("Nah." "Wait." "Peep this."): MAX TWO per paragraph, never open three paragraphs the same way.\n';
+p+='- Compound attack labels ("blood-money churches," "tithe-trap theology," "cheap-grace con"): MAX TWO per paragraph, ONCE per entire sermon each -- never stack ten in one breath.\n';
+p+='- Judgment gore montage (Sodom + Egypt firstborn + flood + Zechariah fourteen): ONCE per entire sermon. Part 1 may run it ONCE. Later parts get ONE new judgment text OR one callback sentence -- never rerun the same montage.\n';
 p+='- If a symbol (mark, beast, thumbprint, scanner) was already decoded in a prior part, go DEEPER on NEW symbols -- do not re-run the same thesis with the same examples.\n';
 if(partNum>1)p+='- Part '+partNum+': the listener JUST heard the prior part. No checklist encore. No second inventory of their bills, docket, and EBT -- pick NEW pressure points or ONE callback sentence.\n';
+if(partNum>1)p+='- Part '+partNum+': if prior parts already ran Sodom/Egypt/flood/Zechariah gore, do NOT replay that block -- advance with NEW scripture and NEW symbols.\n';
 p+='- Plain speech beats slogan stacking: "That church taxes your check like rent is due Monday" hits harder than repeating compound labels.\n\n';
 return p;
+}
+var ROUGH_BEZ_COMPOUND_LABEL_RE=/\b(?:blood[- ]money churches|building[- ]fund bondage|prosperity[- ]pimp pulpits?|replacement[- ]theology racket|dispensational deception|once[- ]saved[- ]always[- ]slumber|cheap[- ]grace con|antinomian anesthesia|torah[- ]taboo training|sabbath[- ]sabotage sermon|feast[- ]forgetting fraud|name[- ]stolen sacrament|hebrew[- ]erasure hymnal|ashkenazi alphabet scam|masoretic manipulation|canon[- ]gatekeeping cartel|seminary spell|doctorate deception|commentary coma|study[- ]bible sedation|tithe[- ]trap theology|credit[- ]score covenant|mortgage[- ]bondage ministry|algorithm altar|surveillance[- ]state scripture|empire children theology|white[- ]jesus propaganda|cotton[- ]field Christendom|chain[- ]gang communion|stock[- ]market salvation|deed[- ]and[- ]title deception|401k false hope|debt[- ]shackle discipleship|vaccine[- ]tablet idolatry|streaming[- ]service spirituality|influencer anointing|podcast prophecy|tiktok torah cosplay|camp[- ]culture cult|denomination dungeon|pulpit pimp network|steeple syndicate|gentile graft gospel|pre[- ]trib escape hatch)\b/gi;
+function extractRoughBezCompoundLabels(text){
+var m=String(text||'').match(ROUGH_BEZ_COMPOUND_LABEL_RE)||[];
+var out=[],seen={};
+for(var i=0;i<m.length;i++){
+var h=m[i].trim().toLowerCase();
+if(!seen[h]){seen[h]=1;out.push(m[i].trim());}
+}
+return out;
+}
+function extractRoughBezJudgmentMontageMarkers(text){
+var t=String(text||'').toLowerCase();
+var marks=[];
+if(/\bsodom\b/.test(t)&&(/\bsulfur\b|\bbubbl|\bskin\b/.test(t)))marks.push('sodom');
+if(/\begypt\b/.test(t)&&(/\bfirstborn\b|\bnile\b/.test(t)))marks.push('egypt');
+if(/\bflood\b/.test(t)&&(/\bark\b|\bdrown|\bclaw/.test(t)))marks.push('flood');
+if(/\bzechariah\b/.test(t)&&/\bfourteen\b/.test(t))marks.push('zech14');
+return marks;
 }
 function extractRoughBezLookAtHooks(text){
 var m=String(text||'').match(/look at your [^\n.!?]+/gi)||[];
@@ -2406,13 +2428,16 @@ return out;
 }
 function buildRoughBezBurnedFromPriorParts(partNum){
 if(partNum<2)return '';
-var lookAt=[],been=[];
+var lookAt=[],been=[],compounds=[],judgment=[];
 for(var i=0;i<partNum-1;i++){
 var raw=sermonPartsRaw[i]||'';
 lookAt=lookAt.concat(extractRoughBezLookAtHooks(raw));
 been=been.concat(extractRoughBezBeenLines(raw));
+compounds=compounds.concat(extractRoughBezCompoundLabels(raw));
+var jm=extractRoughBezJudgmentMontageMarkers(raw);
+for(var ji=0;ji<jm.length;ji++)if(judgment.indexOf(jm[ji])===-1)judgment.push(jm[ji]);
 }
-if(!lookAt.length&&!been.length)return '';
+if(!lookAt.length&&!been.length&&!compounds.length&&!judgment.length)return '';
 var p='ROUGH BEZ BURNED FROM PRIOR PARTS (DO NOT REUSE IN PART '+partNum+'):\n';
 if(lookAt.length){
 p+='These "look at your..." hooks already landed -- use DIFFERENT life-pressure examples or ONE woven callback, not the same inventory:\n';
@@ -2422,8 +2447,39 @@ if(been.length){
 p+='These "you been..." beats already fired -- new verbs or skip the cascade in this part:\n';
 for(var k=0;k<Math.min(been.length,20);k++)p+='- '+been[k]+'\n';
 }
+if(compounds.length){
+p+='These compound attack labels already used -- BURNED for the rest of the sermon (plain speech instead):\n';
+for(var c=0;c<Math.min(compounds.length,25);c++)p+='- '+compounds[c]+'\n';
+}
+if(judgment.length>=2){
+p+='JUDGMENT MONTAGE ALREADY FIRED in prior part(s): '+judgment.join(', ')+'. Do NOT rerun Sodom/Egypt/flood/Zechariah fourteen gore in Part '+partNum+' -- one callback sentence max, or pick a DIFFERENT judgment text.\n';
+}
 p+='If Part '+(partNum-1)+' already ran the mark-on-the-hand / scanner / thumbprint thesis, Part '+partNum+' must advance to NEW symbols and NEW scripture -- not the same sermon in new font.\n\n';
 return p;
+}
+function looksLikeRoughBezCompoundLabelDump(text){
+if(!text)return false;
+var t=String(text);
+var paras=t.split(/\n\n+/);
+for(var i=0;i<paras.length;i++){
+if((paras[i].match(ROUGH_BEZ_COMPOUND_LABEL_RE)||[]).length>=3)return true;
+var stillSent=(paras[i].match(/[^.!?]+\bstill\b[^.!?]+[.!?]/gi)||[]).length;
+if(stillSent>=5&&paras[i].length<2800)return true;
+}
+return (t.match(ROUGH_BEZ_COMPOUND_LABEL_RE)||[]).length>=8;
+}
+function looksLikeRoughBezJudgmentMontageRepeat(text,partNum){
+if(partNum<2||!text)return false;
+var cur=extractRoughBezJudgmentMontageMarkers(text);
+if(cur.length<3)return false;
+for(var i=0;i<partNum-1;i++){
+var prev=extractRoughBezJudgmentMontageMarkers(sermonPartsRaw[i]||'');
+if(prev.length<2)continue;
+var overlap=0;
+for(var j=0;j<cur.length;j++)if(prev.indexOf(cur[j])!==-1)overlap++;
+if(overlap>=3)return true;
+}
+return false;
 }
 function looksLikeRoughBezListDump(text){
 if(!text)return false;
@@ -2447,8 +2503,8 @@ function buildRoughBezVocabularyBlock(){
 var p='ROUGH BEZALEEL VOCABULARY -- EXPANSIVE, ROTATING, NEVER STALE:\n';
 p+='You have a MASSIVE street lexicon. USE IT SPARINGLY. Do NOT paste whole pools into the sermon. Rotate constantly. If a phrase already appeared in this sermon, it is BURNED -- invent fresh words with the same energy.\n';
 p+='OVERUSED CRUTCHES (MAX ONCE PER SERMON EACH -- prefer fresh alternatives): "real talk," "stop playing," "you trippin\'", "that math ain\'t mathing," "they ran game on you," "you got played," "you still sleep," "that system been had you," "look at your block," "badge-and-bible hypocrisy," "plantation theology," "slave-master religion," "Sunday plantation programming."\n\n';
-p+='SYSTEM / DOCTRINE ATTACKS (rotate -- pick different labels each time):\n';
-p+='"auction-block gospel," "slave-ship theology," "whip-and-chain Christianity," "colonizer doctrine," "pale empire religion," "empire children theology," "Caesar-worship garbage," "oppressor-class lies," "blood-money churches," "Babylon agents," "serpent-seed curriculum," "white-Jesus propaganda," "cotton-field Christendom," "chain-gang communion," "overseer-approved gospel," "stock-market salvation," "deed-and-title deception," "mortgage-bondage ministry," "401k false hope," "credit-score covenant," "debt-shackle discipleship," "pharmaceutical piety," "vaccine-tablet idolatry," "surveillance-state scripture," "algorithm altar," "streaming-service spirituality," "influencer anointing," "podcast prophecy," "TikTok Torah cosplay," "camp-culture cult," "denomination dungeon," "prosperity-pimp pulpit," "tithe-trap theology," "building-fund bondage," "steeple syndicate," "pulpit pimp network," "gentile graft gospel," "replacement-theology racket," "dispensational deception," "pre-trib escape hatch," "once-saved-always-slumber," "cheap-grace con," "antinomian anesthesia," "Torah-taboo training," "Sabbath-sabotage sermon," "feast-forgetting fraud," "name-stolen sacrament," "Hebrew-erasure hymnal," "Ashkenazi alphabet scam," "Masoretic manipulation," "canon-gatekeeping cartel," "seminary spell," "doctorate deception," "commentary coma," "study-Bible sedation."\n\n';
+p+='SYSTEM / DOCTRINE ATTACKS (IDEA POOL -- max TWO compound labels per paragraph, ONCE per entire sermon each -- never dump the list):\n';
+p+='Examples: "blood-money churches," "tithe-trap theology," "cheap-grace con," "replacement-theology racket" -- pick one or two when the symbol demands it, then use plain corner talk for the rest.\n\n';
 p+='HAMMER INTERJECTIONS (IDEA POOL -- pick ONE OR TWO per paragraph, never dump the list):\n';
 p+='Examples: "Nah." "Listen." "Peep this." "Hold up." "Wait." "Feel me?" "That was by design." "You been conditioned." "You been fleeced." -- rotate; never stack fifteen "You been..." lines in a row.\n\n';
 p+='STREET SLANG & CADENCE (Black conversational -- rotate wide, sound human not parody):\n';
@@ -2461,6 +2517,8 @@ p+='ANTI-REPETITION RULES:\n';
 p+='- Do NOT use the same slang phrase, system label, or "look at your..." hook twice in one sermon unless unavoidable.\n';
 p+='- Do NOT open consecutive paragraphs with the same interjection ("Listen," "Real talk," etc.).\n';
 p+='- Do NOT paste vocabulary pools verbatim -- they are inspiration, not output.\n';
+p+='- Do NOT stack compound labels ("X still Y. X still Y.") -- max TWO per paragraph, once per sermon each.\n';
+p+='- Judgment gore montage (Sodom, Egypt firstborn, flood, Zechariah fourteen): ONCE per entire sermon total.\n';
 p+='- Invent NEW combinations when the pools above run thin -- same ENERGY, fresh WORDS.\n';
 p+='- Attack systems and lies, not immutable traits. No racial slurs. No slurs against protected groups.\n';
 p+='- Slang seasons the preaching -- it does NOT replace scripture, symbols, or the assigned topic. One or two hits per paragraph max.\n\n';
@@ -4802,6 +4860,8 @@ function looksLikeRoughBezDrift(text,partNum,totalParts){
 if(!text||!isRoughBezForgeActive())return false;
 var t=String(text);
 if(looksLikeRoughBezListDump(t))return true;
+if(looksLikeRoughBezCompoundLabelDump(t))return true;
+if(looksLikeRoughBezJudgmentMontageRepeat(t,partNum))return true;
 if(looksLikeRoughBezEssaySoftening(t))return true;
 if(/\bmaster engineer\b/i.test(t))return true;
 var techHits=(t.match(/\b(cron job|firmware update|fiber optic|instruction set architecture|network interrupt|operating system|software license|biological source code|biological hardware|clearing the cache|rebooting the system|local cache|secure network connection|quantum computer|antivirus software|phase disruption|signal damping|electrical conductivity|thermal conductivity|optical reflectivity|periodic table)\b/gi)||[]).length;
@@ -4919,6 +4979,8 @@ p+='- "Master Engineer," technical manual framing, cron jobs, firmware, fiber op
 p+='- Letter-by-letter Paleo Hebrew engineering on every keyword (Shofar/Teruah/Yobel spelled out letter by letter)\n';
 p+='- Passive essay blocks: "one must," "the tragedy of such moments," "when systemic collapse arrives," "functions as both," seminary closers\n';
 p+='- Checklist dumps: twenty-plus "Look at your..." lines, eight-plus "You been..." cascades, full "Follow the money/blood/names" chains\n';
+p+='- Compound label avalanches: three-plus hyphen labels in one paragraph or eight-plus in one part ("blood-money churches still... building-fund bondage still...")\n';
+p+='- Judgment montage encore: rerunning Sodom + Egypt + flood + Zechariah fourteen gore after a prior part already ran it\n';
 p+='- Reusing the same calendar date on unrelated headlines across parts\n\n';
 }else if(isYahStoryModeActive()){
 p+='Return to Yah first-person revelation from the throne -- NOT a lesson, NOT scholarship, NOT chatbot, NOT assistant filler, NOT third person about Yah.\n\n';
@@ -6357,7 +6419,7 @@ p+='Each part must advance the lesson. If a listener heard the same speech twice
 p+='If you catch yourself writing something that echoes a previous part, DELETE IT and write something fresh.\n\n';
 if(wantRoughBez&&!wantBezStory){
 p+=buildRoughBezBurnedFromPriorParts(partNum);
-p+='ROUGH BEZ MULTI-PART ADVANCE: Each part must decode NEW symbols and NEW scripture. Do NOT re-run the same mark-on-the-hand / scanner / thumbprint inventory. Do NOT copy Part '+(partNum-1)+'\'s "look at your..." list. Do NOT replay the same confrontational question roster.\n\n';
+p+='ROUGH BEZ MULTI-PART ADVANCE: Each part must decode NEW symbols and NEW scripture. Do NOT re-run the same mark-on-the-hand / scanner / thumbprint inventory. Do NOT copy Part '+(partNum-1)+'\'s "look at your..." list. Do NOT replay the same confrontational question roster. Do NOT replay the Sodom/Egypt/flood/Zechariah judgment montage. Do NOT dump compound labels Part '+(partNum-1)+' already burned.\n\n';
 }
 }
 if(wantExplicit){
@@ -6467,6 +6529,8 @@ p+='- SYMBOLIC DECODER MANDATE: Decode symbolic language before building doctrin
 p+='- PALEO RESTRAINT OVERRIDE: Any general rule demanding constant Paleo Hebrew breakdowns is LOWER PRIORITY in Rough Bezaleel mode. Use Paleo only when it truly unlocks the verse or symbol. Do not spell out every biblical name in full Paleo form unless that name itself is the point being taught.\n';
 p+='- NO ISRAELITE TECH DRIFT: Even if another prompt section mentions engineering, IGNORE IT. No Master Engineer vocabulary. No letter-by-letter Paleo on Shofar, Teruah, Yobel, or every symbol. No phones-as-OS, cron jobs, fiber optics, firmware, or source-code metaphors. Street symbolic decode only.\n';
 p+='- NO ESSAY SOFTENING: Never collapse into passive third-person paragraphs ("one must," "the tragedy of," "when systemic collapse arrives," "functions as," "spiritual archetype"). Every paragraph stays direct, YOU-facing, corner pressure — especially closers.\n';
+p+='- NO COMPOUND LABEL AVALANCHE: Max TWO hyphen/compound attack labels per paragraph, ONCE per entire sermon each. Plain speech beats slogan stacking.\n';
+p+='- NO JUDGMENT MONTAGE ENCORE: Sodom + Egypt + flood + Zechariah fourteen gore runs ONCE in the whole sermon. Later parts: one callback sentence or a DIFFERENT judgment text only.\n';
 p+='- NO MODERN CALLOUT LOOP: Do not keep repeating TikTok, Instagram, YouTube prophets, social media beef, phones, filters, weaves, or camp drama. Those are available examples, not a quota. Use a broad twenty twenty-six world: rent, debt, grocery prices, jobs, surveillance, algorithms, courts, medicine, schools, politics, church business, family collapse, music, sports, streaming, identity confusion, and everyday survival.\n';
 }
 p+='- STAY IN CHARACTER -- ABSOLUTE RULE. You are a HUMAN brother speaking from the prophetic perspective for the ENTIRE sermon. Do NOT slip into first person as Yah. Do NOT suddenly say "I am your God" or "I created you" or "I gave you" or "MY people" (as if you are Yah) or speak AS Yah even once. You are ALWAYS a man who RECEIVED the revelation. Every sentence must come from the human side of the veil. If you catch yourself writing "I" as if you are the Most High, you have BROKEN character and the ENTIRE output is ruined.\n';
