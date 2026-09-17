@@ -31,7 +31,7 @@ Set `AI_PROVIDER` to one of:
 
 You can keep `AI_PROVIDER=openrouter` and still pick **`kie/...`** models in every dropdown. Those ids bill `KIE_API_KEY`.
 
-**In-app Images / Video after a sermon** use Kie generators (Nano Banana 2, Flux-2, Veo 3.1, Grok Imagine). They call `/api/kie-media` (create task + poll). OpenRouter `openai/gpt-6-astra` stays at official $10 / $50.
+**In-app Images / Video after a sermon** use Kie generators (Nano Banana 2, GPT Image 2.5, Flux-2, Veo 3.1, Grok Imagine). They call `/api/kie-media` (create task + poll). OpenRouter `openai/gpt-6-astra` stays at official $10 / $50.
 
 ## Quick start (local)
 

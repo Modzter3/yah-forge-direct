@@ -21,6 +21,8 @@
   window.KIE_IMAGE_MODELS = [
     { id: 'nano-banana-2', name: 'Nano Banana 2' },
     { id: 'nano-banana-2-lite', name: 'Nano Banana 2 Lite' },
+    { id: 'gpt-image-2-5-sunburst-text-to-image', name: 'GPT Image 2.5 Sunburst' },
+    { id: 'gpt-image-2-text-to-image', name: 'GPT Image 2' },
     { id: 'flux-2/pro-text-to-image', name: 'Flux-2 Pro' },
     { id: 'flux-2/flex-text-to-image', name: 'Flux-2 Flex' },
     { id: 'grok-imagine/text-to-image', name: 'Grok Imagine' }
