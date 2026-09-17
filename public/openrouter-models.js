@@ -117,6 +117,7 @@
 
   function preferredDefault(models) {
     var want = [
+      'upstage/solar-pro4',
       'google/gemini-3.6-flash',
       'google/gemini-2.5-flash',
       'google/gemini-2.5-pro',
