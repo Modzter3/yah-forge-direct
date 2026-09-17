@@ -7183,45 +7183,12 @@ var ready=[];
 for(var i=0;i<count;i++)ready.push(buildKieSermonImagePrompt(currentTopic,model,i));
 output.innerHTML='';
 kieAppendPromptCards(output,ready,'Ready for '+engineName);
+if(wantTitleCard){
 var sermonTitle=currentTopic.title;
 var chapterLabel=currentChapterSource?(currentChapterSource.book+' Chapter '+currentChapterSource.chapter):'';
-var prompt='You write extra IMAGE PROMPT VARIATIONS for Kie generator "'+engineName+'". Israelite sermons, not church-stock art.\n\n';
-prompt+='SERMON: "'+sermonTitle+'"'+(chapterLabel?' ('+chapterLabel+')':'')+' -- '+currentTopic.desc+'\n\n';
-prompt+='Write exactly '+count+' MORE distinct 16:9 photoreal stills. Each prompt is one paste-ready paragraph.\n';
-prompt+='GRAMMAR (keep this order): engine + 16:9 still. Teaching meaning (never as on-screen text). Shot/framing. Concrete remnant scene. Camera (lens, aperture, angle). Lighting. People lock. Negatives.\n';
-prompt+='PEOPLE LOCK: All people are dark-skinned Negro Israelites — scattered remnant worldwide (Americas, Caribbean, Africa, Europe): deep brown skin, strong features, natural coils or locs, real pores, sweat, fabric. Forbidden: European faces, pale Hollywood bible extras, cartoon, anime, illustration, CGI plastic skin, extra fingers, captions, watermarks, logos.\n';
-prompt+='STYLE: RAW photojournalism / cinema still. Real dirt, linen, sweat, locations, film grain. NEVER write illustration, painting, digital art, cartoon, render, CGI, stained glass, holy glow, European Jesus, winged angels.\n';
-prompt+='Match THIS teaching with a lived remnant scene (street, checkout, stoop, ridge, dock) — not a generic desert prophet.\n\n';
-prompt+='EXAMPLE GRAMMAR:\n'+ready[0]+'\n\n';
-if(wantTitleCard){
-prompt+='ADDITIONALLY, last item is a TITLE CARD. Readable text exists physically in the photograph (carved stone, burned wood, painted wall, etched metal) and reads "'+(chapterLabel?chapterLabel+' -- ':'')+sermonTitle+'". Same people lock. Photoreal 16:9.\n';
+var card=kieImageEngine(model)+'. 16:9 title-card photograph. The sermon title exists as PHYSICAL text in the scene (carved stone, burned wood, painted wall, or etched metal), reading "'+(chapterLabel?chapterLabel+' -- ':'')+sermonTitle+'". Background: '+kieSermonMotif(currentTopic).place+'. Cinema still, film grain, real location. '+kieSermonPeopleLock()+' '+kieSermonNegatives()+' No floating digital overlay text.';
+kieAppendPromptCards(output,[card],'Title card for '+engineName);
 }
-prompt+='OUTPUT FORMAT -- ONLY the delimited prompts.\n';
-prompt+='===IMAGE [number]===\n[the full prompt text]\n===END===\n\n';
-if(wantTitleCard)prompt+='===TITLECARD===\n[the full prompt text]\n===END===\n\n';
-prompt+='Nothing else.';
-var handlerName='imgprompt-'+Date.now();
-window.Poe.registerHandler(handlerName,function(result){
-var msg=result.responses[0];if(!msg)return;
-if(msg.status==='error'){
-showToast(msg.statusText||'Writer failed — ready-to-paste prompts are above.');
-}else if(msg.status==='complete'){
-var raw=stripThinking(msg.content||'');
-var box=document.createElement('div');
-parseAndDisplayPrompts(raw,box,'image');
-if(box.innerHTML){
-var note=document.createElement('div');
-note.className='media-item-label';
-note.style.margin='12px 0 6px';
-note.innerHTML='<i class="fas fa-pen"></i> Writer variations';
-output.appendChild(note);
-while(box.firstChild)output.appendChild(box.firstChild);
-}
-}
-});
-window.Poe.sendUserMessage('@'+getImagePromptModel()+' '+prompt,{handler:handlerName,stream:false,openChat:false,parameters:{}}).catch(function(){
-showToast('Writer unavailable — ready-to-paste prompts are above.');
-});
 }
 function parseAndDisplayPrompts(raw,outputEl,type){
 var html='';
@@ -7358,44 +7325,6 @@ var ready=[];
 for(var i=0;i<3;i++)ready.push(buildKieSermonVideoPrompt(currentTopic,model,i));
 output.innerHTML='';
 kieAppendPromptCards(output,ready,'Ready for '+engineName);
-var sermonTitle=currentTopic.title;
-var chapterLabel=currentChapterSource?(currentChapterSource.book+' Chapter '+currentChapterSource.chapter):'';
-var grammar='One continuous shot, 16:9, photoreal remnant, one camera move, natural physics.';
-if(fam==='kling')grammar=sec+'-second SINGLE SHOT. Put CAMERA first. One move only (slow dolly-in OR tracking OR locked-off). Explicit verbs. No cuts. No stacked pans+zooms.';
-else if(fam==='wan')grammar=sec+'-second ONE CONTINUOUS TAKE. Subject + place + movement, then camera, then sound. Must say: no voice lines in the whole video. no background music.';
-else if(fam==='seedance')grammar=sec+'-second video with timed shots: Shot 1 [0-5s], Shot 2 [5-10s], Shot 3 [10-'+sec+'s]. One action per range. Audio: ambient only, no dialogue, no music, no subtitles.';
-else if(fam==='veo')grammar='Photoreal Veo, ~'+sec+'s, 16:9. Real wind and dust. One slow camera move. No CGI bloom.';
-else if(fam==='sora')grammar='Landscape cinematic, continuous '+sec+'-second motion, 16:9. Real gait. No on-screen titles.';
-var prompt='You write extra VIDEO PROMPT VARIATIONS for Kie generator "'+engineName+'". Israelite sermons, not church movies.\n\n';
-prompt+='SERMON: "'+sermonTitle+'"'+(chapterLabel?' ('+chapterLabel+')':'')+' -- '+currentTopic.desc+'\n\n';
-prompt+='Write 3 MORE paste-ready prompts. Grammar for this generator: '+grammar+'\n';
-prompt+='Scenes: 1) establishing 2) teaching/climax 3) reflective outro. Match THIS teaching with a lived remnant scene.\n';
-prompt+='PEOPLE LOCK: All people are dark-skinned Negro Israelites — scattered remnant worldwide. Deep brown skin, strong features, natural coils or locs. Forbidden: European faces, Hollywood bible extras, cartoon, anime, CGI plastic, extra fingers, on-screen text, logos.\n';
-prompt+='Never put the sermon title on screen. Never invent a narrator. '+kieVideoAudioLock(model)+'\n\n';
-prompt+='EXAMPLE GRAMMAR:\n'+ready[0]+'\n\n';
-prompt+='OUTPUT FORMAT -- ONLY:\n===SCENE [number]===\n[the full prompt text]\n===END===\n\nNothing else.';
-var handlerName='vidprompt-'+Date.now();
-window.Poe.registerHandler(handlerName,function(result){
-var msg=result.responses[0];if(!msg)return;
-if(msg.status==='error'){
-showToast(msg.statusText||'Writer failed — ready-to-paste prompts are above.');
-}else if(msg.status==='complete'){
-var raw=stripThinking(msg.content||'');
-var box=document.createElement('div');
-parseAndDisplayPrompts(raw,box,'video');
-if(box.innerHTML){
-var note=document.createElement('div');
-note.className='media-item-label';
-note.style.margin='12px 0 6px';
-note.innerHTML='<i class="fas fa-pen"></i> Writer variations';
-output.appendChild(note);
-while(box.firstChild)output.appendChild(box.firstChild);
-}
-}
-});
-window.Poe.sendUserMessage('@'+getSelectedModel()+' '+prompt,{handler:handlerName,stream:false,openChat:false,parameters:{}}).catch(function(){
-showToast('Writer unavailable — ready-to-paste prompts are above.');
-});
 }
 var lyricsRawContent='';
 function buildSunoLyricsStylePrompt(){
