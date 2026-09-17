@@ -1,10 +1,20 @@
 /**
  * Fetches live OpenRouter model list and fills every Forge model dropdown with real ids.
+ * Prepends Kie.ai models (kie/gpt-6-astra) so you can A/B against OpenRouter without switching providers.
  * Tabs: Sermon, Dismantle, Transcript, Destroy, News, Yah Chat, Bible/Apoc/Sealed fetch, Image prompts.
  * Falls back silently (keeps loading placeholder) if the catalog cannot be loaded.
  */
 (function () {
   var MODELS_URL = 'https://openrouter.ai/api/v1/models';
+  var KIE_MODELS = [
+    {
+      id: 'kie/gpt-6-astra',
+      name: 'GPT-6 Astra via Kie',
+      context_length: 1050000,
+      pricing: { prompt: '0.0000028', completion: '0.000014' },
+      created: Date.now()
+    }
+  ];
 
   var SELECT_IDS = [
     'modelSelect',
@@ -26,6 +36,7 @@
 
   function prettyProvider(slug) {
     if (!slug) return 'Other';
+    if (slug === 'kie') return 'Kie (discount Astra)';
     return slug.replace(/-/g, ' ').replace(/\b\w/g, function (c) {
       return c.toUpperCase();
     });
@@ -83,6 +94,8 @@
       byProv[p].push(m);
     }
     var provs = Object.keys(byProv).sort(function (a, b) {
+      if (a === 'kie') return -1;
+      if (b === 'kie') return 1;
       return a.toLowerCase().localeCompare(b.toLowerCase());
     });
     var frag = document.createDocumentFragment();
@@ -182,7 +195,8 @@
         return r.json();
       })
       .then(function (data) {
-        var models = data.data || [];
+        var models = (data.data || []).slice();
+        for (var k = 0; k < KIE_MODELS.length; k++) models.unshift(KIE_MODELS[k]);
         if (!models.length) throw new Error('empty catalog');
 
         for (var s = 0; s < SELECT_IDS.length; s++) {
@@ -195,6 +209,13 @@
       })
       .catch(function (err) {
         console.warn('[openrouter-models]', err.message || err);
+        fillSelectsWithKieOnly();
       });
   };
+
+  function fillSelectsWithKieOnly() {
+    for (var s = 0; s < SELECT_IDS.length; s++) {
+      fillSelect(SELECT_IDS[s], KIE_MODELS.slice(), false);
+    }
+  }
 })();

@@ -1,3 +1,12 @@
+import {
+  KIE_BASE_URL,
+  buildKieResponsesPayload,
+  kieJsonToChatSse,
+  looksLikeKieModelId,
+  resolveKieModel,
+  transformKieResponsesSse,
+} from './kie-provider.js';
+
 export const config = { runtime: 'edge' };
 
 const PROVIDERS = {
@@ -7,6 +16,7 @@ const PROVIDERS = {
   together:   { baseUrl: 'https://api.together.xyz/v1',  keyEnv: 'TOGETHER_API_KEY' },
   fireworks:  { baseUrl: 'https://api.fireworks.ai/inference/v1', keyEnv: 'FIREWORKS_API_KEY' },
   xai:        { baseUrl: 'https://api.x.ai/v1',          keyEnv: 'XAI_API_KEY' },
+  kie:        { baseUrl: KIE_BASE_URL,                   keyEnv: 'KIE_API_KEY' },
   custom:     { baseUrl: '',                              keyEnv: 'AI_API_KEY'   },
 };
 
@@ -71,20 +81,43 @@ export default async function handler(req) {
   }
   const imageList = normalizeImageInputs(images);
 
-  const providerName = (process.env.AI_PROVIDER || 'openrouter').trim().toLowerCase();
+  const defaultProviderName = (process.env.AI_PROVIDER || 'openrouter').trim().toLowerCase();
+  const kieModel = looksLikeKieModelId(bot) ? resolveKieModel(bot) : null;
+  const useKie = !!kieModel;
+  const providerName = useKie ? 'kie' : defaultProviderName;
   const provider     = PROVIDERS[providerName] || PROVIDERS.custom;
-  const baseUrl      = stripTrailingSlash(process.env.AI_BASE_URL || provider.baseUrl || '');
+  const baseUrl      = stripTrailingSlash(
+    (useKie ? (process.env.KIE_BASE_URL || KIE_BASE_URL) : (process.env.AI_BASE_URL || provider.baseUrl)) || ''
+  );
 
   if (!baseUrl) {
     return jsonError(
-      'Missing AI base URL. Set AI_BASE_URL or AI_PROVIDER (openrouter/openai/groq/together/fireworks/xai).',
+      'Missing AI base URL. Set AI_BASE_URL or AI_PROVIDER (openrouter/openai/groq/together/fireworks/xai/kie).',
       500
     );
   }
 
   const apiKey = resolveApiKey(providerName, provider);
   if (!apiKey) {
+    if (providerName === 'kie') {
+      return jsonError(
+        'Missing KIE_API_KEY. Add it in Vercel → Settings → Environment Variables, then redeploy.',
+        500
+      );
+    }
     return jsonError(`Missing API key. Set AI_API_KEY or ${provider.keyEnv}.`, 500);
+  }
+
+  if (useKie) {
+    return handleKieRequest({
+      bot,
+      query,
+      parameters,
+      imageList,
+      kieModel,
+      apiKey,
+      baseUrl,
+    });
   }
 
   const resolvedModel = resolveModel({ requestedModel: bot, providerName });
@@ -132,6 +165,90 @@ export default async function handler(req) {
   return jsonFromProviderToSse(parsed, providerName, resolvedModel);
 }
 
+async function handleKieRequest({ bot, query, parameters, imageList, kieModel, apiKey, baseUrl }) {
+  const spec = kieModel || resolveKieModel(bot);
+  if (!spec) {
+    return jsonError(
+      `Unknown Kie model "${bot || ''}". Use kie/gpt-6-astra (or set a supported Kie id).`,
+      400
+    );
+  }
+  if (imageList.length && !supportsVision(spec.id)) {
+    return jsonError(`Kie model "${spec.id}" may not support image input.`, 400);
+  }
+
+  const params = { ...(parameters || {}) };
+  const yahStorySystem = params.yah_story_system === true;
+  delete params.yah_story_system;
+  let systemContent = '';
+  if (yahStorySystem) {
+    systemContent = process.env.YAH_STORY_SYSTEM_PROMPT || DEFAULT_YAH_STORY_SYSTEM_PROMPT;
+    if (/grok/i.test(spec.id)) systemContent += GROK_YAH_STORY_SYSTEM_SUFFIX;
+  }
+
+  const payload = buildKieResponsesPayload({
+    model: spec.id,
+    query,
+    parameters: params,
+    images: imageList,
+    systemContent,
+  });
+
+  const url = `${stripTrailingSlash(baseUrl)}${spec.path}`;
+  let upstream;
+  try {
+    upstream = await fetch(url, {
+      method: 'POST',
+      headers: requestHeaders('kie', apiKey),
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    return jsonError(`Network error reaching Kie (${spec.id}): ${err.message}`, 502);
+  }
+
+  const contentType = upstream.headers.get('content-type') || '';
+  const looksJson = contentType.includes('application/json');
+  if (upstream.ok && upstream.body && !looksJson) {
+    const readable = transformKieResponsesSse(upstream.body);
+    return new Response(readable, {
+      status: 200,
+      headers: {
+        ...corsHeaders(),
+        'Content-Type':      'text/event-stream',
+        'Cache-Control':     'no-cache',
+        'X-Accel-Buffering': 'no',
+        'X-AI-Provider':     'kie',
+        'X-AI-Model':        spec.id,
+      },
+    });
+  }
+
+  const raw = await safeReadText(upstream);
+  let parsed = null;
+  try { parsed = JSON.parse(raw); } catch { parsed = null; }
+
+  if (!upstream.ok) {
+    const clean = cleanErrorMessage(parsed, raw);
+    return jsonError(
+      `kie ${upstream.status} (model: ${spec.id}): ${clean || '(empty)'}`,
+      upstream.status >= 400 ? upstream.status : 502
+    );
+  }
+
+  const sse = kieJsonToChatSse(parsed);
+  return new Response(sse, {
+    status: 200,
+    headers: {
+      ...corsHeaders(),
+      'Content-Type':      'text/event-stream',
+      'Cache-Control':     'no-cache',
+      'X-Accel-Buffering': 'no',
+      'X-AI-Provider':     'kie',
+      'X-AI-Model':        spec.id,
+    },
+  });
+}
+
 function normalizeImageInputs(images) {
   if (!Array.isArray(images)) return [];
   const out = [];
@@ -152,7 +269,7 @@ function normalizeImageInputs(images) {
 function supportsVision(model) {
   const m = String(model || '').toLowerCase();
   if (!m) return false;
-  if (/gemini|gpt-4|gpt-4\.1|gpt-5|claude|grok-4|qwen.*vl|llama.*vision|pixtral|mistral.*pix/i.test(m)) {
+  if (/gemini|gpt-4|gpt-4\.1|gpt-5|gpt-6|astra|claude|grok-4|qwen.*vl|llama.*vision|pixtral|mistral.*pix/i.test(m)) {
     return true;
   }
   return false;
@@ -217,6 +334,10 @@ function buildPayload({ model, query, parameters, providerName, images = [] }) {
 }
 
 function resolveApiKey(providerName, provider) {
+  if (providerName === 'kie') {
+    return process.env.KIE_API_KEY || process.env.KIE_SECRET_KEY || process.env.AI_API_KEY || '';
+  }
+
   const direct = process.env.AI_API_KEY;
   if (direct) return direct;
 
@@ -231,6 +352,7 @@ function resolveApiKey(providerName, provider) {
     together:   process.env.TOGETHER_API_KEY,
     fireworks:  process.env.FIREWORKS_API_KEY,
     xai:        process.env.XAI_API_KEY,
+    kie:        process.env.KIE_API_KEY || process.env.KIE_SECRET_KEY,
     custom:     process.env.CUSTOM_API_KEY,
   };
   return explicitByProvider[providerName] || '';

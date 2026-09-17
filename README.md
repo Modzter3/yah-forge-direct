@@ -24,7 +24,10 @@ Set `AI_PROVIDER` to one of:
 | `together` | `https://api.together.xyz/v1` |
 | `fireworks` | `https://api.fireworks.ai/inference/v1` |
 | `xai` | `https://api.x.ai/v1` |
+| `kie` | `https://api.kie.ai` (GPT-6 Astra via `/codex/v1/responses`) |
 | `custom` | Set `AI_BASE_URL` to any OpenAI-compatible endpoint |
+
+You can keep `AI_PROVIDER=openrouter` and still pick **`kie/gpt-6-astra`** in the model dropdown. That id bills `KIE_API_KEY` at Kie's discounted Astra rate (~$2.80 / $14 per 1M). OpenRouter's `openai/gpt-6-astra` stays at official $10 / $50.
 
 ## Quick start (local)
 
@@ -50,6 +53,14 @@ vercel --prod
 ```
 
 Then add your environment variables in the Vercel project dashboard under **Settings → Environment Variables**.
+
+Required for discounted GPT-6 Astra:
+
+```
+KIE_API_KEY=your_kie_key
+```
+
+Paste the key at [Vercel → yah-forge-direct → Environment Variables](https://vercel.com/modzter3s-projects/yah-forge-direct/settings/environment-variables) for Production, Preview, and Development, then redeploy.
 
 ## Model aliases
 

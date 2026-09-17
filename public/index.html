@@ -1169,16 +1169,16 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       </div>
       <div class="model-select-block">
         <div class="model-select-wrap">
-          <label><i class="fas fa-robot"></i> OpenRouter model:</label>
+          <label><i class="fas fa-robot"></i> Model:</label>
           <select class="model-select" id="modelSelect" onchange="onSermonModelDropdown()">
-            <option value="upstage/solar-pro4" selected>Loading OpenRouter catalog...</option>
+            <option value="upstage/solar-pro4" selected>Loading model catalog...</option>
           </select>
         </div>
         <div class="custom-model-row">
-          <label><i class="fas fa-keyboard" style="margin-right:2px;font-size:0.6rem;"></i> Or paste any OpenRouter model:</label>
-          <input type="text" class="custom-model-input" id="customModelInput" placeholder="provider/model — e.g. x-ai/grok-4.20 or cognitivecomputations/dolphin-mistral-24b-venice-edition" oninput="onCustomModel(this,'modelSelect')" onfocus="this.select()">
+          <label><i class="fas fa-keyboard" style="margin-right:2px;font-size:0.6rem;"></i> Or paste any model id:</label>
+          <input type="text" class="custom-model-input" id="customModelInput" placeholder="provider/model — e.g. kie/gpt-6-astra or upstage/solar-pro4" oninput="onCustomModel(this,'modelSelect')" onfocus="this.select()">
         </div>
-        <div class="custom-model-hint">Any id from openrouter.ai/models overrides the dropdown. Yah Story + Explicit: use <code style="font-size:0.55rem;">cognitivecomputations/dolphin-mistral-24b-venice-edition</code> if Grok/Gemini refuse.</div>
+        <div class="custom-model-hint">OpenRouter ids (solar-pro4, openai/gpt-6-astra) use <code style="font-size:0.55rem;">OPENROUTER_API_KEY</code>. Kie Astra (<code style="font-size:0.55rem;">kie/gpt-6-astra</code>) uses <code style="font-size:0.55rem;">KIE_API_KEY</code> at ~72% off list. Yah Story + Explicit: use <code style="font-size:0.55rem;">cognitivecomputations/dolphin-mistral-24b-venice-edition</code> if Grok/Gemini refuse.</div>
       </div>
       <div class="part-count-wrap">
         <span class="pc-label"><i class="fas fa-layer-group"></i> Parts:</span>
@@ -2069,9 +2069,14 @@ function forgeModelLower(m){return (m||'').toLowerCase();}
 function forgeIsGemini(model){var s=forgeModelLower(model);return s.indexOf('gemini')!==-1||s.indexOf('google/')===0;}
 function forgeIsFlashTier(model){var s=forgeModelLower(model);return s.indexOf('flash')!==-1||s.indexOf('lite')!==-1||s.indexOf('mini')!==-1;}
 function forgeIsClaude(model){var s=forgeModelLower(model);return s.indexOf('claude')!==-1||s.indexOf('anthropic/')===0;}
+function forgeIsKie(model){
+var s=forgeModelLower(model);
+return s.indexOf('kie/')===0||s==='gpt-6-astra';
+}
 function forgeIsOpenAI(model){
 var s=forgeModelLower(model);
 if(s.indexOf('openai/')===0)return true;
+if(forgeIsKie(model)&&/gpt-|astra/.test(s))return true;
 var tail=s.indexOf('/')>=0?s.slice(s.lastIndexOf('/')+1):s;
 return /^gpt-|^o\d/i.test(tail);
 }
@@ -2153,7 +2158,7 @@ if(forgeIsGemini(model)){
 if(s.indexOf('pro')!==-1||s.indexOf('3.1')!==-1)return 32768;
 return 16384;
 }
-if(forgeIsOpenAI(model))return 16384;
+if(forgeIsOpenAI(model)||forgeIsKie(model))return 32768;
 if(s.indexOf('grok')!==-1)return 16384;
 if(s.indexOf('glm')!==-1||s.indexOf('qwen')!==-1||s.indexOf('kimi')!==-1)return 8192;
 return 16384;
