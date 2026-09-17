@@ -29,29 +29,26 @@
   ];
 
   window.KIE_VIDEO_MODELS = [
+    { id: 'kling-3.0/video', name: 'Kling 3.0 Pro' },
+    { id: 'kling-3.0-omni/text-to-video', name: 'Kling O3 (3.0 Omni)' },
+    { id: 'kling/v3-turbo-text-to-video', name: 'Kling V3 Turbo' },
+    { id: 'wan/3-0-video', name: 'Wan 3.0' },
+    { id: 'wan/3-0-video-prime', name: 'Wan 3.0 Prime' },
+    { id: 'bytedance/seedance-2-5', name: 'Seedance 2.5' },
+    { id: 'bytedance/seedance-2', name: 'Seedance 2.0' },
     { id: 'veo3_fast', name: 'Veo 3.1 Fast' },
     { id: 'veo3', name: 'Veo 3.1 Quality' },
     { id: 'veo3_lite', name: 'Veo 3.1 Lite' },
-    { id: 'grok-imagine/text-to-video', name: 'Grok Imagine Video' },
     { id: 'grok-imagine-video-1-5-preview', name: 'Grok Imagine Video 1.5' },
+    { id: 'grok-imagine/text-to-video', name: 'Grok Imagine Video' },
     { id: 'sora-2-text-to-video', name: 'Sora 2 Text to Video' },
     { id: 'sora-2-text-to-video-stable', name: 'Sora 2 Text to Video (Stable)' },
-    { id: 'kling-2.6/text-to-video', name: 'Kling 2.6' },
-    { id: 'kling/v3-turbo-text-to-video', name: 'Kling V3 Turbo' },
-    { id: 'kling/v2-5-turbo-text-to-video-pro', name: 'Kling V2.5 Turbo Pro' },
-    { id: 'kling/v2-1-master-text-to-video', name: 'Kling V2.1 Master' },
-    { id: 'wan/2-7-text-to-video', name: 'Wan 2.7' },
-    { id: 'wan/2-6-text-to-video', name: 'Wan 2.6' },
-    { id: 'wan/2-5-text-to-video', name: 'Wan 2.5' },
-    { id: 'wan/2-2-a14b-text-to-video-turbo', name: 'Wan 2.2 Turbo' },
-    { id: 'bytedance/seedance-2', name: 'ByteDance Seedance 2' },
-    { id: 'bytedance/v1-pro-text-to-video', name: 'ByteDance V1 Pro' },
-    { id: 'bytedance/v1-lite-text-to-video', name: 'ByteDance V1 Lite' },
+    { id: 'minimax-h3/text-to-video', name: 'MiniMax H3' },
+    { id: 'pixverse-v6/text-to-video', name: 'PixVerse V6' },
     { id: 'hailuo/02-text-to-video-pro', name: 'Hailuo 02 Pro' },
     { id: 'hailuo/02-text-to-video-standard', name: 'Hailuo 02 Standard' },
-    { id: 'pixverse-v6/text-to-video', name: 'PixVerse V6' },
-    { id: 'minimax-h3/text-to-video', name: 'MiniMax H3' },
-    { id: 'happyhorse/text-to-video', name: 'HappyHorse' },
+    { id: 'wan/2-7-text-to-video', name: 'Wan 2.7' },
+    { id: 'kling-2.6/text-to-video', name: 'Kling 2.6' },
     { id: 'runway', name: 'Runway Gen-3' }
   ];
 
@@ -76,7 +73,7 @@
 
   window.hydrateKieMediaSelects = function () {
     fillMediaSelect('kieImageModel', window.KIE_IMAGE_MODELS, 'nano-banana-2');
-    fillMediaSelect('kieVideoModel', window.KIE_VIDEO_MODELS, 'veo3_fast');
+    fillMediaSelect('kieVideoModel', window.KIE_VIDEO_MODELS, 'kling-3.0/video');
   };
 
   if (document.readyState === 'loading') {

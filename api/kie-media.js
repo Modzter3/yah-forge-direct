@@ -16,21 +16,26 @@ const VIDEO_MODELS = {
   veo3_fast: { via: 'veo', model: 'veo3_fast' },
   veo3: { via: 'veo', model: 'veo3' },
   veo3_lite: { via: 'veo', model: 'veo3_lite' },
-  'grok-imagine/text-to-video': { via: 'jobs', model: 'grok-imagine/text-to-video', family: 'grok-video' },
-  'grok-imagine-video-1-5-preview': { via: 'jobs', model: 'grok-imagine-video-1-5-preview', family: 'grok-15' },
-  'sora-2-text-to-video': { via: 'jobs', model: 'sora-2-text-to-video', family: 'sora2' },
-  'sora-2-text-to-video-stable': { via: 'jobs', model: 'sora-2-text-to-video-stable', family: 'sora2' },
-  'kling-2.6/text-to-video': { via: 'jobs', model: 'kling-2.6/text-to-video', family: 'kling-26' },
+  'kling-3.0/video': { via: 'jobs', model: 'kling-3.0/video', family: 'kling-30' },
+  'kling-3.0-omni/text-to-video': { via: 'jobs', model: 'kling-3.0-omni/text-to-video', family: 'kling-omni' },
   'kling/v3-turbo-text-to-video': { via: 'jobs', model: 'kling/v3-turbo-text-to-video', family: 'kling-v3' },
+  'kling-2.6/text-to-video': { via: 'jobs', model: 'kling-2.6/text-to-video', family: 'kling-26' },
   'kling/v2-5-turbo-text-to-video-pro': { via: 'jobs', model: 'kling/v2-5-turbo-text-to-video-pro', family: 'kling-v25' },
   'kling/v2-1-master-text-to-video': { via: 'jobs', model: 'kling/v2-1-master-text-to-video', family: 'kling-v25' },
+  'wan/3-0-video': { via: 'jobs', model: 'wan/3-0-video', family: 'wan-30' },
+  'wan/3-0-video-prime': { via: 'jobs', model: 'wan/3-0-video-prime', family: 'wan-30' },
   'wan/2-7-text-to-video': { via: 'jobs', model: 'wan/2-7-text-to-video', family: 'wan' },
   'wan/2-6-text-to-video': { via: 'jobs', model: 'wan/2-6-text-to-video', family: 'wan-26' },
   'wan/2-5-text-to-video': { via: 'jobs', model: 'wan/2-5-text-to-video', family: 'wan' },
   'wan/2-2-a14b-text-to-video-turbo': { via: 'jobs', model: 'wan/2-2-a14b-text-to-video-turbo', family: 'wan-turbo' },
+  'bytedance/seedance-2-5': { via: 'jobs', model: 'bytedance/seedance-2-5', family: 'seedance-25' },
   'bytedance/seedance-2': { via: 'jobs', model: 'bytedance/seedance-2', family: 'seedance' },
   'bytedance/v1-pro-text-to-video': { via: 'jobs', model: 'bytedance/v1-pro-text-to-video', family: 'bytedance-v1' },
   'bytedance/v1-lite-text-to-video': { via: 'jobs', model: 'bytedance/v1-lite-text-to-video', family: 'bytedance-v1' },
+  'grok-imagine-video-1-5-preview': { via: 'jobs', model: 'grok-imagine-video-1-5-preview', family: 'grok-15' },
+  'grok-imagine/text-to-video': { via: 'jobs', model: 'grok-imagine/text-to-video', family: 'grok-video' },
+  'sora-2-text-to-video': { via: 'jobs', model: 'sora-2-text-to-video', family: 'sora2' },
+  'sora-2-text-to-video-stable': { via: 'jobs', model: 'sora-2-text-to-video-stable', family: 'sora2' },
   'hailuo/02-text-to-video-pro': { via: 'jobs', model: 'hailuo/02-text-to-video-pro', family: 'hailuo' },
   'hailuo/02-text-to-video-standard': { via: 'jobs', model: 'hailuo/02-text-to-video-standard', family: 'hailuo' },
   'pixverse-v6/text-to-video': { via: 'jobs', model: 'pixverse-v6/text-to-video', family: 'pixverse' },
@@ -65,6 +70,10 @@ function buildVideoJobInput(spec, prompt, aspectRatio) {
       return { prompt, aspect_ratio: ratio, resolution: '480p', duration: 8 };
     case 'sora2':
       return { prompt, aspect_ratio: soraAspectRatio(ratio), n_frames: '10', remove_watermark: true };
+    case 'kling-30':
+      return { prompt, sound: true, duration: '5', aspect_ratio: ratio, mode: 'pro', multi_shots: false };
+    case 'kling-omni':
+      return { prompt, sound: false, aspect_ratio: ratio, duration: 5, resolution: '1080p' };
     case 'kling-26':
       return { prompt, sound: false, aspect_ratio: ratio, duration: '5' };
     case 'kling-v3':
@@ -77,6 +86,10 @@ function buildVideoJobInput(spec, prompt, aspectRatio) {
         cfg_scale: 0.5,
         negative_prompt: 'blur, distort, and low quality',
       };
+    case 'wan-30':
+      return { prompt, resolution: '1080P', aspect_ratio: ratio, duration: 5, audio: true };
+    case 'seedance-25':
+      return { prompt, aspect_ratio: ratio, resolution: '720p', duration: 15 };
     case 'bytedance-v1':
       return { prompt, aspect_ratio: ratio, resolution: '720p', duration: '5' };
     case 'seedance':
