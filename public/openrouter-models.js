@@ -1,20 +1,14 @@
 /**
  * Fetches live OpenRouter model list and fills every Forge model dropdown with real ids.
- * Prepends Kie.ai models (kie/gpt-6-astra) so you can A/B against OpenRouter without switching providers.
+ * Prepends the full Kie.ai chat catalog (kie/...) so you can A/B against OpenRouter without switching providers.
  * Tabs: Sermon, Dismantle, Transcript, Destroy, News, Yah Chat, Bible/Apoc/Sealed fetch, Image prompts.
  * Falls back silently (keeps loading placeholder) if the catalog cannot be loaded.
  */
 (function () {
   var MODELS_URL = 'https://openrouter.ai/api/v1/models';
-  var KIE_MODELS = [
-    {
-      id: 'kie/gpt-6-astra',
-      name: 'GPT-6 Astra via Kie',
-      context_length: 1050000,
-      pricing: { prompt: '0.0000028', completion: '0.000014' },
-      created: Date.now()
-    }
-  ];
+  var KIE_MODELS = (window.KIE_CHAT_MODELS && window.KIE_CHAT_MODELS.length)
+    ? window.KIE_CHAT_MODELS
+    : [{ id: 'kie/gpt-6-astra', name: 'GPT-6 Astra via Kie', context_length: 1050000, pricing: { prompt: '0.0000028', completion: '0.000014' } }];
 
   var SELECT_IDS = [
     'modelSelect',
@@ -36,7 +30,7 @@
 
   function prettyProvider(slug) {
     if (!slug) return 'Other';
-    if (slug === 'kie') return 'Kie (discount Astra)';
+    if (slug === 'kie') return 'Kie (discount)';
     return slug.replace(/-/g, ' ').replace(/\b\w/g, function (c) {
       return c.toUpperCase();
     });
@@ -206,6 +200,7 @@
         }
 
         if (typeof window.updateNewsSearchNote === 'function') window.updateNewsSearchNote();
+        if (typeof window.hydrateKieMediaSelects === 'function') window.hydrateKieMediaSelects();
       })
       .catch(function (err) {
         console.warn('[openrouter-models]', err.message || err);
@@ -217,5 +212,6 @@
     for (var s = 0; s < SELECT_IDS.length; s++) {
       fillSelect(SELECT_IDS[s], KIE_MODELS.slice(), false);
     }
+    if (typeof window.hydrateKieMediaSelects === 'function') window.hydrateKieMediaSelects();
   }
 })();

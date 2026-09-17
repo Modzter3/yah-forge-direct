@@ -1,5 +1,6 @@
 import {
   KIE_BASE_URL,
+  buildKieChatCompletionsPayload,
   buildKieResponsesPayload,
   kieJsonToChatSse,
   looksLikeKieModelId,
@@ -186,6 +187,10 @@ async function handleKieRequest({ bot, query, parameters, imageList, kieModel, a
     if (/grok/i.test(spec.id)) systemContent += GROK_YAH_STORY_SYSTEM_SUFFIX;
   }
 
+  if (spec.kind === 'chat') {
+    return handleKieChatCompletions({ spec, query, params, imageList, systemContent, apiKey, baseUrl });
+  }
+
   const payload = buildKieResponsesPayload({
     model: spec.id,
     query,
@@ -247,6 +252,46 @@ async function handleKieRequest({ bot, query, parameters, imageList, kieModel, a
       'X-AI-Model':        spec.id,
     },
   });
+}
+
+async function handleKieChatCompletions({ spec, query, params, imageList, systemContent, apiKey, baseUrl }) {
+  const payload = buildKieChatCompletionsPayload({
+    model: spec.id,
+    query,
+    parameters: params,
+    images: imageList,
+    systemContent,
+  });
+  const url = `${stripTrailingSlash(baseUrl)}${spec.path}`;
+  let upstream;
+  try {
+    upstream = await fetch(url, {
+      method: 'POST',
+      headers: requestHeaders('kie', apiKey),
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    return jsonError(`Network error reaching Kie (${spec.id}): ${err.message}`, 502);
+  }
+
+  const contentType = upstream.headers.get('content-type') || '';
+  if (contentType.includes('text/event-stream')) {
+    return streamPassThrough(upstream, 'kie', spec.id);
+  }
+
+  const raw = await safeReadText(upstream);
+  let parsed = null;
+  try { parsed = JSON.parse(raw); } catch { parsed = null; }
+
+  if (!upstream.ok) {
+    const clean = cleanErrorMessage(parsed, raw);
+    return jsonError(
+      `kie ${upstream.status} (model: ${spec.id}): ${clean || '(empty)'}`,
+      upstream.status >= 400 ? upstream.status : 502
+    );
+  }
+
+  return jsonFromProviderToSse(parsed, 'kie', spec.id);
 }
 
 function normalizeImageInputs(images) {

@@ -1,17 +1,72 @@
-/** Kie.ai chat routing — GPT-6 Astra uses the Codex Responses API, not /chat/completions. */
+/** Kie.ai chat routing — some models use Codex Responses, others OpenAI-style chat completions. */
 
 export const KIE_BASE_URL = 'https://api.kie.ai';
 
 export const KIE_MODELS = {
   'gpt-6-astra': {
-    id: 'gpt-6-astra',
-    uiId: 'kie/gpt-6-astra',
-    name: 'GPT-6 Astra',
-    path: '/codex/v1/responses',
-    kind: 'responses',
-    contextLength: 1_050_000,
-    promptPer1m: 2.8,
-    completionPer1m: 14,
+    id: 'gpt-6-astra', uiId: 'kie/gpt-6-astra', name: 'GPT-6 Astra',
+    kind: 'responses', path: '/codex/v1/responses', contextLength: 1_050_000,
+    promptPer1m: 2.8, completionPer1m: 14,
+  },
+  'gpt-5-6-sol': {
+    id: 'gpt-5-6-sol', uiId: 'kie/gpt-5-6-sol', name: 'GPT-5.6 Sol',
+    kind: 'responses', path: '/codex/v1/responses', contextLength: 1_050_000,
+    promptPer1m: 1.12, completionPer1m: 5.6,
+  },
+  'gpt-5-6-terra': {
+    id: 'gpt-5-6-terra', uiId: 'kie/gpt-5-6-terra', name: 'GPT-5.6 Terra',
+    kind: 'responses', path: '/codex/v1/responses', contextLength: 1_050_000,
+    promptPer1m: 0.56, completionPer1m: 3.36,
+  },
+  'gpt-5-6-luna': {
+    id: 'gpt-5-6-luna', uiId: 'kie/gpt-5-6-luna', name: 'GPT-5.6 Luna',
+    kind: 'responses', path: '/codex/v1/responses', contextLength: 1_050_000,
+    promptPer1m: 0.056, completionPer1m: 0.336,
+  },
+  'gpt-5-5': {
+    id: 'gpt-5-5', uiId: 'kie/gpt-5-5', name: 'GPT-5.5',
+    kind: 'responses', path: '/codex/v1/responses', contextLength: 400_000,
+    promptPer1m: 1.4, completionPer1m: 8.4,
+  },
+  'gpt-5-4': {
+    id: 'gpt-5-4', uiId: 'kie/gpt-5-4', name: 'GPT-5.4',
+    kind: 'responses', path: '/codex/v1/responses', contextLength: 400_000,
+    promptPer1m: 1.4, completionPer1m: 8.4,
+  },
+  'gpt-5-2': {
+    id: 'gpt-5-2', uiId: 'kie/gpt-5-2', name: 'GPT-5.2',
+    kind: 'chat', path: '/gpt-5-2/v1/chat/completions', contextLength: 400_000,
+    promptPer1m: 1.4, completionPer1m: 8.4,
+  },
+  'gemini-3.1-pro': {
+    id: 'gemini-3.1-pro', uiId: 'kie/gemini-3.1-pro', name: 'Gemini 3.1 Pro',
+    kind: 'chat', path: '/gemini-3.1-pro/v1/chat/completions', contextLength: 1_000_000,
+    promptPer1m: 0.35, completionPer1m: 2.1,
+  },
+  'gemini-3-pro': {
+    id: 'gemini-3-pro', uiId: 'kie/gemini-3-pro', name: 'Gemini 3 Pro',
+    kind: 'chat', path: '/gemini-3-pro/v1/chat/completions', contextLength: 1_000_000,
+    promptPer1m: 0.35, completionPer1m: 2.1,
+  },
+  'gemini-3-6-flash-openai': {
+    id: 'gemini-3-6-flash-openai', uiId: 'kie/gemini-3-6-flash-openai', name: 'Gemini 3.6 Flash',
+    kind: 'chat', path: '/gemini-3-6-flash-openai/v1/chat/completions', contextLength: 1_000_000,
+    promptPer1m: 0.07, completionPer1m: 0.28,
+  },
+  'gemini-3-flash': {
+    id: 'gemini-3-flash', uiId: 'kie/gemini-3-flash', name: 'Gemini 3 Flash',
+    kind: 'chat', path: '/gemini-3-flash/v1/chat/completions', contextLength: 1_000_000,
+    promptPer1m: 0.07, completionPer1m: 0.28,
+  },
+  'gemini-2.5-pro': {
+    id: 'gemini-2.5-pro', uiId: 'kie/gemini-2.5-pro', name: 'Gemini 2.5 Pro',
+    kind: 'chat', path: '/gemini-2.5-pro/v1/chat/completions', contextLength: 1_000_000,
+    promptPer1m: 0.35, completionPer1m: 2.1,
+  },
+  'gemini-2.5-flash': {
+    id: 'gemini-2.5-flash', uiId: 'kie/gemini-2.5-flash', name: 'Gemini 2.5 Flash',
+    kind: 'chat', path: '/gemini-2.5-flash/v1/chat/completions', contextLength: 1_000_000,
+    promptPer1m: 0.07, completionPer1m: 0.28,
   },
 };
 
@@ -98,6 +153,37 @@ export function buildKieResponsesPayload({ model, query, parameters, images, sys
     payload.max_output_tokens = Math.floor(Number(maxOut));
   }
 
+  return payload;
+}
+
+export function buildKieChatCompletionsPayload({ model, query, parameters, images, systemContent }) {
+  const params = parameters && typeof parameters === 'object' ? { ...parameters } : {};
+  const list = Array.isArray(images) ? images : [];
+  let userContent = String(query || '');
+  if (list.length) {
+    const parts = [{ type: 'text', text: String(query || '') }];
+    for (const url of list) {
+      if (typeof url === 'string' && url.trim()) {
+        parts.push({ type: 'image_url', image_url: { url: url.trim() } });
+      }
+    }
+    userContent = parts;
+  }
+  const messages = [];
+  if (systemContent) messages.push({ role: 'system', content: String(systemContent) });
+  messages.push({ role: 'user', content: userContent });
+
+  const payload = { messages, stream: true };
+  if (model) payload.model = model;
+  if (params.web_search === true) {
+    payload.tools = [{ type: 'function', function: { name: 'web_search' } }];
+  }
+  const maxOut = params.max_tokens || params.max_output_tokens;
+  if (Number.isFinite(Number(maxOut)) && Number(maxOut) > 0) {
+    payload.max_tokens = Math.floor(Number(maxOut));
+  }
+  const effort = mapReasoningEffort(params);
+  if (effort && effort !== 'low') payload.reasoning_effort = effort;
   return payload;
 }
 

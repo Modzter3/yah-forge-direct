@@ -10,6 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js" crossorigin="anonymous"></script>
 <script>if(typeof marked==='undefined'){window.marked={parse:function(t){return t.replace(/&/g,'&amp;').replace(/\x3c/g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'\x3cbr>');}}}</script>
 <script src="/ai-polyfill.js"></script>
+<script src="/kie-catalog.js"></script>
 <script src="/openrouter-models.js"></script>
 <style>
 :root {
@@ -1312,9 +1313,19 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           <label class="toggle-switch" style="margin:0;"><input type="checkbox" id="titleCardToggle"><span class="toggle-track"></span><span style="font-size:0.78rem;">Include Title Card Prompt</span></label>
         </div>
         <div class="model-select-wrap" style="margin-top:6px;">
-          <label><i class="fas fa-robot"></i> OpenRouter model:</label>
+          <label><i class="fas fa-image"></i> Kie image generator:</label>
+          <select class="model-select" id="kieImageModel">
+            <option value="nano-banana-2" selected>Nano Banana 2</option>
+            <option value="nano-banana-2-lite">Nano Banana 2 Lite</option>
+            <option value="flux-2/pro-text-to-image">Flux-2 Pro</option>
+            <option value="flux-2/flex-text-to-image">Flux-2 Flex</option>
+            <option value="grok-imagine/text-to-image">Grok Imagine</option>
+          </select>
+        </div>
+        <div class="model-select-wrap" style="margin-top:6px;">
+          <label><i class="fas fa-robot"></i> Prompt writer (chat):</label>
           <select class="model-select" id="imagePromptModel">
-            <option value="upstage/solar-pro4" selected>Loading OpenRouter catalog...</option>
+            <option value="upstage/solar-pro4" selected>Loading model catalog...</option>
           </select>
           <input type="text" class="custom-model-input" id="customImagePromptModel" placeholder="provider/model override">
         </div>
@@ -1332,6 +1343,15 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <i class="fas fa-chevron-down chevron" id="chevronVideo"></i>
       </div>
       <div class="media-section-body" id="bodyVideo">
+        <div class="model-select-wrap" style="margin-bottom:8px;">
+          <label><i class="fas fa-video"></i> Kie video generator:</label>
+          <select class="model-select" id="kieVideoModel">
+            <option value="veo3_fast" selected>Veo 3.1 Fast</option>
+            <option value="veo3">Veo 3.1 Quality</option>
+            <option value="veo3_lite">Veo 3.1 Lite</option>
+            <option value="grok-imagine/text-to-video">Grok Imagine Video</option>
+          </select>
+        </div>
         <div class="media-btn-row">
           <button class="media-btn primary-video" onclick="generateVideoInApp()"><i class="fas fa-wand-magic-sparkles"></i> Generate In-App</button>
           <button class="media-btn" onclick="generateVideoPrompts()"><i class="fas fa-copy"></i> Get Video Prompts</button>
@@ -6923,33 +6943,74 @@ if(!currentTopic){showToast('Open a topic first.');return;}
 var count=parseInt(document.getElementById('imageCount').value)||3;
 if(count<1)count=1;if(count>10)count=10;
 var output=document.getElementById('outputImages');
-output.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text">Generating '+count+' image(s)...</div></div>';
+var modelEl=document.getElementById('kieImageModel');
+var model=modelEl&&modelEl.value?modelEl.value:'nano-banana-2';
+output.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text">Kie '+escapeHtml(model)+' — generating '+count+' image(s)...</div></div>';
 var imgPrompt='Photorealistic photograph for sermon "'+currentTopic.title+'": '+currentTopic.desc+'. Shot on a high-end cinema camera. All people depicted must be dark-skinned Negro Israelites -- the scattered descendants of Israel found worldwide (Americas, Caribbean, Africa, Europe, and beyond) -- with dark brown skin, strong features, and natural hair. Photojournalistic realism, natural lighting with dramatic contrast, shallow depth of field, film grain, shot composition as if captured by a professional cinematographer on location. RAW photo quality, no illustration, no painting, no cartoon, no digital art, no CGI. Real skin texture, real fabric, real environments. If outdoors: golden hour or overcast natural light. If indoors: practical lighting sources only. No text overlays.';
-var repeatPrefix=count>1?'/repeat '+count+' ':'';
-var handlerName='img-handler-'+Date.now();
-var receivedImages={};
-window.Poe.registerHandler(handlerName,function(result){
-result.responses.forEach(function(msg){
-if(msg.status==='complete'&&msg.attachments&&msg.attachments.length>0){
-if(!receivedImages[msg.messageId]){
-receivedImages[msg.messageId]=true;
-var loader=output.querySelector('.loading-state');if(loader)loader.remove();
+runKieMediaJobs({kind:'image',model:model,prompt:imgPrompt,count:count,aspectRatio:'16:9'},output,function(urls){
+output.innerHTML='';
+for(var i=0;i<urls.length;i++){
 var item=document.createElement('div');item.className='media-item';
-var img=document.createElement('img');img.src=msg.attachments[0].url;img.style.cssText='max-width:100%;border-radius:8px;';
+var img=document.createElement('img');img.src=urls[i];img.style.cssText='max-width:100%;border-radius:8px;';
 item.appendChild(img);output.appendChild(item);
 }
-}else if(msg.status==='error'){
-var loader2=output.querySelector('.loading-state');if(loader2)loader2.remove();
-output.innerHTML+='<div class="error-msg">'+escapeHtml(msg.statusText||'Image generation failed')+'</div>';
+if(!urls.length)output.innerHTML='<div class="error-msg">Kie returned no image URLs.</div>';
+});
 }
+function generateVideoInApp(){
+if(!currentTopic){showToast('Open a topic first.');return;}
+var output=document.getElementById('outputVideo');
+var modelEl=document.getElementById('kieVideoModel');
+var model=modelEl&&modelEl.value?modelEl.value:'veo3_fast';
+output.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text">Kie '+escapeHtml(model)+' — generating sermon video... this can take a few minutes.</div></div>';
+var vidPrompt='Cinematic sermon visual for "'+currentTopic.title+'": '+currentTopic.desc+'. All people shown must be dark-skinned Negro Israelites -- the worldwide scattered descendants of Israel -- with dark brown skin, strong features, and natural hair. Dark cinematic atmosphere, golden divine light rays, ancient scrolls and tablets, dramatic camera movement pushing in slowly, dust particles in light beams, Hebrew Israelite prophetic aesthetic, ultra dramatic, no text on screen.';
+runKieMediaJobs({kind:'video',model:model,prompt:vidPrompt,count:1,aspectRatio:'16:9'},output,function(urls){
+if(!urls.length){output.innerHTML='<div class="error-msg">Kie returned no video URL.</div>';return;}
+var item=document.createElement('div');item.className='media-item';
+var vid=document.createElement('video');vid.controls=true;vid.src=urls[0];vid.style.cssText='max-width:100%;border-radius:8px;';
+item.appendChild(vid);output.innerHTML='';output.appendChild(item);
 });
-if(result.status==='complete'){
-var loader3=output.querySelector('.loading-state');if(loader3)loader3.remove();
 }
+function kieSleep(ms){return new Promise(function(resolve){setTimeout(resolve,ms);});}
+function runKieMediaJobs(opts,output,onUrls){
+var kind=opts.kind||'image';
+fetch('/api/kie-media',{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({kind:kind,model:opts.model,prompt:opts.prompt,count:opts.count||1,aspectRatio:opts.aspectRatio||'16:9'})
+}).then(function(res){return res.json().then(function(j){return {ok:res.ok,j:j};});}).then(function(pack){
+if(!pack.ok||pack.j.error)throw new Error(pack.j.error||'Kie media create failed');
+var tasks=pack.j.tasks||[];
+if(!tasks.length)throw new Error('Kie did not return a task id');
+var loader=output.querySelector('.loading-text');
+if(loader)loader.textContent='Kie '+kind+' queued ('+tasks.length+') — waiting...';
+return Promise.all(tasks.map(function(task){return pollKieMediaTask(task,kind,output);}));
+}).then(function(urlSets){
+var urls=[];
+for(var i=0;i<urlSets.length;i++){
+var set=urlSets[i]||[];
+for(var u=0;u<set.length;u++)if(urls.indexOf(set[u])===-1)urls.push(set[u]);
+}
+onUrls(urls);
+}).catch(function(err){
+output.innerHTML='<div class="error-msg">'+escapeHtml(String(err&&err.message?err.message:err))+'</div>';
 });
-window.Poe.sendUserMessage(repeatPrefix+'@Nano-Banana-2 '+imgPrompt,{handler:handlerName,stream:false,openChat:false,parameters:{aspect_ratio:'16:9',image_only:true}}).catch(function(err){
-output.innerHTML='<div class="error-msg">'+escapeHtml(String(err))+'</div>';
+}
+function pollKieMediaTask(task,kind,output){
+var tries=kind==='video'?90:40;
+var delay=kind==='video'?8000:3000;
+function tick(n){
+if(n>=tries)return Promise.reject(new Error('Timed out waiting for Kie '+kind));
+var q='/api/kie-media?kind='+encodeURIComponent(kind)+'&via='+encodeURIComponent(task.via||'')+'&taskId='+encodeURIComponent(task.taskId);
+return fetch(q).then(function(res){return res.json();}).then(function(j){
+if(j.status==='success')return j.urls||[];
+if(j.status==='fail'||j.status==='error')throw new Error(j.error||'Kie '+kind+' failed');
+var loader=output.querySelector('.loading-text');
+if(loader)loader.textContent='Kie '+kind+' '+(j.status||'generating')+'… ('+(n+1)+'/'+tries+')';
+return kieSleep(delay).then(function(){return tick(n+1);});
 });
+}
+return tick(0);
 }
 function generateImagePrompts(){
 if(!currentTopic){showToast('Open a topic first.');return;}
@@ -7117,30 +7178,6 @@ html+='<button class="copy-btn" onclick="copyStored(\''+fallbackClipId+'\',this)
 html+='</div>';
 }
 outputEl.innerHTML=html;
-}
-function generateVideoInApp(){
-if(!currentTopic){showToast('Open a topic first.');return;}
-var output=document.getElementById('outputVideo');
-output.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text">Generating sermon video... this takes a while.</div></div>';
-var vidPrompt='Cinematic sermon visual for "'+currentTopic.title+'": '+currentTopic.desc+'. All people shown must be dark-skinned Negro Israelites -- the worldwide scattered descendants of Israel -- with dark brown skin, strong features, and natural hair. Dark cinematic atmosphere, golden divine light rays, ancient scrolls and tablets, dramatic camera movement pushing in slowly, dust particles in light beams, Hebrew Israelite prophetic aesthetic, ultra dramatic, no text on screen.';
-var handlerName='vid-handler-'+Date.now();
-window.Poe.registerHandler(handlerName,function(result){
-var msg=result.responses[0];if(!msg)return;
-if(msg.status==='complete'){
-if(msg.attachments&&msg.attachments.length>0){
-var item=document.createElement('div');item.className='media-item';
-var vid=document.createElement('video');vid.controls=true;vid.src=msg.attachments[0].url;vid.style.cssText='max-width:100%;border-radius:8px;';
-item.appendChild(vid);output.innerHTML='';output.appendChild(item);
-}else{
-output.innerHTML='<div class="error-msg">No video generated.</div>';
-}
-}else if(msg.status==='error'){
-output.innerHTML='<div class="error-msg">'+escapeHtml(msg.statusText||'Video generation failed')+'</div>';
-}
-});
-window.Poe.sendUserMessage('@Sora-2 '+vidPrompt,{handler:handlerName,stream:false,openChat:false,parameters:{duration:'8',size:'1280x720'}}).catch(function(err){
-output.innerHTML='<div class="error-msg">'+escapeHtml(String(err))+'</div>';
-});
 }
 function generateVideoPrompts(){
 if(!currentTopic){showToast('Open a topic first.');return;}

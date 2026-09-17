@@ -8,7 +8,9 @@
 |------|---------|
 | `public/index.html` | Full UI — model selector, streaming chat, token counter |
 | `public/ai-polyfill.js` | `window.Poe` compatibility shim that routes to `/api/ai` |
+| `public/kie-catalog.js` | Kie chat + image + video generator lists for every dropdown |
 | `api/ai.js` | Edge function: provider-agnostic, SSE-streaming backend |
+| `api/kie-media.js` | Edge function: Kie image/video createTask + poll |
 | `vercel.json` | Routing config for Vercel |
 | `.env.example` | All supported environment variables with comments |
 
@@ -24,10 +26,12 @@ Set `AI_PROVIDER` to one of:
 | `together` | `https://api.together.xyz/v1` |
 | `fireworks` | `https://api.fireworks.ai/inference/v1` |
 | `xai` | `https://api.x.ai/v1` |
-| `kie` | `https://api.kie.ai` (GPT-6 Astra via `/codex/v1/responses`) |
+| `kie` | `https://api.kie.ai` (chat via `/codex/v1/responses` or `/.../v1/chat/completions`) |
 | `custom` | Set `AI_BASE_URL` to any OpenAI-compatible endpoint |
 
-You can keep `AI_PROVIDER=openrouter` and still pick **`kie/gpt-6-astra`** in the model dropdown. That id bills `KIE_API_KEY` at Kie's discounted Astra rate (~$2.80 / $14 per 1M). OpenRouter's `openai/gpt-6-astra` stays at official $10 / $50.
+You can keep `AI_PROVIDER=openrouter` and still pick **`kie/...`** models in every dropdown. Those ids bill `KIE_API_KEY`.
+
+**In-app Images / Video after a sermon** use Kie generators (Nano Banana 2, Flux-2, Veo 3.1, Grok Imagine). They call `/api/kie-media` (create task + poll). OpenRouter `openai/gpt-6-astra` stays at official $10 / $50.
 
 ## Quick start (local)
 
