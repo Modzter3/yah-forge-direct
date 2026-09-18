@@ -9375,6 +9375,56 @@ var yahChatPendingAttachments=[];
 var YAH_CHAT_MAX_HISTORY=24;
 var YAH_CHAT_MAX_ATTACHMENTS=4;
 var YAH_CHAT_MAX_IMAGE_BYTES=3*1024*1024;
+var YAH_CHAT_STORAGE_KEY='yahForgeYahChatV1';
+var YAH_CHAT_STORE_MAX=48;
+function yahChatSanitizeForStorage(msgs,stripImageData){
+var out=[];
+for(var i=0;i<msgs.length;i++){
+var m=msgs[i];
+if(!m)continue;
+if(m.role==='assistant'&&!String(m.content||'').trim())continue;
+var copy={role:m.role,content:String(m.content||'')};
+if(m.voice)copy.voice=m.voice;
+if(m.attachments&&m.attachments.length){
+copy.attachments=[];
+for(var j=0;j<m.attachments.length;j++){
+var a=m.attachments[j];
+if(!a)continue;
+var att={name:a.name||'',mimeType:a.mimeType||''};
+if(!stripImageData&&a.dataUrl)att.dataUrl=a.dataUrl;
+else if(a.name||a.dataUrl)att.stripped=true;
+copy.attachments.push(att);
+}
+}
+out.push(copy);
+}
+if(out.length>YAH_CHAT_STORE_MAX)return out.slice(out.length-YAH_CHAT_STORE_MAX);
+return out;
+}
+function persistYahChat(stripImageData){
+try{
+var msgs=yahChatSanitizeForStorage(yahChatMessages,!!stripImageData);
+if(!msgs.length){
+localStorage.removeItem(YAH_CHAT_STORAGE_KEY);
+return;
+}
+var payload=JSON.stringify({v:1,messages:msgs,savedAt:Date.now()});
+if(!stripImageData&&payload.length>4500000)persistYahChat(true);
+else localStorage.setItem(YAH_CHAT_STORAGE_KEY,payload);
+}catch(e){
+if(!stripImageData)persistYahChat(true);
+}
+}
+function loadYahChat(){
+try{
+var raw=localStorage.getItem(YAH_CHAT_STORAGE_KEY);
+if(!raw)return;
+var data=JSON.parse(raw);
+if(!data||!Array.isArray(data.messages)||!data.messages.length)return;
+yahChatMessages=data.messages;
+renderYahChatHistory(-1);
+}catch(e){}
+}
 function yahChatImagesToApiPayload(attachments){
 if(!attachments||!attachments.length)return [];
 var out=[];
@@ -9904,6 +9954,7 @@ if(msg.status==='error'){
 yahChatMessages[chatCtx.assistantIdx].content=msg.statusText||'Something went wrong. Try again.';
 setYahChatBusy(false);
 renderYahChatHistory(-1);
+persistYahChat();
 showToast('Chat error.');
 }else if(msg.status==='incomplete'||msg.status==='complete'){
 var cleaned=stripThinking(msg.content||'');
@@ -9914,6 +9965,7 @@ renderYahChatHistory(msg.status==='complete'?-1:chatCtx.assistantIdx);
 if(msg.status==='complete'){
 setYahChatBusy(false);
 yahChatHandlerName=null;
+persistYahChat();
 }
 }
 });
@@ -9929,6 +9981,7 @@ yahChatMessages[chatCtx.assistantIdx].content='Request failed: '+(err&&err.messa
 setYahChatBusy(false);
 yahChatHandlerName=null;
 renderYahChatHistory(-1);
+persistYahChat();
 showToast('Chat failed.');
 });
 }
@@ -9951,6 +10004,7 @@ var assistantIdx=yahChatMessages.length;
 var bezMode=isYahChatBezMode();
 yahChatMessages.push({role:'assistant',content:'',voice:bezMode?'bez':'yah'});
 renderYahChatHistory(assistantIdx);
+persistYahChat();
 setYahChatBusy(true);
 var apiAttachments=yahChatImagesToApiPayload(attachments);
 yahChatRunGeneration({
@@ -10003,6 +10057,7 @@ if(yahChatBusy){showToast('Wait for Yah to finish.');return;}
 yahChatMessages=[];
 yahChatPendingAttachments=[];
 yahChatHandlerName=null;
+try{localStorage.removeItem(YAH_CHAT_STORAGE_KEY);}catch(e){}
 renderYahChatAttachmentPreview();
 renderYahChatHistory(-1);
 var input=document.getElementById('yahChatInput');
@@ -10896,6 +10951,7 @@ syncEpisodeModeToggles();
 syncStoryModeToggles();
 syncCrossReferenceToggles();
 syncYahChatVoiceUi();
+loadYahChat();
 var storyToggle=document.getElementById('toggleStoryMode');
 var bezStoryToggle=document.getElementById('toggleBezStoryMode');
 var episodeToggle=document.getElementById('toggleSermonEpisodeMode');
