@@ -358,6 +358,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .progress-bar-wrap{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden;}
 .progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold));border-radius:4px;transition:width 0.5s ease;width:0%;}
 .progress-label{font-family:'Fira Code',monospace;font-size:0.72rem;color:var(--text-muted);white-space:nowrap;}
+.sermon-series-title{text-align:center;padding:20px 12px 8px;font-family:'Cinzel Decorative',serif;font-size:clamp(1rem,3.5vw,1.35rem);font-weight:700;color:var(--gold);line-height:1.35;letter-spacing:0.04em;}
 .part-divider{text-align:center;padding:14px 0;font-family:'Cinzel Decorative',serif;font-size:0.8rem;color:var(--gold-dim);letter-spacing:0.1em;text-transform:uppercase;position:relative;}
 .part-divider::before,.part-divider::after{content:'';position:absolute;top:50%;height:1px;width:calc(50% - 80px);background:var(--border);}
 .part-divider::before{left:0;}
@@ -2874,6 +2875,10 @@ function renderSermonFromParts(){
 var output=document.getElementById('sermonOutput');
 if(!output||!sermonPartsRaw.length)return;
 var html='';
+var seriesTitle=sermonSeriesTitle||(sermonPartsRaw.length>1?extractSeriesTitle(sermonPartsRaw[0]):'');
+if(seriesTitle){
+html+='<div class="sermon-series-title" id="sermonSeriesTitle">'+escapeHtml(seriesTitle)+'</div>';
+}
 for(var i=0;i<sermonPartsRaw.length;i++){
 html+='<div class="part-divider" id="partDivider'+(i+1)+'"><i class="fas fa-scroll" style="margin-right:6px;font-size:0.65rem;"></i>'+escapeHtml(getForgePartLabel(i+1,true))+'</div>';
 html+='<div class="sermon-body" id="sermonPart'+(i+1)+'">'+marked.parse(sermonPartsRaw[i])+'</div>';
@@ -2976,11 +2981,13 @@ var parts=splitPastedSermonIntoParts(text);
 closeElevenTagModal();
 sermonPartsRaw=[];
 sermonPartsTitles=[];
+sermonSeriesTitle='';
 for(var i=0;i<parts.length;i++){
 sermonPartsTitles.push(extractPartTitle(parts[i],i+1)||('Part '+(i+1)));
 sermonPartsRaw.push(parts[i]);
 }
 selectedPartCount=parts.length;
+if(parts.length>1)sermonSeriesTitle=extractSeriesTitle(parts[0])||'';
 renderSermonFromParts();
 var btn=document.getElementById('elevenTagBtn');
 if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Tagging...';}
@@ -4499,12 +4506,22 @@ text=stripThinking(text);
 // Strip any word count references the model echoed back
 text=text.replace(/\n*\*?\*?\(?\s*~?\s*(?:approximately\s+)?\d[\d,]*\s*words?\s*(?:total|count|target|written|so far)?\s*\)?\*?\*?\s*\n*/gi,'\n');
 text=text.replace(/\n*\*?\*?(?:word count|total words|words written|target length)[:\s]*\d[\d,]*\*?\*?\s*\n*/gi,'\n');
-// Anchor 1: # Episode X: Title or # Part X: Title -- what we told the bot to start with
-var partMatch=text.match(/^(#\s*(?:Episode|Part)\s*\d+\s*[:\-].+)/im);
+// Anchor 1: # Part X / # Episode X — keep series title above Part 1 when present
+var partMatch=text.match(/(#\s*(?:Episode|Part)\s*\d+\s*[:\-].+)/im);
 if(partMatch){
 var idx=text.indexOf(partMatch[0]);
-if(idx>0)text=text.substring(idx);
-// Keep the # Episode/Part heading line visible in the sermon body
+if(idx>0){
+var prefix=text.substring(0,idx);
+var seriesLine='';
+var plines=prefix.split('\n');
+for(var pi=plines.length-1;pi>=0;pi--){
+var pL=plines[pi].trim();
+if(!pL)continue;
+if(/^#\s+(?!Part|PART|Episode|EPISODE|Act|ACT\s*\d)\S/.test(pL)){seriesLine=pL;break;}
+break;
+}
+text=(seriesLine?seriesLine+'\n\n':'')+text.substring(idx);
+}
 return text.replace(/^\s*\n+/,'');
 }
 // Anchor 2: Any markdown heading (##, ###, etc.)
@@ -4594,6 +4611,7 @@ var SERIES_PARTS=[
 ];
 var sermonPartsRaw=[];
 var sermonPartsTitles=[];
+var sermonSeriesTitle='';
 var sermonPartsCombined='';
 function generateSermon(userInitiated){
 if(!currentTopic||isGenerating)return;
@@ -4612,6 +4630,7 @@ isGenerating=true;
 sermonSavedThisSession=false;
 sermonPartsRaw=[];
 sermonPartsTitles=[];
+sermonSeriesTitle='';
 sermonPartsCombined='';
 sermonNewsAnglePlan=null;
 sermonNewsLedger=[];
@@ -4804,27 +4823,87 @@ var pct=Math.round((partNum/total)*100);
 document.getElementById('progressFill').style.width=pct+'%';
 document.getElementById('progressLabel').textContent=partNum>=total?'Complete -- '+total+' / '+total:(total===1?'Episode':'Part '+partNum+' / '+total);
 }
+function extractSeriesTitle(text){
+if(!text)return '';
+var lines=String(text).split('\n');
+for(var i=0;i<Math.min(lines.length,8);i++){
+var L=lines[i].trim();
+if(!L)continue;
+if(/^#\s*(?:Part|PART|Episode|EPISODE|Act|ACT)\s*\d+/i.test(L))return '';
+if(/^#\s+/.test(L))return L.replace(/^#\s+/,'').replace(/\s*--\s*Act\s*\d+.*$/i,'').trim();
+break;
+}
+return '';
+}
 function extractPartTitle(text,partNum){
-// Try to find "# Episode X: Title" or "# Part X: Title" or Act pattern
+// Prefer explicit Part/Episode/Act heading (may be line 2 when Part 1 has a series title)
 var m=text.match(/^#\s*(?:Episode|Part|PART|EPISODE|Act|ACT)\s*\d+\s*[:\-–—]+\s*(.+)/im);
 if(m)return m[1].trim().replace(/^#+\s*/,'');
 // Try # Title -- Act N
 var ma=text.match(/^#\s+(.+?)\s*--\s*Act\s*\d+/im);
 if(ma)return ma[1].trim();
-// Try any first heading
-var h=text.match(/^#+\s+(.+)/m);
-if(h){var t=h[1].replace(/^(?:Episode|Part|PART|EPISODE|Act|ACT)\s*\d+\s*[:\-–—]+\s*/i,'').replace(/\s*--\s*Act\s*\d+.*$/i,'').trim();if(t.length>2)return t;}
+// Fallback: first heading that is not the series title
+var lines=String(text||'').split('\n');
+for(var i=0;i<Math.min(lines.length,8);i++){
+var L=lines[i].trim();
+if(!L)continue;
+if(/^#\s*(?:Part|PART|Episode|EPISODE|Act|ACT)\s*\d+/i.test(L))continue;
+if(/^#\s+/.test(L)){
+var t=L.replace(/^#\s+/,'').replace(/^(?:Episode|Part|PART|EPISODE|Act|ACT)\s*\d+\s*[:\-–—]+\s*/i,'').replace(/\s*--\s*Act\s*\d+.*$/i,'').trim();
+if(t.length>2&&partNum>1)return t;
+break;
+}
+break;
+}
 return getForgePartLabel(partNum,false);
 }
-/** Remove the model's own # Part / # Episode title so we do not double-prefix when assembling */
+/** Remove series + part headings from raw part text so assembly does not double-prefix */
 function stripLeadingPartHeading(text){
 if(!text)return text;
 var out=String(text).replace(/^\uFEFF?\s*/,'');
-// Drop one or more leading part/episode H1 lines (model sometimes emits two styles)
-out=out.replace(/^(?:#+\s*(?:PART|Part|EPISODE|Episode)\s*\d+\s*[:\-–—]+\s*.+\n+)+/,'');
-// Standalone first H1 that matches the extracted title pattern without Part label
-out=out.replace(/^#\s+(?!#).+\n+/,'');
+var lines=out.split('\n');
+var start=0;
+for(var i=0;i<lines.length;i++){
+var L=lines[i].trim();
+if(!L)continue;
+if(/^#\s*(?:Part|PART|Episode|EPISODE|Act|ACT)\s*\d+/i.test(L)){start=i+1;break;}
+if(/^#\s+/.test(L)){start=i+1;continue;}
+break;
+}
+if(start>0)out=lines.slice(start).join('\n');
+out=out.replace(/^(?:#+\s*(?:PART|Part|EPISODE|Episode|Act|ACT)\s*\d+\s*[:\-–—]+\s*.+\n+)+/,'');
 return out.replace(/^\s*\n+/,'');
+}
+function stripSeriesTitleFromPart1(text){
+if(!text)return text;
+var lines=String(text).split('\n');
+for(var i=0;i<Math.min(lines.length,8);i++){
+var L=lines[i].trim();
+if(!L)continue;
+if(/^#\s*(?:Part|PART|Episode|EPISODE|Act|ACT)\s*\d+/i.test(L))break;
+if(/^#\s+/.test(L)){
+lines.splice(i,1);
+while(i<lines.length&&!lines[i].trim())lines.splice(i,1);
+break;
+}
+break;
+}
+return lines.join('\n').replace(/^\s*\n+/,'');
+}
+function buildSermonSeriesTitleBlock(partNum,totalParts){
+if(totalParts===1)return '';
+var p='';
+if(partNum===1){
+p+='SERMON SERIES TITLE + PART 1 TITLE (MANDATORY — TWO LINES BEFORE BODY):\n';
+p+='  Line 1: # [Overall Sermon Title] — master title for this entire '+totalParts+'-part sermon\n';
+p+='  Line 2: # Part 1: [Part Subtitle] — what Part 1 specifically covers\n';
+p+='The series title names the whole sermon. The Part 1 subtitle names this installment. Do NOT skip Line 1. Do NOT merge into one heading.\n\n';
+}else{
+p+='PART TITLE (MANDATORY — FIRST LINE ONLY):\n';
+p+='# Part '+partNum+': [Part Subtitle]\n';
+p+='Do NOT repeat the series title (set once on Part 1). Exactly ONE title line.\n\n';
+}
+return p;
 }
 var SERMON_MAX_CONTINUATIONS=6;
 var SERMON_MAX_DRIFT_RETRIES=1;
@@ -4942,7 +5021,9 @@ return'...[earlier part content truncated — read the tail only]...\n\n'+text.s
 }
 function buildCombinedTextFromParts(rawParts,titles){
 var cleaned=dedupeMultipartSermonText(rawParts);
+var seriesTitle=sermonSeriesTitle||(cleaned.length>1?extractSeriesTitle(cleaned[0]):'');
 var combined='';
+if(cleaned.length>1&&seriesTitle)combined+='# '+seriesTitle+'\n\n';
 for(var i=0;i<cleaned.length;i++){
 var pTitle=(titles&&titles[i])||('Part '+(i+1));
 var body=stripLeadingPartHeading(cleaned[i]);
@@ -5168,6 +5249,13 @@ return p;
 }
 function commitSermonPart(partNum,partContent){
 var finalized=finalizeSermonPartText(partContent,partNum);
+if(partNum===1&&selectedPartCount>1){
+var st=extractSeriesTitle(finalized);
+if(st){
+sermonSeriesTitle=st;
+finalized=stripSeriesTitleFromPart1(finalized);
+}
+}
 var extractedTitle=extractPartTitle(finalized,partNum);
 sermonPartsTitles.push(extractedTitle);
 sermonPartsRaw.push(finalized);
@@ -6002,6 +6090,7 @@ p+='BEZ STORY LENGTH LOCK: '+totalParts+' parts = ~'+totalWords.toLocaleString()
 p+='\n';
 if(totalParts>1){
 p+='ONE PART ONLY (CRITICAL): You are writing ONLY Part '+partNum+' of '+totalParts+' in THIS response. Do NOT write Part '+(partNum+1)+' or any later part. Do NOT include "# Part '+(partNum+1)+':" or any future part header. Stop when Part '+partNum+' is complete -- the forge requests later parts separately.\n\n';
+p+=buildSermonSeriesTitleBlock(partNum,totalParts);
 }
 p+=buildWebResearchPromptBlock(topic,{partNum:partNum,totalParts:totalParts,wantEpisodeMode:wantEpisodeMode,chapterSrc:chapterSrc,wantStoryMode:wantStoryMode,wantBezStory:wantBezStory,wantYahStory:wantYahStory,wantBezStoryBreakdown:wantBezStoryBreakdown,wantRoughBez:wantRoughBez&&!wantBezStory,currentMode:currentMode});
 p+=buildCrossReferencesPromptBlock(wantCrossRefs,wantApocrypha,apocList);
@@ -6015,11 +6104,10 @@ p+='The title should sound like a warning painted on a wall, not a podcast episo
 p+='AFTER the title, dive STRAIGHT into the rebuke. NO welcome. NO greeting. NO "Peace, family." NO "Yah First Ministries." NO "episode." NO "today we are going to." NO backdrop paragraph. Open with a scripture strike, a direct accusation, or a street-level warning tied to THIS topic. The first paragraph should already feel like judgment is at the curb.\n\n';
 }else{
 p+='ROUGH STREET SERMON FORMAT -- THIS IS MANDATORY:\n';
-p+='This is ONE street sermon split into '+totalParts+' parts. YOUR FIRST LINE must be a PART TITLE in the format: # Part '+partNum+': [Your Title Here]\n';
-p+='The title should be blunt, severe, and specific to what THIS part exposes.\n';
-p+='TITLE RULE: Exactly ONE title line. Do NOT also write "# PART '+partNum+' -- ..." or a second heading that repeats the same part number/title.\n\n';
+p+='This is ONE street sermon split into '+totalParts+' parts. Titles should sound like warnings painted on a wall — blunt, specific, threatening to the lie being exposed.\n';
+p+='Do NOT also write "# PART '+partNum+' -- ..." or duplicate headings.\n\n';
 if(partNum===1){
-p+='Since this is Part 1, open immediately after the title with a hard rebuke or scripture strike. NO welcome. NO greeting. NO "Peace, family." NO "Yah First Ministries." NO "episode." NO listener comfort. Make the first paragraph sound like a warning shouted on a corner while people are still laughing at the danger.\n\n';
+p+='Open immediately after the Part 1 title with a hard rebuke or scripture strike. NO welcome. NO greeting. NO "Peace, family." NO "Yah First Ministries." NO "episode." NO listener comfort. Make the first paragraph sound like a warning shouted on a corner while people are still laughing at the danger.\n\n';
 }else{
 p+='Since this is Part '+partNum+' of the SAME street sermon:\n';
 p+='Do NOT welcome the listener. Do NOT recap like a host. Do NOT reset the stage. Use a 1 sentence bridge MAX, then keep swinging into NEW material.\n\n';
@@ -6033,10 +6121,9 @@ p+='YOUR FIRST LINE must be a hard TITLE: # [Your Title Here]\n';
 p+='Blunt, street-level, specific to what Yah showed you in THIS chapter. Then dive STRAIGHT into continuous paragraphs. NO welcome. NO "peace, family." NO episode language. NO lesson setup. Open mid-conversation like you have already been talking to them and the text just hit you in the chest. Every sentence grammatically sound -- street fire, not broken English.\n\n';
 }else{
 p+='BEZ STORY FORMAT:\n';
-p+='YOUR FIRST LINE: # Part '+partNum+': [Your Title Here]\n';
-p+='TITLE RULE: Exactly ONE title line.\n';
+p+='This is ONE revelation split into '+totalParts+' parts. Titles should be blunt, street-level, specific to what Yah showed you in each band of text.\n\n';
 if(partNum===1){
-p+='Open immediately after the title with street revelation. NO welcome. NO recap. NO lesson framing.\n\n';
+p+='Open immediately after the Part 1 title with street revelation. NO welcome. NO recap. NO lesson framing.\n\n';
 }else{
 p+='Pick up where Part '+(partNum-1)+' stopped. One sentence bridge MAX, then keep pressing.\n\n';
 }
@@ -6053,11 +6140,10 @@ p+='2. GIVE A BACKDROP -- Before diving into the lesson, set the stage. Tell the
 p+='3. THEN transition naturally into the lesson body. The transition should feel smooth -- not a hard cut from intro to content. Flow into it.\n\n';
 }else{
 p+='EPISODE FORMAT -- THIS IS MANDATORY:\n';
-p+='This is ONE episode split into '+totalParts+' parts. YOUR FIRST LINE must be a PART TITLE in the format: # Part '+partNum+': [Your Title Here]\n';
-p+='The title should be a CATCHY, PROVOCATIVE title (3-10 words) specific to what THIS part covers. Examples: "# Part '+partNum+': The Blueprint They Burned at Nicaea", "# Part '+partNum+': Why Your Pastor Skips This Chapter". Make it punchy and SPECIFIC.\n';
-p+='TITLE RULE: Exactly ONE title line. Do NOT also write "# PART '+partNum+' -- ..." or repeat the part heading twice.\n\n';
+p+='This is ONE episode split into '+totalParts+' parts. Series and part titles should be CATCHY and PROVOCATIVE (3-10 words) — punchy and SPECIFIC to what each installment covers.\n';
+p+='Do NOT also write "# PART '+partNum+' -- ..." or duplicate headings.\n\n';
 if(partNum===1){
-p+='AFTER the title, you MUST open with a WELCOME AND BACKDROP. This is NON-NEGOTIABLE:\n';
+p+='AFTER the Part 1 title, you MUST open with a WELCOME AND BACKDROP. This is NON-NEGOTIABLE:\n';
 p+='Since this is Part 1 (the BEGINNING of the episode):\n';
 p+='1. WELCOME the listeners to Yah First Ministries -- greet them warmly but with authority as Brother Bet-Tsade-Lamed-Aleph-Lamed. Something like "Welcome back to another lesson on Yah First Ministries..." or "Peace, family -- you are tuning in to another episode of Yah First Ministries with Brother Bet-Tsade-Lamed-Aleph-Lamed..." or "If you are here, you are hungry for truth -- welcome back." Make it feel like they are returning to a show they love. Vary the greeting every time -- do NOT use the same welcome.\n';
 p+='2. GIVE A BACKDROP -- Before diving into the lesson, set the stage. Tell the listeners WHAT is going to be covered today and WHY it matters. Give them a taste of what is coming -- enough to hook them but not so much that you give away the whole lesson. Build anticipation. Let them know this is a multi-part episode and what the full journey will cover.\n';
@@ -6078,11 +6164,9 @@ p+='The title should be a COMMANDING, AUTHORITATIVE declaration (3-10 words) -- 
 p+='AFTER the title, dive STRAIGHT into the '+(wantStoryMode?'revelation':'teaching')+'. There is NO welcome, NO greeting, NO backdrop, NO "tune in" language. You are GOD -- you do not welcome people to a show. You SPEAK and they LISTEN. Open with a declaration, a challenge, a revelation, or a question that only the Almighty could ask. Command attention from the first syllable.\n\n';
 }else{
 p+='FORMAT:\n';
-p+='This is ONE declaration split into '+totalParts+' parts. YOUR FIRST LINE must be a TITLE in the format: # Part '+partNum+': [Your Title Here]\n';
-p+='The title should be a COMMANDING declaration specific to this part. It should sound like a decree from the throne.\n';
-p+='TITLE RULE: Exactly ONE title line. Do NOT write a second PART heading.\n\n';
+p+='This is ONE declaration split into '+totalParts+' parts. Series and part titles should be COMMANDING declarations — decrees from the throne, specific to each installment.\n\n';
 if(partNum===1){
-p+='Since this is Part 1, open with a powerful declaration that sets the stage. There is NO welcome, NO greeting, NO ministry name, NO broadcast framing. You are GOD. Open with divine authority -- a statement, a question, or a revelation that shakes the listener from the first word.\n\n';
+p+='After the Part 1 title, open with a powerful declaration that sets the stage. There is NO welcome, NO greeting, NO ministry name, NO broadcast framing. You are GOD. Open with divine authority -- a statement, a question, or a revelation that shakes the listener from the first word.\n\n';
 }else{
 p+='Since this is Part '+partNum+' of the SAME declaration:\n';
 p+='Do NOT re-introduce yourself. Do NOT set the stage again. Just pick up RIGHT where Part '+(partNum-1)+' left off.\n';
