@@ -2617,7 +2617,7 @@ var p='*** ROUGH BEZ SCRIPTURE SPINE -- THE SERMON FOLLOWS THE BIBLE (NOT SLANG 
 p+='You are WALKING THROUGH SCRIPTURE on "'+title+'" -- not performing a prewritten rant with Bible garnish.\n\n';
 p+='THE LOOP -- repeat for EVERY verse/passage in this part until you hit the word target:\n';
 p+='  (1) QUOTE the verse in KJV wording (spoken book/chapter/verse numbers, or a blockquote).\n';
-p+='  (2) DECODE the symbols in THAT verse for Israel in twenty twenty-six -- systems, access, loyalty, merchants, false shepherds, covenant, judgment.\n';
+p+='  (2) DECODE EVERY symbol in THAT verse for Israel in twenty twenty-six -- beasts, horns, marks, numbers, colors, cities, women, waters, seals, trumpets, bowls, horses, stars, dragons, merchants, false shepherds, covenant, judgment. NEVER leave Revelation or prophetic imagery literal on the page.\n';
 p+='  (3) LAND one fresh modern example the symbol exposes (one or two sentences max -- not a checklist).\n';
 p+='  (4) MOVE to the NEXT verse. Do not loop the same symbol with new adjectives.\n\n';
 if(chapterSrc){
@@ -2999,18 +2999,99 @@ var tagToggle=document.getElementById('toggleElevenLabsTags');
 if(tagToggle)tagToggle.checked=true;
 });
 }
+function isRevelationContext(chapterSrc,topic){
+if(chapterSrc&&chapterSrc.book&&/revelation/i.test(String(chapterSrc.book)))return true;
+var t=((topic&&topic.title)||'')+' '+((topic&&topic.desc)||'');
+return /\b(revelation|apocalypse|beast system|mark of the beast|harlot|mystery babylon|two witnesses|seven seals?|seven trumpets?|seven bowls?|666|antichrist)\b/i.test(t);
+}
+function getSymbolDecoderVoiceLabel(voice){
+if(voice==='street')return 'Street fire -- decode symbols in plain corner English before you preach from them.';
+if(voice==='throne')return 'Throne remembrance -- decode symbols as I unveil them to My people now, not as a fantasy report.';
+if(voice==='broadcast')return 'Israelite broadcast -- decode symbols for the listener before doctrine or engineering layers land.';
+if(voice==='theatre')return 'Boardroom theatre -- decode what the verse SYMBOL means in the elites\' mouths and in Israel\'s real life.';
+return 'Decode symbols in plain English before building doctrine from them.';
+}
+function buildRevelationSymbolAtlasBlock(voice){
+var p='*** REVELATION SYMBOL ATLAS -- ZERO LITERAL FANTASY (MANDATORY WHEN REVELATION IS IN PLAY) ***\n';
+p+='Revelation is almost entirely SYMBOLIC prophecy about systems, identity, economics, religion, and judgment -- NOT a literal monster movie. Never leave Revelation imagery sitting there unexplained. Every dragon, beast, horn, seal, trumpet, bowl, number, color, and city gets DECODED in '+getSymbolDecoderVoiceLabel(voice)+'\n\n';
+p+='FORBIDDEN LITERAL DEFAULTS (ZERO TOLERANCE):\n';
+p+='- No literal seven-headed dragon, no literal locust-scorpion army from a pit, no literal flying woman, no literal giant angel measuring a physical cube city in outer space, no Sunday-school beast costume.\n';
+p+='- If you mention the image, you MUST immediately decode what it represents for Israel in twenty twenty-six.\n\n';
+p+='CORE REVELATION DECODES (use and expand -- do not recite as a list; weave into prose):\n';
+p+='- Dragon / serpent power = ancient serpent-seed empire spirit carried through Rome-Babylon-America -- the continuity of anti-Israel world rule.\n';
+p+='- Beast from the sea = political-military-religious empire SYSTEM rising from the nations -- UN-style global order, banking bloc, military alliance, or state church fused with sword.\n';
+p+='- Beast from the earth = enforcement arm / false prophet layer -- clergy, media, tech platforms, compliance officers, pastors and pundits who make the people WORSHIP the system.\n';
+p+='- Horns = kings, CEOs, presidents, regulators, dynasty heads -- regional rulers who carry the beast\'s authority.\n';
+p+='- Crowns = stolen or delegated authority -- who gets to rule, license, or punish in the beast\'s name.\n';
+p+='- Mark in hand or forehead = economic worship and access control -- banking compliance, digital ID, vaccine passport patterns, payroll loyalty, credit scoring, app permissions, "no buy no sell" commerce gatekeeping.\n';
+p+='- Image of the beast = enforced ideology / state religion -- the thing you must applaud, share, inject, pledge, or platform to keep your job and feed your children.\n';
+p+='- Harlot / Mystery Babylon = religion fused with commerce -- Vatican-State, megachurch-LLC, NGO-industrial complex, luxury merchant class selling souls for margin.\n';
+p+='- Woman clothed with the sun / remnant = true Israel under persecution -- scattered Negro Israel hidden but crowned with covenant identity.\n';
+p+='- Two witnesses = the two houses (Israel and Judah) and/or Torah testimony plus prophetic witness rising NOW -- NOT Enoch and Elijah as two superheroes.\n';
+p+='- Lampstands / menorah = assemblies of witness -- congregations, remnant groups, truth carriers in the earth.\n';
+p+='- Seals = staged unveiling of judgment and hidden plans -- each seal opens a new layer of what Babylon was doing behind closed doors.\n';
+p+='- Trumpets = partial warnings and escalating collapse -- broadcast judgments that hit economy, ecology, politics, and religion in waves.\n';
+p+='- Bowls = final poured-out plagues on the system -- full systemic collapse of medicine, water, commerce, sun/scorch, darkness, Armageddon coalition.\n';
+p+='- White / red / black / pale horses = conquest, bloodshed & debt, famine & scarcity, death & hell patterns -- riders are JUDGMENT MECHANISMS not cosplay horsemen.\n';
+p+='- Stars fallen to earth = deposed rulers, fallen angels-as-men language, celebrity/pastor/political idols stripped of cover.\n';
+p+='- Waters = peoples, multitudes, nations, tongues -- mass populations moved by the harlot\'s spell.\n';
+p+='- Wine / blood of saints = commerce in souls -- martyrdom commodified, persecution as business, outrage cycles sold for profit.\n';
+p+='- 144,000 sealed = symbolic complete remnant numbering -- full governmental witness company, NOT a literal head-count census.\n';
+p+='- New Jerusalem dimensions = governed bride / ordered kingdom architecture -- symbolic perfection of how Yah arranges His people and land, not a NASA space station.\n';
+p+='- Numbers: 7 = completion; 12 = governance; 10 = worldly power; 666 = man exalted to godless completeness (6-6-6); 1,260 / 42 months / time-times-half = measured persecution seasons.\n\n';
+p+='REVELATION DELIVERY LOOP (every verse or vision in your assignment):\n';
+p+='  (1) Quote or anchor the verse.\n';
+p+='  (2) Name the SYMBOL(s) in plain English.\n';
+p+='  (3) Decode what that symbol is doing in SYSTEMS, ECONOMICS, RELIGION, IDENTITY, and JUDGMENT today.\n';
+p+='  (4) Land it on modern Israel\'s body -- block, pew, payroll, passport, prescription, feed, court, church invoice.\n';
+p+='  (5) Move to the next verse -- do NOT leave a symbol sitting literal on the page.\n\n';
+return p;
+}
+function buildUniversalSymbolDecoderBlock(opts){
+opts=opts||{};
+var voice=opts.voice||'neutral';
+var topic=opts.topic||currentTopic;
+var chapterSrc=opts.chapterSrc||currentChapterSource;
+var p='*** UNIVERSAL SYMBOL DECODER -- MANDATORY ON EVERY TOGGLE / EVERY BOOK ***\n';
+p+=getSymbolDecoderVoiceLabel(voice)+'\n\n';
+p+='SYMBOL-FIRST RULE (ZERO TOLERANCE):\n';
+p+='- Yah speaks in symbols across ALL scripture -- not only Revelation. Visions, parables, dreams, beasts, colors, numbers, names, cities, waters, trees, bread, wine, oil, fire, swords, temples, angels-as-men language, plagues, and wars are ENCODED before they are literal.\n';
+p+='- DEFAULT = DECODE. Only stay literal when the text clearly demands flesh-and-blood history with no symbolic layer (and even then ask what the scene PICTURES prophetically).\n';
+p+='- NEVER leave a symbol on the page unexplained. If you mention a beast, horn, mark, harlot, horse, star, seal, trumpet, bowl, or numbered pattern -- decode it in the SAME breath.\n';
+p+='- Do NOT narrate Revelation (or Daniel, Ezekiel, Zechariah, Genesis parables, prophetic psalms) like fantasy cinema. Decode it like wiretap evidence of Babylon\'s operating system.\n\n';
+p+='CROSS-BIBLE SYMBOL FRAMEWORK:\n';
+p+='- Esau/Jacob, Cain/Abel, Ishmael/Isaac, Egypt/Israel, Babylon/Jerusalem = flesh vs spirit, serpent seed vs Adamic/Israel seed -- two lines through everything.\n';
+p+='- Serpent = deceiver MAN / adversary system -- NOT a literal talking snake unless the narrative forces historical reporting, and even then decode the pattern.\n';
+p+='- Beasts and horns = empires and rulers; eagles = speed/empire; lions = kingship/Judah; goats = wicked; sheep = Israel.\n';
+p+='- Colors: red = flesh/bloodlust; white = purity OR deception by context; gold = divine truth/commerce test; purple = authority; scarlet = sin/harlotry.\n';
+p+='- Numbers: 3 = witness; 6 = man/beast; 7 = completion; 10 = worldly power; 12 = governance; 40 = testing; 70/72 = nations or measured judgment.\n';
+p+='- Waters = peoples/multitudes; mountains = governments; trees = men/nations; wine = doctrine or blood commerce; bread = body/word; oil = anointing or machine lubricant of system.\n';
+p+='- Names carry prophecy -- explain what the name MEANS in plain English for this voice. Paleo letter dumps only when they unlock the symbol (Rough Bez: rarely; Israelite tech mode: optional supplement only).\n';
+p+='- Geography is prophecy -- where it happened maps to where Israel lives now after decode.\n';
+p+='- Parables, dreams, and apocalyptic visions = encoded doctrine for Israel today -- rent, court, church betrayal, stolen name, block, cell, pew, payroll, passport, prescription.\n\n';
+p+='BOOK-SPECIFIC REMINDERS (when forging these texts):\n';
+p+='- Genesis: garden serpent, trees, seed lines, Joseph dreams, Egypt famine = identity, deception, provision warfare, exile patterns.\n';
+p+='- Exodus-Deuteronomy: plagues, Pharaoh, Red Sea, manna, tabernacle furniture = judgment stages, hard heart, baptism/delivery, daily word, body-of-Israel architecture.\n';
+p+='- Daniel: metals statue, beasts, horns, little horn, fiery furnace, lions\' den = successive empires, ruler swaps, persecution and preservation of Israel.\n';
+p+='- Ezekiel: wheels, valley of dry bones, temple measures, watchman = mobile government spirit, national resurrection, governed remnant, warning office.\n';
+p+='- Zechariah: horses, lamps, flying scroll, woman in basket, pierced one = patrol spirits/systems, witness, curse on thieves, commerce wickedness removed, betrayal of the shepherd.\n';
+p+='- Gospels parables: sower, wheat/tares, fig tree, virgins, talents = heart soils, seed lines, national fruit inspection, oil readiness, stewardship under judgment.\n';
+p+='- Job (when text is Job): suffering allegory patterns, false comforters, accuser as nations -- use Job-is-Israel frame when the text demands; do not import it into unrelated books.\n\n';
+if(isRevelationContext(chapterSrc,topic))p+=buildRevelationSymbolAtlasBlock(voice);
+if(opts.wantRoughBez){
+p+='ROUGH BEZALEEL SYMBOL LOCK: Corner pressure around DECODED meaning -- quote verse, decode symbol in plain fire, one modern example, next verse. No literal dragons. No fantasy beasts left unexplained. No sermon that sounds like you believe John saw Marvel characters.\n\n';
+}else if(opts.theatre){
+p+='THEATRE SYMBOL LOCK: When scripture is on the table, elites argue over the TEXT while revealing what the SYMBOL protects in their business. Commentary pauses must decode the symbol for Israel in plain English before the scene resumes.\n\n';
+}else if(opts.wantBreakdown){
+p+='BREAKDOWN LOCK: Each verse/point gets FULL symbolic unraveling before the next -- symbol, lie, who profits, land on twenty twenty-six Israel.\n\n';
+}
+p+='SELF-CHECK BEFORE OUTPUT: Scan your draft -- if any beast, horn, mark, dragon, horse, star, seal, trumpet, bowl, harlot, number pattern, or vision image appears WITHOUT a decode in the same paragraph, REWRITE until decoded.\n\n';
+return p;
+}
 function buildBezStoryKnowledgeBlock(topic){
 var p='BEZ STORY KNOWLEDGE BASE (SAME SUBSTANCE AS ALL VOICES -- STREET DELIVERY ONLY):\n';
-p+='You carry the FULL forge doctrinal and symbolic knowledge -- Job-is-Israel, allegory, two seed lines, identity, sealed-scroll discernment, prophetic patterns. The ONLY things you skip are Paleo Hebrew letter breakdowns and engineering/tech metaphors. Say it like a brother on the corner who Yah showed the blueprint -- not like seminary, not like a technical manual.\n\n';
-p+='SYMBOL DECODER (MANDATORY -- PLAIN ENGLISH):\n';
-p+='- Yah speaks in symbols. Beasts, horses, horns, waters, stars, seals, trumpets, bowls, colors, numbers, cities, women, harlots, wilderness, bread, oil, wine, fire, crowns, swords, temples -- decode what they MEAN in real life: systems, nations, offices, deception, economics, identity, judgment, covenant pressure.\n';
-p+='- Do NOT take visions and prophetic imagery literally by default. Decode first. Only go literal when the text forces it.\n';
-p+='- Esau and Jacob = flesh vs spirit. Cain vs Abel, Ishmael vs Isaac, Egypt vs Israel, Babylon vs Jerusalem -- two seed lines running through everything.\n';
-p+='- Colors carry weight: red = flesh/carnality, white = purity or deception by context, gold = divine truth, purple = authority, scarlet = sin.\n';
-p+='- Numbers are clues: seven = completion, twelve = governance, forty = testing, six = man/beast.\n';
-p+='- Animals symbolize: serpent = deceiver (a man, not a literal snake), lion = kingship, eagle = empire, goats = wicked, sheep = Israel.\n';
-p+='- Names carry prophetic meaning -- explain what the name MEANS in plain street English. Do NOT spell names letter-by-letter in Paleo Hebrew.\n';
-p+='- Geography matters: where something happened often IS the prophecy. Land it on modern Israel\'s body after you decode it.\n\n';
+p+='You carry the FULL forge doctrinal and symbolic knowledge -- Job-is-Israel, allegory, two seed lines, identity, sealed-scroll discernment, prophetic patterns. The ONLY things you skip are Paleo Hebrew letter breakdowns and engineering/tech metaphors. Say it like a brother on the corner who Yah showed the blueprint -- not like seminary, not like a technical manual.\n';
+p+='Symbol decoding rules are in the UNIVERSAL SYMBOL DECODER block above -- follow them in street voice on every verse.\n\n';
 p+='JOB IS ISRAEL (USE WHEN THE TEXT OR TOPIC CALLS FOR IT):\n';
 p+='- Job is an allegory about Israel\'s suffering. Satan and the three friends represent the NATIONS whipping your back -- a prophetic picture, not a literal cosmic bet with a supernatural devil.\n';
 p+='- When forging Job OR when suffering, captivity, betrayal, or false comfort patterns show up: Job IS Israel. Eliphaz and the friends = lying preachers and comfort pastors. Dust and ashes = identity stripped. Job forty-two cadence = coronation after the purge.\n';
@@ -3173,6 +3254,7 @@ p+='- They believe this closed door is THEIR chess. Every pause must tell Israel
 }
 p+='COMMENTARY MUST STAY ON TOPIC: "'+title+'" -- '+desc+'\n';
 p+='- Decode THIS meeting only. No unrelated tangents.\n';
+p+='- When scripture is on the table: every pause MUST decode symbols in plain English -- beasts, horns, marks, harlots, seals, trumpets, bowls, dragons as SYSTEMS never literal fantasy.\n';
 p+='- Optional: one short scripture strike inside a pause if it lands the point -- woven in plain speech, not a lesson.\n';
 if(theatreLooksLikeTechEnclosureThread(topic,typeof currentNewsContext!=='undefined'?currentNewsContext:null)){
 p+='\nAI-GIFT COMMENTARY (MANDATORY ON THIS TOPIC):\n';
@@ -3813,6 +3895,7 @@ p+='- PASTED BRIEFING ONLY: This is corporate/news/policy text — NOT scripture
 }
 if(chapterSrc&&!topicIsBriefing){
 p+=buildTheatreChapterVerseBlock(partNum,totalParts,chapterSrc,wordsPerPart,commentaryVoice,scripturePerch);
+p+=buildUniversalSymbolDecoderBlock({voice:'theatre',chapterSrc:chapterSrc,topic:topic,wantRoughBez:wantRoughBez,theatre:true,wantBreakdown:true});
 }
 if(eli5Enabled){
 p+='- LAYMAN\'S TERMS ON: speakers say who gets hurt in plain words — no "legacy populations" or corporate codewords.\n';
@@ -5111,11 +5194,11 @@ p+='- Compound label avalanches: three-plus hyphen labels in one paragraph or ei
 p+='- Judgment montage encore: rerunning Sodom + Egypt + flood + Zechariah fourteen gore after a prior part already ran it\n';
 p+='- Scriptureless rant: long street pressure with fewer than four distinct quoted verses/passages when the part should be walking the Bible\n';
 p+='- Reusing the same calendar date on unrelated headlines across parts\n\n';
-p+='REQUIRED: Walk scripture verse-by-verse -- quote KJV, decode the symbol, land one modern example, move to the NEXT verse. The spine drives the sermon.\n\n';
+p+='REQUIRED: Walk scripture verse-by-verse -- quote KJV, decode EVERY symbol (especially Revelation beasts/horns/seals/trumpets/bowls/mark/harlot/dragon -- NEVER literal fantasy), land one modern example, move to the NEXT verse. The spine drives the sermon.\n\n';
 }else if(isYahStoryModeActive()){
 p+='Return to Yah first-person revelation from the throne -- NOT a lesson, NOT scholarship, NOT chatbot, NOT assistant filler, NOT third person about Yah.\n\n';
 }else{
-p+='Return to sermon revelation prose — decode symbols for scattered Israel in twenty twenty-six, not seminary neutrality.\n\n';
+p+='Return to sermon revelation prose — decode EVERY symbol for scattered Israel in twenty twenty-six (Revelation imagery NEVER literal by default), not seminary neutrality.\n\n';
 }
 p+='BAD OUTPUT (do not repeat this tone or structure):\n"'+String(badReply||'').slice(0,900).replace(/"/g,"'")+'..."\n\n';
 p+=buildPartPrompt(partNum);
@@ -6005,6 +6088,11 @@ p+='ONE PART ONLY (CRITICAL): You are writing ONLY Part '+partNum+' of '+totalPa
 }
 p+=buildWebResearchPromptBlock(topic,{partNum:partNum,totalParts:totalParts,wantEpisodeMode:wantEpisodeMode,chapterSrc:chapterSrc,wantStoryMode:wantStoryMode,wantBezStory:wantBezStory,wantYahStory:wantYahStory,wantBezStoryBreakdown:wantBezStoryBreakdown,wantRoughBez:wantRoughBez&&!wantBezStory,currentMode:currentMode});
 p+=buildCrossReferencesPromptBlock(wantCrossRefs,wantApocrypha,apocList);
+var symbolVoice='throne';
+if(wantBezStory||wantRoughBez)symbolVoice='street';
+else if(wantYahStory)symbolVoice='throne';
+else if(wantIsraelite)symbolVoice='broadcast';
+p+=buildUniversalSymbolDecoderBlock({voice:symbolVoice,chapterSrc:chapterSrc,topic:topic,wantRoughBez:wantRoughBez&&!wantBezStory,wantBreakdown:wantBreakdown||wantBezStoryBreakdown});
 p+=buildEpisodeModeBlock(partNum,totalParts,topic);
 if(wantIsraelite&&wantRoughBez&&!wantBezStory){
 // ROUGH BEZALEEL MODE -- no broadcast format, no welcome/backdrop
@@ -6283,12 +6371,13 @@ p+='   - Explain what each symbol means in real life: a system, office, social c
 p+='   - Do NOT take symbols literally by default. Decode first. Only use Paleo Hebrew if it truly unlocks the symbol.\n';
 p+='   - BUT DO NOT OUTPUT A "**SYMBOLIC LANGUAGE DECODING:**" HEADER -- just deliver the analysis directly.\n\n';
 }else{
-p+='INTERNAL STEP 3 -- PALEO HEBREW WORD BREAKDOWN -- OUTPUT WITHOUT LABEL:\n';
-p+='   - Identify 1-3 KEY WORDS in the verse that carry theological or engineering weight.\n';
-p+='   - Break each word down LETTER BY LETTER using Paleo Hebrew pictographs.\n';
-p+='   - For each letter, give: English name, pictographic symbol meaning, and how it contributes to the word\'s full meaning.\n';
-p+='   - Example: "The word BERESHIT (In the beginning) -- Bet (house/tent) + Resh (head/first) + Aleph (ox/strength) + Shin (teeth/consume) + Yod (hand/work) + Taw (mark/covenant) -- literally means \'The house of the first strength consuming the work of the covenant.\' Every letter is a building block of meaning."\n';
-p+='   - BUT DO NOT OUTPUT A "**PALEO HEBREW WORD BREAKDOWN:**" HEADER -- just deliver the analysis directly.\n\n';
+p+='INTERNAL STEP 3 -- SYMBOLIC LANGUAGE DECODING (PRIMARY) -- OUTPUT WITHOUT LABEL:\n';
+p+='   - Identify every symbolic image in the verse: animals, colors, directions, objects, bodies, women, cities, waters, fire, stars, seals, trumpets, bowls, swords, bread, oil, wine, crowns, horns, numbers, wilderness, temple imagery, beasts, dragons.\n';
+p+='   - Explain what each symbol means in real life: a system, office, social condition, economic pressure, religious deception, covenant state, identity marker, judgment mechanism, or spiritual condition.\n';
+p+='   - Do NOT take symbols literally by default -- especially Revelation, Daniel, Ezekiel, Zechariah, and parables. Decode first. Only go literal when the text forces historical flesh-and-blood reporting.\n';
+p+='   - BUT DO NOT OUTPUT A "**SYMBOLIC LANGUAGE DECODING:**" HEADER -- just deliver the analysis directly.\n\n';
+p+='INTERNAL STEP 3b -- PALEO HEBREW (OPTIONAL SUPPLEMENT ONLY) -- OUTPUT WITHOUT LABEL:\n';
+p+='   - AFTER the symbol decode, you MAY add 1-2 key words with Paleo pictographs ONLY if it truly unlocks the symbol. Skip letter-by-letter dumps that do not change understanding.\n\n';
 }
 p+='INTERNAL STEP 4 -- THEOLOGICAL AND DOCTRINAL LAYER -- OUTPUT WITHOUT LABEL:\n';
 p+='   - What DOCTRINE does this verse establish or support? (Creation, identity, bloodline, law, prophecy, judgment, salvation, etc.)\n';
@@ -6321,8 +6410,9 @@ p+='Do NOT just quote and move on -- TEACH each verse using all internal steps a
 if(wantRoughBez){
 p+='ROUGH BEZALEEL VERSE DELIVERY: For each verse, prioritize what the symbol means and how it hits modern Israel right now. Keep the verse breakdown moving like a real human warning another human. Do not force Paleo, engineering, or tech comparisons into every verse. Use them only when they make the symbol clearer, sharper, or harder to ignore.\n\n';
 }else{
+p+='SYMBOL-FIRST OVERRIDE: Universal symbol decoder above is HIGHER PRIORITY than engineering metaphors. Decode what the verse MEANS symbolically BEFORE illustrating with tech comparisons.\n\n';
 p+='ENGINEERING AND TECHNICAL LAYER -- MANDATORY FOR EVERY VERSE:\n';
-p+='Yah is the MASTER ENGINEER. Every verse has a SURFACE reading and a TECHNICAL blueprint underneath. For each verse you break down, you MUST dig into the engineering layer:\n';
+p+='Yah is the MASTER ENGINEER. Every verse has a SYMBOLIC meaning FIRST and a TECHNICAL blueprint underneath. For each verse you break down, you MUST dig into the engineering layer ONLY AFTER the symbol decode lands:\n';
 p+='*** PALEO HEBREW BREAKDOWN: When you encounter key Hebrew words, break them down letter by letter using the ORIGINAL Paleo Hebrew script -- the ancient pictographic letters Yah gave to Israel. Do NOT use modern square-script Hebrew (Ashkenazi/Babylonian script). That bastardized alphabet came from Babylon during the captivity -- it is NOT the original. For each Paleo Hebrew letter, give its English name and English translation of its pictographic meaning (e.g., Aleph = ox head = strength/leader, Bet = tent/house = household, etc.). Show the ORIGINAL letters with their ORIGINAL meanings. The shapes themselves carry engineering data -- they are pictographs that SHOW what they mean. Show how the pictographic meaning of each letter in a word BUILDS the full meaning of that word -- each letter adds a layer of understanding that the English translation completely misses. ***\n';
 p+='TECHNICAL/ENGINEERING ANALYSIS: Look beneath the surface for the engineering, physics, architecture, frequency, geometry, and structural design encoded in the text. When Yah gives measurements (the ark, the tabernacle, the temple, the New Jerusalem), those are ENGINEERING SPECIFICATIONS -- break down the ratios, the proportions, the sacred geometry. When scripture references water, light, sound, breath, vibration -- reveal the PHYSICS underneath. Creation was an engineering PROJECT with precise specifications, frequencies, wavelengths, and structural constants. The Paleo Hebrew letters themselves are BLUEPRINTS -- each letter has a pictographic shape and a function in the architecture of creation (Sefer Yetzirah). When referencing Hebrew letters in the engineering analysis, ALWAYS use Paleo Hebrew (the original pictographic script) with English names and translations -- NEVER modern square-script Hebrew. Show how Yah used language itself as a PROGRAMMING LANGUAGE to encode reality. The dome firmament is an ENGINEERED STRUCTURE. The pillars of the earth are STRUCTURAL SUPPORTS. The waters above and below are a CONTAINMENT SYSTEM. DNA is Yah\'s biological SOURCE CODE. The human body is Yah\'s most complex MACHINE. The solar and lunar cycles are PRECISION CLOCKWORK. Reveal the Engineer behind every verse.\n';
 p+='SYMBOLIC NUMBER PATTERNS: When numbers appear in scripture -- days, years, measurements, counts of people, animals, objects -- they are NEVER random. Show the SYMBOLIC patterns: why 7 (completion), why 12 (governance), why 40 (testing/transformation), why 144,000 (12 x 12 x 1000 -- perfect governmental order multiplied by divine fullness). Connect the symbolic numbers in each verse to the larger architecture of scripture.\n';
