@@ -471,6 +471,13 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .media-btn.primary-video:hover{background:rgba(255,109,0,0.08);border-color:var(--video-orange);}
 .media-btn.primary-lyrics{border-color:rgba(255,179,0,0.3);color:var(--lyrics-amber);}
 .media-btn.primary-lyrics:hover{background:rgba(255,179,0,0.08);border-color:var(--lyrics-amber);}
+.media-btn.primary-package{border-color:rgba(212,160,23,0.45);color:var(--gold);}
+.media-btn.primary-package:hover{background:rgba(212,160,23,0.1);border-color:var(--gold);}
+.visual-package-note{font-size:0.68rem;color:var(--text-dim);line-height:1.5;margin:0 0 10px;font-family:'Fira Code',monospace;}
+.visual-package-progress{font-family:'Fira Code',monospace;font-size:0.72rem;color:var(--gold);margin:8px 0;padding:10px 12px;background:rgba(212,160,23,0.06);border:1px solid rgba(212,160,23,0.15);border-radius:8px;}
+.visual-beat-status{font-size:0.65rem;color:var(--text-dim);margin-left:8px;}
+.visual-beat-status.ok{color:var(--image-green);}
+.visual-beat-status.fail{color:var(--explicit-red);}
 
 /* MEDIA OUTPUT */
 .media-output{min-height:20px;}
@@ -1019,7 +1026,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <div class="tab-panel" id="panelYahChat">
   <div class="yah-chat-wrap">
     <div class="dismantle-desc">
-      <i class="fas fa-comments" style="color:var(--gold);"></i> <strong>Yah Chat</strong> — one-on-one conversation. Toggle <strong>Web Research</strong> so Yah can look up current facts. Toggle <strong>Bez</strong> for street tech talk to Suno peons (no religious framing — just the extraordinary technology).
+      <i class="fas fa-comments" style="color:var(--gold);"></i> <strong>Yah Chat</strong> — one-on-one conversation saved in this browser (refresh-safe). Toggle <strong>Web Research</strong> so Yah can look up current facts. Toggle <strong>Bez</strong> for street tech talk to Suno peons (no religious framing — just the extraordinary technology).
     </div>
     <div class="yah-chat-history" id="yahChatHistory">
       <div class="yah-chat-empty" id="yahChatEmpty">
@@ -1085,6 +1092,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <button class="sermon-action-btn copy-all" onclick="copyLibrarySermon()"><i class="fas fa-copy"></i> Copy All</button>
       <button class="sermon-action-btn copy-all" onclick="copyLibrarySermonPlain()" style="border-color:var(--gold-dim);color:var(--gold-dim);background:transparent;"><i class="fas fa-align-left"></i> Copy Plain</button>
       <button class="sermon-action-btn export-btn" onclick="exportLibrarySermon()"><i class="fas fa-download"></i> Export to File</button>
+      <button class="sermon-action-btn export-btn" style="border-color:var(--gold-dim);color:var(--gold);" onclick="loadLibraryEntryIntoForge()" title="Load into Forge Media Forge for Visual Package"><i class="fas fa-clapperboard"></i> Visual Package in Forge</button>
       <button class="sermon-action-btn export-btn" style="border-color:var(--crimson-glow);color:var(--crimson-glow);" onclick="deleteLibrarySermon()"><i class="fas fa-trash"></i> Delete</button>
       <div class="tts-bar">
         <span class="tts-label"><i class="fas fa-volume-high"></i> Voice:</span>
@@ -1263,6 +1271,36 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
     <!-- === MEDIA FORGE === -->
     <div class="media-forge">
+
+      <!-- VISUAL PACKAGE -->
+      <div class="media-section-header" onclick="toggleMediaSection('visualPackage')">
+        <h3 style="color:var(--gold)"><i class="fas fa-clapperboard"></i> Visual Package</h3>
+        <i class="fas fa-chevron-down chevron open" id="chevronVisualPackage"></i>
+      </div>
+      <div class="media-section-body open" id="bodyVisualPackage">
+        <p class="visual-package-note">Reads your <strong>full forged sermon</strong> (fresh or loaded from <strong>Library → Visual Package in Forge</strong>), extracts 3–8 visual beats, batch-generates Kie stills and clips (uses <strong>Images</strong> + <strong>Video</strong> model picks below), exports a stitch manifest. Budget sweet spot: ~$3–5/week at 5 beats. Stitch here in chat or run <code style="font-size:0.62rem;">scripts/stitch-visual-package.sh</code>.</p>
+        <div class="image-count-row">
+          <label>Visual beats</label>
+          <input type="number" id="visualBeatCount" min="3" max="8" value="5">
+        </div>
+        <div class="image-count-row" style="flex-wrap:wrap;gap:14px;">
+          <label class="toggle-switch" style="margin:0;"><input type="checkbox" id="visualPkgImages" checked><span class="toggle-track"></span><span style="font-size:0.78rem;">Generate images</span></label>
+          <label class="toggle-switch" style="margin:0;"><input type="checkbox" id="visualPkgVideos" checked><span class="toggle-track"></span><span style="font-size:0.78rem;">Generate videos</span></label>
+          <label class="toggle-switch" style="margin:0;"><input type="checkbox" id="visualPkgTitleCard" checked><span class="toggle-track"></span><span style="font-size:0.78rem;">Title card beat</span></label>
+        </div>
+        <div class="model-select-wrap" style="margin-top:6px;">
+          <label><i class="fas fa-robot"></i> Beat planner (reads sermon):</label>
+          <select class="model-select" id="visualBeatModel">
+            <option value="upstage/solar-pro4" selected>Loading model catalog...</option>
+          </select>
+        </div>
+        <div class="media-btn-row">
+          <button class="media-btn primary-package" id="visualPackageRunBtn" onclick="runVisualPackage()"><i class="fas fa-play"></i> Run Visual Package</button>
+          <button class="media-btn" id="visualPackageCancelBtn" onclick="cancelVisualPackage()" style="display:none;border-color:rgba(255,23,68,0.35);color:var(--explicit-red);"><i class="fas fa-stop"></i> Cancel</button>
+          <button class="media-btn" onclick="exportVisualPackageManifest()" id="visualPackageExportBtn" disabled><i class="fas fa-file-export"></i> Export Manifest</button>
+        </div>
+        <div class="media-output" id="outputVisualPackage"></div>
+      </div>
 
       <!-- MUSIC -->
       <div class="media-section-header" onclick="toggleMediaSection('music')">
@@ -4234,6 +4272,7 @@ document.getElementById('outputMusic').innerHTML='';
 document.getElementById('outputImages').innerHTML='';
 document.getElementById('outputVideo').innerHTML='';
 document.getElementById('outputLyrics').innerHTML='';
+var vpOut=document.getElementById('outputVisualPackage');if(vpOut)vpOut.innerHTML='';
 // Reset hidden threads
 var htWrap=document.getElementById('hiddenThreads');
 if(htWrap){htWrap.classList.remove('visible');document.getElementById('hiddenThreadsBody').innerHTML='<div class="ht-loading"><div class="ht-loading-anim"></div><div class="ht-loading-text">Unearthing buried threads...</div></div>';}
@@ -4302,6 +4341,10 @@ function getImagePromptModel(){
 var custom=(document.getElementById('customImagePromptModel').value||'').trim();
 if(custom)return custom;
 return document.getElementById('imagePromptModel').value||'google/gemini-2.5-flash';
+}
+function getVisualBeatModel(){
+var el=document.getElementById('visualBeatModel');
+return el&&el.value?el.value:getImagePromptModel();
 }
 function getNewsModel(){
 var custom=(document.getElementById('customNewsModel').value||'').trim();
@@ -7015,6 +7058,196 @@ return kieSleep(delay).then(function(){return tick(n+1);});
 }
 return tick(0);
 }
+var visualPackageState={running:false,cancelled:false,result:null};
+function cancelVisualPackage(){
+if(!visualPackageState.running)return;
+visualPackageState.cancelled=true;
+setVisualPackageProgress('Cancelling after current job…');
+}
+function setVisualPackageProgress(msg){
+var el=document.getElementById('outputVisualPackage');
+if(!el)return;
+var box=el.querySelector('.visual-package-progress');
+if(box)box.textContent=msg;
+else el.innerHTML='<div class="visual-package-progress">'+escapeHtml(msg)+'</div>';
+}
+function getSermonTextForVisualPackage(){
+var text='';
+if(typeof sermonPartsCombined==='string'&&sermonPartsCombined.trim())text=sermonPartsCombined.trim();
+else if(sermonPartsRaw&&sermonPartsRaw.length)text=buildCombinedTextFromParts(sermonPartsRaw,sermonPartsTitles||[]).trim();
+if(!text)return '';
+text=text.replace(/^#+\s+/gm,'');
+text=text.replace(/\*\*/g,'');
+text=text.replace(/\[([^\]]+)\]\([^)]+\)/g,'$1');
+var max=70000;
+if(text.length>max)text=text.slice(0,max)+'\n\n[… sermon truncated for beat planner — focus on major themes from this excerpt …]';
+return text;
+}
+function parseVisualBeatsJson(raw){
+var t=stripThinking(raw||'').trim();
+var fence=t.match(/```(?:json)?\s*([\s\S]*?)```/i);
+if(fence)t=fence[1].trim();
+var start=t.indexOf('{');
+var end=t.lastIndexOf('}');
+if(start===-1||end<=start)throw new Error('Beat planner did not return JSON.');
+t=t.slice(start,end+1);
+var data=JSON.parse(t);
+if(!data||!Array.isArray(data.beats)||!data.beats.length)throw new Error('JSON missing beats array.');
+return data;
+}
+function extractVisualBeatsFromSermon(sermonText,beatCount,wantTitleCard){
+return new Promise(function(resolve,reject){
+var title=currentTopic?currentTopic.title:'Sermon';
+var chapterLabel=currentChapterSource?(currentChapterSource.book+' Chapter '+currentChapterSource.chapter):'';
+var prompt='You are a visual director for Hebrew Israelite sermon B-roll. Read the FULL sermon text below and plan '+beatCount+' distinct cinematic visual beats (plus optional title card).\n\n';
+prompt+='SERMON TITLE: "'+title+'"'+(chapterLabel?' ('+chapterLabel+')':'')+'\n\n';
+prompt+='RULES:\n';
+prompt+='- Derive beats from the sermon BODY themes, scripture anchors, and emotional arc — NOT generic stock Bible art.\n';
+prompt+='- Each beat = one still photograph + one short motion clip (5–8 sec B-roll under spoken word).\n';
+prompt+='- All people: dark-skinned Negro Israelites — worldwide scattered descendants of Israel — dark brown skin, strong features, natural hair.\n';
+prompt+='- PHOTOREALISTIC only: cinema camera, natural light, documentary realism. No illustration, cartoon, CGI, fantasy.\n';
+prompt+='- image_prompt: detailed still frame (lens, lighting, composition).\n';
+prompt+='- motion_prompt: camera move + atmosphere for AI video (Kling/Wan/Seedance).\n';
+if(wantTitleCard)prompt+='- Include ONE title_card beat (label "Title Card") with image_prompt for a photoreal title-card scene; motion_prompt can be slow push-in.\n';
+prompt+='OUTPUT: ONLY valid JSON, no markdown fences, no commentary:\n';
+prompt+='{"title":"'+title.replace(/"/g,'\\"')+'","themes":["theme1","theme2"],"beats":[{"n":1,"label":"short label","scripture_ref":"","theme":"","image_prompt":"...","motion_prompt":"..."}]}\n\n';
+prompt+='SERMON TEXT:\n---\n'+sermonText+'\n---';
+var handlerName='visualbeats-'+Date.now();
+window.Poe.registerHandler(handlerName,function(result){
+var msg=result.responses[0];if(!msg)return;
+if(msg.status==='error')reject(new Error(msg.statusText||'Beat planner failed'));
+else if(msg.status==='complete'){
+try{resolve(parseVisualBeatsJson(msg.content||''));}
+catch(e){reject(e);}
+}
+});
+window.Poe.sendUserMessage('@'+getVisualBeatModel()+' '+prompt,{handler:handlerName,stream:false,openChat:false,parameters:{}}).catch(reject);
+});
+}
+function runKieMediaJobsPromise(opts){
+return new Promise(function(resolve,reject){
+var sink=document.createElement('div');
+runKieMediaJobs(opts,sink,function(urls){
+if(!urls||!urls.length)reject(new Error('Kie returned no URLs for '+opts.kind));
+else resolve(urls);
+});
+});
+}
+function renderVisualPackageResults(pkg){
+var output=document.getElementById('outputVisualPackage');
+if(!output)return;
+var html='<div class="visual-package-progress">Done — '+pkg.beats.length+' beat(s). Export manifest for stitch.</div>';
+html+='<div style="font-family:\'Fira Code\',monospace;font-size:0.68rem;color:var(--text-dim);margin:8px 0;">Themes: '+escapeHtml((pkg.themes||[]).join(' · '))+'</div>';
+for(var i=0;i<pkg.beats.length;i++){
+var b=pkg.beats[i];
+html+='<div class="media-item" id="visualBeatItem'+i+'">';
+html+='<div class="media-item-label"><i class="fas fa-clapperboard"></i> Beat '+(b.n||i+1)+': '+escapeHtml(b.label||'Scene')+' <span class="visual-beat-status '+(b.imageUrl&&b.videoUrl?'ok':'')+'">'+(b.imageUrl?'img ✓':'')+' '+(b.videoUrl?'vid ✓':'')+'</span></div>';
+if(b.scripture_ref)html+='<div style="font-size:0.65rem;color:var(--gold-dim);margin-bottom:4px;">'+escapeHtml(b.scripture_ref)+'</div>';
+if(b.imageUrl)html+='<img src="'+escapeHtml(b.imageUrl)+'" alt="" style="max-width:100%;border-radius:8px;margin:6px 0;">';
+if(b.videoUrl)html+='<video controls src="'+escapeHtml(b.videoUrl)+'" style="max-width:100%;border-radius:8px;margin:6px 0;"></video>';
+if(b.error)html+='<div class="error-msg" style="margin-top:6px;">'+escapeHtml(b.error)+'</div>';
+html+='</div>';
+}
+output.innerHTML=html;
+var exportBtn=document.getElementById('visualPackageExportBtn');
+if(exportBtn)exportBtn.disabled=false;
+}
+function exportVisualPackageManifest(){
+var pkg=visualPackageState.result;
+if(!pkg){showToast('Run Visual Package first.');return;}
+var manifest={
+exportedAt:new Date().toISOString(),
+sermonTitle:pkg.title||'',
+themes:pkg.themes||[],
+beats:(pkg.beats||[]).map(function(b){
+return{n:b.n,label:b.label,scripture_ref:b.scripture_ref||'',theme:b.theme||'',image_prompt:b.image_prompt||'',motion_prompt:b.motion_prompt||'',imageUrl:b.imageUrl||'',videoUrl:b.videoUrl||'',error:b.error||''};
+}),
+stitch:{
+order:'beats by n ascending',
+clipUrls:(pkg.beats||[]).filter(function(b){return b.videoUrl;}).map(function(b){return b.videoUrl;}),
+note:'Run: bash scripts/stitch-visual-package.sh manifest.json output.mp4'
+}
+};
+var blob=new Blob([JSON.stringify(manifest,null,2)],{type:'application/json'});
+var a=document.createElement('a');
+a.href=URL.createObjectURL(blob);
+a.download=(pkg.title||'visual-package').replace(/[^\w\-]+/g,'-').slice(0,60)+'-manifest.json';
+a.click();
+URL.revokeObjectURL(a.href);
+showToast('Manifest exported — send clips + manifest here to stitch.');
+}
+async function runVisualPackage(){
+if(visualPackageState.running){showToast('Visual Package already running.');return;}
+if(!currentTopic){showToast('Open a topic first.');return;}
+var sermonText=getSermonTextForVisualPackage();
+if(!sermonText||sermonText.length<200){showToast('Forge the sermon first — Visual Package reads the full text.');return;}
+var beatCount=parseInt(document.getElementById('visualBeatCount').value,10)||5;
+if(beatCount<3)beatCount=3;if(beatCount>8)beatCount=8;
+var wantImages=document.getElementById('visualPkgImages').checked;
+var wantVideos=document.getElementById('visualPkgVideos').checked;
+var wantTitleCard=document.getElementById('visualPkgTitleCard').checked;
+if(!wantImages&&!wantVideos){showToast('Enable images and/or videos.');return;}
+var imageModel=(document.getElementById('kieImageModel')&&document.getElementById('kieImageModel').value)||'gpt-image-2-text-to-image';
+var videoModel=(document.getElementById('kieVideoModel')&&document.getElementById('kieVideoModel').value)||'bytedance/seedance-2-5';
+visualPackageState.running=true;
+visualPackageState.cancelled=false;
+visualPackageState.result=null;
+var runBtn=document.getElementById('visualPackageRunBtn');
+var cancelBtn=document.getElementById('visualPackageCancelBtn');
+var exportBtn=document.getElementById('visualPackageExportBtn');
+if(runBtn)runBtn.disabled=true;
+if(cancelBtn)cancelBtn.style.display='inline-block';
+if(exportBtn)exportBtn.disabled=true;
+var output=document.getElementById('outputVisualPackage');
+output.innerHTML='<div class="visual-package-progress">Step 1/3 — Reading sermon & planning '+beatCount+' beats…</div>';
+try{
+var plan=await extractVisualBeatsFromSermon(sermonText,beatCount,wantTitleCard);
+if(visualPackageState.cancelled)throw new Error('Cancelled');
+var beats=(plan.beats||[]).slice(0,beatCount+(wantTitleCard?1:0));
+for(var bi=0;bi<beats.length;bi++){
+if(!beats[bi].n)beats[bi].n=bi+1;
+beats[bi].imageUrl='';beats[bi].videoUrl='';beats[bi].error='';
+}
+visualPackageState.result={title:plan.title||currentTopic.title,themes:plan.themes||[],beats:beats,imageModel:imageModel,videoModel:videoModel};
+if(wantImages){
+for(var i=0;i<beats.length;i++){
+if(visualPackageState.cancelled)throw new Error('Cancelled');
+setVisualPackageProgress('Step 2/3 — Image '+(i+1)+'/'+beats.length+': '+beats[i].label);
+try{
+var imgUrls=await runKieMediaJobsPromise({kind:'image',model:imageModel,prompt:beats[i].image_prompt,count:1,aspectRatio:'16:9'});
+beats[i].imageUrl=imgUrls[0]||'';
+}catch(imgErr){
+beats[i].error=(beats[i].error?beats[i].error+'; ':'')+String(imgErr.message||imgErr);
+}
+renderVisualPackageResults(visualPackageState.result);
+}
+}
+if(wantVideos){
+for(var v=0;v<beats.length;v++){
+if(visualPackageState.cancelled)throw new Error('Cancelled');
+setVisualPackageProgress('Step 3/3 — Video '+(v+1)+'/'+beats.length+': '+beats[v].label);
+var vidPrompt=beats[v].motion_prompt||beats[v].image_prompt;
+if(!vidPrompt){beats[v].error=(beats[v].error?beats[v].error+'; ':'')+'Missing motion prompt';continue;}
+try{
+var vidUrls=await runKieMediaJobsPromise({kind:'video',model:videoModel,prompt:vidPrompt,count:1,aspectRatio:'16:9'});
+beats[v].videoUrl=vidUrls[0]||'';
+}catch(vidErr){
+beats[v].error=(beats[v].error?beats[v].error+'; ':'')+String(vidErr.message||vidErr);
+}
+renderVisualPackageResults(visualPackageState.result);
+}
+}
+renderVisualPackageResults(visualPackageState.result);
+showToast('Visual Package complete — export manifest or send clips here to stitch.');
+}catch(err){
+if(String(err.message||err).indexOf('Cancelled')!==-1)setVisualPackageProgress('Cancelled.');
+else output.innerHTML='<div class="error-msg">'+escapeHtml(String(err.message||err))+'</div>';
+}finally{
+visualPackageState.running=false;
+if(runBtn)runBtn.disabled=false;
+if(cancelBtn)cancelBtn.style.display='none';
+}
+}
 function generateImagePrompts(){
 if(!currentTopic){showToast('Open a topic first.');return;}
 var count=parseInt(document.getElementById('imageCount').value)||3;
@@ -7545,6 +7778,30 @@ function closeLibraryModal(){
 document.getElementById('libraryModal').classList.remove('open');
 document.body.style.overflow='';
 activeLibIndex=-1;
+}
+function loadLibraryEntryIntoForge(){
+if(activeLibIndex<0){showToast('Open a library sermon first.');return;}
+var entry=sermonLibrary[activeLibIndex];
+if(!entry||!entry.parts||!entry.parts.length){showToast('This library entry has no sermon parts.');return;}
+currentTopic={id:-2,cat:entry.category||'doctrine',title:entry.title,desc:entry.desc||entry.title,fromLibrary:true};
+currentMode=entry.mode||'standard';
+sermonPartsRaw=entry.parts.slice();
+sermonPartsTitles=(entry.partTitles&&entry.partTitles.length)?entry.partTitles.slice():[];
+if(!sermonPartsTitles.length){
+for(var i=0;i<sermonPartsRaw.length;i++){
+sermonPartsTitles.push(extractPartTitle(sermonPartsRaw[i],i+1)||('Part '+(i+1)));
+}
+}
+selectedPartCount=sermonPartsRaw.length;
+sermonSavedThisSession=true;
+visualPackageState.result=null;
+closeLibraryModal();
+openModal({preserveOutput:true,skipPartRec:true,disableGenerateBtn:false});
+renderSermonFromParts();
+var vpBody=document.getElementById('bodyVisualPackage');
+var vpChev=document.getElementById('chevronVisualPackage');
+if(vpBody&&!vpBody.classList.contains('open')){vpBody.classList.add('open');if(vpChev)vpChev.classList.add('open');}
+showToast('Library sermon loaded — set Kie models, then Run Visual Package.');
 }
 function copyLibrarySermon(){
 if(activeLibIndex<0)return;

@@ -21,6 +21,7 @@
     'yahChatModel',
     'newsModel',
     'imagePromptModel',
+    'visualBeatModel',
   ];
 
   function providerFromId(id) {
