@@ -573,7 +573,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <div class="custom-forge-bar">
     <div class="custom-forge-inner">
       <i class="fas fa-pen-fancy custom-forge-icon"></i>
-      <textarea id="customTopicInput" rows="1" placeholder="Enter a topic — or paste scripture with verses (line by line, in order)..." class="custom-forge-input"></textarea>
+      <textarea id="customTopicInput" rows="2" placeholder="Describe what to cover and the tone you want — e.g.&#10;Subject: mark of the beast, digital ID, church fraud&#10;Tone: rough street corner, wake-them-up, no softening&#10;&#10;Or paste scripture with verses (line by line). Ctrl+Enter to forge." class="custom-forge-input"></textarea>
       <button class="custom-forge-btn" id="customForgeBtn" onclick="forgeCustomTopic()"><i class="fas fa-fire"></i> Forge</button>
     </div>
     <div class="custom-forge-inner veil-url-inner">
@@ -3928,6 +3928,7 @@ p+='- Write AT LEAST '+wordsPerPart.toLocaleString()+' words for this '+(totalPa
 p+='- Long exchanges: one exec opens with PR doublespeak, another pushes back with cold math, a third drops the line they would never say on CNBC. Give each speaker multiple turns.\n';
 p+='- Use [BEAT] pauses, side glances, nervous laughter, papers sliding across the table, someone checking their watch -- the boring texture of power, not action-movie pacing.\n';
 p+='- Depth over plot: stay in the ROOM unpacking "'+title+'" from every angle -- who gets fired, who stays, what they call the public, what the spreadsheet says, what the lawyer allows.\n\n';
+if(topic&&topic.id===-1&&!topic.briefingText)p+=buildCustomTopicDirectiveBlock(topic);
 p+='TOPIC LOCK (ZERO TOLERANCE):\n';
 if(chapterSrc){
 p+='- EVERY line must serve unpacking '+chapterSrc.book+' Chapter '+chapterSrc.chapter+' — your assigned verses ONLY (see SCRIPTURE CHAPTER block below).\n';
@@ -4404,21 +4405,22 @@ currentChapterSource=null;
 currentChapterText=null;
 currentChapterVerseCount=0;
 }else{
+var brief=parseCustomTopicBrief(raw);
 var parsed=parseCustomScriptureInput(raw);
 if(parsed.isScripture){
-currentTopic={id:-1,cat:'doctrine',title:parsed.title,desc:'Custom scripture sermon: '+parsed.title};
+currentTopic={id:-1,cat:'doctrine',title:parsed.title,desc:'Custom scripture sermon: '+parsed.title,customBrief:raw,toneHint:brief.tone,subjectHint:''};
 currentMode='standard';
 currentChapterSource={book:parsed.book,chapter:parsed.chapter,type:'custom'};
 currentChapterText=parsed.scriptureText;
 currentChapterVerseCount=parsed.verseCount>0?parsed.verseCount:countVersesInText(parsed.scriptureText);
 }else if(paste.isQuestion){
-currentTopic={id:-1,cat:'doctrine',title:raw,desc:'Direct question — answer precisely: '+raw};
+currentTopic={id:-1,cat:'doctrine',title:raw,desc:brief.tone?('Direct question · Tone: '+brief.tone):('Direct question — answer precisely: '+raw),customBrief:raw,toneHint:brief.tone,subjectHint:raw};
 currentMode='standard';
 currentChapterSource=null;
 currentChapterText=null;
 currentChapterVerseCount=0;
 }else{
-currentTopic={id:-1,cat:'doctrine',title:raw.length>140?paste.headline:raw,desc:'Custom sermon topic: '+raw};
+currentTopic={id:-1,cat:'doctrine',title:brief.headline||raw,desc:formatCustomTopicDesc(brief),customBrief:raw,toneHint:brief.tone,subjectHint:brief.subject};
 currentMode='standard';
 currentChapterSource=null;
 currentChapterText=null;
@@ -4453,7 +4455,15 @@ titleEl.innerHTML+=(' <span class="mode-badge" style="background:rgba(74,124,155
 titleEl.innerHTML+=(' <span class="mode-badge" style="background:rgba(212,160,23,0.15);color:var(--gold);">CUSTOM</span>');
 }
 }
+if(currentTopic.id===-1&&(currentTopic.toneHint||currentTopic.subjectHint)){
+var descParts=[];
+if(currentTopic.subjectHint&&!isDirectQuestionTopic(currentTopic))descParts.push('Cover: '+currentTopic.subjectHint);
+else if(isDirectQuestionTopic(currentTopic))descParts.push('Question: '+currentTopic.title);
+if(currentTopic.toneHint)descParts.push('Tone: '+currentTopic.toneHint);
+descEl.textContent=descParts.length?descParts.join(' · '):currentTopic.desc;
+}else{
 descEl.textContent=currentTopic.desc;
+}
 if(!opts.preserveOutput){
 document.getElementById('sermonOutput').innerHTML='<div class="sermon-placeholder"><i class="fas fa-fire-flame-curved"></i>Configure options, choose your part count, then hit Generate to forge the sermon.</div>';
 }
@@ -5943,6 +5953,76 @@ if((t.match(/[.!?]\s+[A-Z]/g)||[]).length>=4)return true;
 if(t.length>=450&&(t.match(/\b(said|reports|according to|officials|forecast|temperature|heat wave|heatwave|record|degrees|meteorolog|bureau|agency|administration|policy|statement|announced)\b/i)))return true;
 return t.length>=900;
 }
+function parseCustomTopicBrief(raw){
+raw=String(raw||'').trim();
+if(!raw)return {headline:'',subject:'',tone:'',body:'',brief:''};
+var toneRe=/^(tone|voice|style|delivery|vibe|mood|energy|sound like|read like)\s*[:\-–—]\s*(.+)$/i;
+var subjRe=/^(subject|topic|focus|about|talk about|cover|discuss|on|theme|angle)\s*[:\-–—]\s*(.+)$/i;
+var toneParts=[];
+var subjectParts=[];
+var bodyLines=[];
+var lines=raw.split('\n');
+for(var i=0;i<lines.length;i++){
+var line=String(lines[i]||'').trim();
+if(!line)continue;
+var tm=line.match(toneRe);
+if(tm){toneParts.push(tm[2].trim());continue;}
+var sm=line.match(subjRe);
+if(sm){subjectParts.push(sm[2].trim());continue;}
+bodyLines.push(line);
+}
+var body=bodyLines.join('\n').trim();
+if(!subjectParts.length&&bodyLines.length===1){
+var inline=bodyLines[0].match(/^(?:talk about|cover|discuss)\s+(.+?)\s+(?:in\s+(?:a|an)\s+(.+?)\s+tone|with\s+(.+?)\s+(?:energy|delivery))\.?\s*$/i);
+if(inline){
+subjectParts.push(inline[1].trim());
+toneParts.push((inline[2]||inline[3]||'').trim());
+body='';
+}
+}
+var tone=toneParts.join(' ').trim();
+var subject=subjectParts.join(' ').trim();
+if(!subject)subject=body||raw;
+var headline=subject.split('\n')[0]||subject;
+if(headline.length>140){
+var m=headline.match(/^[^.!?]{10,140}[.!?]?/);
+headline=(m?m[0].trim():headline.substring(0,120).trim())+(headline.length>120?'…':'');
+}
+return {headline:headline,subject:subject,tone:tone,body:body,brief:raw};
+}
+function formatCustomTopicDesc(brief){
+if(!brief)return '';
+var parts=[];
+if(brief.subject)parts.push('Cover: '+brief.subject);
+if(brief.tone)parts.push('Tone: '+brief.tone);
+if(parts.length)return parts.join(' · ');
+return 'Custom sermon topic: '+(brief.brief||brief.headline||'');
+}
+function buildCustomTopicDirectiveBlock(topic,opts){
+opts=opts||{};
+if(!topic||topic.id!==-1)return '';
+if(topic.briefingText&&!opts.allowBriefing)return '';
+var tone=topic.toneHint||'';
+var subject=topic.subjectHint||'';
+var brief=topic.customBrief||'';
+if(opts.scriptureOnlyTone){
+if(!tone)return '';
+var p='*** USER TONE DIRECTIVE (PASTED SCRIPTURE) ***\n';
+p+='The user set delivery tone in the topic bar. Match this tone while walking the pasted scripture verse by verse:\n';
+p+=tone+'\n\n';
+p+='Tone stacks with active voice toggles — it does NOT replace Yah Story, Rough Bez, Explicit, or other locks.\n\n';
+return p;
+}
+if(!tone&&!brief&&!subject)return '';
+if(!subject)subject=(topic.title||'').trim();
+var p='*** USER TOPIC DIRECTIVE (HIGHEST PRIORITY FOR SUBJECT & TONE) ***\n';
+p+='The user typed this in the forge topic bar. Honor WHAT to cover and HOW to sound. Voice toggles (Yah Story, Rough Bez, Explicit, etc.) still apply — user tone stacks on top; it does NOT replace them.\n\n';
+if(subject&&!isDirectQuestionTopic(topic))p+='COVER / TALK ABOUT:\n'+subject+'\n\n';
+if(tone)p+='TONE / DELIVERY:\n'+tone+'\n\n';
+if(brief&&brief!==subject&&brief!==tone)p+='FULL USER BRIEF (reference — weave in, do not paste verbatim as one block):\n'+brief+'\n\n';
+p+='Stay locked on the user subject. Match their requested tone in every paragraph.\n\n';
+return p;
+}
 function parseCustomTopicPaste(raw){
 raw=String(raw||'').trim();
 if(!raw)return {headline:'',body:'',isBriefing:false,isQuestion:false};
@@ -6389,6 +6469,10 @@ p+='VERSE COVERAGE: Walk every assigned verse in exact order. Miss nothing. Each
 }
 if(topic&&topic.briefingText)p+=buildPastedBriefingSermonBlock(topic);
 else if(directQuestion)p+=buildDirectQuestionSermonBlock(topic,partNum,totalParts);
+if(topic&&topic.id===-1){
+if(chapterSrc&&chapterSrc.type==='custom')p+=buildCustomTopicDirectiveBlock(topic,{scriptureOnlyTone:true});
+else if(!topic.briefingText)p+=buildCustomTopicDirectiveBlock(topic);
+}
 p+=''+(wantRoughBez?(totalParts===1?'SERMON':'PART '+partNum):(totalParts===1?'EPISODE':'PART '+partNum))+' FOCUS:\n'+partFocus+'\n\n';
 if(chapterSrc){
 p+='SOURCE: '+chapterSrc.book+' Chapter '+chapterSrc.chapter+'.\n';
