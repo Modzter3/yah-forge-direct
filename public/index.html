@@ -2791,11 +2791,27 @@ if(!text)return 0;
 var m=String(text).match(/\[(?:shouts?|whispers?|softly|laughs|sighs|gasps|scoffs|booming|sarcastically|sad|angry|excited|tired|upset|sorrowful|awe|happily|worried|surprised|furious|heartbroken|disgusted|passionate|intense|tender|broken|exhausted|desperate|mocking|bitter|solemn|commanding|intimate|grief|wrath|trembling|stunned|cold|heated)\]/gi);
 return m?m.length:0;
 }
+function getElevenTaggedBodyParagraphs(text){
+var body=String(text||'').trim().replace(/^#\s+.+\n+/m,'');
+return body.split(/\n\s*\n/).map(function(p){return p.trim();}).filter(function(p){
+return p.length>=80&&!/^#+\s/.test(p);
+});
+}
+function looksLikeParagraphsMissingElevenEmotion(text){
+var paras=getElevenTaggedBodyParagraphs(text);
+if(paras.length<1)return false;
+var emotionRx=/\[(?:shouts?|whispers?|softly|laughs|sighs|gasps|scoffs|booming|sarcastically|sad|angry|excited|tired|upset|sorrowful|awe|happily|worried|surprised|furious|heartbroken|disgusted|passionate|intense|tender|broken|exhausted|desperate|mocking|bitter|solemn|commanding|intimate|grief|wrath|trembling|stunned|cold|heated|clears throat|drawn out|rushed|emphasized)\]/i;
+for(var i=0;i<paras.length;i++){
+if(!emotionRx.test(paras[i]))return true;
+}
+return false;
+}
 function looksLikeMissingElevenTags(text){
 if(!isElevenLabsTagsEnabled()||isTheatreModeActive())return false;
 if(!text)return false;
 var t=String(text).trim();
 if(t.length<500)return false;
+if(looksLikeParagraphsMissingElevenEmotion(t))return true;
 var tags=countElevenV3PerformanceTags(t);
 var emotion=countElevenEmotionTags(t);
 var pauses=(t.match(/\[pause\]/gi)||[]).length;
@@ -2810,7 +2826,8 @@ function buildElevenLabsV3AudioTagsBlock(persona){
 var isBez=persona==='bez';
 var p='*** ELEVEN v3 AUDIO TAGS — MANDATORY MEDIUM DENSITY + REAL EMOTION ***\n';
 p+='ZERO TOLERANCE: Plain untagged prose is FAILED output. This part is written FOR ElevenLabs Eleven v3 — the listener must FEEL anger, grief, urgency, tenderness, contempt, and fire through the tags. Sparse [pause]-only tagging is UNACCEPTABLE.\n\n';
-p+='MEDIUM DENSITY (NOT SPARSE): Aim for 2-4 performance tags per body paragraph — woven through the whole part, not clustered in one section. Tag emotional TURNS: when tone, volume, breath, or feeling shifts. Never tag the # title line. Tags start in paragraph one and run through the close.\n\n';
+p+='EVERY PARAGRAPH RULE (ZERO EXCEPTIONS): EVERY body paragraph must carry emotion — minimum one feeling tag per paragraph, aim for 2-3. Write it like YOU are standing there reading it aloud to one person: your breath catches, your voice drops to a whisper, your chest tightens, you spike on judgment, you sigh when the weight hits. If a paragraph has zero emotion tags, the whole part FAILED.\n\n';
+p+='MEDIUM DENSITY: Tags woven through the whole part — not clustered in one section. Tag every emotional TURN: tone, volume, breath, contempt, grief, urgency, tenderness. Never tag the # title line.\n\n';
 p+='EMOTION FIRST (NOT JUST [pause]): At least half your tags must carry FEELING — [angry], [sorrowful], [tired], [upset], [whispers], [shouts], [scoffs], [sighs], [bitter], [passionate], [heartbroken], [furious], [intimate], [wrath], [grief], [exhausted], [mocking], [awe]. [pause] and [drawn out] are pacing tools — use them WITH emotion tags, not instead of them.\n\n';
 p+='HOW TAGS WORK (Eleven v3):\n';
 p+='- Format: [natural-language cue] inline with speech, e.g. [angry], [whispers], [sighs], [shouts].\n';
@@ -2824,8 +2841,8 @@ p+='Delivery & volume: [whispers], [shouts], [softly], [booming], [sarcastically
 p+='Human reactions: [laughs], [sighs], [clears throat], [gasps], [scoffs], [trembling], [stunned].\n';
 p+='Pacing (supplement only): [pause] — never let [pause] be your only tag in a paragraph.\n';
 p+='Skip accent tags and sound-effect tags ([gunshot], [explosion]).\n\n';
-p+='MEDIUM-DENSITY PLACEMENT (ALL VOICES):\n';
-p+='- Every paragraph with rebuke, decode, naming, or judgment needs at least ONE emotion tag — usually two or three at the peaks.\n';
+p+='LIVE-READ PLACEMENT (ALL VOICES):\n';
+p+='- Read it in your head as you write: would YOU whisper here? shout here? sigh here? tag that moment. Every paragraph gets at least one emotion tag — usually two or three where the feeling spikes.\n';
 p+='- Tag the FEELING before the line lands: [angry] before the accusation, [whispers] before the intimate truth, [scoffs] before exposing the lie, [sighs] before exhaustion breaks through.\n';
 p+='- Vary tags — never stack five [pause] tags in a row. Rotate [angry], [whispers], [shouts], [sorrowful], [tired], [bitter], [passionate].\n';
 p+='- Combine with punctuation: [furious] You sat in that pew… [pause] …while they sold your name.\n';
@@ -2862,8 +2879,8 @@ return p;
 function buildElevenTagsDriftCorrectionPrompt(partNum,badReply){
 var p='ELEVEN v3 TAG CHECK FAILED — FULL REWRITE REQUIRED (Part '+partNum+' ONLY):\n';
 p+='Eleven Tags toggle is ON. Your previous output was too SPARSE, too FLAT, or [pause]-heavy with no EMOTION. Plain prose or robotic pacing is UNACCEPTABLE.\n\n';
-p+='FORBIDDEN: Untagged paragraphs, sparse tagging, or mostly [pause] with no feeling.\n';
-p+='REQUIRED — MEDIUM DENSITY + EMOTION: 2-4 tags per paragraph. Lead with [angry], [sorrowful], [whispers], [shouts], [tired], [bitter], [passionate], [scoffs], [sighs], [furious], [heartbroken], [intimate], [wrath], [grief] — not just [pause]. The sermon must sound ALIVE in Eleven v3.\n\n';
+p+='FORBIDDEN: ANY body paragraph with zero emotion tags, sparse tagging, or mostly [pause] with no feeling.\n';
+p+='REQUIRED — EVERY PARAGRAPH EMOTION: Minimum one feeling tag in EVERY body paragraph (aim 2-3). Lead with [angry], [sorrowful], [whispers], [shouts], [tired], [bitter], [passionate], [scoffs], [sighs], [furious], [heartbroken], [intimate], [wrath], [grief]. Write like you are reading it aloud yourself — breath, grit, whisper, fire.\n\n';
 p+='BAD OUTPUT (too few tags):\n"'+String(badReply||'').slice(0,700).replace(/"/g,"'")+'..."\n\n';
 p+=buildPartPrompt(partNum);
 return p;
@@ -7020,7 +7037,7 @@ p+='- No \x3cthink>, \x3cthinking>, \x3cthought>, \x3creasoning>, \x3creflection
 p+='- No **Thinking** or **Reasoning** markdown headers followed by your internal thoughts.\n';
 p+='- No [Thinking] or [Internal reasoning] bracket blocks.\n';
 if(isElevenLabsTagsEnabled()){
-p+='- ELEVEN v3 TAGS — MANDATORY MEDIUM DENSITY + EMOTION (toggle ON): Embed inline [bracket] performance tags throughout EVERY body paragraph — 2-4 tags per paragraph. Lead with FEELING: [angry], [sorrowful], [whispers], [shouts], [tired], [bitter], [passionate], [scoffs], [furious], [heartbroken], [intimate], [wrath], [grief] — NOT just [pause]. Tags are ElevenLabs direction, NOT spoken words. Never tag the # title. Sparse or flat tagging is FAILED output.\n';
+p+='- ELEVEN v3 TAGS — EVERY PARAGRAPH EMOTION (toggle ON): EVERY body paragraph must have at least one feeling tag (aim 2-3) — [angry], [sorrowful], [whispers], [shouts], [tired], [bitter], [passionate], [scoffs], [furious], [heartbroken], [intimate], [wrath], [grief]. Write like you are reading it aloud yourself. NOT just [pause]. Any untagged paragraph = FAILED output.\n';
 }else{
 p+='- ABSOLUTELY NO BRACKET TAGS OF ANY KIND. No [pause], [angry], [laughs], [whispers], [scoffs], [sighs], [booming], [dramatic tone], or ANY text inside square brackets that acts as a stage direction, emotion cue, or sound effect. Square brackets are ONLY permitted for actual content like [citation] references. If you include even ONE bracket stage direction tag, the ENTIRE output is ruined. This is a written document, not a voice script.\n';
 }
@@ -7034,7 +7051,7 @@ if(wantYahStory)tagPersona='yah';
 p+='\n';
 p+=buildElevenLabsV3AudioTagsBlock(tagPersona);
 p+='*** FINAL LOCK — ELEVEN v3 TAGS (LAST INSTRUCTION BEFORE OUTPUT) ***\n';
-p+='Eleven Tags is ON — MEDIUM DENSITY, REAL EMOTION. Your VERY NEXT tokens: # title, then body paragraphs WITH feeling tags from paragraph one. Every paragraph gets 2-4 tags at emotional turns. Lead with [angry], [whispers], [shouts], [sorrowful], [tired], [scoffs], [passionate] — not a flat essay sprinkled with [pause]. Self-check: if any paragraph has zero tags, or tags are mostly [pause] with no emotion, REWRITE before output.\n\n';
+p+='Eleven Tags is ON — EVERY PARAGRAPH EMOTION. Your VERY NEXT tokens: # title, then body paragraphs where EVERY paragraph has feeling tags — like you are standing there reading it yourself. Minimum one emotion tag per paragraph (aim 2-3). [angry], [whispers], [shouts], [sorrowful], [tired], [scoffs], [passionate], [sighs], [furious]. Self-check paragraph by paragraph: zero emotion tags in ANY paragraph = REWRITE.\n\n';
 }
 return p;
 }
