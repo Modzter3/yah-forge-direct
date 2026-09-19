@@ -1160,7 +1160,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch"><input type="checkbox" id="toggleRoughBez"><span class="toggle-track rough-track"></span><span><i class="fas fa-bullhorn" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Rough Bezaleel</span></label>
       <label class="toggle-switch" id="toggleStoryModeWrap" title="Yah first-person revelation cadence — anti-chatbot live voice, names culprits/institutions directly, dated headlines"><input type="checkbox" id="toggleStoryMode"><span class="toggle-track story-track"></span><span><i class="fas fa-book-open" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Yah Story</span></label>
       <label class="toggle-switch" id="toggleBezStoryModeWrap" title="Bez revelation cadence — street fire, grammatically sound English, names culprits by full name and what they do (no vague they/the elites)"><input type="checkbox" id="toggleBezStoryMode"><span class="toggle-track bez-story-track"></span><span><i class="fas fa-book-open" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Bez Story</span></label>
-      <label class="toggle-switch" id="toggleElevenLabsTagsWrap" title="Eleven v3 audio tags — inline [bracket] performance cues woven into the sermon for TTS (Yah or Bez persona-aware)"><input type="checkbox" id="toggleElevenLabsTags"><span class="toggle-track" style="background:linear-gradient(135deg,#1a3a2a,#2a6a4a);"></span><span><i class="fas fa-waveform-lines" style="color:#7ec8a0;margin-right:3px;font-size:0.7rem;"></i>Eleven Tags</span></label>
+      <label class="toggle-switch" id="toggleElevenLabsTagsWrap" title="Eleven v3 medium-density emotional tags — [angry], [whispers], [shouts], etc. woven through every paragraph for TTS"><input type="checkbox" id="toggleElevenLabsTags"><span class="toggle-track" style="background:linear-gradient(135deg,#1a3a2a,#2a6a4a);"></span><span><i class="fas fa-waveform-lines" style="color:#7ec8a0;margin-right:3px;font-size:0.7rem;"></i>Eleven Tags</span></label>
       <label class="toggle-switch" id="toggleSermonEpisodeModeWrap" title="TV season episode-by-episode breakdown across parts"><input type="checkbox" id="toggleSermonEpisodeMode"><span class="toggle-track"></span><span><i class="fas fa-tv" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Episode Mode</span></label>
       <label class="toggle-switch" title="Live web search: verify facts, find recent news with exact dates, weave dated headlines into the sermon (silent — no URLs in output)"><input type="checkbox" id="toggleWebResearch" checked><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
       <label class="toggle-switch" id="toggleBehindTheVeilWrap" title="News-triggered closed-door drama: real headlines → dramatized meeting where sector elites plot the beast-system policy (prophetic illustration, not leaked intel)"><input type="checkbox" id="toggleBehindTheVeil"><span class="toggle-track" style="background:linear-gradient(135deg,#4a1a6a,#8B1A1A);"></span><span><i class="fas fa-door-closed" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Behind the Veil</span></label>
@@ -2783,7 +2783,12 @@ return el&&el.checked;
 }
 function countElevenV3PerformanceTags(text){
 if(!text)return 0;
-var m=String(text).match(/\[(?:pause|shouts?|whispers?|softly|laughs|sighs|clears throat|gasps|scoffs|booming|emphasized|drawn out|rushed|sarcastically|sad|angry|excited|tired|upset|sorrowful|awe|happily|worried|surprised|beginning to speak|coughing)\]/gi);
+var m=String(text).match(/\[(?:pause|shouts?|whispers?|softly|laughs|sighs|clears throat|gasps|scoffs|booming|emphasized|drawn out|rushed|sarcastically|sad|angry|excited|tired|upset|sorrowful|awe|happily|worried|surprised|beginning to speak|coughing|furious|heartbroken|disgusted|passionate|intense|tender|broken|exhausted|desperate|mocking|bitter|solemn|commanding|intimate|grief|wrath|trembling|stunned|cold|heated)\]/gi);
+return m?m.length:0;
+}
+function countElevenEmotionTags(text){
+if(!text)return 0;
+var m=String(text).match(/\[(?:shouts?|whispers?|softly|laughs|sighs|gasps|scoffs|booming|sarcastically|sad|angry|excited|tired|upset|sorrowful|awe|happily|worried|surprised|furious|heartbroken|disgusted|passionate|intense|tender|broken|exhausted|desperate|mocking|bitter|solemn|commanding|intimate|grief|wrath|trembling|stunned|cold|heated)\]/gi);
 return m?m.length:0;
 }
 function looksLikeMissingElevenTags(text){
@@ -2792,32 +2797,39 @@ if(!text)return false;
 var t=String(text).trim();
 if(t.length<500)return false;
 var tags=countElevenV3PerformanceTags(t);
-var min=Math.max(6,Math.floor(t.length/650));
-return tags<min;
+var emotion=countElevenEmotionTags(t);
+var pauses=(t.match(/\[pause\]/gi)||[]).length;
+var minTags=Math.max(14,Math.floor(t.length/450));
+var minEmotion=Math.max(10,Math.floor(minTags*0.55));
+if(tags<minTags)return true;
+if(emotion<minEmotion)return true;
+if(pauses>Math.max(4,tags*0.35))return true;
+return false;
 }
 function buildElevenLabsV3AudioTagsBlock(persona){
 var isBez=persona==='bez';
-var p='*** ELEVEN v3 AUDIO TAGS — MANDATORY (ELEVEN TAGS TOGGLE IS ON) ***\n';
-p+='ZERO TOLERANCE: A sermon with no inline [bracket] tags is FAILED output. This entire part MUST be written FOR ElevenLabs Eleven v3 TTS — embed performance tags in square brackets wherever delivery shifts. The TTS engine reads tags as direction, NOT as words to speak aloud.\n\n';
-p+='MINIMUM DENSITY: Roughly one tag every two to four sentences in body paragraphs (minimum ~6 tags per part, more for longer parts). Never tag the # title line. Tags begin in the first body paragraph and continue through the close.\n\n';
+var p='*** ELEVEN v3 AUDIO TAGS — MANDATORY MEDIUM DENSITY + REAL EMOTION ***\n';
+p+='ZERO TOLERANCE: Plain untagged prose is FAILED output. This part is written FOR ElevenLabs Eleven v3 — the listener must FEEL anger, grief, urgency, tenderness, contempt, and fire through the tags. Sparse [pause]-only tagging is UNACCEPTABLE.\n\n';
+p+='MEDIUM DENSITY (NOT SPARSE): Aim for 2-4 performance tags per body paragraph — woven through the whole part, not clustered in one section. Tag emotional TURNS: when tone, volume, breath, or feeling shifts. Never tag the # title line. Tags start in paragraph one and run through the close.\n\n';
+p+='EMOTION FIRST (NOT JUST [pause]): At least half your tags must carry FEELING — [angry], [sorrowful], [tired], [upset], [whispers], [shouts], [scoffs], [sighs], [bitter], [passionate], [heartbroken], [furious], [intimate], [wrath], [grief], [exhausted], [mocking], [awe]. [pause] and [drawn out] are pacing tools — use them WITH emotion tags, not instead of them.\n\n';
 p+='HOW TAGS WORK (Eleven v3):\n';
-p+='- Format: [natural-language cue] inline with speech, e.g. [laughs], [whispers], [excited], [pause].\n';
-p+='- Tags sit IN the paragraph flow -- before, after, or mid-sentence where the moment turns.\n';
-p+='- Multiple tags in one sentence are allowed for layered performance, e.g. [tired] It has been a long exile… [angry] How much longer will you sleep?\n';
-p+='- v3 does NOT use SSML. Tags + punctuation shape pacing: ellipsis (…) for trailing pause, commas for breath, CAPS for emphasis, line breaks for longer beats, or [pause] for an explicit hold.\n';
-p+='- Tags are performance direction. Do NOT explain tags. Do NOT list tag categories in the output. Do NOT wrap the whole sermon in tags.\n\n';
-p+='TAG TOOLKIT (use strategically -- not every sentence):\n';
-p+='Emotions: [sad], [angry], [happily], [sorrowful], [excited], [worried], [surprised], [awe], [tired], [upset].\n';
-p+='Delivery & pacing: [whispers], [shouts], [softly], [sarcastically], [rushed], [drawn out], [pause], [emphasized], [booming].\n';
-p+='Human reactions: [laughs], [sighs], [clears throat], [gasps], [scoffs], [coughing], [beginning to speak].\n';
-p+='Skip accent tags and sound-effect tags ([gunshot], [explosion]) -- this is prophetic speech, not drama SFX.\n\n';
-p+='STRATEGIC PLACEMENT RULES (ALL VOICES):\n';
-p+='- Tag ONLY where a real human standing in front of one listener would shift tone, breath, volume, or reaction. If the line reads fine without a tag, leave it untagged.\n';
-p+='- Aim for roughly one to four tags per dense paragraph at emotional peaks -- not a tag on every clause.\n';
-p+='- Place tags at TRANSITIONS: rebuke landing, truth dropping, grief breaking through, sarcasm at a lie, whispered intimacy, shout on judgment, sigh after exhaustion.\n';
-p+='- Combine tags with punctuation: [pause] before a decree… or CAPS on the word that must land.\n';
-p+='- Never tag the title line. Tags begin in the body paragraphs.\n';
-p+='- Do NOT paste example tag lines from this prompt. Invent fresh placement every sermon.\n\n';
+p+='- Format: [natural-language cue] inline with speech, e.g. [angry], [whispers], [sighs], [shouts].\n';
+p+='- Tags sit IN the paragraph flow — before, after, or mid-sentence where the feeling turns.\n';
+p+='- Layer tags when the moment demands it: [tired] I watched your mama sign that lease… [angry] and you still call it church.\n';
+p+='- v3 does NOT use SSML. Tags + punctuation shape pacing: ellipsis (…) for trailing pause, CAPS for emphasis, [pause] for a held beat — but EMOTION tags drive the performance.\n';
+p+='- Do NOT explain tags. Do NOT list tag categories in the output.\n\n';
+p+='TAG TOOLKIT — USE EMOTION HEAVY:\n';
+p+='Core emotions: [angry], [sorrowful], [sad], [upset], [tired], [exhausted], [passionate], [furious], [heartbroken], [bitter], [grief], [wrath], [awe], [intimate], [tender], [desperate], [mocking], [disgusted], [excited], [worried], [surprised].\n';
+p+='Delivery & volume: [whispers], [shouts], [softly], [booming], [sarcastically], [rushed], [drawn out], [emphasized], [cold], [heated], [commanding].\n';
+p+='Human reactions: [laughs], [sighs], [clears throat], [gasps], [scoffs], [trembling], [stunned].\n';
+p+='Pacing (supplement only): [pause] — never let [pause] be your only tag in a paragraph.\n';
+p+='Skip accent tags and sound-effect tags ([gunshot], [explosion]).\n\n';
+p+='MEDIUM-DENSITY PLACEMENT (ALL VOICES):\n';
+p+='- Every paragraph with rebuke, decode, naming, or judgment needs at least ONE emotion tag — usually two or three at the peaks.\n';
+p+='- Tag the FEELING before the line lands: [angry] before the accusation, [whispers] before the intimate truth, [scoffs] before exposing the lie, [sighs] before exhaustion breaks through.\n';
+p+='- Vary tags — never stack five [pause] tags in a row. Rotate [angry], [whispers], [shouts], [sorrowful], [tired], [bitter], [passionate].\n';
+p+='- Combine with punctuation: [furious] You sat in that pew… [pause] …while they sold your name.\n';
+p+='- Never tag the title line. Tags begin in body paragraphs.\n\n';
 if(isBez){
 p+='BEZ PERSONA -- WHERE AND WHEN TO TAG:\n';
 p+='You are Brother Bet in the struggle -- live, human, mid-rebuke, not a teleprompter. Tags should sound like a real man whose chest is tight and who might clock in tomorrow.\n';
@@ -2840,18 +2852,18 @@ p+='- [pause] / [drawn out]: Before a judgment lands, before a prophetic NAME is
 p+='- [sorrowful] / [sad]: Lament over Israel\'s sleep, betrayal, lost identity -- not weakness, divine grief.\n';
 p+='- [angry]: Righteous fire at merchants, harlots, false shepherds -- controlled, not chaotic.\n';
 p+='- [awe]: When creation, covenant, or remembrance opens something too big for casual speech.\n';
-p+='- [sighs]: Rare -- when My patience strains and still I call them back.\n';
-p+='- [gasps] / [surprised]: When exposing a hidden lie they thought was sacred.\n';
-p+='Yah tags alternate LONG remembrance runs with SHORT command tags -- vary rhythm; never the same tag pattern twice in a row.\n\n';
+p+='- [sighs] / [grief]: When My patience strains over Israel\'s sleep — divine grief, not weakness.\n';
+p+='- [gasps] / [surprised] / [wrath]: When exposing a lie they thought was sacred.\n';
+p+='Yah tags alternate thunder and whisper — [booming] decree into [intimate] remembrance into [furious] judgment. Medium density throughout; never flat.\n\n';
 }
-p+='OUTPUT LOCK: Write the full sermon WITH TAGS in every paragraph — not a plain essay you tag later. The listener should hear a LIVE human (Bez) or LIVE Almighty (Yah). Tags are invisible scaffolding for Eleven v3. If you finish and count fewer than six [bracket] tags in this part, you failed.\n\n';
+p+='OUTPUT LOCK: Write the full sermon WITH EMOTIONAL TAGS in every paragraph — medium density, not sparse. The listener must HEAR feeling in Eleven v3. If your tags are mostly [pause] with no [angry]/[whispers]/[shouts]/[sorrowful]/[tired]/[scoffs], you failed. If any body paragraph has zero tags, you failed.\n\n';
 return p;
 }
 function buildElevenTagsDriftCorrectionPrompt(partNum,badReply){
 var p='ELEVEN v3 TAG CHECK FAILED — FULL REWRITE REQUIRED (Part '+partNum+' ONLY):\n';
-p+='Eleven Tags toggle is ON. Your previous output had ZERO or far too few inline [bracket] performance tags. Plain prose without tags is UNACCEPTABLE.\n\n';
-p+='FORBIDDEN: Untagged sermon body, or only one or two tags in the whole part.\n';
-p+='REQUIRED: [pause], [whispers], [shouts], [sighs], [clears throat], [angry], [booming], [drawn out], etc. woven through EVERY paragraph at emotional turns — minimum ~6 tags, more for longer parts.\n\n';
+p+='Eleven Tags toggle is ON. Your previous output was too SPARSE, too FLAT, or [pause]-heavy with no EMOTION. Plain prose or robotic pacing is UNACCEPTABLE.\n\n';
+p+='FORBIDDEN: Untagged paragraphs, sparse tagging, or mostly [pause] with no feeling.\n';
+p+='REQUIRED — MEDIUM DENSITY + EMOTION: 2-4 tags per paragraph. Lead with [angry], [sorrowful], [whispers], [shouts], [tired], [bitter], [passionate], [scoffs], [sighs], [furious], [heartbroken], [intimate], [wrath], [grief] — not just [pause]. The sermon must sound ALIVE in Eleven v3.\n\n';
 p+='BAD OUTPUT (too few tags):\n"'+String(badReply||'').slice(0,700).replace(/"/g,"'")+'..."\n\n';
 p+=buildPartPrompt(partNum);
 return p;
@@ -5406,7 +5418,7 @@ ctx.elevenTagsRetryCount++;
 ctx.partContent='';
 ctx.partContentBeforeContinue='';
 ctx.continuationCount=0;
-showToast('Missing Eleven v3 tags — redoing '+getForgePartLabel(partNum,false)+'...');
+showToast('Eleven tags too sparse/flat — redoing '+getForgePartLabel(partNum,false)+'...');
 startSermonPartStream(partNum,false,{elevenTagsCorrection:true,badSample:finalized});
 return;
 }
@@ -7008,7 +7020,7 @@ p+='- No \x3cthink>, \x3cthinking>, \x3cthought>, \x3creasoning>, \x3creflection
 p+='- No **Thinking** or **Reasoning** markdown headers followed by your internal thoughts.\n';
 p+='- No [Thinking] or [Internal reasoning] bracket blocks.\n';
 if(isElevenLabsTagsEnabled()){
-p+='- ELEVEN v3 TAGS ARE MANDATORY (Eleven Tags toggle ON): Embed inline [bracket] performance tags throughout the sermon body — [pause], [whispers], [shouts], [sighs], [clears throat], [angry], [booming], [drawn out], etc. Tags are ElevenLabs direction cues, NOT spoken words. Never tag the # title line. Minimum ~6 tags per part (more for longer parts). A sermon with zero tags or only one or two tags is FAILED output.\n';
+p+='- ELEVEN v3 TAGS — MANDATORY MEDIUM DENSITY + EMOTION (toggle ON): Embed inline [bracket] performance tags throughout EVERY body paragraph — 2-4 tags per paragraph. Lead with FEELING: [angry], [sorrowful], [whispers], [shouts], [tired], [bitter], [passionate], [scoffs], [furious], [heartbroken], [intimate], [wrath], [grief] — NOT just [pause]. Tags are ElevenLabs direction, NOT spoken words. Never tag the # title. Sparse or flat tagging is FAILED output.\n';
 }else{
 p+='- ABSOLUTELY NO BRACKET TAGS OF ANY KIND. No [pause], [angry], [laughs], [whispers], [scoffs], [sighs], [booming], [dramatic tone], or ANY text inside square brackets that acts as a stage direction, emotion cue, or sound effect. Square brackets are ONLY permitted for actual content like [citation] references. If you include even ONE bracket stage direction tag, the ENTIRE output is ruined. This is a written document, not a voice script.\n';
 }
@@ -7022,7 +7034,7 @@ if(wantYahStory)tagPersona='yah';
 p+='\n';
 p+=buildElevenLabsV3AudioTagsBlock(tagPersona);
 p+='*** FINAL LOCK — ELEVEN v3 TAGS (LAST INSTRUCTION BEFORE OUTPUT) ***\n';
-p+='Eleven Tags is ON. Your VERY NEXT tokens after this prompt must be the # title, then body paragraphs WITH inline [bracket] tags woven in from the first paragraph. Do NOT output plain prose and skip tags. Self-check before finishing: count your [pause]/[whispers]/[shouts]/[sighs] tags — if fewer than six in this part, add more at rebukes, whispers, judgment spikes, and pauses before names and verses.\n\n';
+p+='Eleven Tags is ON — MEDIUM DENSITY, REAL EMOTION. Your VERY NEXT tokens: # title, then body paragraphs WITH feeling tags from paragraph one. Every paragraph gets 2-4 tags at emotional turns. Lead with [angry], [whispers], [shouts], [sorrowful], [tired], [scoffs], [passionate] — not a flat essay sprinkled with [pause]. Self-check: if any paragraph has zero tags, or tags are mostly [pause] with no emotion, REWRITE before output.\n\n';
 }
 return p;
 }
