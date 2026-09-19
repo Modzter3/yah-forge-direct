@@ -2586,18 +2586,25 @@ return !!(el&&el.checked);
 }
 function buildExplicitBrimstoneFireBlock(opts){
 opts=opts||{};
+var finalLock=!!opts.finalLock;
+if(finalLock){
+var fp='*** FINAL LOCK — EXPLICIT BRIMSTONE (LAST INSTRUCTION) ***\n';
+fp+='Explicit is ON. Write like YOU are standing there preaching it — brimstone from title to last sentence. EVERY body paragraph: profanity or raw judgment, graphic wrath where scripture demands, direct YOU-facing rebuke. Middle and close match opening heat. Zero neutral paragraphs.\n\n';
+return fp;
+}
 var wantRoughBez=!!opts.wantRoughBez;
 var wantBezStory=!!opts.wantBezStory;
 var wantYahStory=!!opts.wantYahStory;
 var wantIsraelite=!!opts.wantIsraelite;
 var context=opts.context||'sermon';
 var p='*** EXPLICIT BRIMSTONE MODE -- SUSTAINED FIRE FROM FIRST PARAGRAPH TO LAST ***\n';
-p+='This output MUST read like a corner preacher who NEVER lets the congregation breathe easy. NO opening burst then cooling into essay, seminary, or lesson voice. EVERY paragraph stays wake-them-up pressure until the final sentence.\n\n';
+p+='This output MUST read like YOU preaching a wake-them-up brimstone sermon aloud — corner preacher heat that NEVER cools into essay, seminary, or comfortable lesson voice. EVERY paragraph stays wake-them-up pressure until the final sentence.\n\n';
 p+='SUSTAINED HEAT (NON-NEGOTIABLE):\n';
+p+='- EVERY body paragraph carries brimstone — not just the open. Read it in your head as you write: would YOU still be shouting, whispering judgment, or spitting contempt in THIS paragraph?\n';
 p+='- Paragraph ONE sets the fire; paragraph TWO through the LAST must stay at the SAME heat or HIGHER -- never lower.\n';
 p+='- Forbidden mid-sermon tone shifts: street fire -> neutral teaching -> comfortable lesson -> "three points" recap.\n';
 p+='- Forbidden closers that sound like a seminary paper, podcast sign-off, or therapeutic softening.\n';
-p+='- If a paragraph lacks profane/raw judgment pressure OR visceral wrath imagery, it FAILED -- rewrite that paragraph hotter.\n\n';
+p+='- If ANY paragraph lacks profane/raw judgment pressure OR visceral wrath imagery, it FAILED -- rewrite that paragraph hotter before moving on.\n\n';
 p+='PROFANITY & RAW JUDGMENT:\n';
 p+='- Heavy profanity woven through EVERY section -- damn, hell, ass, shit, bullshit, fuck, motherfucker, bitch, horseshit -- not just the opening.\n';
 p+='- Call liars liars. Call sleeping Israel out by name. Street judgment when scripture demands it.\n';
@@ -2825,85 +2832,9 @@ p+='- Sound human AND fill the full part length the forge assigned. Multi-part f
 p+='- If you stop early you failed. Expand with more scripture decode, more lived pressure, more memory -- not padding, not repetition, not catchphrase loops.\n\n';
 return p;
 }
-function isExplicitModeEnabled(){
-var el=document.getElementById('toggleExplicit');
-return !!(el&&el.checked);
-}
 function isElevenLabsTagsEnabled(){
 var el=document.getElementById('toggleElevenLabsTags');
 return el&&el.checked;
-}
-var EXPLICIT_BRIMSTONE_RX=/\b(damn|hell|ass|shit|bullshit|fuck|fucking|motherfucker|bitch|bastard|horseshit|whore|whoring|punk-ass|dumb-ass|lying-ass|blood|skull|flesh|burn|rot|gag|napalm|wail|scream|gore|rip|hellfire|brimstone)\b/gi;
-function countExplicitBrimstoneMarkers(text){
-if(!text)return 0;
-var m=String(text).match(EXPLICIT_BRIMSTONE_RX);
-return m?m.length:0;
-}
-function looksLikeExplicitModeCooling(text){
-if(!isExplicitModeEnabled()||isTheatreModeActive())return false;
-if(!text)return false;
-var t=String(text).trim();
-if(t.length<800)return false;
-if(looksLikeRoughBezEssaySoftening(t))return true;
-if(looksLikeSermonFlashDrift(t,1,1))return true;
-var len=t.length;
-var total=countExplicitBrimstoneMarkers(t);
-var minTotal=Math.max(10,Math.floor(len/850));
-if(total<minTotal)return true;
-var third=Math.floor(len/3);
-var openHits=countExplicitBrimstoneMarkers(t.slice(0,third));
-var closeHits=countExplicitBrimstoneMarkers(t.slice(third*2));
-if(openHits>=5&&closeHits<Math.max(3,Math.floor(openHits*0.4)))return true;
-var body=t.replace(/^#\s+.+\n+/m,'');
-var paras=body.split(/\n\s*\n/).map(function(p){return p.trim();}).filter(function(p){return p.length>=100&&!/^#/.test(p);});
-if(paras.length>=3){
-var cold=0;
-for(var i=0;i<paras.length;i++){
-var hasFire=EXPLICIT_BRIMSTONE_RX.test(paras[i]);
-var youFacing=/\b(you|your)\b/i.test(paras[i]);
-if(!hasFire&&(!youFacing||paras[i].length>220))cold++;
-}
-if(cold>=Math.ceil(paras.length*0.3))return true;
-}
-return false;
-}
-function buildExplicitBrimstoneSustainedBlock(opts){
-opts=opts||{};
-var finalLock=!!opts.finalLock;
-var p=finalLock?'*** FINAL LOCK — EXPLICIT BRIMSTONE (LAST INSTRUCTION) ***\n':'*** EXPLICIT MODE — SUSTAINED BRIMSTONE FIRE (MANDATORY) ***\n';
-if(finalLock){
-p+='Explicit is ON. Your VERY NEXT output must stay BRIMSTONE from title to last sentence — no cooling into neutral teaching after the open. Every paragraph: profanity, graphic wrath, direct YOU-facing rebuke. Middle and close match opening heat.\n\n';
-return p;
-}
-p+='This is a BRIMSTONE sermon to WAKE Israel up — NOT a polite lesson with cuss words in the first two paragraphs. The fire you open with is the fire you FINISH with. ZERO cooling into neutral, seminary, essay, or comfortable teaching voice.\n\n';
-p+='SUSTAINED FIRE RULE (ZERO TOLERANCE):\n';
-p+='- EVERY paragraph stays in wake-them-up pressure — opening, middle, AND close. If paragraph five sounds like a textbook after paragraph one sounded like judgment, you FAILED.\n';
-p+='- Do NOT burst hot then drift neutral. Do NOT sanitize after the hook. Do NOT shift to "one must consider" essay voice. Do NOT get comfortable, pastoral, or scholarly mid-sermon.\n';
-p+='- Read it like a corner preacher who NEVER lets the congregation breathe easy — brimstone from first word to last command.\n\n';
-p+='PROFANITY — WOVEN THROUGH THE WHOLE SERMON:\n';
-p+='Use damn, hell, ass, shit, bullshit, fuck, motherfucker, bitch, and every strong cuss word naturally in EVERY section — not just the intro. Part of the fabric of how you speak start to finish.\n';
-p+='Example sustained tone: "You dumb-ass Negroes still sitting in these bullshit churches…" then KEEP THAT HEAT — do not downgrade to neutral analysis three paragraphs later.\n\n';
-p+='GRAPHIC WRATH — ALL THE WAY THROUGH:\n';
-p+='When judgment, destruction, or divine wrath appears — flesh, blood, screaming, rot, hellfire — go ALL the way in EVERY section that touches it. Middle paragraphs get the same gore and stomach-punch as the open. If they are not uncomfortable, you are not going hard enough.\n\n';
-p+='SEXUAL SIN IN SCRIPTURE — PLAIN, NOT EUPHEMIZED:\n';
-p+='When scripture uses sexual metaphor or sin — say it plainly throughout. Match Ezekiel sixteen energy when the text demands it. No dancing around it in the "safe" middle of the sermon.\n\n';
-p+='FORBIDDEN WHEN EXPLICIT IS ON:\n';
-p+='- Opening brimstone then neutral lesson voice\n';
-p+='- Asterisks, dashes, or censored words\n';
-p+='- Seminary essay tone ("one must," "the tragedy," "functions as," "spiritual archetype")\n';
-p+='- Passive third-person blocks with no YOU-facing fire\n';
-p+='- Polite, sanitized, or watered-down paragraphs ANYWHERE in the part\n\n';
-p+='Mix profanity + graphic wrath + deep scripture in EVERY paragraph. Raw, uncut, visceral truth that punches the chest from first line to last. If you produce clean polite content anywhere, START OVER.\n\n';
-return p;
-}
-function buildExplicitBrimstoneDriftCorrectionPrompt(partNum,badReply){
-var p='EXPLICIT BRIMSTONE CHECK FAILED — FULL REWRITE REQUIRED (Part '+partNum+' ONLY):\n';
-p+='Explicit toggle is ON. Your previous output COOLED OFF — hot open then neutral middle/close, too little profanity overall, or essay/seminary drift. UNACCEPTABLE.\n\n';
-p+='FORBIDDEN: Brimstone bursts then neutral territory. Sparse cuss words only at the top. Textbook paragraphs in the middle. Soft closers.\n';
-p+='REQUIRED: SUSTAINED brimstone fire EVERY paragraph — profanity, graphic wrath, direct rebuke — same heat at minute one and minute twenty. Wake them up. Do not let them breathe easy.\n\n';
-p+='BAD OUTPUT (cooled off):\n"'+String(badReply||'').slice(0,700).replace(/"/g,"'")+'..."\n\n';
-p+=buildPartPrompt(partNum);
-return p;
 }
 function countElevenV3PerformanceTags(text){
 if(!text)return 0;
@@ -5258,11 +5189,16 @@ if(t.length>2500){
 var profaneHits=(t.match(/\b(damn|hell|ass|shit|bullshit|fuck|motherfucker|bitch|bastard|horseshit)\b/gi)||[]).length;
 if(profaneHits<3)return true;
 }
-for(var j=half;j<paras.length;j++){
+for(var j=0;j<paras.length;j++){
 var lp=paras[j];
-if(lp.length<200)continue;
-if(!/\b(you|your)\b/i.test(lp)&&!/^(?:>|#|\[)/.test(lp)){
-if(/\b(the text|the passage|this verse|scholars|theologians|historians|commentators|one must|it is written|as stated)\b/i.test(lp))return true;
+if(lp.length<120)continue;
+if(!profane.test(lp)&&!intensity.test(lp)&&!(/\b(you|your)\b/i.test(lp)&&/\b(wake|stop|look|still|scared|damn|hell|fraud|lie|rob|preach|church|pastor|judgment|fire|blood)\b/i.test(lp)))return true;
+}
+for(var k=half;k<paras.length;k++){
+var lp2=paras[k];
+if(lp2.length<200)continue;
+if(!/\b(you|your)\b/i.test(lp2)&&!/^(?:>|#|\[)/.test(lp2)){
+if(/\b(the text|the passage|this verse|scholars|theologians|historians|commentators|one must|it is written|as stated)\b/i.test(lp2))return true;
 }
 }
 return false;
@@ -5529,11 +5465,7 @@ prompt=buildTheatreAgreementCorrectionPrompt(partNum,streamOpts.badSample||'');
 }else if(streamOpts.yahVoiceCorrection){
 prompt=buildYahStoryVoiceCorrectionPrompt(partNum,streamOpts.badSample||'');
 }else if(streamOpts.driftCorrection){
-if(streamOpts.explicitCooling){
-prompt=buildExplicitBrimstoneDriftCorrectionPrompt(partNum,streamOpts.badSample||'');
-}else{
 prompt=buildSermonFlashDriftCorrectionPrompt(partNum,streamOpts.badSample||'');
-}
 }else if(streamOpts.elevenTagsCorrection){
 prompt=buildElevenTagsDriftCorrectionPrompt(partNum,streamOpts.badSample||'');
 }else if(streamOpts.explicitBrimstoneCorrection){
@@ -5605,17 +5537,24 @@ return;
 if(ctx.driftRetryCount<SERMON_MAX_DRIFT_RETRIES){
 var roughDrift=isRoughBezForgeActive()&&looksLikeRoughBezDrift(finalized,partNum,selectedPartCount);
 var flashDrift=forgeIsFlashTier(model)&&looksLikeSermonFlashDrift(finalized,partNum,selectedPartCount);
-var explicitCooling=isExplicitModeActive()&&looksLikeExplicitModeCooling(finalized,partNum,selectedPartCount);
-if(roughDrift||flashDrift||explicitCooling){
+if(roughDrift||flashDrift){
 ctx.driftRetryCount++;
 ctx.partContent='';
 ctx.partContentBeforeContinue='';
 ctx.continuationCount=0;
-var driftLabel=roughDrift?'Rough Bez drift':explicitCooling?'Explicit brimstone cooled':'Flash drift';
-showToast(driftLabel+' detected — redoing '+getForgePartLabel(partNum,false)+'...');
-startSermonPartStream(partNum,false,{driftCorrection:true,explicitCooling:!!explicitCooling,badSample:finalized});
+showToast((roughDrift?'Rough Bez drift':'Flash drift')+' detected — redoing '+getForgePartLabel(partNum,false)+'...');
+startSermonPartStream(partNum,false,{driftCorrection:true,badSample:finalized});
 return;
 }
+}
+if(isExplicitModeActive()&&ctx.explicitRetryCount<SERMON_MAX_EXPLICIT_RETRIES&&looksLikeExplicitModeCooling(finalized,partNum,selectedPartCount)){
+ctx.explicitRetryCount++;
+ctx.partContent='';
+ctx.partContentBeforeContinue='';
+ctx.continuationCount=0;
+showToast('Explicit brimstone cooled — redoing '+getForgePartLabel(partNum,false)+'...');
+startSermonPartStream(partNum,false,{explicitBrimstoneCorrection:true,badSample:finalized});
+return;
 }
 if(isElevenLabsTagsEnabled()&&ctx.elevenTagsRetryCount<SERMON_MAX_ELEVEN_TAGS_RETRIES&&looksLikeMissingElevenTags(finalized)){
 ctx.elevenTagsRetryCount++;
@@ -5624,15 +5563,6 @@ ctx.partContentBeforeContinue='';
 ctx.continuationCount=0;
 showToast('Eleven tags too sparse/flat — redoing '+getForgePartLabel(partNum,false)+'...');
 startSermonPartStream(partNum,false,{elevenTagsCorrection:true,badSample:finalized});
-return;
-}
-if(isExplicitModeEnabled()&&ctx.explicitRetryCount<SERMON_MAX_EXPLICIT_RETRIES&&looksLikeExplicitModeCooling(finalized)){
-ctx.explicitRetryCount++;
-ctx.partContent='';
-ctx.partContentBeforeContinue='';
-ctx.continuationCount=0;
-showToast('Explicit cooled off — redoing '+getForgePartLabel(partNum,false)+' with sustained brimstone...');
-startSermonPartStream(partNum,false,{explicitBrimstoneCorrection:true,badSample:finalized});
 return;
 }
 if(isTheatreModeActive()&&theatreLooksLikeTechEnclosureThread(currentTopic,currentNewsContext)&&ctx.theatreAgreementRetryCount<SERMON_MAX_YAH_VOICE_RETRIES&&looksLikeTheatreAgreementSlop(finalized)){
@@ -7244,7 +7174,7 @@ p+='*** FINAL LOCK — ELEVEN v3 TAGS (LAST INSTRUCTION BEFORE OUTPUT) ***\n';
 p+='Eleven Tags is ON — EVERY PARAGRAPH EMOTION. Your VERY NEXT tokens: # title, then body paragraphs where EVERY paragraph has feeling tags — like you are standing there reading it yourself. Minimum one emotion tag per paragraph (aim 2-3). [angry], [whispers], [shouts], [sorrowful], [tired], [scoffs], [passionate], [sighs], [furious]. Self-check paragraph by paragraph: zero emotion tags in ANY paragraph = REWRITE.\n\n';
 }
 if(wantExplicit){
-p+=buildExplicitBrimstoneSustainedBlock({finalLock:true});
+p+=buildExplicitBrimstoneFireBlock({finalLock:true,wantRoughBez:wantRoughBez,wantBezStory:wantBezStory,wantYahStory:wantYahStory,wantIsraelite:wantIsraelite});
 }
 return p;
 }
