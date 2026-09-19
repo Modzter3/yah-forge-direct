@@ -2781,10 +2781,25 @@ function isElevenLabsTagsEnabled(){
 var el=document.getElementById('toggleElevenLabsTags');
 return el&&el.checked;
 }
+function countElevenV3PerformanceTags(text){
+if(!text)return 0;
+var m=String(text).match(/\[(?:pause|shouts?|whispers?|softly|laughs|sighs|clears throat|gasps|scoffs|booming|emphasized|drawn out|rushed|sarcastically|sad|angry|excited|tired|upset|sorrowful|awe|happily|worried|surprised|beginning to speak|coughing)\]/gi);
+return m?m.length:0;
+}
+function looksLikeMissingElevenTags(text){
+if(!isElevenLabsTagsEnabled()||isTheatreModeActive())return false;
+if(!text)return false;
+var t=String(text).trim();
+if(t.length<500)return false;
+var tags=countElevenV3PerformanceTags(t);
+var min=Math.max(6,Math.floor(t.length/650));
+return tags<min;
+}
 function buildElevenLabsV3AudioTagsBlock(persona){
 var isBez=persona==='bez';
-var p='ELEVEN v3 AUDIO TAGS (MANDATORY WHEN THIS BLOCK IS PRESENT):\n';
-p+='This sermon will be read aloud through ElevenLabs Eleven v3. Embed inline performance tags in square brackets wherever delivery naturally shifts -- the model reads them as direction, NOT as words to speak aloud.\n\n';
+var p='*** ELEVEN v3 AUDIO TAGS — MANDATORY (ELEVEN TAGS TOGGLE IS ON) ***\n';
+p+='ZERO TOLERANCE: A sermon with no inline [bracket] tags is FAILED output. This entire part MUST be written FOR ElevenLabs Eleven v3 TTS — embed performance tags in square brackets wherever delivery shifts. The TTS engine reads tags as direction, NOT as words to speak aloud.\n\n';
+p+='MINIMUM DENSITY: Roughly one tag every two to four sentences in body paragraphs (minimum ~6 tags per part, more for longer parts). Never tag the # title line. Tags begin in the first body paragraph and continue through the close.\n\n';
 p+='HOW TAGS WORK (Eleven v3):\n';
 p+='- Format: [natural-language cue] inline with speech, e.g. [laughs], [whispers], [excited], [pause].\n';
 p+='- Tags sit IN the paragraph flow -- before, after, or mid-sentence where the moment turns.\n';
@@ -2829,7 +2844,16 @@ p+='- [sighs]: Rare -- when My patience strains and still I call them back.\n';
 p+='- [gasps] / [surprised]: When exposing a hidden lie they thought was sacred.\n';
 p+='Yah tags alternate LONG remembrance runs with SHORT command tags -- vary rhythm; never the same tag pattern twice in a row.\n\n';
 }
-p+='OUTPUT LOCK: Write the full sermon with tags embedded naturally in the flowing paragraphs. The listener should hear a LIVE human (Bez) or LIVE Almighty (Yah) -- tags are invisible scaffolding for Eleven v3, not stage directions read aloud.\n\n';
+p+='OUTPUT LOCK: Write the full sermon WITH TAGS in every paragraph — not a plain essay you tag later. The listener should hear a LIVE human (Bez) or LIVE Almighty (Yah). Tags are invisible scaffolding for Eleven v3. If you finish and count fewer than six [bracket] tags in this part, you failed.\n\n';
+return p;
+}
+function buildElevenTagsDriftCorrectionPrompt(partNum,badReply){
+var p='ELEVEN v3 TAG CHECK FAILED — FULL REWRITE REQUIRED (Part '+partNum+' ONLY):\n';
+p+='Eleven Tags toggle is ON. Your previous output had ZERO or far too few inline [bracket] performance tags. Plain prose without tags is UNACCEPTABLE.\n\n';
+p+='FORBIDDEN: Untagged sermon body, or only one or two tags in the whole part.\n';
+p+='REQUIRED: [pause], [whispers], [shouts], [sighs], [clears throat], [angry], [booming], [drawn out], etc. woven through EVERY paragraph at emotional turns — minimum ~6 tags, more for longer parts.\n\n';
+p+='BAD OUTPUT (too few tags):\n"'+String(badReply||'').slice(0,700).replace(/"/g,"'")+'..."\n\n';
+p+=buildPartPrompt(partNum);
 return p;
 }
 function detectElevenTagPersona(text){
@@ -4911,6 +4935,7 @@ return out.replace(/^\s*\n+/,'');
 }
 var SERMON_MAX_CONTINUATIONS=6;
 var SERMON_MAX_DRIFT_RETRIES=1;
+var SERMON_MAX_ELEVEN_TAGS_RETRIES=2;
 var SERMON_MAX_YAH_VOICE_RETRIES=4;
 var TRANSCRIPT_MAX_AGREEMENT_RETRIES=1;
 var SERMON_FIRST_TOKEN_MS=5*60*1000;
@@ -5297,6 +5322,8 @@ prompt=buildTheatreAgreementCorrectionPrompt(partNum,streamOpts.badSample||'');
 prompt=buildYahStoryVoiceCorrectionPrompt(partNum,streamOpts.badSample||'');
 }else if(streamOpts.driftCorrection){
 prompt=buildSermonFlashDriftCorrectionPrompt(partNum,streamOpts.badSample||'');
+}else if(streamOpts.elevenTagsCorrection){
+prompt=buildElevenTagsDriftCorrectionPrompt(partNum,streamOpts.badSample||'');
 }else if(isContinuation){
 prompt=buildSermonContinuationPrompt(partNum,ctx.partContent,ctx.continuationOpts||{});
 }else{
@@ -5306,7 +5333,7 @@ prompt=wrapPromptForGrokIfNeeded(prompt,model,isYahStoryModeActive()&&!ctx.bezFa
 var params=getSermonWebSearchParams(model,selectedPartCount);
 var yahApiActive=isYahStoryModeActive()&&!ctx.bezFallbackActive;
 appendYahStoryApiParams(params,yahApiActive,{skipSystem:!!streamOpts.yahLiteRetry});
-ctx.handlerName='sermon-part-'+partNum+'-'+Date.now()+'-'+(isContinuation?ctx.continuationCount:0)+'-'+(streamOpts.yahVoiceCorrection?'yahvoice':streamOpts.driftCorrection?'drift':'');
+ctx.handlerName='sermon-part-'+partNum+'-'+Date.now()+'-'+(isContinuation?ctx.continuationCount:0)+'-'+(streamOpts.yahVoiceCorrection?'yahvoice':streamOpts.driftCorrection?'drift':streamOpts.elevenTagsCorrection?'eleventags':'');
 var activeHandler=ctx.handlerName;
 ctx.gotFirstToken=false;
 clearSermonWatchdogs();
@@ -5373,6 +5400,15 @@ showToast((roughDrift?'Rough Bez drift':'Flash drift')+' detected — redoing '+
 startSermonPartStream(partNum,false,{driftCorrection:true,badSample:finalized});
 return;
 }
+}
+if(isElevenLabsTagsEnabled()&&ctx.elevenTagsRetryCount<SERMON_MAX_ELEVEN_TAGS_RETRIES&&looksLikeMissingElevenTags(finalized)){
+ctx.elevenTagsRetryCount++;
+ctx.partContent='';
+ctx.partContentBeforeContinue='';
+ctx.continuationCount=0;
+showToast('Missing Eleven v3 tags — redoing '+getForgePartLabel(partNum,false)+'...');
+startSermonPartStream(partNum,false,{elevenTagsCorrection:true,badSample:finalized});
+return;
 }
 if(isTheatreModeActive()&&theatreLooksLikeTechEnclosureThread(currentTopic,currentNewsContext)&&ctx.theatreAgreementRetryCount<SERMON_MAX_YAH_VOICE_RETRIES&&looksLikeTheatreAgreementSlop(finalized)){
 ctx.theatreAgreementRetryCount++;
@@ -5449,6 +5485,7 @@ partContent:'',
 partContentBeforeContinue:'',
 continuationCount:0,
 driftRetryCount:0,
+elevenTagsRetryCount:0,
 yahVoiceRetryCount:0,
 theatreAgreementRetryCount:0,
 yahLiteTried:false,
@@ -6193,10 +6230,6 @@ p+='EPISODE COVERAGE: Walk your assigned TV episodes in broadcast order. Scene b
 }else{
 p+='VERSE COVERAGE: Walk every assigned verse in exact order. Miss nothing. Each verse is a beat in what Yah showed you -- not a lesson point.\n\n';
 }
-}
-if(isElevenLabsTagsEnabled()){
-var tagPersona=(wantBezStory||(wantIsraelite)||wantRoughBez)?'bez':'yah';
-p+=buildElevenLabsV3AudioTagsBlock(tagPersona);
 }
 if(topic&&topic.briefingText)p+=buildPastedBriefingSermonBlock(topic);
 else if(directQuestion)p+=buildDirectQuestionSermonBlock(topic,partNum,totalParts);
@@ -6974,11 +7007,23 @@ p+='- Do NOT include any thinking, reasoning, reflection, planning, analysis, or
 p+='- No \x3cthink>, \x3cthinking>, \x3cthought>, \x3creasoning>, \x3creflection>, \x3canalysis>, \x3cplanning>, \x3cscratchpad> tags -- NONE.\n';
 p+='- No **Thinking** or **Reasoning** markdown headers followed by your internal thoughts.\n';
 p+='- No [Thinking] or [Internal reasoning] bracket blocks.\n';
+if(isElevenLabsTagsEnabled()){
+p+='- ELEVEN v3 TAGS ARE MANDATORY (Eleven Tags toggle ON): Embed inline [bracket] performance tags throughout the sermon body — [pause], [whispers], [shouts], [sighs], [clears throat], [angry], [booming], [drawn out], etc. Tags are ElevenLabs direction cues, NOT spoken words. Never tag the # title line. Minimum ~6 tags per part (more for longer parts). A sermon with zero tags or only one or two tags is FAILED output.\n';
+}else{
 p+='- ABSOLUTELY NO BRACKET TAGS OF ANY KIND. No [pause], [angry], [laughs], [whispers], [scoffs], [sighs], [booming], [dramatic tone], or ANY text inside square brackets that acts as a stage direction, emotion cue, or sound effect. Square brackets are ONLY permitted for actual content like [citation] references. If you include even ONE bracket stage direction tag, the ENTIRE output is ruined. This is a written document, not a voice script.\n';
+}
 p+='- No "Thinking..." or "Analyzing..." or "Let me consider..." preambles.\n';
 p+='- Do NOT mention word counts anywhere in the sermon. No "approximately 2,000 words" or "word count" or "I will write X words" or anything about length targets. The word count instruction is for YOUR guidance only -- it must NEVER appear in the output text.\n';
 p+='- NO DIAGRAMS, FLOWCHARTS, ASCII ART, TABLES, OR MATRICES (ZERO TOLERANCE): This is spoken-word prose for preaching -- NOT a textbook, whiteboard, or engineering manual. Do NOT output ASCII diagrams, box-and-arrow flowcharts, circuit schematics, tree charts, timeline graphics, mermaid, or code-fenced visual layouts. Do NOT output allocation matrices, specification tables, column-aligned charts, markdown pipe tables, or bordered layouts using ====, ----, or spaced columns (e.g. "Component    Measurement    Function"). Do NOT use Unicode box-drawing characters (──, │, ▼, ►, etc.) or arrow chains to illustrate concepts. Do NOT wrap concepts in bracketed diagram titles like [ THE CIRCUIT OF ... ] or banner titles like THE SHOWBREAD ALLOCATION MATRIX. Weave every measurement and symbol into flowing sentences and paragraphs. If you feel the urge to tabulate or draw it, DESCRIBE it in words instead.\n';
 p+='- Your VERY FIRST output must be the # title line, then '+openingInstruction+'. Nothing before the title. Zero preamble.\n';
+if(isElevenLabsTagsEnabled()){
+var tagPersona=(wantBezStory||wantRoughBez||wantIsraelite)?'bez':'yah';
+if(wantYahStory)tagPersona='yah';
+p+='\n';
+p+=buildElevenLabsV3AudioTagsBlock(tagPersona);
+p+='*** FINAL LOCK — ELEVEN v3 TAGS (LAST INSTRUCTION BEFORE OUTPUT) ***\n';
+p+='Eleven Tags is ON. Your VERY NEXT tokens after this prompt must be the # title, then body paragraphs WITH inline [bracket] tags woven in from the first paragraph. Do NOT output plain prose and skip tags. Self-check before finishing: count your [pause]/[whispers]/[shouts]/[sighs] tags — if fewer than six in this part, add more at rebukes, whispers, judgment spikes, and pauses before names and verses.\n\n';
+}
 return p;
 }
 /* ==========================================
