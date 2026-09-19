@@ -5057,8 +5057,38 @@ out.push(L);
 }
 return out.join('\n');
 }
+function countScareQuotes(text){
+return (String(text||'').match(/"[^"\n]{1,60}"/g)||[]).length;
+}
+function looksLikeSermonAssistantTail(text){
+if(!text||String(text).length<80)return false;
+var t=String(text);
+if(/\bWould you like to (?:continue|summary|a summary|explore|proceed|the next)\b/i.test(t))return true;
+if(/\b(?:feel free to ask|let me know if you(?:'d| would) like)\b/i.test(t))return true;
+if(/\bThe restoration of the human temple is not a process\b/i.test(t))return true;
+if(/\b(?:As we examine the next layer|Furthermore, let us decode|In the depths of this protocol|Consider the "chemistry of joy"|To understand the gravity of this stewardship)\b/i.test(t))return true;
+var words=countForgeWords(t);
+var quotes=countScareQuotes(t);
+if(words>80&&quotes>=10&&quotes/Math.max(words,1)>0.07)return true;
+if(words>120&&!/\b(I am Yah|I tell you|Listen to Me|Hear Me,|My people|You want the|Stop eating|Go and eat)\b/i.test(t.slice(0,700))&&/\b(?:the body is|one must|this protocol|the struggle is|as the weeks turn|metabolic flexibility|vagus nerve)\b/i.test(t))return true;
+return false;
+}
+function stripSermonAssistantTail(text){
+if(!text)return text;
+var t=String(text);
+t=t.replace(/\n\nWould you like to\b[\s\S]*/i,'');
+t=t.replace(/\n\n(?:To understand the gravity of this stewardship|As we conclude this segment|The "restorative protocol" has led you|The restoration of the human temple is not)\b[\s\S]*/i,'');
+var closerRe=/(That is the word of the Most High\.|Go and eat the life I provided\.[^\n]*\.|The choice is yours, Israel\.|Obey it and live, or ignore it and rot[^\n]*\.)\s*\n/i;
+var cm=closerRe.exec(t);
+if(cm){
+var rest=t.slice(cm.index+cm[0].length).trim();
+if(rest.length>150&&looksLikeSermonAssistantTail(rest))t=t.slice(0,cm.index+cm[0].length).trim();
+}
+return t.replace(/\n{3,}/g,'\n\n').trim();
+}
 function finalizeSermonPartText(text,partNum){
 var out=stripSermonPreamble(text||'');
+out=stripSermonAssistantTail(out);
 out=stripSermonDiagrams(out);
 if(isTheatreModeActive()){
 out=truncateAtTheatreBoundary(out,partNum,selectedPartCount);
@@ -5170,6 +5200,11 @@ if(pm)maxPart=Math.max(maxPart,parseInt(pm[1],10));
 }
 if(maxPart>totalParts)return true;
 }
+if(/\bWould you like to (?:continue|summary|a summary|explore|proceed|the next)\b/i.test(t))return true;
+if(/\bThe restoration of the human temple is not a process\b/i.test(t))return true;
+if(looksLikeSermonAssistantTail(t))return true;
+var half=Math.floor(t.length/2);
+if(half>0&&countScareQuotes(t.slice(half))>=12&&countScareQuotes(t.slice(0,half))<6)return true;
 return false;
 }
 function isYahStoryModeActive(){
@@ -5223,8 +5258,12 @@ if((t.match(/\n#{3,4}\s+/g)||[]).length>=2)return true;
 if((t.match(/^\* \*\*/gm)||[]).length>=2)return true;
 if(/^(Welcome back|Thank you for tuning|In this (?:video|podcast|lesson)|It is clear that|It sounds like there)/im.test(trimmed))return true;
 if(/\b(I hope this helps|feel free to ask|let me know if you (?:have|need))\b/i.test(t))return true;
+if(/\bWould you like to (?:continue|summary|a summary|explore|proceed|the next)\b/i.test(t))return true;
+if(looksLikeSermonAssistantTail(t))return true;
 var head=trimmed.slice(0,900);
 if(head.length>250&&!/\b(I am Yah|I tore|I watched|I tell you|Look at you|You sit before Me|You survived|My people|I despise|I did not|Hear Me|The ink on their|My indignation|My fury)\b/i.test(head))return true;
+var half=Math.floor(t.length/2);
+if(half>0&&countScareQuotes(t.slice(half))>=12&&countScareQuotes(t.slice(0,half))<6)return true;
 return false;
 }
 function buildSermonFlashDriftCorrectionPrompt(partNum,badReply){
@@ -5234,7 +5273,8 @@ p+='FORBIDDEN (ZERO TOLERANCE):\n';
 p+='- "Literary and Historical Context", Hellenistic Greek, Stoicism, Platonism, Septuagint linguistics, Alexandria history essays\n';
 p+='- Markdown ### subheaders, **Theme:** / **Analysis:** bullet breakdowns, numbered academic verse analyses\n';
 p+='- Diaspora sociology essay tone — write revelation to Israel, not a term paper\n';
-p+='- Writing Part '+(partNum+1)+'+ or extra parts in this response — ONE part only\n\n';
+p+='- Writing Part '+(partNum+1)+'+ or extra parts in this response — ONE part only\n';
+p+='- Assistant endings ("Would you like to continue/summary"), third-person wellness essays, or scare-quote spam ("word" on every phrase)\n\n';
 if(isTheatreModeActive()){
 p+='Return to boardroom dialogue and [BEAT]s on topic — not a lecture.\n\n';
 }else if(isRoughBezForgeActive()){
@@ -5299,7 +5339,8 @@ p+='Continue the SAME part -- more depth on your assigned verses/scenes, more li
 p+='Your previous output was cut off mid-sentence or mid-thought.\n';
 }
 p+='Do NOT add a new "# Part" heading. Do NOT restart the title. Pick up EXACTLY where you stopped and keep writing ONLY Part '+partNum+'.\n';
-p+='Do NOT add diagrams, flowcharts, ASCII art, tables, matrices, box-drawing characters, or arrow-chain visuals -- prose paragraphs only.\n\n';
+p+='Do NOT add diagrams, flowcharts, ASCII art, tables, matrices, box-drawing characters, or arrow-chain visuals -- prose paragraphs only.\n';
+p+='Stay in the SAME voice. Do NOT switch to third-person wellness blog, assistant offers ("Would you like..."), or scare-quote emphasis spam.\n\n';
 p+='LAST FOUR HUNDRED CHARACTERS OF YOUR DRAFT:\n"...'+String(existing||'').slice(-400)+'"\n\nCONTINUE IMMEDIATELY:';
 return p;
 }
@@ -6803,6 +6844,8 @@ p+='- BEZ STORY NAME THE CULPRITS: When Babylon, merchants, false shepherds, cou
 }else if(wantYahStory){
 p+='- YAH STORY VOICE LOCK: First person as Yah/Yahusha only. You ARE speaking as God to Israel. Never third person about Yah.\n';
 p+='- YAH STORY ANTI-CHATBOT: No assistant filler, no lesson voice, no therapeutic softening, no pasted prompt catchphrases, no three-beat AI cascades. Sound like the throne remembering My own -- not ChatGPT in a robe.\n';
+p+='- NO SCARE QUOTES: Do not wrap ordinary words in quotation marks for emphasis ("secret", "decode", "protocol", "familiar spirits"). Use CAPS or plain speech. Scripture blockquotes only.\n';
+p+='- NO ASSISTANT ENDINGS: Never ask "Would you like to continue/summary." Never append third-person wellness essays after the sermon closes. When the part is done, STOP.\n';
 p+='- YAH STORY NAME THE CULPRITS: When Babylon, merchants, false shepherds, courts, pharma, media, or money decode -- say WHO by full name and what they do, and name institutions directly when the symbol is a system. CEO down to the clerk who stamps the eviction if that is what the verse exposes. Web-search verify internally; preach name + role only -- never "as of 2026" or date stamps on people. Every headline strike must include its verified calendar date (month, day, year -- spelled out). FORBIDDEN: "they," "the elites," "some CEO," "that pharmaceutical company," "you know who," or vague timelines like "last week" / "this past summer" on news.\n';
 }else if(wantIsraelite){
 p+='- YOUR ASSIGNED VOICE: ISRAELITE BROTHER (third person about Yah). You are Brother Bet-Tsade-Lamed-Aleph-Lamed, an Israelite brother and teacher who has been SHOWN the truth from the throne room. You deliver the DIVINE PERSPECTIVE through mortal lips -- you speak as a man who has seen what Yah sees, who understands what Yah intends, and who channels that fire and authority as His chosen mouthpiece. You are NOT Yah -- but you speak AS IF you just came down from the mountain with the tablets still smoking in your hands. Your authority comes from having RECEIVED the divine perspective directly. Say things like "Yah SHOWED me this," "the Most High revealed," "when the Father opened my eyes to this I could not sleep for three days," "the Spirit dropped this on me and I have to give it to you." You speak ABOUT Yod-He-Waw-He and Yod-He-Waw-Shin-Ayin in THIRD PERSON but with the weight and certainty of someone who has been IN His presence and been given the download. You are not guessing -- you KNOW because HE told you. Reference Yah as "the Most High," "our Father," "Yod-He-Waw-He," "the Almighty" -- with fire, love, and prophetic urgency. You are a PROPHET delivering the divine verdict from the human side of the veil. The listener should feel like they are hearing from a man who just walked out of the Holy of Holies with smoke still on his garments.\n';
@@ -7031,6 +7074,9 @@ openingInstruction=wantRoughBez?'the rough street rebuke immediately -- no welco
 openingInstruction=wantRoughBez?'a one-sentence bridge MAX, then the rough street sermon body -- no welcome, no recap, no episode language':'the brief bridge and lesson body';
 }
 p+='START IMMEDIATELY with your # title line'+(totalParts>1?' (# Part '+partNum+': [title])':'')+', then '+openingInstruction+'. ';
+if(forgeIsFlashTier(getSelectedModel())){
+p+='FLASH MODEL ANTI-DRIFT: Stay in assigned voice through the LAST sentence. Do NOT switch to third-person wellness blog prose at the end. Do NOT spam scare quotes around ordinary words. Do NOT ask "Would you like to continue" or offer summaries. When the part closes, STOP — no assistant tail.\n\n';
+}
 p+='CRITICAL OUTPUT RULES:\n';
 p+='- Do NOT include any thinking, reasoning, reflection, planning, analysis, or internal monologue tags, blocks, sections, or headers in your output.\n';
 p+='- No \x3cthink>, \x3cthinking>, \x3cthought>, \x3creasoning>, \x3creflection>, \x3canalysis>, \x3cplanning>, \x3cscratchpad> tags -- NONE.\n';
