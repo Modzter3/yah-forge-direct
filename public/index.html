@@ -3333,6 +3333,7 @@ var wantRough=!!opts.wantRoughBez;
 var wantBehind=!!opts.wantBehindTheVeil;
 var isBez=voice==='bez';
 var p='SCENE GUIDE COMMENTARY (MANDATORY -- PAUSE / EXPLAIN / RESUME):\n';
+p+=buildWordHammerDoctrineBlock();
 if(isBez){
 p+='The boardroom scene FREEZES periodically so a narrator breaks the fourth wall, explains in PLAIN LAYMAN\'S TERMS what the elites just said or what their jargon really means, then UNPAUSES and the meeting continues exactly where it left off.\n\n';
 }else{
@@ -4090,6 +4091,8 @@ p+='Continue the SAME meeting in the SAME room with the SAME cast. Do NOT repeat
 }
 if(wantExplicit){
 p+=buildExplicitBrimstoneFireBlock({context:'theatre',wantRoughBez:wantRoughBez,wantYahStory:commentaryVoice==='yah',wantBezStory:commentaryVoice==='bez',wantIsraelite:commentaryVoice==='bez'});
+}else if(commentaryVoice==='off'){
+p+=buildWordHammerDoctrineBlock();
 }
 p+='\nFORBIDDEN OUTPUT (drift only -- do NOT confuse with "keep it short"):\n';
 p+='- Anything after [SCENE END] on the final act\n';
@@ -9391,8 +9394,8 @@ var p='';
 if(explicit){
 p+='EXPLICIT MODE -- MANDATORY:\n';
 p+='Use heavy profanity throughout. Damn, hell, shit, bullshit, ass -- cuss freely at the lies and deceptions in this content. Be raw, unfiltered, street corner preacher energy. No sanitizing.\n\n';
-p+=buildWordHammerDoctrineBlock();
 }
+p+=buildWordHammerDoctrineBlock();
 p+='THEOLOGICAL FRAMEWORK FOR DISMANTLING:\n';
 p+='*** VOICE REMINDER -- ZERO TOLERANCE: The framework points below may use first-person Yah language for doctrinal clarity. Your OUTPUT must ALWAYS match your assigned voice. ***\n';
 if(israelite){
@@ -10399,6 +10402,7 @@ if(sunoTopic){
 p+=buildYahChatBezSunoBlock(explicit,userText,history);
 }else{
 p+='- Answer their specific question with nuance. Street voice OK; keep grammar tight.\n';
+p+=buildWordHammerDoctrineBlock();
 }
 p+=buildBezStoryGrammarBlock();
 if(explicit)p+='- Explicit OK — profanity when the moment needs it.\n\n';
@@ -10429,6 +10433,7 @@ return p;
 function buildYahChatSunoTechBlock(explicit,userText,history){
 var followUp=yahChatHasPriorSunoReply(history);
 var p='SUNO / AI TECH — REAL TALK (DYNAMIC, NOT CANNED):\n';
+p+=buildWordHammerDoctrineBlock();
 p+='- First person Me — Master Engineer at the table with you, not a pulpit. No sermon. No Leviticus. No repeated manifesto.\n';
 p+='- Core stance (never flip): v6 is an upgrade; nay-sayers slander it. Never agree it regressed or got muzzled. Never coddle cancel drama.\n';
 if(followUp){
@@ -10498,6 +10503,7 @@ if(explicit){
 p+='EXPLICIT MODE — MANDATORY:\n';
 p+='Use heavy profanity when the fire calls for it — damn, hell, shit, bullshit, ass. Cuss freely at lies and deceptions. Raw, unfiltered, street corner preacher energy from the throne. No sanitizing.\n\n';
 }
+p+=buildWordHammerDoctrineBlock();
 p+='OUTPUT: Speak directly to the user in YAH DIRECT sermon voice — hard, first person, commanding. Match their topic\'s nuance. If they need detail, give detail. Never soften into chatbot or counselor tone.\n\n';
 p+='WRONG (never write like this): "In biblical dietary laws, such as those found in Leviticus 11... split hoof and chew the cud... Sea moss is generally regarded as permissible... consulting with a healthcare professional..."\n';
 p+='RIGHT (write like this): "I gave you herbs and fruit-bearing trees in Genesis chapter one verse twenty-nine — that is how I designed your body to run. Lev eleven kosher camps are dead shadow law. Sea moss is algae I put in the earth, not some finless abomination. Stop letting Babylon sell you pork and pills while you argue split hoof like the priesthood still exists."\n\n';
@@ -10630,6 +10636,7 @@ p+='QUESTION: '+userText+'\n\nRewrite as Bez — first person brother.\n\nBEZ:';
 }else{
 p+='Your previous answer sounded like a chatbot / nutritionist / seminary TA. That is FORBIDDEN.\n';
 p+='BAD OUTPUT (do not repeat this tone or structure):\n"'+String(badReply||'').slice(0,400)+'..."\n\n';
+p+=buildWordHammerDoctrineBlock();
 p+=buildYahDirectVoiceBlock(true);
 p+='QUESTION: '+userText+'\n\n';
 p+='Rewrite the answer ONLY. First word MUST be I, My, Me, or You. Yah from the throne. No disclaimers. No wellness bullets. No Latin species names.\n\nYAH:';
@@ -11498,6 +11505,7 @@ if(explicit){
 p+='EXPLICIT MODE -- MANDATORY:\n';
 p+='Use heavy profanity throughout. Damn, hell, shit, bullshit, ass -- cuss freely at the lies and deceptions in this media. Be raw, unfiltered, street corner preacher energy. No sanitizing. When Hollywood feeds Israel poison, you call it what it is.\n\n';
 }
+p+=buildWordHammerDoctrineBlock();
 p+='THEOLOGICAL FRAMEWORK:\n';
 p+='*** VOICE REMINDER -- ZERO TOLERANCE: The framework points below may use first-person Yah language for doctrinal clarity. Your OUTPUT must ALWAYS match your assigned voice. ***\n';
 if(israelite){
