@@ -758,7 +758,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <div class="tab-panel" id="panelTranscript">
   <div class="dismantle-wrap">
     <div class="dismantle-desc">
-      <i class="fas fa-closed-captioning"></i> <strong>Paste a tagged transcript</strong> — label each turn with <code>[TAG]:</code> or <code>[TAG]</code> on its own line. Multi-part splits the source across parts (each part critiques only its slice — not the whole file again). Full forge sermon knowledge + Explicit brimstone when checked. Or paste a <strong>Reddit thread URL</strong> below.
+      <i class="fas fa-closed-captioning"></i> <strong>Paste a tagged transcript</strong> — per-speaker <code>[TAG]:</code> lines when you can, OR one <code>[TAG]</code> at the top for messy crosstalk (multi-part auto-splits by length — each part only gets its slice). Full forge knowledge + Explicit brimstone when checked. Reddit URL below works too.
     </div>
     <div class="custom-forge-inner reddit-url-inner">
       <i class="fab fa-reddit custom-forge-icon"></i>
@@ -767,7 +767,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <button class="custom-forge-btn reddit-csv-btn" onclick="document.getElementById('transcriptRedditCsvInput').click()"><i class="fas fa-file-csv"></i> Import CSV</button>
       <input type="file" id="transcriptRedditCsvInput" accept=".csv,text/csv" style="display:none" onchange="importRedditCsvIntoField('transcriptInput',this)">
     </div>
-    <textarea class="dismantle-textarea" id="transcriptInput" placeholder="[HOST]: Opening question...&#10;[GUEST A]: Their claim...&#10;[GUEST B]: Their rebuttal...&#10;&#10;Use any [TAG] labels you need. Toggle which speakers to critique below." style="min-height:220px;"></textarea>
+    <textarea class="dismantle-textarea" id="transcriptInput" placeholder="Crosstalk / debate (one tag OK):&#10;[EIFMinistries]&#10;Good evening... [whole transcript]&#10;&#10;Or per-speaker:&#10;[HOST]: claim...&#10;[GUEST]: reply...&#10;&#10;Multi-part splits the source — each part critiques only its chunk." style="min-height:220px;"></textarea>
     <div class="transcript-speaker-toggles" id="transcriptSpeakerToggles">
       <span class="pc-words">Speaker tags appear here when you paste [TAG]: lines</span>
     </div>
@@ -9667,21 +9667,40 @@ if(t.slice(at,at+2)==='\n\n')return dir>0?at+2:at;
 }
 return Math.max(0,Math.min(t.length,idx));
 }
-function getTranscriptCharSliceForPart(transcript,partNum,totalParts){
+function transcriptNeedsCharSplit(turns,totalParts){
+if(!turns||!turns.length)return true;
+if(totalParts<=1)return false;
+if(turns.length===1)return true;
+if(turns.length<totalParts)return true;
+return false;
+}
+function getTranscriptCharSliceForPart(transcript,partNum,totalParts,turns){
+turns=turns||[];
 var t=String(transcript||'').trim();
-if(!t)return {text:'',startTurn:partNum,endTurn:partNum,totalTurns:totalParts,startIdx:partNum-1,endIdx:partNum,tags:[],charSlice:true};
-if(totalParts<=1)return {text:t,startTurn:1,endTurn:1,totalTurns:1,startIdx:0,endIdx:1,tags:[],charSlice:true};
+if(!t)return {text:'',startTurn:partNum,endTurn:partNum,totalTurns:totalParts,startIdx:partNum-1,endIdx:partNum,tags:[],charSlice:true,monolithicTag:false};
+if(totalParts<=1){
+var tag1=turns.length===1?turns[0].tag:null;
+return {text:t,startTurn:1,endTurn:1,totalTurns:1,startIdx:0,endIdx:1,tags:tag1?[tag1]:[],charSlice:true,monolithicTag:!!tag1};
+}
 var len=t.length;
 var start=Math.floor((partNum-1)*len/totalParts);
 var end=partNum===totalParts?len:Math.floor(partNum*len/totalParts);
 if(partNum>1)start=snapTranscriptSliceBoundary(t,start,1);
 if(partNum<totalParts)end=snapTranscriptSliceBoundary(t,end,-1);
 if(end<=start)end=Math.min(len,start+Math.max(400,Math.floor(len/totalParts)));
-return {text:t.slice(start,end).trim(),startTurn:partNum,endTurn:partNum,totalTurns:totalParts,startIdx:partNum-1,endIdx:partNum,tags:[],charSlice:true,startChar:start+1,endChar:end};
+var body=t.slice(start,end).trim();
+var slice={text:body,startTurn:partNum,endTurn:partNum,totalTurns:totalParts,startIdx:partNum-1,endIdx:partNum,tags:[],charSlice:true,monolithicTag:false,startChar:start+1,endChar:end};
+if(turns.length===1){
+var tag=turns[0].tag;
+slice.tags=[tag];
+slice.monolithicTag=true;
+slice.text='['+tag+'] (segment '+partNum+' of '+totalParts+' — crosstalk / multi-voice block under this tag):\n'+body;
+}
+return slice;
 }
 function getTranscriptSliceForPart(transcript,partNum,totalParts){
 var turns=parseTranscriptTurns(transcript);
-if(!turns.length)return getTranscriptCharSliceForPart(transcript,partNum,totalParts);
+if(transcriptNeedsCharSplit(turns,totalParts))return getTranscriptCharSliceForPart(transcript,partNum,totalParts,turns);
 var start=Math.floor((partNum-1)*turns.length/totalParts);
 var end=Math.floor(partNum*turns.length/totalParts);
 if(partNum===totalParts)end=turns.length;
@@ -9691,7 +9710,7 @@ var out=[];
 for(var i=0;i<slice.length;i++){
 out.push('['+slice[i].tag+']: '+slice[i].lines.join('\n').trim());
 }
-return {text:out.join('\n\n'),startTurn:start+1,endTurn:end,totalTurns:turns.length,startIdx:start,endIdx:end,tags:slice.map(function(t){return t.tag;}),charSlice:false};
+return {text:out.join('\n\n'),startTurn:start+1,endTurn:end,totalTurns:turns.length,startIdx:start,endIdx:end,tags:slice.map(function(t){return t.tag;}),charSlice:false,monolithicTag:false};
 }
 function getTranscriptTagsForPart(transcript,partNum,totalParts){
 var sl=getTranscriptSliceForPart(transcript,partNum,totalParts);
@@ -9699,9 +9718,19 @@ return sl.tags||[];
 }
 function buildTranscriptPriorContextBlock(transcript,partNum,totalParts,maxTurns){
 if(partNum<=1)return '';
+var cur=getTranscriptSliceForPart(transcript,partNum,totalParts);
+if(cur.charSlice){
+var prevEnd=(cur.startChar||1)-1;
+if(prevEnd<=0)return '';
+var maxChars=Math.max(1500,(maxTurns||6)*500);
+var tailStart=Math.max(0,prevEnd-maxChars);
+var priorText=String(transcript).slice(tailStart,prevEnd).trim();
+if(!priorText)return '';
+return '--- PRIOR SOURCE EXCERPT (context only — already critiqued in earlier parts, do NOT re-score) ---\n'+priorText+'\n--- END PRIOR CONTEXT ---\n\n';
+}
 var turns=parseTranscriptTurns(transcript);
 if(!turns.length)return '';
-var startIdx=getTranscriptSliceForPart(transcript,partNum,totalParts).startIdx;
+var startIdx=cur.startIdx;
 if(startIdx<=0)return '';
 var from=Math.max(0,startIdx-(maxTurns||8));
 var prior=turns.slice(from,startIdx);
@@ -9721,7 +9750,7 @@ for(var pi=1;pi<partNum;pi++){
 var sl=getTranscriptSliceForPart(transcript,pi,totalParts);
 var tags=getTranscriptTagsForPart(transcript,pi,totalParts);
 if(sl.charSlice){
-p+='- Part '+pi+' DONE: source characters ~'+((sl.startChar||'?')+'–'+(sl.endChar||'?'))+' — do NOT re-critique opening prayer, virgin birth, or any material from earlier in the file.\n';
+p+='- Part '+pi+' DONE: source characters ~'+((sl.startChar||'?')+'–'+(sl.endChar||'?'))+(sl.monolithicTag?' (same tag, earlier segment)':'')+' — do NOT re-critique that stretch.\n';
 }else{
 p+='- Part '+pi+' DONE: transcript turns '+sl.startTurn+'–'+sl.endTurn+(tags.length?' ('+tags.join(', ')+')':'')+' — FORBIDDEN to write ## headers for these speakers/turns again.\n';
 }
@@ -9916,6 +9945,9 @@ p+='- The tagged transcript is IN THIS MESSAGE. You are NOT continuing a prior c
 p+='- "'+segLabel+'" means segment '+partNum+' of '+totalParts+' of ONE critique job — NOT a creative-fiction serial where Part 1 is missing.\n';
 p+='- START IMMEDIATELY critiquing the speaker turns in the segment below. Do NOT ask the user to paste Part 1, the brief, or the source.\n';
 p+='- Do NOT meta-comment on these instructions. Do NOT explain what you lack. Write the critique.\n';
+if(slice.monolithicTag){
+p+='- MONOLITHIC CROSSTALK PASTE: One tag covers the whole debate — many voices interrupt inside. You do NOT need per-speaker tags. Critique the ENABLED tag\'s program/host accountability AND every false doctrine spoken in THIS segment (IUIC, Dr. Price, captains, etc.) — trap each lie on forge terms.\n';
+}
 if(slice.charSlice){
 p+='- This part = character slice '+partNum+' of '+totalParts+' of the pasted transcript. Critique ONLY what is in the SEGMENT block — NOT the whole debate.\n\n';
 }else{
