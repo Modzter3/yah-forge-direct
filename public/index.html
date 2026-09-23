@@ -4282,6 +4282,27 @@ return;
 fetchChapterTextFromModel(book,chapter,type,callback);
 }
 function countVersesInText(text){
+// Strategy A: one verse per line — "1. In the beginning..." (local corpus / manual paste)
+var lines=(text||'').split('\n');
+var lineNums=[];
+for(var li=0;li<lines.length;li++){
+var lm=lines[li].trim().match(/^(\d{1,3})\.\s+/);
+if(lm)lineNums.push(parseInt(lm[1],10));
+}
+if(lineNums.length>=5&&lineNums[0]===1){
+var strict=true;
+for(var si=0;si<lineNums.length;si++){
+if(lineNums[si]!==si+1){strict=false;break;}
+}
+if(strict)return lineNums.length;
+var maxSeq=1;
+for(var sj=1;sj<lineNums.length;sj++){
+if(lineNums[sj]===maxSeq+1)maxSeq=lineNums[sj];
+else if(lineNums[sj]<=maxSeq+1)maxSeq=Math.max(maxSeq,lineNums[sj]);
+else break;
+}
+if(maxSeq>=5)return maxSeq;
+}
 // Strategy 0: biblical citation format -- "Sir 5:1" or "Gen 1:1" or "Psalm 119:1" etc.
 var citationMatches=text.match(/(?:^|\n)\s*[A-Za-z0-9 ]+\s+\d+:(\d+)\s/g);
 var maxFromCitations=0;
@@ -4293,7 +4314,7 @@ if(cite){var cv=parseInt(cite[1]);if(cv>maxFromCitations)maxFromCitations=cv;}
 }
 if(maxFromCitations>=5)return maxFromCitations;
 // Strategy 1: verse numbers at the start of lines -- "1." or "**1.**" or "1 " etc.
-var lineMatches=text.match(/(?:^|\n)\s*\**(\d+)\**[\.\):\s]/g);
+var lineMatches=text.match(/(?:^|\n)\s*\**(\d+)\**\.(?:\s|$)/g);
 var maxFromLines=0;
 if(lineMatches){
 for(var i=0;i<lineMatches.length;i++){
