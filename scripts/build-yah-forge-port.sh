@@ -11,6 +11,9 @@ rm -rf "$OUT"
 mkdir -p "$OUT/public" "$OUT/scripts" "$OUT/api"
 
 cp "$ROOT/public/index.html" "$OUT/public/index.html"
+cp "$ROOT/public/apoc-local-corpus.js" "$OUT/public/apoc-local-corpus.js"
+mkdir -p "$OUT/public/corpus"
+cp -r "$ROOT/public/corpus/." "$OUT/public/corpus/"
 python3 "$ROOT/scripts/adapt-index-for-poe.py" "$OUT/public/index.html"
 
 # Upgraded polyfill — still routes to /api/poe (Poe billing unchanged)
