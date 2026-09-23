@@ -12,6 +12,7 @@
 <script src="/ai-polyfill.js"></script>
 <script src="/kie-catalog.js"></script>
 <script src="/openrouter-models.js"></script>
+<script src="/apoc-local-corpus.js"></script>
 <style>
 :root {
   --gold:#D4A017; --gold-dim:#9B7510; --crimson:#8B1A1A; --crimson-glow:#C41E3A;
@@ -627,7 +628,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <div class="tab-panel" id="panelApocrypha">
   <div class="chapter-selector">
     <h2><i class="fas fa-book-skull"></i> Generate from Apocrypha</h2>
-    <p>Select a permitted apocryphal book and chapter. Enoch, Jasher, and Jubilees excluded.<br><span style="font-size:0.78em;opacity:0.7;"><i class="fas fa-globe" style="margin-right:3px;"></i>Apocrypha verses are retrieved via web search for accuracy -- not from model memory.</span></p>
+    <p>Select a permitted apocryphal book and chapter. Enoch, Jasher, and Jubilees excluded.<br><span style="font-size:0.78em;opacity:0.7;"><i class="fas fa-globe" style="margin-right:3px;"></i>Most apocrypha verses are retrieved via web search for accuracy -- not from model memory.</span><br><span id="apocCorpusNote" style="display:none;font-size:0.78em;opacity:0.85;color:var(--accent-teal);"><i class="fas fa-database" style="margin-right:3px;"></i><strong>Book of Natasrym (Natsarim):</strong> loaded from the built-in Gospel of the Kailedy corpus (21 chapters) — no web search.</span></p>
     <div class="selector-row">
       <select id="apocBook" onchange="updateApocChapters()"><option value="">-- Select Book --</option></select>
       <select id="apocChapter" disabled><option value="">-- Chapter --</option></select>
@@ -641,6 +642,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div style="margin-top:16px;">
       <label style="display:block;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:6px;"><i class="fas fa-paste" style="margin-right:5px;font-size:0.65rem;"></i>Or paste verses manually (optional):</label>
       <textarea id="apocManualPaste" class="dismantle-textarea" style="min-height:120px;font-size:14px;" placeholder="Paste the chapter verses here (one verse per line, numbered). If filled, auto-retrieval will be skipped and these verses will be used instead."></textarea>
+    </div>
+    <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+      <button type="button" class="lib-io-btn" onclick="importApocCorpusJson()" title="Import a JSON corpus (book + chapters) into this browser for offline retrieval"><i class="fas fa-file-import"></i> Import book JSON</button>
+      <span style="font-size:0.72rem;color:var(--text-muted);">Optional: save other rare books locally (same format as built-in Natsarim).</span>
     </div>
     <button class="chapter-gen-btn apoc-btn" onclick="openApocSermon()"><i class="fas fa-bolt"></i> Forge Sermon from Apocrypha</button>
   </div>
@@ -2071,12 +2076,47 @@ for(var i=0;i<APOC_BOOKS.length;i++){
 var o=document.createElement('option');o.value=i;o.textContent=APOC_BOOKS[i].n;sel.appendChild(o);
 }
 }
+function isNatasrymBookName(name){
+if(window.ForgeLocalCorpus&&ForgeLocalCorpus.normalizeBookName){
+var n=ForgeLocalCorpus.normalizeBookName(name);
+return n.indexOf('natsar')!==-1||n.indexOf('kailedy')!==-1;
+}
+return /natsar|kailedy/i.test(String(name||''));
+}
+function syncApocCorpusNote(){
+var note=document.getElementById('apocCorpusNote');
+if(!note)return;
+var sel=document.getElementById('apocBook');
+if(!sel||sel.value===''){note.style.display='none';return;}
+var book=APOC_BOOKS[parseInt(sel.value)];
+note.style.display=isNatasrymBookName(book.n)?'inline':'none';
+}
+function importApocCorpusJson(){
+var input=document.createElement('input');
+input.type='file';
+input.accept='application/json,.json';
+input.onchange=function(){
+var file=input.files&&input.files[0];
+if(!file)return;
+var reader=new FileReader();
+reader.onload=function(){
+try{
+if(!window.ForgeLocalCorpus)throw new Error('Corpus module not loaded');
+var name=ForgeLocalCorpus.importBookJson(reader.result);
+showToast('Imported local corpus: '+name);
+}catch(e){showToast('Import failed: '+(e.message||e));}
+};
+reader.readAsText(file);
+};
+input.click();
+}
 function updateApocChapters(){
 var sel=document.getElementById('apocBook');var ch=document.getElementById('apocChapter');
 ch.innerHTML='<option value="">-- Chapter --</option>';
-if(!sel.value){ch.disabled=true;return;}
+if(!sel.value){ch.disabled=true;syncApocCorpusNote();return;}
 var book=APOC_BOOKS[parseInt(sel.value)];ch.disabled=false;
 for(var i=1;i<=book.c;i++){var o=document.createElement('option');o.value=i;o.textContent='Chapter '+i;ch.appendChild(o);}
+syncApocCorpusNote();
 }
 function populateSealedBooks(){
 var sel=document.getElementById('sealedBook');
@@ -4173,7 +4213,7 @@ return true;
 }
 return false;
 }
-function fetchChapterText(book,chapter,type,callback){
+function fetchChapterTextFromModel(book,chapter,type,callback){
 var handlerName='scripture-fetch-'+Date.now();
 var fetchModel=getScriptureFetchModel();
 var fetchPrompt;
@@ -4182,7 +4222,13 @@ var completionInstructions='Do NOT think, reason, or explain. Output ONLY the ra
 completionInstructions+='Put each verse on its OWN line. Number each verse at the start like "1. In the beginning..." ';
 completionInstructions+='Do NOT skip any verses. Start at verse 1 and go to the very last verse of the chapter. ';
 completionInstructions+='You MUST output the COMPLETE chapter -- do NOT stop early or truncate. If the chapter is long, keep going until the final verse. Completeness is critical.\n';
-if(type==='sealed'){
+if(isNatasrymBookName(book)&&(type==='apocrypha'||type==='sealed')){
+fetchPrompt='CRITICAL BOOK IDENTITY: This is the "Book of the Natsarim" / "Book of Natasrym" from the Gospel of the Kailedy (Parable of the Vineyard restored-names edition, 21 chapters). ';
+fetchPrompt+='It is NOT the Book of Yochanon (John the Baptist) from the same volume. It is NOT generic "Nazarene" church history, NOT Acts 24:5 commentary, NOT the Kolbrin unrelated texts, and NOT standard KJV apocrypha/deuterocanon. ';
+fetchPrompt+='Search ONLY for "Book of the Natsarim" OR "Gospel of the Kailedy" Chapter '+chapter+' with numbered verses. Preferred sources: parableofthevineyard.com Natsarim PDF, spencercoffman.com Gospel of the Kailedy, bibliotecapleyades.net kolbrin_11 (Natsarim section only). ';
+fetchPrompt+='Retrieve Chapter '+chapter+' of the Book of the Natsarim ONLY.\n';
+fetchPrompt+=completionInstructions;
+}else if(type==='sealed'){
 // Sealed scrolls: use web search for rare/ancient texts
 fetchPrompt='IMPORTANT: You MUST use your web search tool to find the actual text of '+book+' Chapter '+chapter+'. ';
 fetchPrompt+='This is an ancient sealed/pseudepigraphal text that is NOT in standard Bibles. Do NOT recite from memory -- these texts are too rare and your training data likely has incomplete or inaccurate versions. ';
@@ -4219,6 +4265,21 @@ callback(msg.statusText||'Failed to retrieve scripture',null,fetchModel,false);
 window.Poe.sendUserMessage('@'+fetchModel+' '+fetchPrompt,{handler:handlerName,stream:false,openChat:false,parameters:fetchParams}).catch(function(err){
 callback(String(err),null,fetchModel,false);
 });
+}
+function fetchChapterText(book,chapter,type,callback){
+if(window.ForgeLocalCorpus&&(type==='apocrypha'||type==='sealed')){
+ForgeLocalCorpus.resolveLocalChapterText(book,chapter).then(function(local){
+if(local&&local.text){
+callback(null,local.text,local.source||'local corpus',false);
+return;
+}
+fetchChapterTextFromModel(book,chapter,type,callback);
+}).catch(function(){
+fetchChapterTextFromModel(book,chapter,type,callback);
+});
+return;
+}
+fetchChapterTextFromModel(book,chapter,type,callback);
 }
 function countVersesInText(text){
 // Strategy 0: biblical citation format -- "Sir 5:1" or "Gen 1:1" or "Psalm 119:1" etc.
@@ -4888,9 +4949,11 @@ output.appendChild(box);
 }else{
 // No manual paste -- proceed with auto-fetch
 var fetchModelName=getScriptureFetchModel();
-var fetchIcon=(currentChapterSource.type==='apocrypha'||currentChapterSource.type==='sealed')?'fa-globe':'fa-book-bible';
-var fetchLabel=(currentChapterSource.type==='sealed')?'Unearthing sealed text for ':(currentChapterSource.type==='apocrypha')?'Searching the web for ':'Retrieving ';
-output.innerHTML='<div class="loading-state" id="scriptureFetchLoader"><div class="loading-pulse"></div><div class="loading-text"><i class="fas '+fetchIcon+'" style="margin-right:6px;"></i>'+fetchLabel+escapeHtml(currentChapterSource.book)+' Chapter '+currentChapterSource.chapter+' via <strong>'+escapeHtml(fetchModelName)+'</strong>'+((currentChapterSource.type==='apocrypha'||currentChapterSource.type==='sealed')?' <span style="opacity:0.7;font-size:0.8em;">(web search enabled)</span>':'')+'...</div></div>';
+var useLocalCorpus=isNatasrymBookName(currentChapterSource.book);
+var fetchIcon=useLocalCorpus?'fa-database':((currentChapterSource.type==='apocrypha'||currentChapterSource.type==='sealed')?'fa-globe':'fa-book-bible');
+var fetchLabel=useLocalCorpus?'Loading built-in corpus for ':(currentChapterSource.type==='sealed')?'Unearthing sealed text for ':(currentChapterSource.type==='apocrypha')?'Searching the web for ':'Retrieving ';
+var fetchExtra=useLocalCorpus?' <span style="opacity:0.7;font-size:0.8em;">(local Gospel of the Kailedy text)</span>':((currentChapterSource.type==='apocrypha'||currentChapterSource.type==='sealed')?' <span style="opacity:0.7;font-size:0.8em;">(web search enabled)</span>':'');
+output.innerHTML='<div class="loading-state" id="scriptureFetchLoader"><div class="loading-pulse"></div><div class="loading-text"><i class="fas '+fetchIcon+'" style="margin-right:6px;"></i>'+fetchLabel+escapeHtml(currentChapterSource.book)+' Chapter '+currentChapterSource.chapter+(useLocalCorpus?'':' via <strong>'+escapeHtml(fetchModelName)+'</strong>')+fetchExtra+'...</div></div>';
 fetchChapterText(currentChapterSource.book,currentChapterSource.chapter,currentChapterSource.type,function(err,text,usedModel,truncated){
 var loader=document.getElementById('scriptureFetchLoader');
 if(loader)loader.remove();
