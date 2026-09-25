@@ -1818,6 +1818,9 @@ if(tc<=5)return 4;
 return 5;
 }
 if(mode==='sealed'){
+if(typeof getForgeLlmProvider==='function'&&getForgeLlmProvider()==='bonsai'&&ForgeBonsaiProfile&&ForgeBonsaiProfile.recommendedPartsForChapter){
+return ForgeBonsaiProfile.recommendedPartsForChapter(currentChapterVerseCount);
+}
 // Sealed scrolls -- longer texts get more parts
 var sealedBookName=currentChapterSource?currentChapterSource.book:'';
 var heavySealed=['1 Enoch','2 Enoch','3 Enoch','Book of Jasher','Book of Jubilees','Testament of Job','1 Adam and Eve','Conflict of Adam','Pistis Sophia','Sefer Raziel'];
@@ -1825,6 +1828,9 @@ for(var hs=0;hs<heavySealed.length;hs++){if(sealedBookName.indexOf(heavySealed[h
 return 3;
 }
 if(mode==='bible'||mode==='apocrypha'){
+if(typeof getForgeLlmProvider==='function'&&getForgeLlmProvider()==='bonsai'&&ForgeBonsaiProfile&&ForgeBonsaiProfile.recommendedPartsForChapter){
+return ForgeBonsaiProfile.recommendedPartsForChapter(currentChapterVerseCount);
+}
 var heavy=['Isaiah','Ezekiel','Daniel','Revelation','Genesis','Exodus','Deuteronomy','Jeremiah','Romans','Hebrews','Matthew','Acts','Psalms','Wisdom of Solomon','Sirach (Ecclesiasticus)','2 Esdras (4 Ezra)'];
 var light=['Philemon','2 John','3 John','Jude','Titus','Letter of Jeremiah','Prayer of Azariah','Prayer of Manasseh','Susanna','Bel and the Dragon'];
 var bookName=currentChapterSource?currentChapterSource.book:'';
@@ -1926,7 +1932,13 @@ btns[i].classList.toggle('active',parseInt(btns[i].getAttribute('data-count'))==
 }
 function updatePartRecommendation(){
 var rec=recommendPartCount(currentTopic,currentMode);
-document.getElementById('partRecBadge').textContent='REC: '+rec;
+var badge=document.getElementById('partRecBadge');
+badge.textContent='REC: '+rec;
+if(typeof getForgeLlmProvider==='function'&&getForgeLlmProvider()==='bonsai'&&(currentMode==='bible'||currentMode==='apocrypha'||currentMode==='sealed')){
+badge.title='Bonsai RunPod: more parts = fewer verses per part and less context/memory pressure';
+}else{
+badge.title='Recommended based on topic depth';
+}
 if(!document.getElementById('toggleAlways7').checked){
 setPartCount(rec);
 }

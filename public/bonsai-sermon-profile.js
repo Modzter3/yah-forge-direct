@@ -573,6 +573,16 @@
     return params;
   }
 
+  /** RunPod-friendly verse band sizing (smaller parts → less context pressure). */
+  function recommendedPartsForChapter(verseCount) {
+    var vc = parseInt(verseCount, 10) || 0;
+    if (vc <= 0) return 5;
+    if (vc <= 8) return 2;
+    if (vc <= 14) return 3;
+    if (vc <= 22) return 4;
+    return 5;
+  }
+
   function shouldUseProfile() {
     return isChapterSermonContext();
   }
@@ -638,5 +648,6 @@
     enableRepetitionRetry: function (state) {
       if (state) state.repetitionRetry = true;
     },
+    recommendedPartsForChapter: recommendedPartsForChapter,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
