@@ -10,6 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js" crossorigin="anonymous"></script>
 <script>if(typeof marked==='undefined'){window.marked={parse:function(t){return t.replace(/&/g,'&amp;').replace(/\x3c/g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'\x3cbr>');}}}</script>
 <script src="/ai-polyfill.js"></script>
+<script src="/forge-llm-provider.js"></script>
 <script src="/kie-catalog.js"></script>
 <script src="/openrouter-models.js"></script>
 <script src="/apoc-local-corpus.js"></script>
@@ -1182,6 +1183,15 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         </select>
       </div>
       <div class="model-select-block">
+        <div class="model-select-wrap">
+          <label><i class="fas fa-server"></i> LLM provider:</label>
+          <select class="model-select" id="forgeLlmProvider" onchange="onForgeLlmProviderChange()" style="max-width:220px;">
+            <option value="openrouter" selected>OpenRouter</option>
+            <option value="bonsai">Bonsai RunPod</option>
+          </select>
+          <span id="bonsaiHealthStatus" style="display:none;font-size:0.72rem;font-family:'Fira Code',monospace;margin-left:6px;"></span>
+        </div>
+        <div id="forgeLlmProviderHint" class="custom-model-hint" style="margin-bottom:8px;">OpenRouter + optional kie/... models via OPENROUTER_API_KEY and KIE_API_KEY.</div>
         <div class="model-select-wrap">
           <label><i class="fas fa-robot"></i> Model:</label>
           <select class="model-select" id="modelSelect" onchange="onSermonModelDropdown()">
