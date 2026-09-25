@@ -1,0 +1,28 @@
+Example user message body sent to POST /api/ai when forging Numbers 3 part 2 of 3 with OrcaRouter Local selected.
+
+=== LOCAL SERMON ORCHESTRATION (overrides generic length padding) ===
+SERMON STATE
+Book: Numbers
+Chapter: 3
+Part: 2 of 3
+Cover ONLY: Numbers 3:18-34
+Already covered: Numbers 3:1-17
+...
+
+Forge POST /api/ai JSON (abbreviated):
+{
+  "provider": "local",
+  "bot": "local/orcarouter",
+  "query": "@local/orcarouter ...",
+  "parameters": {
+    "local_llm_sermon": true,
+    "max_tokens": 4060,
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "top_k": 20,
+    "repeat_penalty": 1.08,
+    "forge_stream_abort_key": "sermon-part-2-..."
+  }
+}
+
+Server merges with getLocalLlmGenerationProfile() defaults; strips local_llm_sermon and OpenAI frequency/presence penalties before POST {LOCAL_LLM_BASE_URL}/chat/completions.

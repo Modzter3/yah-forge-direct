@@ -90,7 +90,7 @@
     const payload = { bot, query: prompt, parameters };
     if (images && images.length) payload.images = images;
     const provider = resolveLlmProvider();
-    if (provider === 'bonsai') payload.provider = 'bonsai';
+    if (provider === 'local' || provider === 'bonsai') payload.provider = 'local';
     const signal = resolveAbortSignal(parameters);
     const fetchOpts = {
       method: 'POST',
@@ -103,8 +103,8 @@
       let msg;
       try { msg = (await res.json()).error; } catch { msg = await res.text(); }
       const errText = msg || `HTTP ${res.status}`;
-      if (provider === 'bonsai' && !/Bonsai RunPod offline/i.test(errText)) {
-        throw new Error('Bonsai RunPod offline: ' + errText);
+      if ((provider === 'local' || provider === 'bonsai') && !/OrcaRouter Local offline/i.test(errText)) {
+        throw new Error('OrcaRouter Local offline: ' + errText);
       }
       throw new Error(errText);
     }

@@ -1,0 +1,17 @@
+{
+  "_comment": "Example POST https://91olopadheefpl-8080.proxy.runpod.net/v1/chat/completions (Forge /api/ai builds equivalent body)",
+  "model": "orcarouter_Qwen3.8-27B-Uncensored-Q6_K_L.gguf",
+  "messages": [
+    {
+      "role": "user",
+      "content": "=== LOCAL SERMON ORCHESTRATION ===\n... verse ledger + slim KJV band ...\n\n(Full Forge part prompt follows.)"
+    }
+  ],
+  "stream": true,
+  "temperature": 0.7,
+  "top_p": 0.9,
+  "top_k": 20,
+  "repeat_penalty": 1.08,
+  "max_tokens": 4060,
+  "stream_options": { "include_usage": true }
+}

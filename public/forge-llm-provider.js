@@ -1,47 +1,56 @@
 /**
- * Global LLM provider selection: OpenRouter (default) vs Bonsai RunPod.
+ * Global LLM provider selection: OpenRouter (default) vs OrcaRouter Local (RunPod).
  * Server keys stay on Vercel; client only sends provider id to /api/ai.
  */
 (function (global) {
   var STORAGE_KEY = 'yahForgeLlmProvider';
-  var BONSAI_MODEL_ID = 'bonsai/runpod';
-  var HEALTH_URL = '/api/bonsai-health';
+  var LOCAL_MODEL_ID = 'local/orcarouter';
+  var HEALTH_URL = '/api/local-llm-health';
   var lastHealth = { checkedAt: 0, ok: null, message: '' };
+
+  function normalizeProviderId(v) {
+    if (v === 'bonsai') return 'local';
+    return v === 'local' ? 'local' : 'openrouter';
+  }
 
   function getForgeLlmProvider() {
     try {
       var v = localStorage.getItem(STORAGE_KEY);
-      if (v === 'bonsai') return 'bonsai';
+      return normalizeProviderId(v === 'bonsai' ? 'local' : v);
     } catch (e) {}
     return 'openrouter';
   }
 
   function setForgeLlmProvider(id) {
-    var next = id === 'bonsai' ? 'bonsai' : 'openrouter';
+    var next = normalizeProviderId(id);
     try {
       localStorage.setItem(STORAGE_KEY, next);
     } catch (e) {}
     syncProviderUi();
     refreshModelCatalogForProvider();
-    if (next === 'bonsai') checkBonsaiHealth(true);
+    if (next === 'local') checkLocalLlmHealth(true);
     if (typeof global.updatePartRecommendation === 'function') global.updatePartRecommendation();
   }
 
-  function getBonsaiModelId() {
-    return BONSAI_MODEL_ID;
+  function getLocalLlmModelId() {
+    return LOCAL_MODEL_ID;
   }
 
-  function bonsaiCatalogEntry() {
+  function getBonsaiModelId() {
+    return getLocalLlmModelId();
+  }
+
+  function localLlmCatalogEntry() {
     return {
-      id: BONSAI_MODEL_ID,
-      name: 'Bonsai RunPod (env BONSAI_MODEL)',
+      id: LOCAL_MODEL_ID,
+      name: 'OrcaRouter Local (env LOCAL_LLM_MODEL)',
       context_length: 65536,
       pricing: null,
     };
   }
 
-  function fillAllSelectsWithBonsai() {
-    var entry = bonsaiCatalogEntry();
+  function fillAllSelectsWithLocalLlm() {
+    var entry = localLlmCatalogEntry();
     var ids =
       global.FORGE_MODEL_SELECT_IDS ||
       [
@@ -70,8 +79,8 @@
   }
 
   function refreshModelCatalogForProvider() {
-    if (getForgeLlmProvider() === 'bonsai') {
-      fillAllSelectsWithBonsai();
+    if (getForgeLlmProvider() === 'local') {
+      fillAllSelectsWithLocalLlm();
       return Promise.resolve();
     }
     if (typeof global.hydrateForgeModelSelects === 'function') {
@@ -80,28 +89,28 @@
     return Promise.resolve();
   }
 
-  function updateBonsaiHealthBadge(data) {
-    var el = document.getElementById('bonsaiHealthStatus');
+  function updateLocalLlmHealthBadge(data) {
+    var el = document.getElementById('localLlmHealthStatus') || document.getElementById('bonsaiHealthStatus');
     if (!el) return;
-    if (getForgeLlmProvider() !== 'bonsai') {
+    if (getForgeLlmProvider() !== 'local') {
       el.textContent = '';
       el.style.display = 'none';
       return;
     }
     el.style.display = 'inline';
     if (data && data.ok) {
-      el.textContent = 'Bonsai RunPod online';
+      el.textContent = 'OrcaRouter Local online';
       el.style.color = 'var(--accent-teal, #2D8B7A)';
     } else {
-      el.textContent = data && data.error ? data.error : 'Bonsai RunPod offline';
+      el.textContent = data && data.error ? data.error : 'OrcaRouter Local offline';
       el.style.color = 'var(--crimson-glow, #C41E3A)';
     }
   }
 
-  function checkBonsaiHealth(force) {
+  function checkLocalLlmHealth(force) {
     var now = Date.now();
     if (!force && now - lastHealth.checkedAt < 45000 && lastHealth.ok !== null) {
-      updateBonsaiHealthBadge({ ok: lastHealth.ok, error: lastHealth.message });
+      updateLocalLlmHealthBadge({ ok: lastHealth.ok, error: lastHealth.message });
       return Promise.resolve(lastHealth);
     }
     return fetch(HEALTH_URL, { method: 'GET', cache: 'no-store' })
@@ -115,20 +124,24 @@
         lastHealth = {
           checkedAt: Date.now(),
           ok: ok,
-          message: ok ? '' : (res.body && res.body.error) || 'Bonsai RunPod offline',
+          message: ok ? '' : (res.body && res.body.error) || 'OrcaRouter Local offline',
         };
-        updateBonsaiHealthBadge({ ok: ok, error: lastHealth.message });
+        updateLocalLlmHealthBadge({ ok: ok, error: lastHealth.message });
         return lastHealth;
       })
       .catch(function () {
         lastHealth = {
           checkedAt: Date.now(),
           ok: false,
-          message: 'Bonsai RunPod offline: health check failed',
+          message: 'OrcaRouter Local offline: health check failed',
         };
-        updateBonsaiHealthBadge({ ok: false, error: lastHealth.message });
+        updateLocalLlmHealthBadge({ ok: false, error: lastHealth.message });
         return lastHealth;
       });
+  }
+
+  function checkBonsaiHealth(force) {
+    return checkLocalLlmHealth(force);
   }
 
   function syncProviderUi() {
@@ -136,14 +149,14 @@
     if (sel) sel.value = getForgeLlmProvider();
     var hint = document.getElementById('forgeLlmProviderHint');
     var customRow = document.querySelector('.model-select-block .custom-model-row');
-    var isBonsai = getForgeLlmProvider() === 'bonsai';
+    var isLocal = getForgeLlmProvider() === 'local';
     if (hint) {
-      hint.textContent = isBonsai
-        ? 'Bonsai RunPod uses server env BONSAI_MODEL — no OpenRouter key. If RunPod is down, you will see "Bonsai RunPod offline" (no fallback).'
+      hint.textContent = isLocal
+        ? 'OrcaRouter Local uses server env LOCAL_LLM_MODEL on your RunPod endpoint — no OpenRouter key. If RunPod is down, you will see "OrcaRouter Local offline" (no fallback).'
         : 'OpenRouter + optional kie/... models via OPENROUTER_API_KEY and KIE_API_KEY.';
     }
-    if (customRow) customRow.style.display = isBonsai ? 'none' : '';
-    updateBonsaiHealthBadge(isBonsai ? { ok: lastHealth.ok, error: lastHealth.message } : null);
+    if (customRow) customRow.style.display = isLocal ? 'none' : '';
+    updateLocalLlmHealthBadge(isLocal ? { ok: lastHealth.ok, error: lastHealth.message } : null);
   }
 
   function onForgeLlmProviderChange() {
@@ -157,8 +170,8 @@
     var orig = global.hydrateForgeModelSelects;
     if (typeof orig !== 'function') return;
     global.hydrateForgeModelSelects = function () {
-      if (getForgeLlmProvider() === 'bonsai') {
-        fillAllSelectsWithBonsai();
+      if (getForgeLlmProvider() === 'local') {
+        fillAllSelectsWithLocalLlm();
         return Promise.resolve();
       }
       return orig.apply(global, arguments);
@@ -169,16 +182,18 @@
     patchOpenRouterHydrate();
     syncProviderUi();
     refreshModelCatalogForProvider();
-    if (getForgeLlmProvider() === 'bonsai') checkBonsaiHealth(false);
+    if (getForgeLlmProvider() === 'local') checkLocalLlmHealth(false);
     setInterval(function () {
-      if (getForgeLlmProvider() === 'bonsai') checkBonsaiHealth(false);
+      if (getForgeLlmProvider() === 'local') checkLocalLlmHealth(false);
     }, 60000);
   }
 
   global.getForgeLlmProvider = getForgeLlmProvider;
   global.setForgeLlmProvider = setForgeLlmProvider;
+  global.getLocalLlmModelId = getLocalLlmModelId;
   global.getBonsaiModelId = getBonsaiModelId;
   global.onForgeLlmProviderChange = onForgeLlmProviderChange;
+  global.checkLocalLlmHealth = checkLocalLlmHealth;
   global.checkBonsaiHealth = checkBonsaiHealth;
   global.refreshModelCatalogForProvider = refreshModelCatalogForProvider;
   global.initForgeLlmProvider = initForgeLlmProvider;

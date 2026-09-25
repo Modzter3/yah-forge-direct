@@ -8,12 +8,12 @@ import {
   transformKieResponsesSse,
 } from './kie-provider.js';
 import {
-  BONSAI_PROVIDER_ID,
-  BONSAI_OFFLINE_PREFIX,
-  buildBonsaiChatPayload,
-  getBonsaiConfig,
-  isBonsaiProviderRequest,
-} from './bonsai-provider.js';
+  LOCAL_LLM_PROVIDER_ID,
+  LOCAL_LLM_OFFLINE_PREFIX,
+  buildLocalLlmChatPayload,
+  getLocalLlmConfig,
+  isLocalLlmProviderRequest,
+} from './local-llm-provider.js';
 
 export const config = { runtime: 'edge' };
 
@@ -89,8 +89,8 @@ export default async function handler(req) {
   }
   const imageList = normalizeImageInputs(images);
 
-  if (isBonsaiProviderRequest(body)) {
-    return handleBonsaiRequest({ query, parameters, imageList });
+  if (isLocalLlmProviderRequest(body)) {
+    return handleLocalLlmRequest({ query, parameters, imageList });
   }
 
   const defaultProviderName = (process.env.AI_PROVIDER || 'openrouter').trim().toLowerCase();
@@ -177,11 +177,11 @@ export default async function handler(req) {
   return jsonFromProviderToSse(parsed, providerName, resolvedModel);
 }
 
-async function handleBonsaiRequest({ query, parameters, imageList }) {
-  const config = getBonsaiConfig();
+async function handleLocalLlmRequest({ query, parameters, imageList }) {
+  const config = getLocalLlmConfig();
   if (!config.baseUrl || !config.apiKey || !config.model) {
     return jsonError(
-      'Bonsai RunPod is not configured. Set BONSAI_BASE_URL, BONSAI_API_KEY, and BONSAI_MODEL in Vercel.',
+      'OrcaRouter Local is not configured. Set LOCAL_LLM_BASE_URL, LOCAL_LLM_API_KEY, and LOCAL_LLM_MODEL in Vercel.',
       500
     );
   }
@@ -194,7 +194,7 @@ async function handleBonsaiRequest({ query, parameters, imageList }) {
     systemContent = process.env.YAH_STORY_SYSTEM_PROMPT || DEFAULT_YAH_STORY_SYSTEM_PROMPT;
   }
 
-  const built = buildBonsaiChatPayload({
+  const built = buildLocalLlmChatPayload({
     model: config.model,
     query,
     parameters: params,
@@ -218,7 +218,7 @@ async function handleBonsaiRequest({ query, parameters, imageList }) {
     });
   } catch (err) {
     return jsonError(
-      `${BONSAI_OFFLINE_PREFIX}: ${err.message || 'cannot reach RunPod endpoint'}`,
+      `${LOCAL_LLM_OFFLINE_PREFIX}: ${err.message || 'cannot reach RunPod endpoint'}`,
       502
     );
   }
@@ -231,17 +231,17 @@ async function handleBonsaiRequest({ query, parameters, imageList }) {
     let parsed = null;
     try { parsed = JSON.parse(raw); } catch { parsed = null; }
     const clean = cleanErrorMessage(parsed, raw) || `HTTP ${upstream.status}`;
-    return jsonError(`${BONSAI_OFFLINE_PREFIX}: ${clean}`, upstream.status >= 400 ? upstream.status : 502);
+    return jsonError(`${LOCAL_LLM_OFFLINE_PREFIX}: ${clean}`, upstream.status >= 400 ? upstream.status : 502);
   }
 
   if (contentType.includes('text/event-stream')) {
-    return streamPassThrough(upstream, BONSAI_PROVIDER_ID, resolvedModel);
+    return streamPassThrough(upstream, LOCAL_LLM_PROVIDER_ID, resolvedModel);
   }
 
   const raw = await safeReadText(upstream);
   let parsed = null;
   try { parsed = JSON.parse(raw); } catch { parsed = null; }
-  return jsonFromProviderToSse(parsed, BONSAI_PROVIDER_ID, resolvedModel);
+  return jsonFromProviderToSse(parsed, LOCAL_LLM_PROVIDER_ID, resolvedModel);
 }
 
 async function handleKieRequest({ bot, query, parameters, imageList, kieModel, apiKey, baseUrl }) {
