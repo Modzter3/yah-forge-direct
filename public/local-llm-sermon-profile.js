@@ -100,6 +100,38 @@
     );
   }
 
+  function isLocalExplicitModeEnabled() {
+    try {
+      if (typeof global.isExplicitModeActive === 'function') return global.isExplicitModeActive();
+      if (typeof document !== 'undefined') {
+        var el = document.getElementById('toggleExplicit');
+        return !!(el && el.checked);
+      }
+    } catch (e) {
+      return false;
+    }
+    return false;
+  }
+
+  function buildLocalExplicitModeBlock(meta) {
+    return (
+      'EXPLICIT MODE: ON (LOCAL LLM)\n' +
+      '- Use frequent, natural profanity when it strengthens delivery — do not sanitize the sermon.\n' +
+      '- Do NOT replace profanity with euphemisms or default to church-safe language.\n' +
+      '- Do NOT merely sprinkle one curse word into the whole part.\n' +
+      '- Vocabulary may include: damn, hell, bullshit, shit, ass, bastard, motherfucker, fuck.\n' +
+      '- Use them organically in rebukes, confrontation, ridicule, anger, and emphasis.\n' +
+      '- Do NOT force profanity into every sentence. Do NOT become comedic or juvenile.\n' +
+      '- Stay intelligent, controlled, scriptural, and dangerous.\n' +
+      '- When the subject warrants it, use sexually explicit or graphic adult language directly rather than vague euphemisms — only when relevant to what is being condemned or explained.\n' +
+      '- Explicit mode changes vocabulary intensity ONLY — not doctrine, factual accuracy, verse coverage, or KJV figures for ' +
+      meta.book +
+      ' chapter ' +
+      meta.chapter +
+      '.\n'
+    );
+  }
+
   function buildAntiStockFillerDiscipline(meta) {
     return (
       'NO STOCK FILLER (LOCAL LLM — MANDATORY):\n' +
@@ -307,6 +339,7 @@
       '',
       buildAntiStockFillerDiscipline(meta),
       '',
+      isLocalExplicitModeEnabled() ? buildLocalExplicitModeBlock(meta) + '\n' : '',
       buildEndingContract(meta),
       '',
       'LOCAL PART LENGTH: Aim for ~' +
@@ -343,6 +376,9 @@
       p +=
         'NO STOCK FILLER: Remove recycled hype ("fire is still burning," "wipe the sweat," "keep listening," "your choice," etc.). ' +
         'Each paragraph must advance verse, doctrine, or application — fresh wording only.\n\n';
+    }
+    if (/explicit|brimstone|profan|sanitiz|church-safe/i.test(String(reason || '')) && isLocalExplicitModeEnabled()) {
+      p += buildLocalExplicitModeBlock(meta) + '\n';
     }
     if (/numeric|accuracy|273|263|1365|count|figure|drift|math|KJV figure/i.test(String(reason || ''))) {
       p +=
@@ -1055,6 +1091,8 @@
     augmentPartPrompt: augmentPartPrompt,
     buildRetryPrompt: buildRetryPrompt,
     buildVerseLedger: buildVerseLedger,
+    buildLocalExplicitModeBlock: buildLocalExplicitModeBlock,
+    isLocalExplicitModeEnabled: isLocalExplicitModeEnabled,
     auditVersePartition: auditVersePartition,
     applyGenerationParams: applyGenerationParams,
     applyLocalBudgetParams: applyLocalBudgetParams,

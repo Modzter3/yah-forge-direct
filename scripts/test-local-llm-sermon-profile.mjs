@@ -82,9 +82,11 @@ const good273 =
 const valGood = P.validateScriptureReferences(good273, meta5, { chapterText: numbers3 });
 if (!valGood.ok) throw new Error('correct KJV figures should pass: ' + valGood.errors);
 
+const fillerPad = 'Verse exposition padding. '.repeat(20);
 const fillerPart2 =
+  fillerPad +
   'The fire is still burning on your skin. Verse eighteen names Libni and Shimei. They carry the charge.';
-const fillerPrior = 'The fire is still burning on your skin from that gate warning.';
+const fillerPrior = fillerPad + 'The fire is still burning on your skin from that gate warning.';
 const degReuse = P.detectDegeneration(fillerPart2, { partNum: 2, priorPartsText: fillerPrior });
 if (!degReuse || !/stock transition/i.test(degReuse.reason)) {
   throw new Error('should detect reused stock filler between parts: ' + (degReuse && degReuse.reason));
@@ -94,6 +96,14 @@ const degOk = P.detectDegeneration('Verse eighteen lists Libni and Shimei for th
   priorPartsText: fillerPrior,
 });
 if (degOk) throw new Error('verse-only part 2 open should pass filler check: ' + degOk.reason);
+
+const explicitBlock = P.buildLocalExplicitModeBlock({ book: 'Numbers', chapter: 3 });
+if (!/EXPLICIT MODE: ON/.test(explicitBlock) || !/motherfucker/.test(explicitBlock)) {
+  throw new Error('local explicit mode block missing required guidance');
+}
+if (!/factual accuracy/.test(explicitBlock)) {
+  throw new Error('explicit block must preserve accuracy discipline');
+}
 
 const words2800 = 2800;
 const tok = P.maxTokensForWords(words2800);
