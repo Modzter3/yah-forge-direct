@@ -106,9 +106,7 @@ const ch3Full = numbersBook.chapters['3'];
 state.fullChapterText = ch3Full;
 const meta3 = P.buildPartMeta(3, state);
 const slim = P.sliceChapterTextForBand(ch3Full, meta3.range, meta3);
-if (!slim.includes('35.') || slim.includes('\n36.') === false && meta3.range.end >= 36) {
-  /* range-dependent */
-}
+if (!slim.includes('35.')) throw new Error('part 3 slice missing verse 35');
 if (slim.length >= ch3Full.length * 0.85) {
   throw new Error('part 3 slice should be much smaller than full chapter');
 }
