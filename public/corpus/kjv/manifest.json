@@ -1,0 +1,338 @@
+{
+  "translation": "KJV",
+  "books": [
+    {
+      "book": "Genesis",
+      "file": "Genesis.json",
+      "chapters": 50
+    },
+    {
+      "book": "Exodus",
+      "file": "Exodus.json",
+      "chapters": 40
+    },
+    {
+      "book": "Leviticus",
+      "file": "Leviticus.json",
+      "chapters": 27
+    },
+    {
+      "book": "Numbers",
+      "file": "Numbers.json",
+      "chapters": 36
+    },
+    {
+      "book": "Deuteronomy",
+      "file": "Deuteronomy.json",
+      "chapters": 34
+    },
+    {
+      "book": "Joshua",
+      "file": "Joshua.json",
+      "chapters": 24
+    },
+    {
+      "book": "Judges",
+      "file": "Judges.json",
+      "chapters": 21
+    },
+    {
+      "book": "Ruth",
+      "file": "Ruth.json",
+      "chapters": 4
+    },
+    {
+      "book": "1 Samuel",
+      "file": "1 Samuel.json",
+      "chapters": 31
+    },
+    {
+      "book": "2 Samuel",
+      "file": "2 Samuel.json",
+      "chapters": 24
+    },
+    {
+      "book": "1 Kings",
+      "file": "1 Kings.json",
+      "chapters": 22
+    },
+    {
+      "book": "2 Kings",
+      "file": "2 Kings.json",
+      "chapters": 25
+    },
+    {
+      "book": "1 Chronicles",
+      "file": "1 Chronicles.json",
+      "chapters": 29
+    },
+    {
+      "book": "2 Chronicles",
+      "file": "2 Chronicles.json",
+      "chapters": 36
+    },
+    {
+      "book": "Ezra",
+      "file": "Ezra.json",
+      "chapters": 10
+    },
+    {
+      "book": "Nehemiah",
+      "file": "Nehemiah.json",
+      "chapters": 13
+    },
+    {
+      "book": "Esther",
+      "file": "Esther.json",
+      "chapters": 10
+    },
+    {
+      "book": "Job",
+      "file": "Job.json",
+      "chapters": 42
+    },
+    {
+      "book": "Psalms",
+      "file": "Psalms.json",
+      "chapters": 150
+    },
+    {
+      "book": "Proverbs",
+      "file": "Proverbs.json",
+      "chapters": 31
+    },
+    {
+      "book": "Ecclesiastes",
+      "file": "Ecclesiastes.json",
+      "chapters": 12
+    },
+    {
+      "book": "Song of Solomon",
+      "file": "Song of Solomon.json",
+      "chapters": 8
+    },
+    {
+      "book": "Isaiah",
+      "file": "Isaiah.json",
+      "chapters": 66
+    },
+    {
+      "book": "Jeremiah",
+      "file": "Jeremiah.json",
+      "chapters": 52
+    },
+    {
+      "book": "Lamentations",
+      "file": "Lamentations.json",
+      "chapters": 5
+    },
+    {
+      "book": "Ezekiel",
+      "file": "Ezekiel.json",
+      "chapters": 48
+    },
+    {
+      "book": "Daniel",
+      "file": "Daniel.json",
+      "chapters": 12
+    },
+    {
+      "book": "Hosea",
+      "file": "Hosea.json",
+      "chapters": 14
+    },
+    {
+      "book": "Joel",
+      "file": "Joel.json",
+      "chapters": 3
+    },
+    {
+      "book": "Amos",
+      "file": "Amos.json",
+      "chapters": 9
+    },
+    {
+      "book": "Obadiah",
+      "file": "Obadiah.json",
+      "chapters": 1
+    },
+    {
+      "book": "Jonah",
+      "file": "Jonah.json",
+      "chapters": 4
+    },
+    {
+      "book": "Micah",
+      "file": "Micah.json",
+      "chapters": 7
+    },
+    {
+      "book": "Nahum",
+      "file": "Nahum.json",
+      "chapters": 3
+    },
+    {
+      "book": "Habakkuk",
+      "file": "Habakkuk.json",
+      "chapters": 3
+    },
+    {
+      "book": "Zephaniah",
+      "file": "Zephaniah.json",
+      "chapters": 3
+    },
+    {
+      "book": "Haggai",
+      "file": "Haggai.json",
+      "chapters": 2
+    },
+    {
+      "book": "Zechariah",
+      "file": "Zechariah.json",
+      "chapters": 14
+    },
+    {
+      "book": "Malachi",
+      "file": "Malachi.json",
+      "chapters": 4
+    },
+    {
+      "book": "Matthew",
+      "file": "Matthew.json",
+      "chapters": 28
+    },
+    {
+      "book": "Mark",
+      "file": "Mark.json",
+      "chapters": 16
+    },
+    {
+      "book": "Luke",
+      "file": "Luke.json",
+      "chapters": 24
+    },
+    {
+      "book": "John",
+      "file": "John.json",
+      "chapters": 21
+    },
+    {
+      "book": "Acts",
+      "file": "Acts.json",
+      "chapters": 28
+    },
+    {
+      "book": "Romans",
+      "file": "Romans.json",
+      "chapters": 16
+    },
+    {
+      "book": "1 Corinthians",
+      "file": "1 Corinthians.json",
+      "chapters": 16
+    },
+    {
+      "book": "2 Corinthians",
+      "file": "2 Corinthians.json",
+      "chapters": 13
+    },
+    {
+      "book": "Galatians",
+      "file": "Galatians.json",
+      "chapters": 6
+    },
+    {
+      "book": "Ephesians",
+      "file": "Ephesians.json",
+      "chapters": 6
+    },
+    {
+      "book": "Philippians",
+      "file": "Philippians.json",
+      "chapters": 4
+    },
+    {
+      "book": "Colossians",
+      "file": "Colossians.json",
+      "chapters": 4
+    },
+    {
+      "book": "1 Thessalonians",
+      "file": "1 Thessalonians.json",
+      "chapters": 5
+    },
+    {
+      "book": "2 Thessalonians",
+      "file": "2 Thessalonians.json",
+      "chapters": 3
+    },
+    {
+      "book": "1 Timothy",
+      "file": "1 Timothy.json",
+      "chapters": 6
+    },
+    {
+      "book": "2 Timothy",
+      "file": "2 Timothy.json",
+      "chapters": 4
+    },
+    {
+      "book": "Titus",
+      "file": "Titus.json",
+      "chapters": 3
+    },
+    {
+      "book": "Philemon",
+      "file": "Philemon.json",
+      "chapters": 1
+    },
+    {
+      "book": "Hebrews",
+      "file": "Hebrews.json",
+      "chapters": 13
+    },
+    {
+      "book": "James",
+      "file": "James.json",
+      "chapters": 5
+    },
+    {
+      "book": "1 Peter",
+      "file": "1 Peter.json",
+      "chapters": 5
+    },
+    {
+      "book": "2 Peter",
+      "file": "2 Peter.json",
+      "chapters": 3
+    },
+    {
+      "book": "1 John",
+      "file": "1 John.json",
+      "chapters": 5
+    },
+    {
+      "book": "2 John",
+      "file": "2 John.json",
+      "chapters": 1
+    },
+    {
+      "book": "3 John",
+      "file": "3 John.json",
+      "chapters": 1
+    },
+    {
+      "book": "Jude",
+      "file": "Jude.json",
+      "chapters": 1
+    },
+    {
+      "book": "Revelation",
+      "file": "Revelation.json",
+      "chapters": 22
+    }
+  ],
+  "totalBooks": 66,
+  "totalChapters": 1189,
+  "source": "https://github.com/aruljohn/Bible-kjv"
+}

@@ -606,7 +606,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <div class="tab-panel" id="panelBible">
   <div class="chapter-selector">
     <h2><i class="fas fa-book-bible"></i> Generate from Bible Chapter</h2>
-    <p>Select a KJV book and chapter to forge a sermon directly from scripture.</p>
+    <p>Select a KJV book and chapter to forge a sermon directly from scripture.<br><span style="font-size:0.78em;opacity:0.85;color:var(--accent-teal);"><i class="fas fa-database" style="margin-right:3px;"></i>Full KJV (66 books) loads from the built-in corpus — no web search or model fetch for chapter text.</span></p>
     <div class="selector-row">
       <select id="bibleBook" onchange="updateBibleChapters()"><option value="">-- Select Book --</option></select>
       <select id="bibleChapter" disabled><option value="">-- Chapter --</option></select>
@@ -4277,14 +4277,23 @@ callback(String(err),null,fetchModel,false);
 });
 }
 function fetchChapterText(book,chapter,type,callback){
-if(window.ForgeLocalCorpus&&(type==='apocrypha'||type==='sealed')){
-ForgeLocalCorpus.resolveLocalChapterText(book,chapter).then(function(local){
+if(window.ForgeLocalCorpus&&(type==='bible'||type==='apocrypha'||type==='sealed')){
+var resolveFn=ForgeLocalCorpus.resolveChapterText?ForgeLocalCorpus.resolveChapterText(book,chapter,type):ForgeLocalCorpus.resolveLocalChapterText(book,chapter);
+Promise.resolve(resolveFn).then(function(local){
 if(local&&local.text){
 callback(null,local.text,local.source||'local corpus',false);
 return;
 }
+if(type==='bible'){
+callback('Built-in KJV corpus missing for '+book+' Chapter '+chapter+'. Redeploy or run scripts/build-kjv-corpus.py.',null,'local corpus',false);
+return;
+}
 fetchChapterTextFromModel(book,chapter,type,callback);
 }).catch(function(){
+if(type==='bible'){
+callback('Failed to load built-in KJV corpus.',null,'local corpus',false);
+return;
+}
 fetchChapterTextFromModel(book,chapter,type,callback);
 });
 return;
@@ -4980,10 +4989,10 @@ output.appendChild(box);
 }else{
 // No manual paste -- proceed with auto-fetch
 var fetchModelName=getScriptureFetchModel();
-var useLocalCorpus=isNatasrymBookName(currentChapterSource.book);
+var useLocalCorpus=currentChapterSource.type==='bible'||isNatasrymBookName(currentChapterSource.book);
 var fetchIcon=useLocalCorpus?'fa-database':((currentChapterSource.type==='apocrypha'||currentChapterSource.type==='sealed')?'fa-globe':'fa-book-bible');
 var fetchLabel=useLocalCorpus?'Loading built-in corpus for ':(currentChapterSource.type==='sealed')?'Unearthing sealed text for ':(currentChapterSource.type==='apocrypha')?'Searching the web for ':'Retrieving ';
-var fetchExtra=useLocalCorpus?' <span style="opacity:0.7;font-size:0.8em;">(local Gospel of the Kailedy text)</span>':((currentChapterSource.type==='apocrypha'||currentChapterSource.type==='sealed')?' <span style="opacity:0.7;font-size:0.8em;">(web search enabled)</span>':'');
+var fetchExtra=useLocalCorpus?(currentChapterSource.type==='bible'?' <span style="opacity:0.7;font-size:0.8em;">(built-in KJV)</span>':' <span style="opacity:0.7;font-size:0.8em;">(local Gospel of the Kailedy text)</span>'):((currentChapterSource.type==='apocrypha'||currentChapterSource.type==='sealed')?' <span style="opacity:0.7;font-size:0.8em;">(web search enabled)</span>':'');
 output.innerHTML='<div class="loading-state" id="scriptureFetchLoader"><div class="loading-pulse"></div><div class="loading-text"><i class="fas '+fetchIcon+'" style="margin-right:6px;"></i>'+fetchLabel+escapeHtml(currentChapterSource.book)+' Chapter '+currentChapterSource.chapter+(useLocalCorpus?'':' via <strong>'+escapeHtml(fetchModelName)+'</strong>')+fetchExtra+'...</div></div>';
 fetchChapterText(currentChapterSource.book,currentChapterSource.chapter,currentChapterSource.type,function(err,text,usedModel,truncated){
 var loader=document.getElementById('scriptureFetchLoader');
