@@ -23,6 +23,7 @@ export default async function handler(req) {
     ok: health.ok,
     offline: !health.ok,
     model: cfg.model || health.model,
+    maxContext: cfg.maxContext || 65536,
     baseUrl: cfg.baseUrl ? cfg.baseUrl.replace(/\/v1\/?$/, '/v1') : '',
     ...(health.ok
       ? { message: 'OrcaRouter Local online' }

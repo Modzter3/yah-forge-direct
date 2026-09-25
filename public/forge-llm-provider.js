@@ -126,6 +126,9 @@
           ok: ok,
           message: ok ? '' : (res.body && res.body.error) || 'OrcaRouter Local offline',
         };
+        if (ok && res.body && res.body.maxContext && global.ForgeLocalSermonProfile) {
+          global.ForgeLocalSermonProfile.setEffectiveContextTokens(res.body.maxContext);
+        }
         updateLocalLlmHealthBadge({ ok: ok, error: lastHealth.message });
         return lastHealth;
       })
