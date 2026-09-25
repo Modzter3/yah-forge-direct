@@ -5,6 +5,25 @@
 export const BONSAI_PROVIDER_ID = 'bonsai';
 export const BONSAI_OFFLINE_PREFIX = 'Bonsai RunPod offline';
 
+/** Default llama-server sampling for Bonsai (override via BONSAI_* env). */
+export function getBonsaiGenerationProfile() {
+  return {
+    temperature: parseFloat(process.env.BONSAI_TEMPERATURE || '0.8'),
+    top_p: parseFloat(process.env.BONSAI_TOP_P || '0.9'),
+    top_k: Math.max(0, parseInt(process.env.BONSAI_TOP_K || '20', 10) || 20),
+    repeat_penalty: parseFloat(process.env.BONSAI_REPEAT_PENALTY || '1.1'),
+    /** Sermon parts: ~1800–2800 words — cap runaway completions */
+    sermon_max_tokens: Math.min(
+      8192,
+      Math.max(1024, parseInt(process.env.BONSAI_SERMON_MAX_TOKENS || '4096', 10) || 4096)
+    ),
+    default_max_tokens: Math.min(
+      8192,
+      Math.max(1024, parseInt(process.env.BONSAI_DEFAULT_MAX_TOKENS || '8192', 10) || 8192)
+    ),
+  };
+}
+
 export function stripTrailingSlash(v) {
   return String(v || '').replace(/\/+$/, '');
 }
@@ -32,6 +51,9 @@ const BONSAI_STRIP_PARAMS = new Set([
   'thinking_level',
   'reasoning_effort',
   'yah_story_system',
+  'bonsai_sermon',
+  'frequency_penalty',
+  'presence_penalty',
 ]);
 
 export function sanitizeBonsaiParameters(parameters) {
@@ -117,7 +139,9 @@ export function buildBonsaiChatPayload({ model, query, parameters, images, confi
   const user = buildBonsaiUserContent(query, images);
   if (user.error) return { error: user.error };
 
+  const profile = getBonsaiGenerationProfile();
   const params = sanitizeBonsaiParameters(parameters);
+  const sermonMode = parameters?.bonsai_sermon === true;
   const messages = [];
   if (systemContent && String(systemContent).trim()) {
     messages.push({ role: 'system', content: String(systemContent).trim() });
@@ -128,11 +152,17 @@ export function buildBonsaiChatPayload({ model, query, parameters, images, confi
     model: model || config.model,
     messages,
     stream: true,
+    temperature: profile.temperature,
+    top_p: profile.top_p,
+    top_k: profile.top_k,
+    repeat_penalty: profile.repeat_penalty,
     ...params,
   };
 
-  if (payload.max_tokens === undefined && config.maxContext) {
-    payload.max_tokens = Math.min(8192, config.maxContext);
+  if (payload.max_tokens === undefined) {
+    payload.max_tokens = sermonMode
+      ? Math.min(profile.sermon_max_tokens, config.maxContext || profile.sermon_max_tokens)
+      : Math.min(profile.default_max_tokens, config.maxContext || profile.default_max_tokens);
   }
 
   const includeUsage = (process.env.AI_INCLUDE_STREAM_USAGE || 'true').toLowerCase() !== 'false';
