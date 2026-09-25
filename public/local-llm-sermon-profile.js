@@ -1,13 +1,13 @@
 /**
- * Bonsai-only multi-part sermon orchestration (OpenRouter unchanged).
+ * Local RunPod multi-part sermon orchestration (OpenRouter unchanged).
  */
 (function (global) {
   var WORD_MIN = 1800;
   var WORD_TARGET = 2200;
   var WORD_MAX = 2800;
-  var MAX_BONSAI_RETRIES = 2;
+  var MAX_LOCAL_LLM_RETRIES = 1;
   var MAX_TRUNC_CONTINUATIONS = 1;
-  /** Server default BONSAI_SERMON_MAX_TOKENS — client calc stays below this */
+  /** Server default LOCAL_LLM_SERMON_MAX_TOKENS — client calc stays below this */
   var SERMON_TOKEN_CEILING = 4800;
   var TOKENS_PER_WORD = 1.45;
   /** Conservative RunPod llama-server n_ctx budget (prompt + completion) */
@@ -16,16 +16,16 @@
   var CHARS_PER_TOKEN_EST = 3.35;
   var SHRINK_WORD_TARGET = 1500;
 
-  function isBonsaiProvider() {
+  function isLocalLlmProvider() {
     try {
-      return typeof global.getForgeLlmProvider === 'function' && global.getForgeLlmProvider() === 'bonsai';
+      return typeof global.getForgeLlmProvider === 'function' && (global.getForgeLlmProvider() === 'local' || global.getForgeLlmProvider() === 'bonsai');
     } catch (e) {
       return false;
     }
   }
 
   function isChapterSermonContext() {
-    if (!isBonsaiProvider()) return false;
+    if (!isLocalLlmProvider()) return false;
     if (!global.currentChapterSource || !global.currentChapterVerseCount) return false;
     var t = global.currentChapterSource.type;
     return t === 'bible' || t === 'apocrypha' || t === 'sealed';
@@ -82,7 +82,7 @@
 
   function buildHardVerseDiscipline(meta) {
     return (
-      'HARD VERSE DISCIPLINE (BONSAI — MANDATORY):\n' +
+      'HARD VERSE DISCIPLINE (LOCAL LLM — MANDATORY):\n' +
       '- Never cite another chapter as though it belongs to ' +
       meta.book +
       ' chapter ' +
@@ -98,7 +98,7 @@
   }
 
   function buildEndingContract(meta) {
-    var p = 'NATURAL PART ENDING (BONSAI):\n';
+    var p = 'NATURAL PART ENDING (LOCAL LLM):\n';
     p +=
       'When verse ' +
       meta.range.end +
@@ -152,7 +152,7 @@
   }
 
   function effectiveContextTokens() {
-    var n = global.__BONSAI_EFFECTIVE_CONTEXT;
+    var n = global.__LOCAL_LLM_EFFECTIVE_CONTEXT;
     if (typeof n === 'number' && n > 4096) return Math.floor(n);
     return DEFAULT_EFFECTIVE_CONTEXT;
   }
@@ -199,11 +199,11 @@
     return sliceChapterTextForBand(full, meta.range, meta);
   }
 
-  function compactBasePromptForBonsai(basePrompt) {
+  function compactBasePromptForLocalLlm(basePrompt) {
     var p = String(basePrompt || '');
     p = p.replace(
       /\nTHIS CHAPTER HAS EXACTLY[\s\S]*?(?=\n(?:DO NOT HALLUCINATE VERSES|VERSE-BY-VERSE))/,
-      '\n(Verse band assignments are in the BONSAI SERMON ORCHESTRATION block — follow that ledger exactly.)\n'
+      '\n(Verse band assignments are in the LOCAL SERMON ORCHESTRATION block — follow that ledger exactly.)\n'
     );
     p = p.replace(
       /\nThe FULL scripture text for this chapter has been provided above\.[^\n]*\n/g,
@@ -280,14 +280,14 @@
       meta.wordTarget = Math.min(meta.wordTarget, SHRINK_WORD_TARGET);
     }
     var blocks = [
-      '=== BONSAI SERMON ORCHESTRATION (overrides generic length padding) ===',
+      '=== LOCAL SERMON ORCHESTRATION (overrides generic length padding) ===',
       buildVerseLedger(meta),
       '',
       buildHardVerseDiscipline(meta),
       '',
       buildEndingContract(meta),
       '',
-      'BONSAI PART LENGTH: Aim for ~' +
+      'LOCAL PART LENGTH: Aim for ~' +
         meta.wordTarget.toLocaleString() +
         ' words for this part (' +
         meta.range.count +
@@ -302,13 +302,13 @@
           ' words max). Tight paragraphs; no filler; finish the verse band and stop.\n'
       );
     }
-    blocks.push('=== END BONSAI ORCHESTRATION ===\n\n');
-    return blocks.join('\n') + compactBasePromptForBonsai(basePrompt);
+    blocks.push('=== END LOCAL SERMON ORCHESTRATION ===\n\n');
+    return blocks.join('\n') + compactBasePromptForLocalLlm(basePrompt);
   }
 
   function buildRetryPrompt(meta, reason, badSample) {
     var p =
-      'BONSAI REGENERATION REQUIRED — your previous attempt failed: ' +
+      'LOCAL LLM REGENERATION REQUIRED — your previous attempt failed: ' +
       reason +
       '.\nDiscard that attempt. Follow the verse ledger exactly.\n\n';
     p += buildVerseLedger(meta) + '\n\n' + buildHardVerseDiscipline(meta) + '\n\n';
@@ -549,7 +549,7 @@
     opts = opts || {};
     var meta = buildPartMeta(partNum, state);
     if (state.contextShrink) meta.wordTarget = Math.min(meta.wordTarget, SHRINK_WORD_TARGET);
-    params.bonsai_sermon = true;
+    params.local_llm_sermon = true;
     var wantOut = maxTokensForWords(meta.wordTarget);
     if (opts.promptCharLength) {
       var budget =
@@ -559,17 +559,15 @@
     }
     params.max_tokens = wantOut;
     if (state.repetitionRetry) {
-      params.temperature = 0.72;
+      params.temperature = 0.65;
       params.top_p = 0.88;
-      params.repeat_penalty = 1.28;
+      params.repeat_penalty = 1.22;
     } else {
-      params.temperature = 0.8;
+      params.temperature = 0.7;
       params.top_p = 0.9;
-      params.repeat_penalty = 1.1;
+      params.repeat_penalty = 1.08;
     }
     params.top_k = 20;
-    params.frequency_penalty = 0;
-    params.presence_penalty = 0;
     return params;
   }
 
@@ -608,7 +606,7 @@
     delete global.__forgeStreamAbortRegistry[key];
   }
 
-  global.ForgeBonsaiProfile = {
+  var profile = {
     shouldUseProfile: shouldUseProfile,
     isChapterSermonContext: isChapterSermonContext,
     initSermonState: initSermonState,
@@ -628,7 +626,7 @@
       return MAX_TRUNC_CONTINUATIONS;
     },
     maxRetries: function () {
-      return MAX_BONSAI_RETRIES;
+      return MAX_LOCAL_LLM_RETRIES;
     },
     wordsForVerseBand: wordsForVerseBand,
     maxTokensForWords: maxTokensForWords,
@@ -638,7 +636,7 @@
     sliceChapterTextForBand: sliceChapterTextForBand,
     chapterTextOverrideForPart: chapterTextOverrideForPart,
     captureFullChapterText: captureFullChapterText,
-    compactBasePromptForBonsai: compactBasePromptForBonsai,
+    compactBasePromptForLocalLlm: compactBasePromptForLocalLlm,
     isContextSizeError: isContextSizeError,
     estimatePromptTokens: estimatePromptTokens,
     effectiveContextTokens: effectiveContextTokens,
@@ -650,4 +648,6 @@
     },
     recommendedPartsForChapter: recommendedPartsForChapter,
   };
+  global.ForgeLocalSermonProfile = profile;
+  global.ForgeBonsaiProfile = profile;
 })(typeof window !== 'undefined' ? window : globalThis);
