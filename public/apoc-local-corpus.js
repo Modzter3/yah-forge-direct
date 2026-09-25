@@ -1,13 +1,17 @@
 /**
- * Local apocrypha/sealed text — avoids web-search confusion for rare books.
- * Built-in: Book of Natasrym (Natsarim) from /corpus/book-of-natasrym.json
+ * Local scripture corpora — KJV Bible + apocrypha/sealed (Natasrym built-in).
  * Optional: user override via localStorage (ForgeLocalCorpus.importJson).
  */
 (function (global) {
-  var CORPUS_URL = '/corpus/book-of-natasrym.json';
+  var NATASRYM_URL = '/corpus/book-of-natasrym.json';
+  var KJV_DIR = '/corpus/kjv/';
+  var KJV_MANIFEST_URL = KJV_DIR + 'manifest.json';
   var STORAGE_KEY = 'yahForgeLocalCorpusOverrides';
-  var cache = null;
-  var loadPromise = null;
+  var natasrymCache = null;
+  var natasrymLoadPromise = null;
+  var kjvManifest = null;
+  var kjvManifestPromise = null;
+  var kjvBookCache = {};
 
   function normalizeBookName(name) {
     return String(name || '')
@@ -47,23 +51,64 @@
     } catch (e) {}
   }
 
-  function loadBuiltin() {
-    if (cache) return Promise.resolve(cache);
-    if (loadPromise) return loadPromise;
-    loadPromise = fetch(CORPUS_URL)
+  function loadNatasrymBuiltin() {
+    if (natasrymCache) return Promise.resolve(natasrymCache);
+    if (natasrymLoadPromise) return natasrymLoadPromise;
+    natasrymLoadPromise = fetch(NATASRYM_URL)
       .then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
       })
       .then(function (data) {
-        cache = data;
+        natasrymCache = data;
         return data;
       })
       .catch(function () {
-        cache = null;
+        natasrymCache = null;
         return null;
       });
-    return loadPromise;
+    return natasrymLoadPromise;
+  }
+
+  function loadKjvManifest() {
+    if (kjvManifest) return Promise.resolve(kjvManifest);
+    if (kjvManifestPromise) return kjvManifestPromise;
+    kjvManifestPromise = fetch(KJV_MANIFEST_URL)
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        kjvManifest = data;
+        return data;
+      })
+      .catch(function () {
+        kjvManifest = null;
+        return null;
+      });
+    return kjvManifestPromise;
+  }
+
+  function kjvFileForBook(book) {
+    return String(book || '').replace(/\//g, '-') + '.json';
+  }
+
+  function loadKjvBook(book) {
+    var file = kjvFileForBook(book);
+    if (kjvBookCache[file]) return Promise.resolve(kjvBookCache[file]);
+    var url = KJV_DIR + encodeURIComponent(file).replace(/%2F/g, '/');
+    return fetch(url)
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        kjvBookCache[file] = data;
+        return data;
+      })
+      .catch(function () {
+        return null;
+      });
   }
 
   function chapterKey(ch) {
@@ -77,14 +122,27 @@
     return text && String(text).trim() ? String(text).trim() : null;
   }
 
-  function resolveLocalChapterText(book, chapter) {
-    var ch = chapterKey(chapter);
+  function resolveKjvChapterText(book, chapter) {
+    return loadKjvBook(book).then(function (payload) {
+      if (!payload || !bookMatches(payload.book, payload.aliases, book)) {
+        return null;
+      }
+      var text = lookupInPayload(payload, chapter);
+      if (!text) return null;
+      return {
+        text: text,
+        source: 'built-in KJV corpus',
+      };
+    });
+  }
+
+  function resolveApocSealedChapterText(book, chapter) {
     var overrides = readOverrides();
     var overrideBooks = overrides.books || {};
     for (var ob in overrideBooks) {
       if (!Object.prototype.hasOwnProperty.call(overrideBooks, ob)) continue;
       if (bookMatches(ob, overrideBooks[ob].aliases, book)) {
-        var ot = lookupInPayload(overrideBooks[ob], ch);
+        var ot = lookupInPayload(overrideBooks[ob], chapter);
         if (ot) {
           return Promise.resolve({
             text: ot,
@@ -93,11 +151,11 @@
         }
       }
     }
-    return loadBuiltin().then(function (builtin) {
+    return loadNatasrymBuiltin().then(function (builtin) {
       if (!builtin || !bookMatches(builtin.book, builtin.aliases, book)) {
         return null;
       }
-      var text = lookupInPayload(builtin, ch);
+      var text = lookupInPayload(builtin, chapter);
       if (!text) return null;
       return {
         text: text,
@@ -106,9 +164,30 @@
     });
   }
 
+  function resolveChapterText(book, chapter, type) {
+    if (type === 'bible') {
+      return resolveKjvChapterText(book, chapter);
+    }
+    if (type === 'apocrypha' || type === 'sealed') {
+      return resolveApocSealedChapterText(book, chapter);
+    }
+    return Promise.resolve(null);
+  }
+
+  /** @deprecated use resolveChapterText */
+  function resolveLocalChapterText(book, chapter) {
+    return resolveApocSealedChapterText(book, chapter);
+  }
+
   function hasBuiltinNatasrym() {
-    return loadBuiltin().then(function (b) {
+    return loadNatasrymBuiltin().then(function (b) {
       return !!(b && b.chapters);
+    });
+  }
+
+  function hasBuiltinKjv() {
+    return loadKjvManifest().then(function (m) {
+      return !!(m && m.totalBooks === 66);
     });
   }
 
@@ -135,8 +214,11 @@
   }
 
   global.ForgeLocalCorpus = {
+    resolveChapterText: resolveChapterText,
+    resolveKjvChapterText: resolveKjvChapterText,
     resolveLocalChapterText: resolveLocalChapterText,
     hasBuiltinNatasrym: hasBuiltinNatasrym,
+    hasBuiltinKjv: hasBuiltinKjv,
     importBookJson: importBookJson,
     clearOverrides: clearOverrides,
     normalizeBookName: normalizeBookName,
