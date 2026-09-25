@@ -7,6 +7,9 @@
   var WORD_MAX = 2800;
   var MAX_BONSAI_RETRIES = 1;
   var MAX_TRUNC_CONTINUATIONS = 1;
+  /** Server default BONSAI_SERMON_MAX_TOKENS — client calc stays below this */
+  var SERMON_TOKEN_CEILING = 4800;
+  var TOKENS_PER_WORD = 1.45;
 
   function isBonsaiProvider() {
     try {
@@ -37,8 +40,17 @@
     return b + ' ' + ch + ':' + vStart + '-' + vEnd;
   }
 
+  function assignedCoveredEndBeforePart(partNum, totalParts, verseCount) {
+    if (partNum <= 1) return 0;
+    var prev = getVerseRange(partNum - 1, totalParts, verseCount);
+    return prev.end;
+  }
+
   function buildVerseLedger(meta) {
-    var coveredEnd = meta.coveredThrough || 0;
+    var coveredEnd = assignedCoveredEndBeforePart(meta.partNum, meta.totalParts, meta.verseCount);
+    if (meta.partNum > 1 && meta.coveredThrough > 0) {
+      coveredEnd = Math.max(coveredEnd, meta.coveredThrough);
+    }
     var already =
       coveredEnd > 0
         ? refLabel(meta.book, meta.chapter, 1, coveredEnd)
@@ -131,7 +143,7 @@
   }
 
   function maxTokensForWords(words) {
-    return Math.min(4096, Math.max(1024, Math.ceil(words * 1.45)));
+    return Math.min(SERMON_TOKEN_CEILING, Math.max(1024, Math.ceil(words * TOKENS_PER_WORD)));
   }
 
   function initSermonState() {
@@ -157,10 +169,28 @@
       chapter: state.chapter,
       partNum: partNum,
       totalParts: totalParts,
+      verseCount: state.verseCount,
       range: range,
       coveredThrough: state.coveredThrough || 0,
       wordTarget: wordsForVerseBand(range),
     };
+  }
+
+  function auditVersePartition(totalVerses, totalParts) {
+    var seen = {};
+    var ranges = [];
+    for (var p = 1; p <= totalParts; p++) {
+      var r = getVerseRange(p, totalParts, totalVerses);
+      ranges.push(r);
+      for (var v = r.start; v <= r.end; v++) {
+        if (seen[v]) return { ok: false, error: 'overlap at verse ' + v, ranges: ranges };
+        seen[v] = true;
+      }
+    }
+    for (var expect = 1; expect <= totalVerses; expect++) {
+      if (!seen[expect]) return { ok: false, error: 'gap at verse ' + expect, ranges: ranges };
+    }
+    return { ok: true, ranges: ranges };
   }
 
   function augmentPartPrompt(basePrompt, partNum, state) {
@@ -274,6 +304,15 @@
     });
   }
 
+  function isCrossReferenceCue(text, idx) {
+    var slice = String(text || '')
+      .slice(Math.max(0, idx - 160), idx + 30)
+      .toLowerCase();
+    return /\b(compare|cross[- ]reference|cross reference|see also|as in|cf\.|echoes|turn to|look at|likewise in|remember in|parallel in)\b/.test(
+      slice
+    );
+  }
+
   function validateScriptureReferences(text, meta) {
     var errors = [];
     var t = String(text || '');
@@ -285,7 +324,7 @@
     var wm;
     while ((wm = wrongCh.exec(t))) {
       var citedCh = parseInt(wm[1], 10);
-      if (citedCh && citedCh !== ch && !/cross[- ]reference/i.test(t.slice(Math.max(0, wm.index - 80), wm.index + 40))) {
+      if (citedCh && citedCh !== ch && !isCrossReferenceCue(t, wm.index)) {
         errors.push(' cites ' + book + ' ' + citedCh + ' without clear cross-reference label (current chapter is ' + ch + ')');
         break;
       }
@@ -296,24 +335,30 @@
     while ((wm = wrongCh2.exec(t))) {
       var token = wm[1].toLowerCase();
       var citedCh2 = ord[token] || parseInt(token, 10);
-      if (citedCh2 && citedCh2 !== ch && !/cross[- ]reference/i.test(t.slice(Math.max(0, wm.index - 80), wm.index + 40))) {
+      if (citedCh2 && citedCh2 !== ch && !isCrossReferenceCue(t, wm.index)) {
         errors.push(' references ' + book + ' chapter ' + citedCh2 + ' as current exposition (assigned chapter ' + ch + ')');
         break;
       }
     }
 
     var nums = parseVerseNumbersInText(t, book, ch);
-    var outOfBand = nums.filter(function (n) {
-      return n < meta.range.start || n > meta.range.end;
-    });
-    if (outOfBand.length >= 3) {
+    var unlabeledOutOfBand = 0;
+    var re3 = /\bverse[s]?\s+(\d{1,3})\b/gi;
+    var vm;
+    while ((vm = re3.exec(t))) {
+      var vn = parseInt(vm[1], 10);
+      if (vn >= meta.range.start && vn <= meta.range.end) continue;
+      if (isCrossReferenceCue(t, vm.index)) continue;
+      unlabeledOutOfBand++;
+    }
+    if (unlabeledOutOfBand >= 3) {
       errors.push(
         ' treats verses outside assigned band ' +
           meta.range.start +
           '-' +
           meta.range.end +
-          ' as primary exposition (e.g. verse ' +
-          outOfBand.slice(0, 3).join(', ') +
+          ' as primary exposition (unlabeled verse references: ' +
+          unlabeledOutOfBand +
           ')'
       );
     }
@@ -354,15 +399,7 @@
   function updateStateAfterPart(state, partText, partNum) {
     if (!state) return state;
     var meta = buildPartMeta(partNum, state);
-    var nums = parseVerseNumbersInText(partText, meta.book, meta.chapter);
-    var maxInBand = meta.range.start - 1;
-    for (var i = 0; i < nums.length; i++) {
-      if (nums[i] >= meta.range.start && nums[i] <= meta.range.end && nums[i] > maxInBand) {
-        maxInBand = nums[i];
-      }
-    }
-    if (maxInBand >= meta.range.start) state.coveredThrough = Math.max(state.coveredThrough || 0, maxInBand);
-    else state.coveredThrough = Math.max(state.coveredThrough || 0, meta.range.end);
+    state.coveredThrough = Math.max(state.coveredThrough || 0, meta.range.end);
 
     state.transitionPoint = extractTransitionPoint(partText, meta);
     var insights = extractBulletInsights(partText, 4);
@@ -389,6 +426,27 @@
     return isChapterSermonContext();
   }
 
+  function registerStreamAbort(key, controller) {
+    if (!key || !controller) return;
+    global.__forgeStreamAbortRegistry = global.__forgeStreamAbortRegistry || {};
+    global.__forgeStreamAbortRegistry[key] = controller;
+  }
+
+  function abortStream(key) {
+    if (!key || !global.__forgeStreamAbortRegistry) return false;
+    var c = global.__forgeStreamAbortRegistry[key];
+    if (c && !c.signal.aborted) {
+      c.abort();
+      return true;
+    }
+    return false;
+  }
+
+  function clearStreamAbort(key) {
+    if (!key || !global.__forgeStreamAbortRegistry) return;
+    delete global.__forgeStreamAbortRegistry[key];
+  }
+
   global.ForgeBonsaiProfile = {
     shouldUseProfile: shouldUseProfile,
     isChapterSermonContext: isChapterSermonContext,
@@ -397,10 +455,14 @@
     augmentPartPrompt: augmentPartPrompt,
     buildRetryPrompt: buildRetryPrompt,
     buildVerseLedger: buildVerseLedger,
+    auditVersePartition: auditVersePartition,
     applyGenerationParams: applyGenerationParams,
     detectDegeneration: detectDegeneration,
     validateScriptureReferences: validateScriptureReferences,
     updateStateAfterPart: updateStateAfterPart,
+    registerStreamAbort: registerStreamAbort,
+    abortStream: abortStream,
+    clearStreamAbort: clearStreamAbort,
     maxTruncationContinuations: function () {
       return MAX_TRUNC_CONTINUATIONS;
     },
@@ -408,5 +470,9 @@
       return MAX_BONSAI_RETRIES;
     },
     wordsForVerseBand: wordsForVerseBand,
+    maxTokensForWords: maxTokensForWords,
+    sermonTokenCeiling: function () {
+      return SERMON_TOKEN_CEILING;
+    },
   };
 })(typeof window !== 'undefined' ? window : globalThis);

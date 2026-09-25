@@ -5569,6 +5569,9 @@ ctx.partContentBeforeContinue='';
 ctx.continuationCount=0;
 ctx.bonsaiDegenerationHit=null;
 ctx.bonsaiLastGoodContent='';
+ctx.bonsaiStreamAborted=false;
+ctx.bonsaiStreamHandled=false;
+ctx.bonsaiAbortController=null;
 showToast('Bonsai: '+reason+' — retrying '+getForgePartLabel(partNum,false)+'...');
 streamOpts=streamOpts||{};
 streamOpts.bonsaiVerseRetry=true;
@@ -5668,6 +5671,11 @@ ForgeBonsaiProfile.applyGenerationParams(params,partNum,ctx.bonsaiState);
 }
 ctx.handlerName='sermon-part-'+partNum+'-'+Date.now()+'-'+(isContinuation?ctx.continuationCount:0)+'-'+(streamOpts.yahVoiceCorrection?'yahvoice':streamOpts.driftCorrection?'drift':streamOpts.elevenTagsCorrection?'eleventags':streamOpts.explicitBrimstoneCorrection?'explicit':'');
 var activeHandler=ctx.handlerName;
+if(isBonsaiChapterSermonActive()&&ForgeBonsaiProfile){
+ctx.bonsaiAbortController=new AbortController();
+ForgeBonsaiProfile.registerStreamAbort(activeHandler,ctx.bonsaiAbortController);
+params.forge_stream_abort_key=activeHandler;
+}
 ctx.gotFirstToken=false;
 clearSermonWatchdogs();
 armSermonWatchdogs(function(){finishCurrentSermonPart('stall');});
@@ -5676,6 +5684,12 @@ var msg=result.responses[0];if(!msg)return;
 if(!sermonGenCtx||sermonGenCtx.handlerName!==activeHandler)return;
 if(msg.status==='error'){
 var errText=msg.statusText||'';
+if(ctx.bonsaiStreamHandled){ForgeBonsaiProfile&&ForgeBonsaiProfile.clearStreamAbort(activeHandler);return;}
+if(errText==='aborted'&&ctx.bonsaiDegenerationHit){
+ctx.bonsaiStreamHandled=true;
+ForgeBonsaiProfile.clearStreamAbort(activeHandler);
+return;
+}
 if(!ctx.modelFallbackTried&&looksLikeForgeModelBlockError(errText)){
 ctx.modelFallbackTried=true;
 var blocked=getForgeStreamModel(ctx);
@@ -5703,18 +5717,31 @@ else ctx.partContent=chunk;
 if(isBonsaiChapterSermonActive()&&ForgeBonsaiProfile){
 var liveDeg=ForgeBonsaiProfile.detectDegeneration(ctx.partContent);
 if(liveDeg){
+if(!ctx.bonsaiStreamAborted){
+ctx.bonsaiStreamAborted=true;
 ctx.bonsaiDegenerationHit=liveDeg;
+ctx.partContent=ctx.bonsaiLastGoodContent||ctx.partContent;
+ForgeBonsaiProfile.abortStream(activeHandler);
+ctx.bonsaiStreamHandled=true;
+clearSermonWatchdogs();
+var snap=finalizeSermonPartText(ctx.partContent,partNum);
+ctx.partContainer.innerHTML=marked.parse(snap+'\n\n*(Bonsai: repetition detected — stream aborted)*');
+if(!retryBonsaiSermonPart(ctx,partNum,streamOpts,liveDeg.reason,snap)){
+handleBonsaiPartFailure(ctx,partNum,'Repetition loop — '+liveDeg.reason);
+}
+ForgeBonsaiProfile.clearStreamAbort(activeHandler);
+return;
+}
 }else{
 ctx.bonsaiLastGoodContent=ctx.partContent;
 }
 }
+if(ctx.bonsaiStreamHandled)return;
 var displaySource=ctx.bonsaiDegenerationHit&&(ctx.bonsaiLastGoodContent||'').trim()?ctx.bonsaiLastGoodContent:ctx.partContent;
 var display=finalizeSermonPartText(displaySource,partNum);
-if(ctx.bonsaiDegenerationHit){
-display+='\n\n*(Bonsai: repetition detected — stopping stream; validating…)*';
-}
 ctx.partContainer.innerHTML=marked.parse(display);
 if(msg.status==='complete'){
+ForgeBonsaiProfile&&ForgeBonsaiProfile.clearStreamAbort(activeHandler);
 clearSermonWatchdogs();
 var finalized=finalizeSermonPartText(ctx.partContent,partNum);
 if(isBonsaiChapterSermonActive()&&!finalizeBonsaiPartIfValid(ctx,partNum,streamOpts,finalized))return;
@@ -5844,6 +5871,9 @@ bonsaiState:(function(){if(partNum===1&&ForgeBonsaiProfile&&ForgeBonsaiProfile.s
 bonsaiRetryCount:0,
 bonsaiDegenerationHit:null,
 bonsaiLastGoodContent:'',
+bonsaiAbortController:null,
+bonsaiStreamAborted:false,
+bonsaiStreamHandled:false,
 driftRetryCount:0,
 elevenTagsRetryCount:0,
 explicitRetryCount:0,

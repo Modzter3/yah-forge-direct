@@ -15,7 +15,7 @@ export function getBonsaiGenerationProfile() {
     /** Sermon parts: ~1800–2800 words — cap runaway completions */
     sermon_max_tokens: Math.min(
       8192,
-      Math.max(1024, parseInt(process.env.BONSAI_SERMON_MAX_TOKENS || '4096', 10) || 4096)
+      Math.max(1024, parseInt(process.env.BONSAI_SERMON_MAX_TOKENS || '4800', 10) || 4800)
     ),
     default_max_tokens: Math.min(
       8192,
@@ -52,6 +52,7 @@ const BONSAI_STRIP_PARAMS = new Set([
   'reasoning_effort',
   'yah_story_system',
   'bonsai_sermon',
+  'forge_stream_abort_key',
   'frequency_penalty',
   'presence_penalty',
 ]);

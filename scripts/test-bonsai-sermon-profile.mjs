@@ -1,44 +1,103 @@
 #!/usr/bin/env node
-/** Smoke tests for public/bonsai-sermon-profile.js (no browser). */
+/** Bonsai sermon profile: partition audit, validator, tokens, stream abort. */
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import vm from 'vm';
 
 const dir = dirname(fileURLToPath(import.meta.url));
-const src = readFileSync(join(dir, '../public/bonsai-sermon-profile.js'), 'utf8');
-const sandbox = {
-  window: {},
-  globalThis: {},
-  currentChapterSource: { book: 'Numbers', chapter: 3, type: 'bible' },
-  currentChapterVerseCount: 51,
-  selectedPartCount: 3,
-  getForgeLlmProvider: () => 'bonsai',
-  getVerseRangeForPart: (p, t, v) => {
-    const base = Math.floor(v / t);
-    const rem = v % t;
-    let start = 1;
-    for (let i = 1; i < p; i++) start += base + (i <= rem ? 1 : 0);
-    const count = base + (p <= rem ? 1 : 0);
-    return { start, end: start + count - 1, count };
-  },
-};
-sandbox.window = sandbox;
-sandbox.globalThis = sandbox;
-vm.runInNewContext(src, sandbox, { filename: 'bonsai-sermon-profile.js' });
-const P = sandbox.ForgeBonsaiProfile;
+
+function getVerseRangeForPart(partNum, totalParts, totalVerses) {
+  const base = Math.floor(totalVerses / totalParts);
+  const remainder = totalVerses % totalParts;
+  let start = 1;
+  for (let i = 1; i < partNum; i++) {
+    start += base + (i <= remainder ? 1 : 0);
+  }
+  const count = base + (partNum <= remainder ? 1 : 0);
+  const end = start + count - 1;
+  return { start, end, count };
+}
+
+function loadProfile() {
+  const src = readFileSync(join(dir, '../public/bonsai-sermon-profile.js'), 'utf8');
+  const sandbox = {
+    window: {},
+    globalThis: {},
+    currentChapterSource: { book: 'Numbers', chapter: 3, type: 'bible' },
+    currentChapterVerseCount: 51,
+    selectedPartCount: 3,
+    getForgeLlmProvider: () => 'bonsai',
+    getVerseRangeForPart,
+  };
+  sandbox.window = sandbox;
+  sandbox.globalThis = sandbox;
+  vm.runInNewContext(src, sandbox, { filename: 'bonsai-sermon-profile.js' });
+  return sandbox.ForgeBonsaiProfile;
+}
+
+const P = loadProfile();
+const NUMBERS_3 = 51;
+
+console.log('=== Numbers 3 verse partitions ===');
+for (const parts of [2, 3, 4, 5]) {
+  const audit = P.auditVersePartition(NUMBERS_3, parts);
+  if (!audit.ok) throw new Error('partition failed for ' + parts + ' parts: ' + audit.error);
+  const summary = audit.ranges.map((r, i) => `P${i + 1}:${r.start}-${r.end}`).join(' | ');
+  console.log(parts + ' parts:', summary, '=> ok');
+}
 
 const state = P.initSermonState();
-state.coveredThrough = 13;
-const meta = P.buildPartMeta(2, state);
-const ledger = P.buildVerseLedger(meta);
-const loopText = 'Extend grace amidst chaos. '.repeat(20);
-const deg = P.detectDegeneration(loopText);
-if (!deg) throw new Error('expected degeneration detect');
+state.coveredThrough = 17;
+const meta2 = P.buildPartMeta(2, state);
+const ledger = P.buildVerseLedger(meta2);
+if (!ledger.includes('Already covered: Numbers 3:1-17')) {
+  throw new Error('ledger should show 1-17 already covered for part 2 of 3, got:\n' + ledger);
+}
+console.log('\n=== Part 2 ledger (already covered) ===');
+console.log(ledger.split('\n').slice(0, 10).join('\n'));
+
+const crossOk =
+  'Compare Exodus 13:2 for the firstborn claim. Now verse 18 in Numbers chapter 3 opens the census.';
+const valCross = P.validateScriptureReferences(crossOk, meta2);
+if (!valCross.ok) throw new Error('cross-ref should pass: ' + valCross.errors);
+
 const bad = 'Numbers chapter one verse three says we must count. ' + 'x '.repeat(200);
-const val = P.validateScriptureReferences(bad, meta);
-if (val.ok) throw new Error('expected validation failure');
-console.log('ledger sample:\n', ledger.split('\n').slice(0, 10).join('\n'));
-console.log('deg:', deg.reason);
-console.log('val errors:', val.errors);
-console.log('ok');
+const valBad = P.validateScriptureReferences(bad, meta2);
+if (valBad.ok) throw new Error('expected wrong-chapter failure');
+
+console.log('\n=== Cross-reference allowed ===');
+console.log('validate Exodus compare:', valCross.ok);
+console.log('validate wrong chapter:', valBad.errors[0]);
+
+const words2800 = 2800;
+const tok = P.maxTokensForWords(words2800);
+const ceil = P.sermonTokenCeiling();
+console.log('\n=== Token headroom (2800 words) ===');
+console.log('max_tokens =', tok, '(ceiling', ceil + ', ratio 1.45)');
+if (tok >= ceil) throw new Error('2800-word part should stay below ceiling');
+if (tok < 4000) throw new Error('expected ~4060 tokens for 2800 words');
+
+console.log('\n=== Stream abort (AbortController + registry) ===');
+const ctrl = new AbortController();
+P.registerStreamAbort('test-handler', ctrl);
+let fetchAborted = false;
+const inflight = new Promise((_resolve, reject) => {
+  ctrl.signal.addEventListener('abort', () => {
+    fetchAborted = true;
+    reject(Object.assign(new Error('Aborted'), { name: 'AbortError' }));
+  });
+});
+const didAbort = P.abortStream('test-handler');
+try {
+  await inflight;
+  throw new Error('inflight fetch should reject on abort');
+} catch (e) {
+  if (e.name !== 'AbortError') throw e;
+}
+if (!didAbort || !fetchAborted || !ctrl.signal.aborted) {
+  throw new Error('ForgeBonsaiProfile.abortStream must abort the registered fetch');
+}
+console.log('abortStream() aborted in-flight request:', fetchAborted);
+
+console.log('\nall checks passed');
