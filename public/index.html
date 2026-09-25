@@ -5639,7 +5639,7 @@ return true;
 function finalizeLocalLlmPartIfValid(ctx,partNum,streamOpts,finalized){
 if(!isLocalLlmChapterSermonActive()||!ctx.localSermonState||!ForgeLocalSermonProfile)return true;
 var meta=ForgeLocalSermonProfile.buildPartMeta(partNum,ctx.localSermonState);
-var deg=ForgeLocalSermonProfile.detectDegeneration(finalized);
+var deg=ForgeLocalSermonProfile.detectDegeneration(finalized,{partNum:partNum,priorPartsText:(sermonPartsRaw||[]).slice(0,partNum-1).join('\n\n')});
 if(deg){
 if(retryLocalLlmSermonPart(ctx,partNum,streamOpts,deg.reason,finalized))return false;
 handleLocalLlmPartFailure(ctx,partNum,'Repetition loop detected — '+deg.reason+'. Try fewer parts or edit manually.');
@@ -5791,7 +5791,7 @@ armSermonWatchdogs(function(){finishCurrentSermonPart('stall');});
 if(isContinuation)ctx.partContent=(ctx.partContentBeforeContinue||'')+'\n\n'+chunk;
 else ctx.partContent=chunk;
 if(isLocalLlmChapterSermonActive()&&ForgeLocalSermonProfile){
-var liveDeg=ForgeLocalSermonProfile.detectDegeneration(ctx.partContent,{streaming:true});
+var liveDeg=ForgeLocalSermonProfile.detectDegeneration(ctx.partContent,{streaming:true,partNum:partNum,priorPartsText:(sermonPartsRaw||[]).slice(0,partNum-1).join('\n\n')});
 if(liveDeg){
 if(!ctx.localStreamAborted){
 ctx.localStreamAborted=true;

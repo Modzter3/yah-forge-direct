@@ -82,6 +82,19 @@ const good273 =
 const valGood = P.validateScriptureReferences(good273, meta5, { chapterText: numbers3 });
 if (!valGood.ok) throw new Error('correct KJV figures should pass: ' + valGood.errors);
 
+const fillerPart2 =
+  'The fire is still burning on your skin. Verse eighteen names Libni and Shimei. They carry the charge.';
+const fillerPrior = 'The fire is still burning on your skin from that gate warning.';
+const degReuse = P.detectDegeneration(fillerPart2, { partNum: 2, priorPartsText: fillerPrior });
+if (!degReuse || !/stock transition/i.test(degReuse.reason)) {
+  throw new Error('should detect reused stock filler between parts: ' + (degReuse && degReuse.reason));
+}
+const degOk = P.detectDegeneration('Verse eighteen lists Libni and Shimei for the Gershon line.', {
+  partNum: 2,
+  priorPartsText: fillerPrior,
+});
+if (degOk) throw new Error('verse-only part 2 open should pass filler check: ' + degOk.reason);
+
 const words2800 = 2800;
 const tok = P.maxTokensForWords(words2800);
 if (tok >= P.sermonTokenCeiling()) throw new Error('2800-word part should stay below ceiling');

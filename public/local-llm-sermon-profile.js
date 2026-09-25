@@ -100,6 +100,21 @@
     );
   }
 
+  function buildAntiStockFillerDiscipline(meta) {
+    return (
+      'NO STOCK FILLER (LOCAL LLM — MANDATORY):\n' +
+      '- Do NOT reuse canned transition hype between parts or within a part.\n' +
+      '- Banned (and close variants): "fire is still burning/scorching," "wipe the sweat," "keep listening," "your choice," "gathering fuel," "keep burning/dying in your ignorance."\n' +
+      '- Every paragraph must advance the verse, argument, doctrine, or application — not recycled aggression.\n' +
+      '- Intensity must come from the text and the point you are making, not repeated sermon-DJ catchphrases.\n' +
+      (meta.partNum > 1
+        ? '- Part ' +
+          meta.partNum +
+          ': open with NEW substance tied to the next assigned verse — no copy-paste throat-clearing from earlier parts.\n'
+        : '')
+    );
+  }
+
   function buildEndingContract(meta) {
     var p = 'NATURAL PART ENDING (LOCAL LLM):\n';
     p +=
@@ -108,11 +123,13 @@
       ' has been fully explained:\n' +
       '- Finish the current thought.\n';
     if (meta.partNum < meta.totalParts) {
-      p += '- Write a SHORT transition into the next part (2-4 sentences max).\n';
+      p +=
+        '- Write a SHORT transition into the next part (2-4 sentences max) — verse-specific only, no stock hype lines.\n';
     }
     p +=
       '- STOP immediately.\n' +
       '- Do NOT manufacture filler to consume token budget.\n' +
+      '- Do NOT end with "keep listening," "your choice," "fire is still burning," or similar recycled closers.\n' +
       '- Do NOT summarize the entire sermon unless this is the final part.\n' +
       '- Do NOT start Part ' +
       (meta.partNum + 1) +
@@ -288,6 +305,8 @@
       '',
       buildHardVerseDiscipline(meta),
       '',
+      buildAntiStockFillerDiscipline(meta),
+      '',
       buildEndingContract(meta),
       '',
       'LOCAL PART LENGTH: Aim for ~' +
@@ -319,6 +338,11 @@
       p +=
         'ANTI-LOOP (MANDATORY): Do NOT repeat the same sentence or paragraph. Do NOT reuse identical closing lines. ' +
         'Vary wording while keeping doctrine. Advance verse-by-verse — never paste the same block twice.\n\n';
+    }
+    if (/stock sermon filler|stock transition|stock filler/i.test(String(reason || ''))) {
+      p +=
+        'NO STOCK FILLER: Remove recycled hype ("fire is still burning," "wipe the sweat," "keep listening," "your choice," etc.). ' +
+        'Each paragraph must advance verse, doctrine, or application — fresh wording only.\n\n';
     }
     if (/numeric|accuracy|273|263|1365|count|figure|drift|math|KJV figure/i.test(String(reason || ''))) {
       p +=
@@ -360,6 +384,50 @@
       if (freq[key] >= 4) {
         return { reason: 'same long sentence repeated four or more times near the end' };
       }
+    }
+    return null;
+  }
+
+  var STOCK_FILLER_CHECKS = [
+    { label: 'fire is still burning/scorching', re: /fire is still (?:burning|scorching)/i },
+    { label: 'wipe the sweat', re: /wipe the sweat/i },
+    { label: 'keep listening', re: /keep listening(?:,\s*or\s*keep[\s\w]{0,24})?/i },
+    { label: 'your choice', re: /\byour choice\b/i },
+    { label: 'gathering fuel', re: /gathering fuel/i },
+    { label: 'keep burning/dying hook', re: /keep (?:listening,\s*)?or keep (?:burning|dying)/i },
+  ];
+
+  function detectStockSermonFiller(text, opts) {
+    opts = opts || {};
+    var t = String(text || '');
+    if (t.length < 200) return null;
+    var prior = String(opts.priorPartsText || '');
+    var partNum = parseInt(opts.partNum, 10) || 1;
+    var open = t.slice(0, 500);
+    var labels = [];
+    for (var i = 0; i < STOCK_FILLER_CHECKS.length; i++) {
+      var chk = STOCK_FILLER_CHECKS[i];
+      if (!chk.re.test(t)) continue;
+      chk.re.lastIndex = 0;
+      labels.push(chk.label);
+      var inPrior = prior && chk.re.test(prior);
+      chk.re.lastIndex = 0;
+      var inOpen = partNum > 1 && chk.re.test(open);
+      chk.re.lastIndex = 0;
+      var count = (t.match(chk.re) || []).length;
+      chk.re.lastIndex = 0;
+      if (count >= 2) {
+        return { reason: 'stock sermon filler repeated in part (' + chk.label + ')' };
+      }
+      if (inPrior) {
+        return { reason: 'reused stock transition between parts (' + chk.label + ')' };
+      }
+      if (inOpen) {
+        return { reason: 'stock opener on part ' + partNum + ' (' + chk.label + ')' };
+      }
+    }
+    if (labels.length >= 2) {
+      return { reason: 'multiple stock sermon filler lines (' + labels.join(', ') + ')' };
     }
     return null;
   }
@@ -428,6 +496,11 @@
     if (sentLoop) return sentLoop;
     var chunkLoop = detectConsecutiveTailRepeat(tail);
     if (chunkLoop) return chunkLoop;
+
+    if (!streaming) {
+      var stock = detectStockSermonFiller(t, opts);
+      if (stock) return stock;
+    }
 
     return null;
   }
