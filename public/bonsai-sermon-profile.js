@@ -5,7 +5,7 @@
   var WORD_MIN = 1800;
   var WORD_TARGET = 2200;
   var WORD_MAX = 2800;
-  var MAX_BONSAI_RETRIES = 1;
+  var MAX_BONSAI_RETRIES = 2;
   var MAX_TRUNC_CONTINUATIONS = 1;
   /** Server default BONSAI_SERMON_MAX_TOKENS — client calc stays below this */
   var SERMON_TOKEN_CEILING = 4800;
@@ -236,6 +236,7 @@
       doctrines: [],
       transitionPoint: '',
       contextShrink: false,
+      repetitionRetry: false,
     };
   }
 
@@ -311,6 +312,11 @@
       reason +
       '.\nDiscard that attempt. Follow the verse ledger exactly.\n\n';
     p += buildVerseLedger(meta) + '\n\n' + buildHardVerseDiscipline(meta) + '\n\n';
+    if (/repetition|repeated|duplicate|loop/i.test(String(reason || ''))) {
+      p +=
+        'ANTI-LOOP (MANDATORY): Do NOT repeat the same sentence or paragraph. Do NOT reuse identical closing lines. ' +
+        'Vary wording while keeping doctrine. Advance verse-by-verse — never paste the same block twice.\n\n';
+    }
     if (badSample) {
       p +=
         'FAILED OUTPUT EXCERPT (do not copy this structure):\n"' +
@@ -327,52 +333,93 @@
       .toLowerCase();
   }
 
-  function detectDegeneration(text) {
+  function tailSlice(text, streaming) {
     var t = String(text || '');
-    if (t.length < 400) return null;
+    var maxChars = streaming ? 2200 : 4500;
+    if (t.length <= maxChars) return t;
+    return t.slice(-maxChars);
+  }
+
+  function detectTailSentenceLoop(tail) {
+    var sentences = tail.match(/[^.!?]+[.!?]+/g) || [];
+    if (sentences.length < 8) return null;
+    var window = sentences.slice(-36);
+    var freq = {};
+    for (var i = 0; i < window.length; i++) {
+      var key = normalizeWs(window[i]);
+      if (key.length < 55) continue;
+      freq[key] = (freq[key] || 0) + 1;
+      if (freq[key] >= 4) {
+        return { reason: 'same long sentence repeated four or more times near the end' };
+      }
+    }
+    return null;
+  }
+
+  function detectConsecutiveTailRepeat(tail) {
+    var norm = tail.replace(/\s+/g, ' ').trim();
+    if (norm.length < 700) return null;
+    var blockLen = Math.min(320, Math.max(140, Math.floor(norm.length / 4)));
+    var block = norm.slice(-blockLen);
+    if (block.length < 120) return null;
+    var scan = norm.slice(-Math.min(2400, norm.length));
+    var hits = 0;
+    var idx = 0;
+    while ((idx = scan.indexOf(block, idx)) !== -1) {
+      hits++;
+      if (hits >= 3) {
+        return { reason: 'same closing block pasted multiple times in a row' };
+      }
+      idx += Math.max(1, Math.floor(blockLen * 0.85));
+    }
+    return null;
+  }
+
+  function detectDegeneration(text, opts) {
+    opts = opts || {};
+    var streaming = !!opts.streaming;
+    var t = String(text || '');
+    var minLen = streaming ? 3200 : 400;
+    if (t.length < minLen) return null;
 
     var extendMatches = t.match(/\bExtend\s+\w+\s+amidst\s+\w+/gi) || [];
     if (extendMatches.length >= 3) {
       return { reason: 'repetitive "Extend X amidst Y" template loop' };
     }
 
-    var paras = t.split(/\n\n+/).map(function (p) {
+    var tail = tailSlice(t, streaming);
+    var paras = tail.split(/\n\n+/).map(function (p) {
       return p.trim();
     }).filter(function (p) {
       return p.length > 80;
     });
     if (paras.length >= 3) {
-      var last = paras.slice(-6);
+      var last = paras.slice(-5);
       for (var i = 0; i < last.length; i++) {
         for (var j = i + 1; j < last.length; j++) {
           if (normalizeWs(last[i]) === normalizeWs(last[j]) && last[i].length > 100) {
-            return { reason: 'duplicate paragraph repeated' };
+            return { reason: 'duplicate paragraph repeated near the end' };
           }
         }
       }
     }
 
-    var sentences = t.match(/[^.!?]+[.!?]+/g) || [];
+    var sentences = tail.match(/[^.!?]+[.!?]+/g) || [];
     if (sentences.length >= 6) {
-      var tail = sentences.slice(-8).map(normalizeWs);
-      for (var a = 0; a < tail.length; a++) {
+      var sentTail = sentences.slice(-10).map(normalizeWs);
+      for (var a = 0; a < sentTail.length; a++) {
         var count = 0;
-        for (var b = 0; b < tail.length; b++) {
-          if (tail[b] === tail[a] && tail[a].length > 40) count++;
+        for (var b = 0; b < sentTail.length; b++) {
+          if (sentTail[b] === sentTail[a] && sentTail[a].length > 40) count++;
         }
-        if (count >= 3) return { reason: 'same sentence repeated three or more times' };
+        if (count >= 3) return { reason: 'same sentence repeated three or more times near the end' };
       }
     }
 
-    var triGramCounts = {};
-    var words = t.toLowerCase().replace(/[^a-z0-9\s']/g, ' ').split(/\s+/).filter(Boolean);
-    for (var w = 0; w < words.length - 5; w++) {
-      var phrase = words.slice(w, w + 6).join(' ');
-      triGramCounts[phrase] = (triGramCounts[phrase] || 0) + 1;
-      if (triGramCounts[phrase] >= 4 && phrase.length > 25) {
-        return { reason: 'excessive repeated phrase sequence' };
-      }
-    }
+    var sentLoop = detectTailSentenceLoop(tail);
+    if (sentLoop) return sentLoop;
+    var chunkLoop = detectConsecutiveTailRepeat(tail);
+    if (chunkLoop) return chunkLoop;
 
     return null;
   }
@@ -511,10 +558,16 @@
       wantOut = Math.min(wantOut, budget);
     }
     params.max_tokens = wantOut;
-    params.temperature = 0.8;
-    params.top_p = 0.9;
+    if (state.repetitionRetry) {
+      params.temperature = 0.72;
+      params.top_p = 0.88;
+      params.repeat_penalty = 1.28;
+    } else {
+      params.temperature = 0.8;
+      params.top_p = 0.9;
+      params.repeat_penalty = 1.1;
+    }
     params.top_k = 20;
-    params.repeat_penalty = 1.1;
     params.frequency_penalty = 0;
     params.presence_penalty = 0;
     return params;
@@ -581,6 +634,9 @@
     effectiveContextTokens: effectiveContextTokens,
     enableContextShrink: function (state) {
       if (state) state.contextShrink = true;
+    },
+    enableRepetitionRetry: function (state) {
+      if (state) state.repetitionRetry = true;
     },
   };
 })(typeof window !== 'undefined' ? window : globalThis);

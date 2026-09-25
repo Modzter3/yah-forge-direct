@@ -5573,6 +5573,9 @@ if(ForgeBonsaiProfile.isContextSizeError(reason))return false;
 if((ctx.bonsaiRetryCount||0)>=ForgeBonsaiProfile.maxRetries())return false;
 abortActiveBonsaiSermonStream(ctx);
 ctx.bonsaiRetryCount=(ctx.bonsaiRetryCount||0)+1;
+if(/repetition|repeated|duplicate|loop/i.test(String(reason||''))&&ForgeBonsaiProfile.enableRepetitionRetry){
+ForgeBonsaiProfile.enableRepetitionRetry(ctx.bonsaiState);
+}
 ctx.partContent='';
 ctx.partContentBeforeContinue='';
 ctx.continuationCount=0;
@@ -5757,7 +5760,7 @@ armSermonWatchdogs(function(){finishCurrentSermonPart('stall');});
 if(isContinuation)ctx.partContent=(ctx.partContentBeforeContinue||'')+'\n\n'+chunk;
 else ctx.partContent=chunk;
 if(isBonsaiChapterSermonActive()&&ForgeBonsaiProfile){
-var liveDeg=ForgeBonsaiProfile.detectDegeneration(ctx.partContent);
+var liveDeg=ForgeBonsaiProfile.detectDegeneration(ctx.partContent,{streaming:true});
 if(liveDeg){
 if(!ctx.bonsaiStreamAborted){
 ctx.bonsaiStreamAborted=true;
