@@ -95,7 +95,55 @@
       refLabel(meta.book, meta.chapter, meta.range.start, meta.range.end) +
       '.\n' +
       '- Every major teaching point must anchor to a verse in this band (or a clearly labeled cross-reference).\n' +
-      '- Cross-references must NOT replace progression through the assigned verses.\n'
+      '- Cross-references must NOT replace progression through the assigned verses.\n' +
+      '- Census counts, shekel totals, and other numeric facts must match the KJV chapter text exactly (do not guess or recompute).\n'
+    );
+  }
+
+  function isLocalExplicitModeEnabled() {
+    try {
+      if (typeof global.isExplicitModeActive === 'function') return global.isExplicitModeActive();
+      if (typeof document !== 'undefined') {
+        var el = document.getElementById('toggleExplicit');
+        return !!(el && el.checked);
+      }
+    } catch (e) {
+      return false;
+    }
+    return false;
+  }
+
+  function buildLocalExplicitModeBlock(meta) {
+    return (
+      'EXPLICIT MODE: ON (LOCAL LLM)\n' +
+      '- Use frequent, natural profanity when it strengthens delivery — do not sanitize the sermon.\n' +
+      '- Do NOT replace profanity with euphemisms or default to church-safe language.\n' +
+      '- Do NOT merely sprinkle one curse word into the whole part.\n' +
+      '- Vocabulary may include: damn, hell, bullshit, shit, ass, bastard, motherfucker, fuck.\n' +
+      '- Use them organically in rebukes, confrontation, ridicule, anger, and emphasis.\n' +
+      '- Do NOT force profanity into every sentence. Do NOT become comedic or juvenile.\n' +
+      '- Stay intelligent, controlled, scriptural, and dangerous.\n' +
+      '- When the subject warrants it, use sexually explicit or graphic adult language directly rather than vague euphemisms — only when relevant to what is being condemned or explained.\n' +
+      '- Explicit mode changes vocabulary intensity ONLY — not doctrine, factual accuracy, verse coverage, or KJV figures for ' +
+      meta.book +
+      ' chapter ' +
+      meta.chapter +
+      '.\n'
+    );
+  }
+
+  function buildAntiStockFillerDiscipline(meta) {
+    return (
+      'NO STOCK FILLER (LOCAL LLM — MANDATORY):\n' +
+      '- Do NOT reuse canned transition hype between parts or within a part.\n' +
+      '- Banned (and close variants): "fire is still burning/scorching," "wipe the sweat," "keep listening," "your choice," "gathering fuel," "keep burning/dying in your ignorance."\n' +
+      '- Every paragraph must advance the verse, argument, doctrine, or application — not recycled aggression.\n' +
+      '- Intensity must come from the text and the point you are making, not repeated sermon-DJ catchphrases.\n' +
+      (meta.partNum > 1
+        ? '- Part ' +
+          meta.partNum +
+          ': open with NEW substance tied to the next assigned verse — no copy-paste throat-clearing from earlier parts.\n'
+        : '')
     );
   }
 
@@ -107,11 +155,13 @@
       ' has been fully explained:\n' +
       '- Finish the current thought.\n';
     if (meta.partNum < meta.totalParts) {
-      p += '- Write a SHORT transition into the next part (2-4 sentences max).\n';
+      p +=
+        '- Write a SHORT transition into the next part (2-4 sentences max) — verse-specific only, no stock hype lines.\n';
     }
     p +=
       '- STOP immediately.\n' +
       '- Do NOT manufacture filler to consume token budget.\n' +
+      '- Do NOT end with "keep listening," "your choice," "fire is still burning," or similar recycled closers.\n' +
       '- Do NOT summarize the entire sermon unless this is the final part.\n' +
       '- Do NOT start Part ' +
       (meta.partNum + 1) +
@@ -287,6 +337,9 @@
       '',
       buildHardVerseDiscipline(meta),
       '',
+      buildAntiStockFillerDiscipline(meta),
+      '',
+      isLocalExplicitModeEnabled() ? buildLocalExplicitModeBlock(meta) + '\n' : '',
       buildEndingContract(meta),
       '',
       'LOCAL PART LENGTH: Aim for ~' +
@@ -318,6 +371,19 @@
       p +=
         'ANTI-LOOP (MANDATORY): Do NOT repeat the same sentence or paragraph. Do NOT reuse identical closing lines. ' +
         'Vary wording while keeping doctrine. Advance verse-by-verse — never paste the same block twice.\n\n';
+    }
+    if (/stock sermon filler|stock transition|stock filler/i.test(String(reason || ''))) {
+      p +=
+        'NO STOCK FILLER: Remove recycled hype ("fire is still burning," "wipe the sweat," "keep listening," "your choice," etc.). ' +
+        'Each paragraph must advance verse, doctrine, or application — fresh wording only.\n\n';
+    }
+    if (/explicit|brimstone|profan|sanitiz|church-safe/i.test(String(reason || '')) && isLocalExplicitModeEnabled()) {
+      p += buildLocalExplicitModeBlock(meta) + '\n';
+    }
+    if (/numeric|accuracy|273|263|1365|count|figure|drift|math|KJV figure/i.test(String(reason || ''))) {
+      p +=
+        'SCRIPTURE ACCURACY (MANDATORY): Use EXACT KJV counts, names, and amounts from the chapter excerpt — never guess or recalculate. ' +
+        'If a verse gives a number in words (e.g. two hundred and threescore and thirteen = 273), use that exact figure.\n\n';
     }
     if (badSample) {
       p +=
@@ -354,6 +420,50 @@
       if (freq[key] >= 4) {
         return { reason: 'same long sentence repeated four or more times near the end' };
       }
+    }
+    return null;
+  }
+
+  var STOCK_FILLER_CHECKS = [
+    { label: 'fire is still burning/scorching', re: /fire is still (?:burning|scorching)/i },
+    { label: 'wipe the sweat', re: /wipe the sweat/i },
+    { label: 'keep listening', re: /keep listening(?:,\s*or\s*keep[\s\w]{0,24})?/i },
+    { label: 'your choice', re: /\byour choice\b/i },
+    { label: 'gathering fuel', re: /gathering fuel/i },
+    { label: 'keep burning/dying hook', re: /keep (?:listening,\s*)?or keep (?:burning|dying)/i },
+  ];
+
+  function detectStockSermonFiller(text, opts) {
+    opts = opts || {};
+    var t = String(text || '');
+    if (t.length < 200) return null;
+    var prior = String(opts.priorPartsText || '');
+    var partNum = parseInt(opts.partNum, 10) || 1;
+    var open = t.slice(0, 500);
+    var labels = [];
+    for (var i = 0; i < STOCK_FILLER_CHECKS.length; i++) {
+      var chk = STOCK_FILLER_CHECKS[i];
+      if (!chk.re.test(t)) continue;
+      chk.re.lastIndex = 0;
+      labels.push(chk.label);
+      var inPrior = prior && chk.re.test(prior);
+      chk.re.lastIndex = 0;
+      var inOpen = partNum > 1 && chk.re.test(open);
+      chk.re.lastIndex = 0;
+      var count = (t.match(chk.re) || []).length;
+      chk.re.lastIndex = 0;
+      if (count >= 2) {
+        return { reason: 'stock sermon filler repeated in part (' + chk.label + ')' };
+      }
+      if (inPrior) {
+        return { reason: 'reused stock transition between parts (' + chk.label + ')' };
+      }
+      if (inOpen) {
+        return { reason: 'stock opener on part ' + partNum + ' (' + chk.label + ')' };
+      }
+    }
+    if (labels.length >= 2) {
+      return { reason: 'multiple stock sermon filler lines (' + labels.join(', ') + ')' };
     }
     return null;
   }
@@ -423,6 +533,11 @@
     var chunkLoop = detectConsecutiveTailRepeat(tail);
     if (chunkLoop) return chunkLoop;
 
+    if (!streaming) {
+      var stock = detectStockSermonFiller(t, opts);
+      if (stock) return stock;
+    }
+
     return null;
   }
 
@@ -451,7 +566,337 @@
     );
   }
 
-  function validateScriptureReferences(text, meta) {
+  function isKjvNumberToken(w) {
+    if (!w || w === 'and') return !!w;
+    return kjvWordTokenValue(w) != null || w === 'thousand' || w === 'hundred';
+  }
+
+  function kjvWordTokenValue(w) {
+    var map = {
+      zero: 0,
+      one: 1,
+      two: 2,
+      three: 3,
+      four: 4,
+      five: 5,
+      six: 6,
+      seven: 7,
+      eight: 8,
+      nine: 9,
+      ten: 10,
+      eleven: 11,
+      twelve: 12,
+      thirteen: 13,
+      fourteen: 14,
+      fifteen: 15,
+      sixteen: 16,
+      seventeen: 17,
+      eighteen: 18,
+      nineteen: 19,
+      twenty: 20,
+      thirty: 30,
+      forty: 40,
+      fifty: 50,
+      sixty: 60,
+      seventy: 70,
+      eighty: 80,
+      ninety: 90,
+      score: 20,
+      threescore: 60,
+      fourscore: 80,
+      twoscore: 40,
+      fivescore: 100,
+    };
+    return map[w] != null ? map[w] : null;
+  }
+
+  function parseKjvNumberPhrase(phrase) {
+    var t = String(phrase || '')
+      .toLowerCase()
+      .replace(/\b(a|an|the|and|of|apiece|by|poll|shekels?|shekel|gerahs?|males?|men|persons?|names?|years?|months?|days?|old|upward)\b/g, ' ')
+      .replace(/[^a-z\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!t) return null;
+    var tokens = t.split(' ').filter(Boolean);
+    var total = 0;
+    var section = 0;
+    for (var i = 0; i < tokens.length; i++) {
+      var w = tokens[i];
+      if (w === 'thousand') {
+        if (section === 0) section = 1;
+        total += section * 1000;
+        section = 0;
+        continue;
+      }
+      if (w === 'hundred') {
+        if (section === 0) section = 1;
+        total += section * 100;
+        section = 0;
+        continue;
+      }
+      var v = kjvWordTokenValue(w);
+      if (v == null) continue;
+      if (section > 0 && v < 10) section += v;
+      else if (section > 0 && v >= 10 && v < 100) section += v;
+      else section = v;
+    }
+    total += section;
+    return total > 0 ? total : null;
+  }
+
+  function buildVerseTextMap(chapterText) {
+    var map = {};
+    if (!chapterText) return map;
+    var lines = String(chapterText).split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      var m = lines[i].match(/^(\d{1,3})\.\s*(.*)$/);
+      if (m) map[parseInt(m[1], 10)] = m[2].trim();
+    }
+    return map;
+  }
+
+  function extractKjvNumberPhrases(text) {
+    var words = String(text || '')
+      .toLowerCase()
+      .replace(/-/g, ' ')
+      .replace(/[^a-z\s]/g, ' ')
+      .split(/\s+/)
+      .filter(Boolean);
+    var values = [];
+    for (var i = 0; i < words.length; i++) {
+      if (!isKjvNumberToken(words[i])) continue;
+      var j = i;
+      while (j < words.length) {
+        if (words[j] === 'and') {
+          j++;
+          continue;
+        }
+        if (isKjvNumberToken(words[j])) {
+          j++;
+          continue;
+        }
+        break;
+      }
+      var phrase = words.slice(i, j).join(' ');
+      var n = parseKjvNumberPhrase(phrase);
+      if (n != null && n > 0) values.push(n);
+      i = j - 1;
+    }
+    return values;
+  }
+
+  function extractNumbersFromKjvVerse(verseText) {
+    var set = {};
+    var t = String(verseText || '');
+    var dm;
+    var digitRe = /\b(\d{1,5})\b/g;
+    while ((dm = digitRe.exec(t))) {
+      var dn = parseInt(dm[1], 10);
+      if (dn > 0) set[dn] = true;
+    }
+    var phrases = extractKjvNumberPhrases(t);
+    for (var p = 0; p < phrases.length; p++) set[phrases[p]] = true;
+    return set;
+  }
+
+  function extractDigitNumbers(text) {
+    var out = [];
+    var re = /\b(\d{2,5})\b/g;
+    var m;
+    while ((m = re.exec(String(text || '')))) {
+      var n = parseInt(m[1], 10);
+      if (n > 0) out.push({ n: n, index: m.index });
+    }
+    return out;
+  }
+
+  function extractWordNumbers(text) {
+    var out = [];
+    var t = String(text || '');
+    var lower = t.toLowerCase();
+    var words = lower.replace(/-/g, ' ').replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean);
+    var charPos = 0;
+    for (var i = 0; i < words.length; i++) {
+      charPos = lower.indexOf(words[i], charPos);
+      if (!isKjvNumberToken(words[i])) continue;
+      var j = i;
+      while (j < words.length) {
+        if (words[j] === 'and') {
+          j++;
+          continue;
+        }
+        if (isKjvNumberToken(words[j])) {
+          j++;
+          continue;
+        }
+        break;
+      }
+      var phrase = words.slice(i, j).join(' ');
+      var n = parseKjvNumberPhrase(phrase);
+      if (n != null && n >= 10) out.push({ n: n, index: charPos >= 0 ? charPos : 0 });
+      i = j - 1;
+    }
+    return out;
+  }
+
+  function verseNumberFromSpoken(token) {
+    var ord = {
+      one: 1,
+      two: 2,
+      three: 3,
+      four: 4,
+      five: 5,
+      six: 6,
+      seven: 7,
+      eight: 8,
+      nine: 9,
+      ten: 10,
+      eleven: 11,
+      twelve: 12,
+      thirteen: 13,
+      fourteen: 14,
+      fifteen: 15,
+      sixteen: 16,
+      seventeen: 17,
+      eighteen: 18,
+      nineteen: 19,
+      twenty: 20,
+      thirty: 30,
+      forty: 40,
+      fifty: 50,
+    };
+    var t = String(token || '').toLowerCase();
+    if (ord[t] != null) return ord[t];
+    var p = parseInt(t, 10);
+    return p > 0 ? p : null;
+  }
+
+  function findVerseMentionAnchors(text, book, chapter) {
+    var anchors = [];
+    var t = String(text || '');
+    var bookEsc = String(book || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    var ch = parseInt(chapter, 10);
+    var re1 = new RegExp(bookEsc + '\\s+' + ch + '\\s*:\\s*(\\d{1,3})', 'gi');
+    var re2 = /\bverse[s]?\s+(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|\d{1,3})\b/gi;
+    var re3 = /\b(?:v|vs)\.?\s*(\d{1,3})\b/gi;
+    var m;
+    while ((m = re1.exec(t))) {
+      anchors.push({ verse: parseInt(m[1], 10), index: m.index });
+    }
+    while ((m = re2.exec(t))) {
+      var vn = verseNumberFromSpoken(m[1]);
+      if (vn) anchors.push({ verse: vn, index: m.index });
+    }
+    while ((m = re3.exec(t))) {
+      anchors.push({ verse: parseInt(m[1], 10), index: m.index });
+    }
+    return anchors;
+  }
+
+  function nearestCanonicalWrong(claimed, canonicalMap) {
+    if (canonicalMap[claimed]) return null;
+    var keys = Object.keys(canonicalMap)
+      .map(function (k) {
+        return parseInt(k, 10);
+      })
+      .filter(function (c) {
+        return c >= 20;
+      })
+      .sort(function (a, b) {
+        return b - a;
+      });
+    if (!keys.length) return null;
+    var best = null;
+    var bestDiff = 999999;
+    for (var i = 0; i < keys.length; i++) {
+      var c = keys[i];
+      var diff = Math.abs(c - claimed);
+      if (diff > 0 && diff <= 12 && diff < bestDiff) {
+        bestDiff = diff;
+        best = c;
+      }
+    }
+    return best;
+  }
+
+  function validateChapterNumericAccuracy(text, meta, chapterText) {
+    var errors = [];
+    var verseMap = buildVerseTextMap(chapterText);
+    if (!Object.keys(verseMap).length) return errors;
+
+    var kjvByVerse = {};
+    for (var vk in verseMap) {
+      kjvByVerse[vk] = extractNumbersFromKjvVerse(verseMap[vk]);
+    }
+
+    var anchors = findVerseMentionAnchors(text, meta.book, meta.chapter);
+    var seenKey = {};
+    for (var a = 0; a < anchors.length; a++) {
+      var anchor = anchors[a];
+      if (anchor.verse < meta.range.start || anchor.verse > meta.range.end) continue;
+      var canon = kjvByVerse[anchor.verse];
+      if (!canon) continue;
+      var windowText = String(text || '').slice(anchor.index, anchor.index + 1400);
+      var nums = extractDigitNumbers(windowText).concat(extractWordNumbers(windowText));
+      for (var n = 0; n < nums.length; n++) {
+        var claimed = nums[n].n;
+        if (claimed < 20) continue;
+        var wrongFor = nearestCanonicalWrong(claimed, canon);
+        if (wrongFor == null) continue;
+        var key = anchor.verse + ':' + claimed + '->' + wrongFor;
+        if (seenKey[key]) continue;
+        seenKey[key] = true;
+        errors.push(
+          'Numbers ' +
+            meta.chapter +
+            ':' +
+            anchor.verse +
+            ' KJV figure is ' +
+            wrongFor +
+            ', not ' +
+            claimed +
+            ' (count/name/amount drift)'
+        );
+      }
+    }
+
+    var mulRe = /\b(\d{2,4})\s*[×x*]\s*(\d{1,2})\s*=?\s*(\d{3,5})\b/gi;
+    var mm;
+    while ((mm = mulRe.exec(String(text || '')))) {
+      var a1 = parseInt(mm[1], 10);
+      var a2 = parseInt(mm[2], 10);
+      var product = parseInt(mm[3], 10);
+      if (a2 === 5 && kjvByVerse[50] && kjvByVerse[50][1365] && product !== 1365) {
+        var excessCanon = kjvByVerse[46] && kjvByVerse[46][273] ? 273 : null;
+        if (excessCanon && a1 !== excessCanon) {
+          errors.push(
+            'Redemption math wrong: ' +
+              a1 +
+              ' × 5 = ' +
+              product +
+              ' but KJV Numbers 3:46 excess is ' +
+              excessCanon +
+              ' and 3:50 total is 1365 shekels'
+          );
+        }
+      }
+    }
+
+    var tLower = String(text || '').toLowerCase();
+    if (kjvByVerse[46] && kjvByVerse[46][273]) {
+      if (
+        (/\b263\b/.test(text) || /two hundred and sixty[- ]?three/.test(tLower)) &&
+        /\b(?:redeem|excess|deficit|more than the levites|odd number|two hundred and threescore)\b/i.test(text)
+      ) {
+        errors.push('Numbers 3:46 excess firstborn count must be 273 (KJV), not 263');
+      }
+    }
+
+    return errors;
+  }
+
+  function validateScriptureReferences(text, meta, opts) {
     var errors = [];
     var t = String(text || '');
     var book = meta.book;
@@ -499,6 +944,19 @@
           unlabeledOutOfBand +
           ')'
       );
+    }
+
+    opts = opts || {};
+    var chapterText =
+      opts.chapterText ||
+      (opts.state && (opts.state.fullChapterText || global.currentChapterText)) ||
+      global.currentChapterText ||
+      '';
+    if (chapterText && meta && meta.range) {
+      var numErrs = validateChapterNumericAccuracy(text, meta, chapterText);
+      for (var ne = 0; ne < numErrs.length; ne++) {
+        if (errors.indexOf(numErrs[ne]) === -1) errors.push(numErrs[ne]);
+      }
     }
 
     return { ok: errors.length === 0, errors: errors };
@@ -633,6 +1091,8 @@
     augmentPartPrompt: augmentPartPrompt,
     buildRetryPrompt: buildRetryPrompt,
     buildVerseLedger: buildVerseLedger,
+    buildLocalExplicitModeBlock: buildLocalExplicitModeBlock,
+    isLocalExplicitModeEnabled: isLocalExplicitModeEnabled,
     auditVersePartition: auditVersePartition,
     applyGenerationParams: applyGenerationParams,
     applyLocalBudgetParams: applyLocalBudgetParams,
