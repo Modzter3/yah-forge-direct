@@ -126,4 +126,24 @@ if (!P.isContextSizeError('Context size has been exceeded.')) {
 console.log('\n=== Part 3 slim excerpt ===');
 console.log('full chars', ch3Full.length, 'slim chars', slim.length, 'verses', meta3.range.start + '-' + meta3.range.end);
 
+console.log('\n=== Degeneration detector (thematic vs true loop) ===');
+const thematicParts = [];
+for (let v = 18; v <= 34; v++) {
+  thematicParts.push(
+    `Verse ${v} in Numbers chapter three adds another layer of the Levitical charge on Aaron's house so scattered Israel understands tabernacle service in this generation.`
+  );
+}
+const thematic = thematicParts.join(' ');
+if (P.detectDegeneration(thematic)) {
+  throw new Error('thematic sermon should not trip repetition detector: ' + P.detectDegeneration(thematic).reason);
+}
+const trueLoop =
+  thematic +
+  ' Extend mercy amidst judgment. Extend mercy amidst judgment. Extend mercy amidst judgment. ' +
+  'This same closing line repeats again and again without advancing the text at all. '.repeat(12);
+const loopHit = P.detectDegeneration(trueLoop);
+if (!loopHit) throw new Error('expected true template loop to be detected');
+console.log('thematic pass, loop detected:', loopHit.reason);
+if (P.maxRetries() < 2) throw new Error('expected at least 2 bonsai retries');
+
 console.log('\nall checks passed');
