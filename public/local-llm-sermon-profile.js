@@ -95,7 +95,8 @@
       refLabel(meta.book, meta.chapter, meta.range.start, meta.range.end) +
       '.\n' +
       '- Every major teaching point must anchor to a verse in this band (or a clearly labeled cross-reference).\n' +
-      '- Cross-references must NOT replace progression through the assigned verses.\n'
+      '- Cross-references must NOT replace progression through the assigned verses.\n' +
+      '- Census counts, shekel totals, and other numeric facts must match the KJV chapter text exactly (do not guess or recompute).\n'
     );
   }
 
