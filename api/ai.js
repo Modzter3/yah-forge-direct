@@ -7,6 +7,13 @@ import {
   resolveKieModel,
   transformKieResponsesSse,
 } from './kie-provider.js';
+import {
+  BONSAI_PROVIDER_ID,
+  BONSAI_OFFLINE_PREFIX,
+  buildBonsaiChatPayload,
+  getBonsaiConfig,
+  isBonsaiProviderRequest,
+} from './bonsai-provider.js';
 
 export const config = { runtime: 'edge' };
 
@@ -81,6 +88,10 @@ export default async function handler(req) {
     return jsonError('Missing required field: query', 400);
   }
   const imageList = normalizeImageInputs(images);
+
+  if (isBonsaiProviderRequest(body)) {
+    return handleBonsaiRequest({ query, parameters, imageList });
+  }
 
   const defaultProviderName = (process.env.AI_PROVIDER || 'openrouter').trim().toLowerCase();
   const kieModel = looksLikeKieModelId(bot) ? resolveKieModel(bot) : null;
@@ -164,6 +175,73 @@ export default async function handler(req) {
   }
 
   return jsonFromProviderToSse(parsed, providerName, resolvedModel);
+}
+
+async function handleBonsaiRequest({ query, parameters, imageList }) {
+  const config = getBonsaiConfig();
+  if (!config.baseUrl || !config.apiKey || !config.model) {
+    return jsonError(
+      'Bonsai RunPod is not configured. Set BONSAI_BASE_URL, BONSAI_API_KEY, and BONSAI_MODEL in Vercel.',
+      500
+    );
+  }
+
+  const params = { ...(parameters || {}) };
+  const yahStorySystem = params.yah_story_system === true;
+  delete params.yah_story_system;
+  let systemContent = '';
+  if (yahStorySystem) {
+    systemContent = process.env.YAH_STORY_SYSTEM_PROMPT || DEFAULT_YAH_STORY_SYSTEM_PROMPT;
+  }
+
+  const built = buildBonsaiChatPayload({
+    model: config.model,
+    query,
+    parameters: params,
+    images: imageList,
+    config,
+    systemContent,
+  });
+  if (built.error) {
+    return jsonError(built.error, 400);
+  }
+
+  let upstream;
+  try {
+    upstream = await fetch(`${config.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(built.payload),
+    });
+  } catch (err) {
+    return jsonError(
+      `${BONSAI_OFFLINE_PREFIX}: ${err.message || 'cannot reach RunPod endpoint'}`,
+      502
+    );
+  }
+
+  const contentType = upstream.headers.get('content-type') || '';
+  const resolvedModel = config.model;
+
+  if (!upstream.ok) {
+    const raw = await safeReadText(upstream);
+    let parsed = null;
+    try { parsed = JSON.parse(raw); } catch { parsed = null; }
+    const clean = cleanErrorMessage(parsed, raw) || `HTTP ${upstream.status}`;
+    return jsonError(`${BONSAI_OFFLINE_PREFIX}: ${clean}`, upstream.status >= 400 ? upstream.status : 502);
+  }
+
+  if (contentType.includes('text/event-stream')) {
+    return streamPassThrough(upstream, BONSAI_PROVIDER_ID, resolvedModel);
+  }
+
+  const raw = await safeReadText(upstream);
+  let parsed = null;
+  try { parsed = JSON.parse(raw); } catch { parsed = null; }
+  return jsonFromProviderToSse(parsed, BONSAI_PROVIDER_ID, resolvedModel);
 }
 
 async function handleKieRequest({ bot, query, parameters, imageList, kieModel, apiKey, baseUrl }) {

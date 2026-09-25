@@ -10,7 +10,7 @@
     ? window.KIE_CHAT_MODELS
     : [{ id: 'kie/gpt-6-astra', name: 'GPT-6 Astra via Kie', context_length: 1050000, pricing: { prompt: '0.0000028', completion: '0.000014' } }];
 
-  var SELECT_IDS = [
+  window.FORGE_MODEL_SELECT_IDS = [
     'modelSelect',
     'scriptureFetchModel',
     'apocFetchModel',
@@ -23,6 +23,7 @@
     'imagePromptModel',
     'visualBeatModel',
   ];
+  var SELECT_IDS = window.FORGE_MODEL_SELECT_IDS;
 
   function providerFromId(id) {
     var i = String(id || '').indexOf('/');
@@ -183,7 +184,7 @@
     restoreOrDefault(el, prev, models, flashBias);
   }
 
-  window.hydrateForgeModelSelects = function () {
+  function hydrateOpenRouterCatalog() {
     return fetch(MODELS_URL)
       .then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -207,7 +208,9 @@
         console.warn('[openrouter-models]', err.message || err);
         fillSelectsWithKieOnly();
       });
-  };
+  }
+
+  window.hydrateForgeModelSelects = hydrateOpenRouterCatalog;
 
   function fillSelectsWithKieOnly() {
     for (var s = 0; s < SELECT_IDS.length; s++) {

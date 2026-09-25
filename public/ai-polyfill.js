@@ -69,9 +69,20 @@
       .slice(0, 4);
   }
 
+  function resolveLlmProvider() {
+    try {
+      if (typeof window.getForgeLlmProvider === 'function') {
+        return window.getForgeLlmProvider();
+      }
+    } catch (_) {}
+    return 'openrouter';
+  }
+
   async function openStream(bot, prompt, parameters, images) {
     const payload = { bot, query: prompt, parameters };
     if (images && images.length) payload.images = images;
+    const provider = resolveLlmProvider();
+    if (provider === 'bonsai') payload.provider = 'bonsai';
     const res = await fetch(API_ROUTE, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -80,7 +91,11 @@
     if (!res.ok) {
       let msg;
       try { msg = (await res.json()).error; } catch { msg = await res.text(); }
-      throw new Error(msg || `HTTP ${res.status}`);
+      const errText = msg || `HTTP ${res.status}`;
+      if (provider === 'bonsai' && !/Bonsai RunPod offline/i.test(errText)) {
+        throw new Error('Bonsai RunPod offline: ' + errText);
+      }
+      throw new Error(errText);
     }
     return res;
   }
