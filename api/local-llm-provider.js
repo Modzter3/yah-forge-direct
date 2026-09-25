@@ -11,12 +11,28 @@ function envFirst(localKey, legacyKey) {
   return process.env[legacyKey] || '';
 }
 
+function envTruthy(key, legacyKey, defaultWhenUnset) {
+  const raw = envFirst(key, legacyKey);
+  if (raw === '') return defaultWhenUnset;
+  return !/^(0|false|no|off)$/i.test(String(raw).trim());
+}
+
+/** Default true — Qwen thinking burns tokens and slows sermons on RunPod. Set LOCAL_LLM_DISABLE_THINKING=false to allow it. */
+export function isLocalLlmDisableThinking() {
+  return envTruthy('LOCAL_LLM_DISABLE_THINKING', 'BONSAI_DISABLE_THINKING', true);
+}
+
+function isLikelyQwenModel(model) {
+  return /qwen/i.test(String(model || ''));
+}
+
 /** Default llama-server sampling (override via LOCAL_LLM_* env). */
 export function getLocalLlmGenerationProfile() {
   return {
     temperature: parseFloat(envFirst('LOCAL_LLM_TEMPERATURE', 'BONSAI_TEMPERATURE') || '0.7'),
-    top_p: parseFloat(envFirst('LOCAL_LLM_TOP_P', 'BONSAI_TOP_P') || '0.9'),
+    top_p: parseFloat(envFirst('LOCAL_LLM_TOP_P', 'BONSAI_TOP_P') || '0.8'),
     top_k: Math.max(0, parseInt(envFirst('LOCAL_LLM_TOP_K', 'BONSAI_TOP_K') || '20', 10) || 20),
+    min_p: parseFloat(envFirst('LOCAL_LLM_MIN_P', 'BONSAI_MIN_P') || '0'),
     repeat_penalty: parseFloat(envFirst('LOCAL_LLM_REPEAT_PENALTY', 'BONSAI_REPEAT_PENALTY') || '1.08'),
     sermon_max_tokens: Math.min(
       8192,
@@ -70,6 +86,8 @@ const LOCAL_LLM_STRIP_PARAMS = new Set([
   'thinking_budget',
   'thinking_level',
   'reasoning_effort',
+  'reasoning_budget',
+  'chat_template_kwargs',
   'yah_story_system',
   'local_llm_sermon',
   'bonsai_sermon',
@@ -167,18 +185,36 @@ export function buildLocalLlmChatPayload({ model, query, parameters, images, con
   if (systemContent && String(systemContent).trim()) {
     messages.push({ role: 'system', content: String(systemContent).trim() });
   }
-  messages.push({ role: 'user', content: user.content });
+  let userContent = user.content;
+  const disableThinking = isLocalLlmDisableThinking();
+  const effectiveModel = model || config.model;
+  if (
+    disableThinking &&
+    isLikelyQwenModel(effectiveModel) &&
+    !/\/no_think\b/i.test(String(userContent))
+  ) {
+    userContent = String(userContent).trimEnd() + ' /no_think';
+  }
+  messages.push({ role: 'user', content: userContent });
 
   const payload = {
-    model: model || config.model,
+    model: effectiveModel,
     messages,
     stream: true,
     temperature: profile.temperature,
     top_p: profile.top_p,
     top_k: profile.top_k,
+    min_p: profile.min_p,
     repeat_penalty: profile.repeat_penalty,
     ...params,
   };
+
+  if (disableThinking) {
+    payload.chat_template_kwargs = {
+      enable_thinking: false,
+      preserve_thinking: false,
+    };
+  }
 
   if (payload.max_tokens === undefined) {
     payload.max_tokens = sermonMode
@@ -198,6 +234,7 @@ export function buildLocalLlmChatPayload({ model, query, parameters, images, con
 export {
   LOCAL_LLM_PROVIDER_ID as BONSAI_PROVIDER_ID,
   LOCAL_LLM_OFFLINE_PREFIX as BONSAI_OFFLINE_PREFIX,
+  isLocalLlmDisableThinking as isBonsaiDisableThinking,
   getLocalLlmGenerationProfile as getBonsaiGenerationProfile,
   getLocalLlmConfig as getBonsaiConfig,
   isLocalLlmProviderRequest as isBonsaiProviderRequest,

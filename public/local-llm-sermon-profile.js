@@ -77,7 +77,7 @@
       'End after completing: ' + refLabel(meta.book, meta.chapter, meta.range.end, meta.range.end),
       '',
       'Advance through the assigned verses IN ORDER. Cross-references are optional one-sentence support only — they never replace walking the assigned band.',
-      'Write the sermon directly — no , <thinking>, or hidden reasoning blocks.',
+      'Write the sermon directly — no <think>, <thinking>, or hidden reasoning blocks.',
     ];
     return lines.join('\n');
   }
@@ -561,8 +561,9 @@
     if (typeof wantOut !== 'number' || wantOut < MIN_OUTPUT_BUDGET) wantOut = SERMON_TOKEN_CEILING;
     params.max_tokens = clampMaxTokensForPrompt(wantOut, opts.promptCharLength);
     params.temperature = params.temperature != null ? params.temperature : 0.7;
-    params.top_p = params.top_p != null ? params.top_p : 0.9;
+    params.top_p = params.top_p != null ? params.top_p : 0.8;
     params.top_k = params.top_k != null ? params.top_k : 20;
+    params.min_p = params.min_p != null ? params.min_p : 0;
     params.repeat_penalty = params.repeat_penalty != null ? params.repeat_penalty : 1.08;
     return params;
   }
@@ -577,14 +578,15 @@
     params.max_tokens = clampMaxTokensForPrompt(wantOut, opts.promptCharLength);
     if (state.repetitionRetry) {
       params.temperature = 0.65;
-      params.top_p = 0.88;
+      params.top_p = 0.8;
       params.repeat_penalty = 1.22;
     } else {
       params.temperature = 0.7;
-      params.top_p = 0.9;
+      params.top_p = 0.8;
       params.repeat_penalty = 1.08;
     }
     params.top_k = 20;
+    params.min_p = 0;
     return params;
   }
 
