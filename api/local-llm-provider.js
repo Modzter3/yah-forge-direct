@@ -233,6 +233,7 @@ export function buildLocalLlmChatPayload({ model, query, parameters, images, con
 export {
   LOCAL_LLM_PROVIDER_ID as BONSAI_PROVIDER_ID,
   LOCAL_LLM_OFFLINE_PREFIX as BONSAI_OFFLINE_PREFIX,
+  isLocalLlmDisableThinking as isBonsaiDisableThinking,
   getLocalLlmGenerationProfile as getBonsaiGenerationProfile,
   getLocalLlmConfig as getBonsaiConfig,
   isLocalLlmProviderRequest as isBonsaiProviderRequest,
