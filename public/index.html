@@ -11,6 +11,7 @@
 <script>if(typeof marked==='undefined'){window.marked={parse:function(t){return t.replace(/&/g,'&amp;').replace(/\x3c/g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'\x3cbr>');}}}</script>
 <script src="/ai-polyfill.js"></script>
 <script src="/forge-llm-provider.js"></script>
+<script src="/bonsai-sermon-profile.js"></script>
 <script src="/kie-catalog.js"></script>
 <script src="/openrouter-models.js"></script>
 <script src="/apoc-local-corpus.js"></script>
@@ -4912,6 +4913,7 @@ var SERIES_PARTS=[
 var sermonPartsRaw=[];
 var sermonPartsTitles=[];
 var sermonPartsCombined='';
+var bonsaiSermonSessionState=null;
 function generateSermon(userInitiated){
 if(!currentTopic||isGenerating)return;
 if(isFetchingVeilArticle){
@@ -4930,6 +4932,7 @@ sermonSavedThisSession=false;
 sermonPartsRaw=[];
 sermonPartsTitles=[];
 sermonPartsCombined='';
+bonsaiSermonSessionState=null;
 sermonNewsAnglePlan=null;
 sermonNewsLedger=[];
 var savedCustomScripture=(currentChapterSource&&currentChapterSource.type==='custom'&&currentChapterText)?{text:currentChapterText,count:currentChapterVerseCount,src:currentChapterSource}:null;
@@ -5546,6 +5549,56 @@ if(isExplicitModeActive())p+='EXPLICIT MODE STILL ON: Continue with SUSTAINED br
 p+='LAST FOUR HUNDRED CHARACTERS OF YOUR DRAFT:\n"...'+String(existing||'').slice(-400)+'"\n\nCONTINUE IMMEDIATELY:';
 return p;
 }
+function isBonsaiChapterSermonActive(){
+return !!(window.ForgeBonsaiProfile&&ForgeBonsaiProfile.shouldUseProfile&&ForgeBonsaiProfile.shouldUseProfile());
+}
+function handleBonsaiPartFailure(ctx,partNum,message){
+clearSermonWatchdogs();
+var ldr=document.getElementById('loader'+partNum);if(ldr)ldr.remove();
+ctx.partContainer.innerHTML='<div class="error-msg"><i class="fas fa-exclamation-triangle"></i> Bonsai RunPod: '+escapeHtml(message||'Generation failed')+'</div>';
+document.getElementById('generateBtn').disabled=false;
+isGenerating=false;
+sermonGenCtx=null;
+}
+function retryBonsaiSermonPart(ctx,partNum,streamOpts,reason,badSample){
+if(!ctx.bonsaiState||!ForgeBonsaiProfile)return false;
+if((ctx.bonsaiRetryCount||0)>=ForgeBonsaiProfile.maxRetries())return false;
+ctx.bonsaiRetryCount=(ctx.bonsaiRetryCount||0)+1;
+ctx.partContent='';
+ctx.partContentBeforeContinue='';
+ctx.continuationCount=0;
+ctx.bonsaiDegenerationHit=null;
+ctx.bonsaiLastGoodContent='';
+ctx.bonsaiStreamAborted=false;
+ctx.bonsaiStreamHandled=false;
+ctx.bonsaiAbortController=null;
+showToast('Bonsai: '+reason+' — retrying '+getForgePartLabel(partNum,false)+'...');
+streamOpts=streamOpts||{};
+streamOpts.bonsaiVerseRetry=true;
+streamOpts.bonsaiRetryReason=reason;
+streamOpts.badSample=badSample||'';
+startSermonPartStream(partNum,false,streamOpts);
+return true;
+}
+function finalizeBonsaiPartIfValid(ctx,partNum,streamOpts,finalized){
+if(!isBonsaiChapterSermonActive()||!ctx.bonsaiState||!ForgeBonsaiProfile)return true;
+var meta=ForgeBonsaiProfile.buildPartMeta(partNum,ctx.bonsaiState);
+var deg=ForgeBonsaiProfile.detectDegeneration(finalized);
+if(deg){
+if(retryBonsaiSermonPart(ctx,partNum,streamOpts,deg.reason,finalized))return false;
+handleBonsaiPartFailure(ctx,partNum,'Repetition loop detected — '+deg.reason+'. Try fewer parts or edit manually.');
+return false;
+}
+var val=ForgeBonsaiProfile.validateScriptureReferences(finalized,meta);
+if(!val.ok){
+var vmsg=val.errors.join('; ');
+if(retryBonsaiSermonPart(ctx,partNum,streamOpts,'verse/range drift ('+vmsg+')',finalized))return false;
+handleBonsaiPartFailure(ctx,partNum,'Verse discipline failed: '+vmsg);
+return false;
+}
+ForgeBonsaiProfile.updateStateAfterPart(ctx.bonsaiState,finalized,partNum);
+return true;
+}
 function commitSermonPart(partNum,partContent){
 var finalized=finalizeSermonPartText(partContent,partNum);
 var extractedTitle=extractPartTitle(finalized,partNum);
@@ -5598,17 +5651,31 @@ prompt=buildSermonFlashDriftCorrectionPrompt(partNum,streamOpts.badSample||'');
 prompt=buildElevenTagsDriftCorrectionPrompt(partNum,streamOpts.badSample||'');
 }else if(streamOpts.explicitBrimstoneCorrection){
 prompt=buildExplicitBrimstoneDriftCorrectionPrompt(partNum,streamOpts.badSample||'');
+}else if(streamOpts.bonsaiVerseRetry&&ctx.bonsaiState&&ForgeBonsaiProfile){
+var bMeta=ForgeBonsaiProfile.buildPartMeta(partNum,ctx.bonsaiState);
+prompt=ForgeBonsaiProfile.buildRetryPrompt(bMeta,streamOpts.bonsaiRetryReason||'verse discipline failure',streamOpts.badSample||'')+buildPartPrompt(partNum);
 }else if(isContinuation){
 prompt=buildSermonContinuationPrompt(partNum,ctx.partContent,ctx.continuationOpts||{});
 }else{
 prompt=buildPartPrompt(partNum);
 }
+if(!streamOpts.bonsaiVerseRetry&&ctx.bonsaiState&&ForgeBonsaiProfile){
+prompt=ForgeBonsaiProfile.augmentPartPrompt(prompt,partNum,ctx.bonsaiState);
+}
 prompt=wrapPromptForGrokIfNeeded(prompt,model,isYahStoryModeActive()&&!ctx.bezFallbackActive);
 var params=getSermonWebSearchParams(model,selectedPartCount);
 var yahApiActive=isYahStoryModeActive()&&!ctx.bezFallbackActive;
 appendYahStoryApiParams(params,yahApiActive,{skipSystem:!!streamOpts.yahLiteRetry});
+if(ctx.bonsaiState&&ForgeBonsaiProfile){
+ForgeBonsaiProfile.applyGenerationParams(params,partNum,ctx.bonsaiState);
+}
 ctx.handlerName='sermon-part-'+partNum+'-'+Date.now()+'-'+(isContinuation?ctx.continuationCount:0)+'-'+(streamOpts.yahVoiceCorrection?'yahvoice':streamOpts.driftCorrection?'drift':streamOpts.elevenTagsCorrection?'eleventags':streamOpts.explicitBrimstoneCorrection?'explicit':'');
 var activeHandler=ctx.handlerName;
+if(isBonsaiChapterSermonActive()&&ForgeBonsaiProfile){
+ctx.bonsaiAbortController=new AbortController();
+ForgeBonsaiProfile.registerStreamAbort(activeHandler,ctx.bonsaiAbortController);
+params.forge_stream_abort_key=activeHandler;
+}
 ctx.gotFirstToken=false;
 clearSermonWatchdogs();
 armSermonWatchdogs(function(){finishCurrentSermonPart('stall');});
@@ -5617,6 +5684,12 @@ var msg=result.responses[0];if(!msg)return;
 if(!sermonGenCtx||sermonGenCtx.handlerName!==activeHandler)return;
 if(msg.status==='error'){
 var errText=msg.statusText||'';
+if(ctx.bonsaiStreamHandled){ForgeBonsaiProfile&&ForgeBonsaiProfile.clearStreamAbort(activeHandler);return;}
+if(errText==='aborted'&&ctx.bonsaiDegenerationHit){
+ctx.bonsaiStreamHandled=true;
+ForgeBonsaiProfile.clearStreamAbort(activeHandler);
+return;
+}
 if(!ctx.modelFallbackTried&&looksLikeForgeModelBlockError(errText)){
 ctx.modelFallbackTried=true;
 var blocked=getForgeStreamModel(ctx);
@@ -5641,14 +5714,40 @@ if(ctx.firstTokenTimer){clearTimeout(ctx.firstTokenTimer);ctx.firstTokenTimer=nu
 armSermonWatchdogs(function(){finishCurrentSermonPart('stall');});
 if(isContinuation)ctx.partContent=(ctx.partContentBeforeContinue||'')+'\n\n'+chunk;
 else ctx.partContent=chunk;
-var display=finalizeSermonPartText(ctx.partContent,partNum);
+if(isBonsaiChapterSermonActive()&&ForgeBonsaiProfile){
+var liveDeg=ForgeBonsaiProfile.detectDegeneration(ctx.partContent);
+if(liveDeg){
+if(!ctx.bonsaiStreamAborted){
+ctx.bonsaiStreamAborted=true;
+ctx.bonsaiDegenerationHit=liveDeg;
+ctx.partContent=ctx.bonsaiLastGoodContent||ctx.partContent;
+ForgeBonsaiProfile.abortStream(activeHandler);
+ctx.bonsaiStreamHandled=true;
+clearSermonWatchdogs();
+var snap=finalizeSermonPartText(ctx.partContent,partNum);
+ctx.partContainer.innerHTML=marked.parse(snap+'\n\n*(Bonsai: repetition detected — stream aborted)*');
+if(!retryBonsaiSermonPart(ctx,partNum,streamOpts,liveDeg.reason,snap)){
+handleBonsaiPartFailure(ctx,partNum,'Repetition loop — '+liveDeg.reason);
+}
+ForgeBonsaiProfile.clearStreamAbort(activeHandler);
+return;
+}
+}else{
+ctx.bonsaiLastGoodContent=ctx.partContent;
+}
+}
+if(ctx.bonsaiStreamHandled)return;
+var displaySource=ctx.bonsaiDegenerationHit&&(ctx.bonsaiLastGoodContent||'').trim()?ctx.bonsaiLastGoodContent:ctx.partContent;
+var display=finalizeSermonPartText(displaySource,partNum);
 ctx.partContainer.innerHTML=marked.parse(display);
 if(msg.status==='complete'){
+ForgeBonsaiProfile&&ForgeBonsaiProfile.clearStreamAbort(activeHandler);
 clearSermonWatchdogs();
 var finalized=finalizeSermonPartText(ctx.partContent,partNum);
+if(isBonsaiChapterSermonActive()&&!finalizeBonsaiPartIfValid(ctx,partNum,streamOpts,finalized))return;
 var truncated=detectTruncation(finalized);
-var underWords=isForgePartUnderWordTarget(finalized,selectedPartCount);
-var maxCont=SERMON_MAX_CONTINUATIONS;
+var underWords=isBonsaiChapterSermonActive()?false:isForgePartUnderWordTarget(finalized,selectedPartCount);
+var maxCont=isBonsaiChapterSermonActive()&&ForgeBonsaiProfile?ForgeBonsaiProfile.maxTruncationContinuations():SERMON_MAX_CONTINUATIONS;
 var actDone=theatreActComplete(finalized,partNum,selectedPartCount);
 if(isYahStoryModeActive()&&!ctx.bezFallbackActive&&looksLikeYahStoryGuardrailRefusal(finalized)){
 if(forgeHandleYahStoryGuardrailRefusal(ctx,partNum,streamOpts,startSermonPartStream))return;
@@ -5703,6 +5802,7 @@ startSermonPartStream(partNum,false,{theatreAgreementCorrection:true,badSample:f
 return;
 }
 if((truncated||underWords)&&!looksLikeYahStoryGuardrailRefusal(finalized)&&!actDone&&ctx.continuationCount<maxCont){
+if(isBonsaiChapterSermonActive()&&!truncated)return;
 ctx.continuationCount++;
 ctx.partContentBeforeContinue=ctx.partContent;
 ctx.continuationOpts={underWordCount:underWords&&!truncated};
@@ -5767,6 +5867,13 @@ partNum:partNum,
 partContent:'',
 partContentBeforeContinue:'',
 continuationCount:0,
+bonsaiState:(function(){if(partNum===1&&ForgeBonsaiProfile&&ForgeBonsaiProfile.shouldUseProfile()){bonsaiSermonSessionState=ForgeBonsaiProfile.initSermonState();}return bonsaiSermonSessionState;})(),
+bonsaiRetryCount:0,
+bonsaiDegenerationHit:null,
+bonsaiLastGoodContent:'',
+bonsaiAbortController:null,
+bonsaiStreamAborted:false,
+bonsaiStreamHandled:false,
 driftRetryCount:0,
 elevenTagsRetryCount:0,
 explicitRetryCount:0,

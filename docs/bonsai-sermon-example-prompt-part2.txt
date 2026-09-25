@@ -1,0 +1,47 @@
+Example user message body sent to POST /api/ai when forging Numbers 3 part 2 of 3 with Bonsai selected.
+(Forge voice/system blocks from buildPartPrompt() precede this block in the real prompt; shown here truncated.)
+
+=== BONSAI SERMON ORCHESTRATION (overrides generic length padding) ===
+SERMON STATE
+Book: Numbers
+Chapter: 3
+Part: 2 of 3
+Cover ONLY: Numbers 3:18-34
+Already covered: Numbers 3:1-17
+DO NOT reteach: Numbers 3:1-17
+Begin with: Numbers 3:18
+End after completing: Numbers 3:34
+
+Advance through the assigned verses IN ORDER. Cross-references are optional one-sentence support only — they never replace walking the assigned band.
+
+HARD VERSE DISCIPLINE (BONSAI — MANDATORY):
+- Never cite another chapter as though it belongs to Numbers chapter 3 unless you label it explicitly as a cross-reference.
+...
+
+COMPACT SERMON CONTINUITY (do NOT expect full prior parts in context):
+Verses completed through: Numbers 3:1-13
+Resume from: After Numbers 3:13: ...
+Major conclusions already established (do NOT re-argue at length):
+- ...
+
+=== END BONSAI ORCHESTRATION ===
+
+[... full existing Forge buildPartPrompt() content: framework, chapter text, verse map, voice mode, ~2000 word target, etc. ...]
+
+POST /api/ai JSON (client polyfill):
+{
+  "provider": "bonsai",
+  "bot": "bonsai/runpod",
+  "query": "<entire prompt string above>",
+  "parameters": {
+    "bonsai_sermon": true,
+    "max_tokens": 3190,
+    "temperature": 0.8,
+    "top_p": 0.9,
+    "top_k": 20,
+    "repeat_penalty": 1.1,
+    "yah_story_system": false
+  }
+}
+
+Server merges parameters with getBonsaiGenerationProfile() defaults; strips bonsai_sermon from upstream payload.

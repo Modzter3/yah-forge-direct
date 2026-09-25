@@ -78,16 +78,27 @@
     return 'openrouter';
   }
 
+  function resolveAbortSignal(parameters) {
+    const key = parameters && parameters.forge_stream_abort_key;
+    if (!key || typeof window === 'undefined') return undefined;
+    const reg = window.__forgeStreamAbortRegistry;
+    if (!reg || !reg[key]) return undefined;
+    return reg[key].signal;
+  }
+
   async function openStream(bot, prompt, parameters, images) {
     const payload = { bot, query: prompt, parameters };
     if (images && images.length) payload.images = images;
     const provider = resolveLlmProvider();
     if (provider === 'bonsai') payload.provider = 'bonsai';
-    const res = await fetch(API_ROUTE, {
+    const signal = resolveAbortSignal(parameters);
+    const fetchOpts = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
-    });
+    };
+    if (signal) fetchOpts.signal = signal;
+    const res = await fetch(API_ROUTE, fetchOpts);
     if (!res.ok) {
       let msg;
       try { msg = (await res.json()).error; } catch { msg = await res.text(); }
@@ -165,6 +176,11 @@
         if (isFinished(parsed)) break;
       }
     } catch (err) {
+      const aborted = err && (err.name === 'AbortError' || /aborted/i.test(String(err.message || '')));
+      if (aborted && parameters && parameters.forge_stream_abort_key) {
+        if (handlerFn) handlerFn(wrap('error', text || '', [], 'aborted'));
+        return;
+      }
       if (handlerFn && text) {
         const out = extractAttachments(text);
         handlerFn(wrap('complete', out.text, out.attachments));
