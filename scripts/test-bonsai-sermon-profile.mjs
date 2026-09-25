@@ -100,4 +100,30 @@ if (!didAbort || !fetchAborted || !ctrl.signal.aborted) {
 }
 console.log('abortStream() aborted in-flight request:', fetchAborted);
 
+const fullCh = readFileSync(join(dir, '../public/corpus/kjv/Numbers.json'), 'utf8');
+const numbersBook = JSON.parse(fullCh);
+const ch3Full = numbersBook.chapters['3'];
+state.fullChapterText = ch3Full;
+const meta3 = P.buildPartMeta(3, state);
+const slim = P.sliceChapterTextForBand(ch3Full, meta3.range, meta3);
+if (!slim.includes('35.')) throw new Error('part 3 slice missing verse 35');
+if (slim.length >= ch3Full.length * 0.85) {
+  throw new Error('part 3 slice should be much smaller than full chapter');
+}
+if (!/^SLIM KJV EXCERPT/.test(slim)) throw new Error('missing slim header');
+const est = P.estimatePromptTokens(90000);
+const eff = P.effectiveContextTokens();
+const budgetOut = Math.min(P.maxTokensForWords(2200), eff - est - 384);
+console.log('\n=== Context budget (90k char prompt) ===');
+console.log('effective_context=', eff, 'estimated_prompt_tokens=', est, 'max_out=', budgetOut);
+if (budgetOut >= P.sermonTokenCeiling()) {
+  throw new Error('large prompt should clamp max_tokens below sermon ceiling');
+}
+if (!P.isContextSizeError('Context size has been exceeded.')) {
+  throw new Error('context error detector');
+}
+
+console.log('\n=== Part 3 slim excerpt ===');
+console.log('full chars', ch3Full.length, 'slim chars', slim.length, 'verses', meta3.range.start + '-' + meta3.range.end);
+
 console.log('\nall checks passed');
