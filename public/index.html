@@ -2288,7 +2288,7 @@ function getSermonWebSearchParams(model,totalParts){
 var params={};
 var theatre=isTheatreModeActive();
 var webEl=document.getElementById('toggleWebResearch');
-if((webEl&&webEl.checked||theatre)&&forgeSupportsWebBrowse(model)){
+if(!isBonsaiChapterSermonActive()&&(webEl&&webEl.checked||theatre)&&forgeSupportsWebBrowse(model)){
 params.web_search=true;
 }
 if(theatre&&forgeIsGemini(model)){
@@ -5560,9 +5560,18 @@ document.getElementById('generateBtn').disabled=false;
 isGenerating=false;
 sermonGenCtx=null;
 }
+function abortActiveBonsaiSermonStream(ctx){
+if(!ctx||!ForgeBonsaiProfile)return;
+if(ctx.handlerName)ForgeBonsaiProfile.abortStream(ctx.handlerName);
+if(ctx.bonsaiAbortController&&!ctx.bonsaiAbortController.signal.aborted){
+try{ctx.bonsaiAbortController.abort();}catch(e){}
+}
+}
 function retryBonsaiSermonPart(ctx,partNum,streamOpts,reason,badSample){
 if(!ctx.bonsaiState||!ForgeBonsaiProfile)return false;
+if(ForgeBonsaiProfile.isContextSizeError(reason))return false;
 if((ctx.bonsaiRetryCount||0)>=ForgeBonsaiProfile.maxRetries())return false;
+abortActiveBonsaiSermonStream(ctx);
 ctx.bonsaiRetryCount=(ctx.bonsaiRetryCount||0)+1;
 ctx.partContent='';
 ctx.partContentBeforeContinue='';
@@ -5578,6 +5587,23 @@ streamOpts.bonsaiVerseRetry=true;
 streamOpts.bonsaiRetryReason=reason;
 streamOpts.badSample=badSample||'';
 startSermonPartStream(partNum,false,streamOpts);
+return true;
+}
+function retryBonsaiContextShrink(ctx,partNum,streamOpts){
+if(!ctx.bonsaiState||!ForgeBonsaiProfile||ctx.bonsaiContextShrinkTried)return false;
+ctx.bonsaiContextShrinkTried=true;
+abortActiveBonsaiSermonStream(ctx);
+ForgeBonsaiProfile.enableContextShrink(ctx.bonsaiState);
+ctx.partContent='';
+ctx.partContentBeforeContinue='';
+ctx.continuationCount=0;
+ctx.bonsaiDegenerationHit=null;
+ctx.bonsaiLastGoodContent='';
+ctx.bonsaiStreamAborted=false;
+ctx.bonsaiStreamHandled=false;
+ctx.bonsaiAbortController=null;
+showToast('Bonsai: context limit — retrying '+getForgePartLabel(partNum,false)+' with slimmer prompt...');
+startSermonPartStream(partNum,false,streamOpts||{});
 return true;
 }
 function finalizeBonsaiPartIfValid(ctx,partNum,streamOpts,finalized){
@@ -5634,6 +5660,15 @@ function startSermonPartStream(partNum,isContinuation,streamOpts){
 streamOpts=streamOpts||{};
 var ctx=sermonGenCtx;
 if(!ctx)return;
+if(isBonsaiChapterSermonActive()&&!isContinuation&&!streamOpts.bonsaiVerseRetry){
+abortActiveBonsaiSermonStream(ctx);
+}
+var savedChapterTextForBonsai=null;
+if(isBonsaiChapterSermonActive()&&ctx.bonsaiState&&ForgeBonsaiProfile&&!isContinuation){
+savedChapterTextForBonsai=currentChapterText;
+var slim=ForgeBonsaiProfile.chapterTextOverrideForPart(partNum,ctx.bonsaiState);
+if(slim)currentChapterText=slim;
+}
 if(!isContinuation&&!streamOpts.yahVoiceCorrection&&!streamOpts.driftCorrection){
 if(streamOpts.yahLiteRetry)ctx.promptMode='yahLite';
 else if(streamOpts.bezFallback){ctx.promptMode='bezFallback';ctx.bezFallbackActive=true;}
@@ -5663,11 +5698,12 @@ if(!streamOpts.bonsaiVerseRetry&&ctx.bonsaiState&&ForgeBonsaiProfile){
 prompt=ForgeBonsaiProfile.augmentPartPrompt(prompt,partNum,ctx.bonsaiState);
 }
 prompt=wrapPromptForGrokIfNeeded(prompt,model,isYahStoryModeActive()&&!ctx.bezFallbackActive);
+if(savedChapterTextForBonsai!==null)currentChapterText=savedChapterTextForBonsai;
 var params=getSermonWebSearchParams(model,selectedPartCount);
 var yahApiActive=isYahStoryModeActive()&&!ctx.bezFallbackActive;
 appendYahStoryApiParams(params,yahApiActive,{skipSystem:!!streamOpts.yahLiteRetry});
 if(ctx.bonsaiState&&ForgeBonsaiProfile){
-ForgeBonsaiProfile.applyGenerationParams(params,partNum,ctx.bonsaiState);
+ForgeBonsaiProfile.applyGenerationParams(params,partNum,ctx.bonsaiState,{promptCharLength:prompt.length});
 }
 ctx.handlerName='sermon-part-'+partNum+'-'+Date.now()+'-'+(isContinuation?ctx.continuationCount:0)+'-'+(streamOpts.yahVoiceCorrection?'yahvoice':streamOpts.driftCorrection?'drift':streamOpts.elevenTagsCorrection?'eleventags':streamOpts.explicitBrimstoneCorrection?'explicit':'');
 var activeHandler=ctx.handlerName;
@@ -5685,6 +5721,12 @@ if(!sermonGenCtx||sermonGenCtx.handlerName!==activeHandler)return;
 if(msg.status==='error'){
 var errText=msg.statusText||'';
 if(ctx.bonsaiStreamHandled){ForgeBonsaiProfile&&ForgeBonsaiProfile.clearStreamAbort(activeHandler);return;}
+if(isBonsaiChapterSermonActive()&&ForgeBonsaiProfile&&ForgeBonsaiProfile.isContextSizeError(errText)){
+ForgeBonsaiProfile.clearStreamAbort(activeHandler);
+if(retryBonsaiContextShrink(ctx,partNum,streamOpts))return;
+handleBonsaiPartFailure(ctx,partNum,'RunPod context limit exceeded (prompt too large for this GPU slot). Try more parts, disable extra toggles, or raise n_ctx on the pod.');
+return;
+}
 if(errText==='aborted'&&ctx.bonsaiDegenerationHit){
 ctx.bonsaiStreamHandled=true;
 ForgeBonsaiProfile.clearStreamAbort(activeHandler);
@@ -5817,6 +5859,11 @@ generatePart(partNum+1);
 });
 window.Poe.sendUserMessage('@'+model+' '+prompt,{handler:activeHandler,stream:true,openChat:false,parameters:params}).catch(function(err){
 var errText=String(err||'');
+if(isBonsaiChapterSermonActive()&&ForgeBonsaiProfile&&ForgeBonsaiProfile.isContextSizeError(errText)){
+if(retryBonsaiContextShrink(ctx,partNum,streamOpts))return;
+handleBonsaiPartFailure(ctx,partNum,'RunPod context limit exceeded (prompt too large for this GPU slot). Try more parts, disable extra toggles, or raise n_ctx on the pod.');
+return;
+}
 if(!ctx.modelFallbackTried&&looksLikeForgeModelBlockError(errText)){
 ctx.modelFallbackTried=true;
 var blocked=getForgeStreamModel(ctx);
@@ -5869,6 +5916,7 @@ partContentBeforeContinue:'',
 continuationCount:0,
 bonsaiState:(function(){if(partNum===1&&ForgeBonsaiProfile&&ForgeBonsaiProfile.shouldUseProfile()){bonsaiSermonSessionState=ForgeBonsaiProfile.initSermonState();}return bonsaiSermonSessionState;})(),
 bonsaiRetryCount:0,
+bonsaiContextShrinkTried:false,
 bonsaiDegenerationHit:null,
 bonsaiLastGoodContent:'',
 bonsaiAbortController:null,

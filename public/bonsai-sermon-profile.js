@@ -10,6 +10,11 @@
   /** Server default BONSAI_SERMON_MAX_TOKENS — client calc stays below this */
   var SERMON_TOKEN_CEILING = 4800;
   var TOKENS_PER_WORD = 1.45;
+  /** Conservative RunPod llama-server n_ctx budget (prompt + completion) */
+  var DEFAULT_EFFECTIVE_CONTEXT = 28672;
+  var CONTEXT_SAFETY_TOKENS = 384;
+  var CHARS_PER_TOKEN_EST = 3.35;
+  var SHRINK_WORD_TARGET = 1500;
 
   function isBonsaiProvider() {
     try {
@@ -146,6 +151,77 @@
     return Math.min(SERMON_TOKEN_CEILING, Math.max(1024, Math.ceil(words * TOKENS_PER_WORD)));
   }
 
+  function effectiveContextTokens() {
+    var n = global.__BONSAI_EFFECTIVE_CONTEXT;
+    if (typeof n === 'number' && n > 4096) return Math.floor(n);
+    return DEFAULT_EFFECTIVE_CONTEXT;
+  }
+
+  function estimatePromptTokens(charLength) {
+    var n = Math.ceil((charLength || 0) / CHARS_PER_TOKEN_EST);
+    return Math.max(512, n);
+  }
+
+  function sliceChapterTextForBand(fullText, range, meta) {
+    if (!fullText || !range) return '';
+    var lines = String(fullText).split('\n');
+    var out = [];
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var m = line.match(/^(\d{1,3})\.\s/);
+      if (m) {
+        var vn = parseInt(m[1], 10);
+        if (vn >= range.start && vn <= range.end) out.push(line);
+      }
+    }
+    var hdr =
+      'SLIM KJV EXCERPT — ' +
+      refLabel(meta.book, meta.chapter, range.start, range.end) +
+      ' ONLY (' +
+      meta.verseCount +
+      ' verses in full chapter). Primary exposition must use ONLY these verses; cross-refs stay one sentence.\n';
+    return hdr + out.join('\n');
+  }
+
+  function captureFullChapterText(state) {
+    if (!state) return;
+    if (!state.fullChapterText && global.currentChapterText) {
+      state.fullChapterText = String(global.currentChapterText);
+    }
+  }
+
+  function chapterTextOverrideForPart(partNum, state) {
+    if (!state) return null;
+    captureFullChapterText(state);
+    var full = state.fullChapterText || global.currentChapterText;
+    if (!full) return null;
+    var meta = buildPartMeta(partNum, state);
+    return sliceChapterTextForBand(full, meta.range, meta);
+  }
+
+  function compactBasePromptForBonsai(basePrompt) {
+    var p = String(basePrompt || '');
+    p = p.replace(
+      /\nTHIS CHAPTER HAS EXACTLY[\s\S]*?(?=\n(?:DO NOT HALLUCINATE VERSES|VERSE-BY-VERSE))/,
+      '\n(Verse band assignments are in the BONSAI SERMON ORCHESTRATION block — follow that ledger exactly.)\n'
+    );
+    p = p.replace(
+      /\nThe FULL scripture text for this chapter has been provided above\.[^\n]*\n/g,
+      '\nOnly the assigned verse excerpt is in context — quote primary exposition from that excerpt.\n'
+    );
+    return p;
+  }
+
+  function isContextSizeError(errText) {
+    var t = String(errText || '').toLowerCase();
+    return (
+      t.indexOf('context size has been exceeded') !== -1 ||
+      t.indexOf('context length exceeded') !== -1 ||
+      t.indexOf('exceeds the context') !== -1 ||
+      t.indexOf('prompt is too long') !== -1
+    );
+  }
+
   function initSermonState() {
     if (!isChapterSermonContext()) return null;
     var src = global.currentChapterSource;
@@ -154,10 +230,12 @@
       chapter: src.chapter,
       totalParts: global.selectedPartCount,
       verseCount: global.currentChapterVerseCount,
+      fullChapterText: global.currentChapterText ? String(global.currentChapterText) : '',
       coveredThrough: 0,
       conclusions: [],
       doctrines: [],
       transitionPoint: '',
+      contextShrink: false,
     };
   }
 
@@ -195,7 +273,11 @@
 
   function augmentPartPrompt(basePrompt, partNum, state) {
     if (!state) return basePrompt;
+    captureFullChapterText(state);
     var meta = buildPartMeta(partNum, state);
+    if (state.contextShrink) {
+      meta.wordTarget = Math.min(meta.wordTarget, SHRINK_WORD_TARGET);
+    }
     var blocks = [
       '=== BONSAI SERMON ORCHESTRATION (overrides generic length padding) ===',
       buildVerseLedger(meta),
@@ -212,8 +294,15 @@
       '',
     ];
     if (partNum > 1) blocks.push(buildCompactContinuityBlock(state));
+    if (state.contextShrink) {
+      blocks.push(
+        'CONTEXT SHRINK MODE: Prior attempt exceeded RunPod context. Keep this part shorter (~' +
+          meta.wordTarget +
+          ' words max). Tight paragraphs; no filler; finish the verse band and stop.\n'
+      );
+    }
     blocks.push('=== END BONSAI ORCHESTRATION ===\n\n');
-    return blocks.join('\n') + basePrompt;
+    return blocks.join('\n') + compactBasePromptForBonsai(basePrompt);
   }
 
   function buildRetryPrompt(meta, reason, badSample) {
@@ -408,11 +497,20 @@
     return state;
   }
 
-  function applyGenerationParams(params, partNum, state) {
+  function applyGenerationParams(params, partNum, state, opts) {
     if (!params || !state) return params;
+    opts = opts || {};
     var meta = buildPartMeta(partNum, state);
+    if (state.contextShrink) meta.wordTarget = Math.min(meta.wordTarget, SHRINK_WORD_TARGET);
     params.bonsai_sermon = true;
-    params.max_tokens = maxTokensForWords(meta.wordTarget);
+    var wantOut = maxTokensForWords(meta.wordTarget);
+    if (opts.promptCharLength) {
+      var budget =
+        effectiveContextTokens() - estimatePromptTokens(opts.promptCharLength) - CONTEXT_SAFETY_TOKENS;
+      if (budget < 768) budget = 768;
+      wantOut = Math.min(wantOut, budget);
+    }
+    params.max_tokens = wantOut;
     params.temperature = 0.8;
     params.top_p = 0.9;
     params.top_k = 20;
@@ -473,6 +571,16 @@
     maxTokensForWords: maxTokensForWords,
     sermonTokenCeiling: function () {
       return SERMON_TOKEN_CEILING;
+    },
+    sliceChapterTextForBand: sliceChapterTextForBand,
+    chapterTextOverrideForPart: chapterTextOverrideForPart,
+    captureFullChapterText: captureFullChapterText,
+    compactBasePromptForBonsai: compactBasePromptForBonsai,
+    isContextSizeError: isContextSizeError,
+    estimatePromptTokens: estimatePromptTokens,
+    effectiveContextTokens: effectiveContextTokens,
+    enableContextShrink: function (state) {
+      if (state) state.contextShrink = true;
     },
   };
 })(typeof window !== 'undefined' ? window : globalThis);
