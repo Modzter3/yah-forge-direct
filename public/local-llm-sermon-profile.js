@@ -77,7 +77,7 @@
       'End after completing: ' + refLabel(meta.book, meta.chapter, meta.range.end, meta.range.end),
       '',
       'Advance through the assigned verses IN ORDER. Cross-references are optional one-sentence support only — they never replace walking the assigned band.',
-      'Write the sermon directly — no , <thinking>, or hidden reasoning blocks.',
+      'Write the sermon directly — no <think>, <thinking>, or hidden reasoning blocks.',
     ];
     return lines.join('\n');
   }

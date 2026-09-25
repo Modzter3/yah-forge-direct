@@ -11,6 +11,21 @@ function envFirst(localKey, legacyKey) {
   return process.env[legacyKey] || '';
 }
 
+function envTruthy(key, legacyKey, defaultWhenUnset) {
+  const raw = envFirst(key, legacyKey);
+  if (raw === '') return defaultWhenUnset;
+  return !/^(0|false|no|off)$/i.test(String(raw).trim());
+}
+
+/** Default true — Qwen thinking burns tokens and slows sermons on RunPod. Set LOCAL_LLM_DISABLE_THINKING=false to allow it. */
+export function isLocalLlmDisableThinking() {
+  return envTruthy('LOCAL_LLM_DISABLE_THINKING', 'BONSAI_DISABLE_THINKING', true);
+}
+
+function isLikelyQwenModel(model) {
+  return /qwen/i.test(String(model || ''));
+}
+
 /** Default llama-server sampling (override via LOCAL_LLM_* env). */
 export function getLocalLlmGenerationProfile() {
   return {
@@ -167,10 +182,20 @@ export function buildLocalLlmChatPayload({ model, query, parameters, images, con
   if (systemContent && String(systemContent).trim()) {
     messages.push({ role: 'system', content: String(systemContent).trim() });
   }
-  messages.push({ role: 'user', content: user.content });
+  let userContent = user.content;
+  const disableThinking = isLocalLlmDisableThinking();
+  const effectiveModel = model || config.model;
+  if (
+    disableThinking &&
+    isLikelyQwenModel(effectiveModel) &&
+    !/\/no_think\b/i.test(String(userContent))
+  ) {
+    userContent = String(userContent).trimEnd() + ' /no_think';
+  }
+  messages.push({ role: 'user', content: userContent });
 
   const payload = {
-    model: model || config.model,
+    model: effectiveModel,
     messages,
     stream: true,
     temperature: profile.temperature,
@@ -179,6 +204,16 @@ export function buildLocalLlmChatPayload({ model, query, parameters, images, con
     repeat_penalty: profile.repeat_penalty,
     ...params,
   };
+
+  if (disableThinking) {
+    payload.reasoning_budget = 0;
+    payload.chat_template_kwargs = {
+      ...(payload.chat_template_kwargs && typeof payload.chat_template_kwargs === 'object'
+        ? payload.chat_template_kwargs
+        : {}),
+      enable_thinking: false,
+    };
+  }
 
   if (payload.max_tokens === undefined) {
     payload.max_tokens = sermonMode
