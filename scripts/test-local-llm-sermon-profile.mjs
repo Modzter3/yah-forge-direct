@@ -89,5 +89,8 @@ const params = P.applyGenerationParams({}, 1, state, { promptCharLength: 12000 }
 if (params.local_llm_sermon !== true) throw new Error('local_llm_sermon flag');
 if (params.frequency_penalty !== undefined) throw new Error('should not send frequency_penalty');
 if (params.repeat_penalty !== 1.08) throw new Error('default repeat_penalty 1.08');
+if (params.max_tokens < 2000) throw new Error('65536 ctx should allow >2k max_tokens for 12k char prompt');
+const budgetOnly = P.applyLocalBudgetParams({ max_tokens: 8192 }, { promptCharLength: 12000 });
+if (budgetOnly.max_tokens < 2000) throw new Error('applyLocalBudgetParams should not clamp to 768');
 
 console.log('\nall checks passed');

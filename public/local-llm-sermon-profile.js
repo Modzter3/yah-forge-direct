@@ -10,9 +10,10 @@
   /** Server default LOCAL_LLM_SERMON_MAX_TOKENS — client calc stays below this */
   var SERMON_TOKEN_CEILING = 4800;
   var TOKENS_PER_WORD = 1.45;
-  /** Conservative RunPod llama-server n_ctx budget (prompt + completion) */
-  var DEFAULT_EFFECTIVE_CONTEXT = 28672;
-  var CONTEXT_SAFETY_TOKENS = 384;
+  /** Match llama-server n_ctx (override via window.__LOCAL_LLM_EFFECTIVE_CONTEXT or health check) */
+  var DEFAULT_EFFECTIVE_CONTEXT = 65536;
+  var CONTEXT_SAFETY_TOKENS = 512;
+  var MIN_OUTPUT_BUDGET = 1024;
   var CHARS_PER_TOKEN_EST = 3.35;
   var SHRINK_WORD_TARGET = 1500;
 
@@ -76,6 +77,7 @@
       'End after completing: ' + refLabel(meta.book, meta.chapter, meta.range.end, meta.range.end),
       '',
       'Advance through the assigned verses IN ORDER. Cross-references are optional one-sentence support only — they never replace walking the assigned band.',
+      'Write the sermon directly — no , <thinking>, or hidden reasoning blocks.',
     ];
     return lines.join('\n');
   }
@@ -544,6 +546,27 @@
     return state;
   }
 
+  function clampMaxTokensForPrompt(wantOut, promptCharLength) {
+    if (!promptCharLength) return wantOut;
+    var budget =
+      effectiveContextTokens() - estimatePromptTokens(promptCharLength) - CONTEXT_SAFETY_TOKENS;
+    if (budget < MIN_OUTPUT_BUDGET) budget = MIN_OUTPUT_BUDGET;
+    return Math.min(wantOut, Math.min(SERMON_TOKEN_CEILING, budget));
+  }
+
+  function applyLocalBudgetParams(params, opts) {
+    if (!params || !isLocalLlmProvider()) return params;
+    opts = opts || {};
+    var wantOut = params.max_tokens || SERMON_TOKEN_CEILING;
+    if (typeof wantOut !== 'number' || wantOut < MIN_OUTPUT_BUDGET) wantOut = SERMON_TOKEN_CEILING;
+    params.max_tokens = clampMaxTokensForPrompt(wantOut, opts.promptCharLength);
+    params.temperature = params.temperature != null ? params.temperature : 0.7;
+    params.top_p = params.top_p != null ? params.top_p : 0.9;
+    params.top_k = params.top_k != null ? params.top_k : 20;
+    params.repeat_penalty = params.repeat_penalty != null ? params.repeat_penalty : 1.08;
+    return params;
+  }
+
   function applyGenerationParams(params, partNum, state, opts) {
     if (!params || !state) return params;
     opts = opts || {};
@@ -551,13 +574,7 @@
     if (state.contextShrink) meta.wordTarget = Math.min(meta.wordTarget, SHRINK_WORD_TARGET);
     params.local_llm_sermon = true;
     var wantOut = maxTokensForWords(meta.wordTarget);
-    if (opts.promptCharLength) {
-      var budget =
-        effectiveContextTokens() - estimatePromptTokens(opts.promptCharLength) - CONTEXT_SAFETY_TOKENS;
-      if (budget < 768) budget = 768;
-      wantOut = Math.min(wantOut, budget);
-    }
-    params.max_tokens = wantOut;
+    params.max_tokens = clampMaxTokensForPrompt(wantOut, opts.promptCharLength);
     if (state.repetitionRetry) {
       params.temperature = 0.65;
       params.top_p = 0.88;
@@ -616,6 +633,10 @@
     buildVerseLedger: buildVerseLedger,
     auditVersePartition: auditVersePartition,
     applyGenerationParams: applyGenerationParams,
+    applyLocalBudgetParams: applyLocalBudgetParams,
+    setEffectiveContextTokens: function (n) {
+      if (typeof n === 'number' && n > 4096) global.__LOCAL_LLM_EFFECTIVE_CONTEXT = Math.floor(n);
+    },
     detectDegeneration: detectDegeneration,
     validateScriptureReferences: validateScriptureReferences,
     updateStateAfterPart: updateStateAfterPart,

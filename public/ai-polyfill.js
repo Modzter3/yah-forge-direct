@@ -112,7 +112,19 @@
   }
 
   function deltaText(parsed) {
-    try { return parsed.choices[0].delta.content || ''; } catch { return ''; }
+    try {
+      var c = parsed.choices[0];
+      if (!c) return '';
+      if (c.delta) {
+        if (c.delta.content != null && c.delta.content !== '') return c.delta.content;
+        if (c.delta.text != null && c.delta.text !== '') return c.delta.text;
+      }
+      if (c.text != null && c.text !== '') return c.text;
+      if (c.message && c.message.content != null && c.message.content !== '') return c.message.content;
+      return '';
+    } catch {
+      return '';
+    }
   }
 
   function isFinished(parsed) {

@@ -4754,9 +4754,24 @@ tags that reasoning models inject.
 function stripThinking(text){
 if(!text)return text;
 var tags='think|thinking|thought|reasoning|reflection|inner_monologue|scratchpad|analysis|planning|internal|deliberation|consideration|pondering|working|brain|mind|reason|rationale|chain_of_thought|cot|step_by_step|meta|hidden|private|note_to_self|self_reflection|observations|approach|strategy';
+var raw=text;
 text=text.replace(new RegExp('\x3c('+tags+')[^>]*>[\\s\\S]*?\x3c/\\1>','gi'),'');
+var unclosed=text.match(new RegExp('\x3c('+tags+')[^>]*>([\\s\\S]*)$','i'));
+if(unclosed&&unclosed[2]){
+var inner=unclosed[2].replace(new RegExp('\x3c/('+tags+')>','gi'),'').trim();
+if(inner.length>120){
+text=inner;
+}else{
 text=text.replace(new RegExp('\x3c('+tags+')[^>]*>[\\s\\S]*$','gi'),'');
+}
+}else{
+text=text.replace(new RegExp('\x3c('+tags+')[^>]*>[\\s\\S]*$','gi'),'');
+}
 text=text.replace(new RegExp('\x3c/('+tags+')>','gi'),'');
+if(!text.trim()&&raw.trim()){
+var qwenThink=raw.match(/<\/think>\s*([\s\S]+)/i);
+if(qwenThink&&qwenThink[1].trim().length>80)text=qwenThink[1].trim();
+}
 text=text.replace(/\[(?:Thinking|Reasoning|Internal(?: reasoning| thoughts?)?|Reflection|Scratchpad|Analysis|Planning|Deliberation)\][\s\S]*?\[\/(?:Thinking|Reasoning|Internal(?: reasoning| thoughts?)?|Reflection|Scratchpad|Analysis|Planning|Deliberation)\]/gi,'');
 text=text.replace(/\[(?:Thinking|Reasoning|Internal(?: reasoning| thoughts?)?|Reflection|Scratchpad|Analysis|Planning|Deliberation)\][\s\S]*$/gi,'');
 text=text.replace(/```(?:thinking|reasoning|reflection|internal|scratchpad|analysis|planning)[\s\S]*?```/gi,'');
@@ -5717,8 +5732,12 @@ if(savedChapterTextForLocal!==null)currentChapterText=savedChapterTextForLocal;
 var params=getSermonWebSearchParams(model,selectedPartCount);
 var yahApiActive=isYahStoryModeActive()&&!ctx.bezFallbackActive;
 appendYahStoryApiParams(params,yahApiActive,{skipSystem:!!streamOpts.yahLiteRetry});
-if(ctx.localSermonState&&ForgeLocalSermonProfile){
+if(typeof getForgeLlmProvider==='function'&&getForgeLlmProvider()==='local'&&ForgeLocalSermonProfile){
+if(ctx.localSermonState){
 ForgeLocalSermonProfile.applyGenerationParams(params,partNum,ctx.localSermonState,{promptCharLength:prompt.length});
+}else{
+ForgeLocalSermonProfile.applyLocalBudgetParams(params,{promptCharLength:prompt.length});
+}
 }
 ctx.handlerName='sermon-part-'+partNum+'-'+Date.now()+'-'+(isContinuation?ctx.continuationCount:0)+'-'+(streamOpts.yahVoiceCorrection?'yahvoice':streamOpts.driftCorrection?'drift':streamOpts.elevenTagsCorrection?'eleventags':streamOpts.explicitBrimstoneCorrection?'explicit':'');
 var activeHandler=ctx.handlerName;
