@@ -60,6 +60,28 @@ const crossOk =
 const valCross = P.validateScriptureReferences(crossOk, meta2);
 if (!valCross.ok) throw new Error('cross-ref should pass: ' + valCross.errors);
 
+const numbers3 = JSON.parse(
+  readFileSync(join(dir, '../public/corpus/kjv/Numbers.json'), 'utf8')
+).chapters['3'];
+const meta5 = {
+  book: 'Numbers',
+  chapter: 3,
+  range: { start: 42, end: 51, count: 10 },
+  partNum: 5,
+  totalParts: 5,
+  verseCount: 51,
+};
+const bad263 =
+  'Verse forty-six isolates the deficit. Two hundred and sixty-three. 263 x 5 = 1315. Verse fifty: one thousand three hundred and threescore and five shekels.';
+const val263 = P.validateScriptureReferences(bad263, meta5, { chapterText: numbers3 });
+if (val263.ok) throw new Error('263 excess should fail KJV numeric validation');
+if (!val263.errors.some((e) => /273/.test(e))) throw new Error('expected 273 correction in errors: ' + val263.errors);
+
+const good273 =
+  'Verse forty-six: two hundred and threescore and thirteen redeemed. Verse forty-seven: five shekels apiece. Verse fifty: 1365 shekels total.';
+const valGood = P.validateScriptureReferences(good273, meta5, { chapterText: numbers3 });
+if (!valGood.ok) throw new Error('correct KJV figures should pass: ' + valGood.errors);
+
 const words2800 = 2800;
 const tok = P.maxTokensForWords(words2800);
 if (tok >= P.sermonTokenCeiling()) throw new Error('2800-word part should stay below ceiling');

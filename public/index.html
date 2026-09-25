@@ -5645,10 +5645,10 @@ if(retryLocalLlmSermonPart(ctx,partNum,streamOpts,deg.reason,finalized))return f
 handleLocalLlmPartFailure(ctx,partNum,'Repetition loop detected — '+deg.reason+'. Try fewer parts or edit manually.');
 return false;
 }
-var val=ForgeLocalSermonProfile.validateScriptureReferences(finalized,meta);
+var val=ForgeLocalSermonProfile.validateScriptureReferences(finalized,meta,{state:ctx.localSermonState,chapterText:ctx.localSermonState&&ctx.localSermonState.fullChapterText});
 if(!val.ok){
 var vmsg=val.errors.join('; ');
-if(retryLocalLlmSermonPart(ctx,partNum,streamOpts,'verse/range drift ('+vmsg+')',finalized))return false;
+if(retryLocalLlmSermonPart(ctx,partNum,streamOpts,'scripture accuracy ('+vmsg+')',finalized))return false;
 handleLocalLlmPartFailure(ctx,partNum,'Verse discipline failed: '+vmsg);
 return false;
 }
