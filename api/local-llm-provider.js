@@ -30,8 +30,9 @@ function isLikelyQwenModel(model) {
 export function getLocalLlmGenerationProfile() {
   return {
     temperature: parseFloat(envFirst('LOCAL_LLM_TEMPERATURE', 'BONSAI_TEMPERATURE') || '0.7'),
-    top_p: parseFloat(envFirst('LOCAL_LLM_TOP_P', 'BONSAI_TOP_P') || '0.9'),
+    top_p: parseFloat(envFirst('LOCAL_LLM_TOP_P', 'BONSAI_TOP_P') || '0.8'),
     top_k: Math.max(0, parseInt(envFirst('LOCAL_LLM_TOP_K', 'BONSAI_TOP_K') || '20', 10) || 20),
+    min_p: parseFloat(envFirst('LOCAL_LLM_MIN_P', 'BONSAI_MIN_P') || '0'),
     repeat_penalty: parseFloat(envFirst('LOCAL_LLM_REPEAT_PENALTY', 'BONSAI_REPEAT_PENALTY') || '1.08'),
     sermon_max_tokens: Math.min(
       8192,
@@ -85,6 +86,8 @@ const LOCAL_LLM_STRIP_PARAMS = new Set([
   'thinking_budget',
   'thinking_level',
   'reasoning_effort',
+  'reasoning_budget',
+  'chat_template_kwargs',
   'yah_story_system',
   'local_llm_sermon',
   'bonsai_sermon',
@@ -201,17 +204,15 @@ export function buildLocalLlmChatPayload({ model, query, parameters, images, con
     temperature: profile.temperature,
     top_p: profile.top_p,
     top_k: profile.top_k,
+    min_p: profile.min_p,
     repeat_penalty: profile.repeat_penalty,
     ...params,
   };
 
   if (disableThinking) {
-    payload.reasoning_budget = 0;
     payload.chat_template_kwargs = {
-      ...(payload.chat_template_kwargs && typeof payload.chat_template_kwargs === 'object'
-        ? payload.chat_template_kwargs
-        : {}),
       enable_thinking: false,
+      preserve_thinking: false,
     };
   }
 
