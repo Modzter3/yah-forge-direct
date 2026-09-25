@@ -146,4 +146,9 @@ if (!loopHit) throw new Error('expected true template loop to be detected');
 console.log('thematic pass, loop detected:', loopHit.reason);
 if (P.maxRetries() < 2) throw new Error('expected at least 2 bonsai retries');
 
+if (P.recommendedPartsForChapter(51) !== 5) throw new Error('Numbers-scale chapter should recommend 5 parts');
+if (P.recommendedPartsForChapter(10) !== 3) throw new Error('short chapter should recommend fewer parts');
+console.log('\n=== Bonsai part recommendation ===');
+console.log('51 verses ->', P.recommendedPartsForChapter(51), 'parts');
+
 console.log('\nall checks passed');

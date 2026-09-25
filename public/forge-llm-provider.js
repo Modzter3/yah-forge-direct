@@ -24,6 +24,7 @@
     syncProviderUi();
     refreshModelCatalogForProvider();
     if (next === 'bonsai') checkBonsaiHealth(true);
+    if (typeof global.updatePartRecommendation === 'function') global.updatePartRecommendation();
   }
 
   function getBonsaiModelId() {
