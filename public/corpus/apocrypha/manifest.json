@@ -1,0 +1,223 @@
+{
+  "collection": "apocrypha",
+  "books": [
+    {
+      "book": "Wisdom of Solomon",
+      "file": "Wisdom of Solomon.json",
+      "chapters": 19
+    },
+    {
+      "book": "Sirach (Ecclesiasticus)",
+      "file": "Sirach (Ecclesiasticus).json",
+      "chapters": 51
+    },
+    {
+      "book": "Tobit",
+      "file": "Tobit.json",
+      "chapters": 14
+    },
+    {
+      "book": "Judith",
+      "file": "Judith.json",
+      "chapters": 16
+    },
+    {
+      "book": "1 Maccabees",
+      "file": "1 Maccabees.json",
+      "chapters": 16
+    },
+    {
+      "book": "2 Maccabees",
+      "file": "2 Maccabees.json",
+      "chapters": 15
+    },
+    {
+      "book": "Baruch",
+      "file": "Baruch.json",
+      "chapters": 5
+    },
+    {
+      "book": "Letter of Jeremiah",
+      "file": "Letter of Jeremiah.json",
+      "chapters": 1
+    },
+    {
+      "book": "2 Esdras (4 Ezra)",
+      "file": "2 Esdras (4 Ezra).json",
+      "chapters": 16
+    },
+    {
+      "book": "1 Esdras",
+      "file": "1 Esdras.json",
+      "chapters": 9
+    },
+    {
+      "book": "Additions to Esther",
+      "file": "Additions to Esther.json",
+      "chapters": 7
+    },
+    {
+      "book": "Prayer of Azariah",
+      "file": "Prayer of Azariah.json",
+      "chapters": 1
+    },
+    {
+      "book": "Susanna",
+      "file": "Susanna.json",
+      "chapters": 1
+    },
+    {
+      "book": "Bel and the Dragon",
+      "file": "Bel and the Dragon.json",
+      "chapters": 1
+    },
+    {
+      "book": "Prayer of Manasseh",
+      "file": "Prayer of Manasseh.json",
+      "chapters": 1
+    },
+    {
+      "book": "Psalm 151",
+      "file": "Psalm 151.json",
+      "chapters": 1
+    },
+    {
+      "book": "2 Baruch",
+      "file": "2 Baruch.json",
+      "chapters": 87
+    },
+    {
+      "book": "Testament of Solomon",
+      "file": "Testament of Solomon.json",
+      "chapters": 1
+    },
+    {
+      "book": "Apocalypse of Elijah",
+      "file": "Apocalypse of Elijah.json",
+      "chapters": 5
+    },
+    {
+      "book": "Ascension of Isaiah",
+      "file": "Ascension of Isaiah.json",
+      "chapters": 11
+    },
+    {
+      "book": "Testament of the Twelve Patriarchs",
+      "file": "Testament of the Twelve Patriarchs.json",
+      "chapters": 12
+    },
+    {
+      "book": "1 Enoch (Ethiopian Enoch)",
+      "file": "1 Enoch (Ethiopian Enoch).json",
+      "chapters": 107
+    },
+    {
+      "book": "2 Enoch (Slavonic Secrets of Enoch)",
+      "file": "2 Enoch (Slavonic Secrets of Enoch).json",
+      "chapters": 68
+    },
+    {
+      "book": "Book of Jasher (Sefer HaYashar)",
+      "file": "Book of Jasher (Sefer HaYashar).json",
+      "chapters": 91
+    },
+    {
+      "book": "Book of Jubilees (Little Genesis)",
+      "file": "Book of Jubilees (Little Genesis).json",
+      "chapters": 50
+    },
+    {
+      "book": "Testament of Abraham",
+      "file": "Testament of Abraham.json",
+      "chapters": 20
+    },
+    {
+      "book": "Testament of Moses (Assumption)",
+      "file": "Testament of Moses (Assumption).json",
+      "chapters": 12
+    },
+    {
+      "book": "Testament of Job",
+      "file": "Testament of Job.json",
+      "chapters": 12
+    },
+    {
+      "book": "Apocalypse of Abraham",
+      "file": "Apocalypse of Abraham.json",
+      "chapters": 32
+    },
+    {
+      "book": "1 Adam and Eve (Vita Adae)",
+      "file": "1 Adam and Eve (Vita Adae).json",
+      "chapters": 79
+    },
+    {
+      "book": "2 Adam and Eve",
+      "file": "2 Adam and Eve.json",
+      "chapters": 22
+    },
+    {
+      "book": "Book of Giants",
+      "file": "Book of Giants.json",
+      "chapters": 1
+    },
+    {
+      "book": "Shepherd of Hermas",
+      "file": "Shepherd of Hermas.json",
+      "chapters": 26
+    },
+    {
+      "book": "Gospel of Nicodemus (Acts of Pilate)",
+      "file": "Gospel of Nicodemus (Acts of Pilate).json",
+      "chapters": 23
+    },
+    {
+      "book": "Psalms of Solomon",
+      "file": "Psalms of Solomon.json",
+      "chapters": 18
+    },
+    {
+      "book": "Odes of Solomon",
+      "file": "Odes of Solomon.json",
+      "chapters": 41
+    },
+    {
+      "book": "3 Baruch (Greek Apocalypse)",
+      "file": "3 Baruch (Greek Apocalypse).json",
+      "chapters": 18
+    },
+    {
+      "book": "4 Baruch (Rest of Jeremiah)",
+      "file": "4 Baruch (Rest of Jeremiah).json",
+      "chapters": 9
+    },
+    {
+      "book": "Ladder of Jacob",
+      "file": "Ladder of Jacob.json",
+      "chapters": 8
+    },
+    {
+      "book": "Lives of the Prophets",
+      "file": "Lives of the Prophets.json",
+      "chapters": 24
+    },
+    {
+      "book": "Apocalypse of Peter",
+      "file": "Apocalypse of Peter.json",
+      "chapters": 17
+    },
+    {
+      "book": "History of the Rechabites",
+      "file": "History of the Rechabites.json",
+      "chapters": 22
+    },
+    {
+      "book": "Book of Natasrym (Natsarim)",
+      "file": "Book of Natasrym (Natsarim).json",
+      "chapters": 21
+    }
+  ],
+  "totalBooks": 43,
+  "totalChapters": 1011,
+  "source": "scripts/build-apoc-sealed-corpus.py"
+}

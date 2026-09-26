@@ -630,7 +630,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <div class="tab-panel" id="panelApocrypha">
   <div class="chapter-selector">
     <h2><i class="fas fa-book-skull"></i> Generate from Apocrypha</h2>
-    <p>Select a permitted apocryphal book and chapter. Enoch, Jasher, and Jubilees excluded.<br><span style="font-size:0.78em;opacity:0.7;"><i class="fas fa-globe" style="margin-right:3px;"></i>Most apocrypha verses are retrieved via web search for accuracy -- not from model memory.</span><br><span id="apocCorpusNote" style="display:none;font-size:0.78em;opacity:0.85;color:var(--accent-teal);"><i class="fas fa-database" style="margin-right:3px;"></i><strong>Book of Natasrym (Natsarim):</strong> loaded from the built-in Gospel of the Kailedy corpus (21 chapters) — no web search.</span></p>
+    <p>Select a permitted apocryphal book and chapter. Enoch, Jasher, and Jubilees excluded.<br><span style="font-size:0.78em;opacity:0.7;"><i class="fas fa-globe" style="margin-right:3px;"></i>Books without a built-in JSON corpus still use web search for chapter text.</span><br><span id="apocCorpusNote" style="display:none;font-size:0.78em;opacity:0.85;color:var(--accent-teal);"><i class="fas fa-database" style="margin-right:3px;"></i><span id="apocCorpusNoteText"></span></span></p>
     <div class="selector-row">
       <select id="apocBook" onchange="updateApocChapters()"><option value="">-- Select Book --</option></select>
       <select id="apocChapter" disabled><option value="">-- Chapter --</option></select>
@@ -658,7 +658,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <div class="chapter-selector" style="border-color:rgba(139,26,26,0.25);">
     <h2 style="color:var(--crimson-glow);"><i class="fas fa-lock"></i> Generate from Sealed Scrolls</h2>
     <p style="line-height:1.6;">Ancient texts hidden from the mainstream -- Sefer Yetzirah, the Testaments, Enoch, Jasher, Jubilees, and more. These are the scrolls they buried.<br>
-    <span style="font-size:0.78em;opacity:0.7;"><i class="fas fa-globe" style="margin-right:3px;"></i>Sealed text is retrieved via web search for accuracy -- these texts are too rare for model memory alone.</span></p>
+    <span style="font-size:0.78em;opacity:0.7;"><i class="fas fa-globe" style="margin-right:3px;"></i>Sealed books without a built-in JSON corpus still use web search.</span><br><span id="sealedCorpusNote" style="display:none;font-size:0.78em;opacity:0.85;color:var(--accent-teal);"><i class="fas fa-database" style="margin-right:3px;"></i><span id="sealedCorpusNoteText"></span></span></p>
     <div class="selector-row">
       <select id="sealedBook" onchange="updateSealedChapters()" style="border-color:rgba(139,26,26,0.25);"><option value="">-- Select Sealed Text --</option></select>
       <select id="sealedChapter" disabled style="border-color:rgba(139,26,26,0.25);"><option value="">-- Chapter --</option></select>
@@ -1995,6 +1995,7 @@ renderTopics();
 populateBibleBooks();
 populateApocBooks();
 populateSealedBooks();
+prefetchForgeCorpusManifests();
 // Initialize news date range pickers -- default to "This Week"
 var now=new Date();
 var todayStr=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
@@ -2099,6 +2100,25 @@ for(var i=0;i<APOC_BOOKS.length;i++){
 var o=document.createElement('option');o.value=i;o.textContent=APOC_BOOKS[i].n;sel.appendChild(o);
 }
 }
+var FORGE_LOCAL_APOC_BOOKS={};
+var FORGE_LOCAL_SEALED_BOOKS={};
+function prefetchForgeCorpusManifests(){
+if(!window.ForgeLocalCorpus||!ForgeLocalCorpus.normalizeBookName)return;
+fetch('/corpus/apocrypha/manifest.json').then(function(r){return r.ok?r.json():null;}).then(function(m){
+if(!m||!m.books)return;
+for(var i=0;i<m.books.length;i++){
+FORGE_LOCAL_APOC_BOOKS[ForgeLocalCorpus.normalizeBookName(m.books[i].book)]=true;
+}
+syncApocCorpusNote();
+}).catch(function(){});
+fetch('/corpus/sealed/manifest.json').then(function(r){return r.ok?r.json():null;}).then(function(m){
+if(!m||!m.books)return;
+for(var i=0;i<m.books.length;i++){
+FORGE_LOCAL_SEALED_BOOKS[ForgeLocalCorpus.normalizeBookName(m.books[i].book)]=true;
+}
+syncSealedCorpusNote();
+}).catch(function(){});
+}
 function isNatasrymBookName(name){
 if(window.ForgeLocalCorpus&&ForgeLocalCorpus.normalizeBookName){
 var n=ForgeLocalCorpus.normalizeBookName(name);
@@ -2106,13 +2126,38 @@ return n.indexOf('natsar')!==-1||n.indexOf('kailedy')!==-1;
 }
 return /natsar|kailedy/i.test(String(name||''));
 }
+function isLocalCorpusBook(name,type){
+if(!name)return false;
+if(type==='bible')return true;
+if(!window.ForgeLocalCorpus||!ForgeLocalCorpus.normalizeBookName)return isNatasrymBookName(name);
+var n=ForgeLocalCorpus.normalizeBookName(name);
+if(type==='sealed')return !!(FORGE_LOCAL_SEALED_BOOKS[n]||FORGE_LOCAL_APOC_BOOKS[n]);
+if(type==='apocrypha')return !!FORGE_LOCAL_APOC_BOOKS[n];
+return !!FORGE_LOCAL_APOC_BOOKS[n]||isNatasrymBookName(name);
+}
 function syncApocCorpusNote(){
 var note=document.getElementById('apocCorpusNote');
-if(!note)return;
+var textEl=document.getElementById('apocCorpusNoteText');
+if(!note||!textEl)return;
 var sel=document.getElementById('apocBook');
 if(!sel||sel.value===''){note.style.display='none';return;}
 var book=APOC_BOOKS[parseInt(sel.value)];
-note.style.display=isNatasrymBookName(book.n)?'inline':'none';
+if(isLocalCorpusBook(book.n,'apocrypha')){
+textEl.textContent='Built-in local corpus for '+book.n+' — no web search for chapter text.';
+note.style.display='inline';
+}else{note.style.display='none';}
+}
+function syncSealedCorpusNote(){
+var note=document.getElementById('sealedCorpusNote');
+var textEl=document.getElementById('sealedCorpusNoteText');
+if(!note||!textEl)return;
+var sel=document.getElementById('sealedBook');
+if(!sel||sel.value===''){note.style.display='none';return;}
+var book=SEALED_BOOKS[parseInt(sel.value)];
+if(isLocalCorpusBook(book.n,'sealed')){
+textEl.textContent='Built-in local corpus for '+book.n+' — no web search for chapter text.';
+note.style.display='inline';
+}else{note.style.display='none';}
 }
 function importApocCorpusJson(){
 var input=document.createElement('input');
@@ -2151,10 +2196,11 @@ function updateSealedChapters(){
 var sel=document.getElementById('sealedBook');var ch=document.getElementById('sealedChapter');
 ch.innerHTML='<option value="">-- Chapter --</option>';
 var descEl=document.getElementById('sealedBookDesc');
-if(!sel.value){ch.disabled=true;if(descEl){descEl.style.display='none';descEl.textContent='';}return;}
+if(!sel.value){ch.disabled=true;if(descEl){descEl.style.display='none';descEl.textContent='';}syncSealedCorpusNote();return;}
 var book=SEALED_BOOKS[parseInt(sel.value)];ch.disabled=false;
 for(var i=1;i<=book.c;i++){var o=document.createElement('option');o.value=i;o.textContent='Chapter '+i;ch.appendChild(o);}
 if(descEl&&book.desc){descEl.textContent=book.desc;descEl.style.display='block';}else if(descEl){descEl.style.display='none';}
+syncSealedCorpusNote();
 }
 function openSealedSermon(){
 var bi=document.getElementById('sealedBook').value;
@@ -5020,10 +5066,10 @@ output.appendChild(box);
 }else{
 // No manual paste -- proceed with auto-fetch
 var fetchModelName=getScriptureFetchModel();
-var useLocalCorpus=currentChapterSource.type==='bible'||isNatasrymBookName(currentChapterSource.book);
+var useLocalCorpus=isLocalCorpusBook(currentChapterSource.book,currentChapterSource.type);
 var fetchIcon=useLocalCorpus?'fa-database':((currentChapterSource.type==='apocrypha'||currentChapterSource.type==='sealed')?'fa-globe':'fa-book-bible');
 var fetchLabel=useLocalCorpus?'Loading built-in corpus for ':(currentChapterSource.type==='sealed')?'Unearthing sealed text for ':(currentChapterSource.type==='apocrypha')?'Searching the web for ':'Retrieving ';
-var fetchExtra=useLocalCorpus?(currentChapterSource.type==='bible'?' <span style="opacity:0.7;font-size:0.8em;">(built-in KJV)</span>':' <span style="opacity:0.7;font-size:0.8em;">(local Gospel of the Kailedy text)</span>'):((currentChapterSource.type==='apocrypha'||currentChapterSource.type==='sealed')?' <span style="opacity:0.7;font-size:0.8em;">(web search enabled)</span>':'');
+var fetchExtra=useLocalCorpus?(currentChapterSource.type==='bible'?' <span style="opacity:0.7;font-size:0.8em;">(built-in KJV)</span>':' <span style="opacity:0.7;font-size:0.8em;">(built-in local corpus)</span>'):((currentChapterSource.type==='apocrypha'||currentChapterSource.type==='sealed')?' <span style="opacity:0.7;font-size:0.8em;">(web search enabled)</span>':'');
 output.innerHTML='<div class="loading-state" id="scriptureFetchLoader"><div class="loading-pulse"></div><div class="loading-text"><i class="fas '+fetchIcon+'" style="margin-right:6px;"></i>'+fetchLabel+escapeHtml(currentChapterSource.book)+' Chapter '+currentChapterSource.chapter+(useLocalCorpus?'':' via <strong>'+escapeHtml(fetchModelName)+'</strong>')+fetchExtra+'...</div></div>';
 fetchChapterText(currentChapterSource.book,currentChapterSource.chapter,currentChapterSource.type,function(err,text,usedModel,truncated){
 var loader=document.getElementById('scriptureFetchLoader');
