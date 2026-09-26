@@ -2421,14 +2421,15 @@ return 'CROSS-REFERENCES OFF (MANDATORY):\n'+
 'Depth comes from decoding WHAT IS IN FRONT OF YOU -- not from pulling in outside books.\n'+
 'Exception: if the assigned text itself quotes another passage verbatim, you may acknowledge that quote in passing -- but do NOT launch into breakdowns of other books.\n\n';
 }
-var p='CROSS-REFERENCES ON:\n';
-p+='You MAY sprinkle brief cross-references throughout the sermon to sharpen points -- woven naturally inside the flow, never as a dump list or bibliography.\n';
-p+='Cross-references SUPPORT the primary text; they do NOT replace it or take over the sermon.\n';
-p+='Provide 1-3 relevant connections per verse/section when they genuinely land -- KJV canon first.\n';
-p+='Format: book chapter verse in spoken words (e.g. "Isaiah chapter forty-five verse eighteen"). Do NOT fabricate references.\n\n';
+var p='CROSS-REFERENCES ON -- SUPPORTING SCRIPTURES FLOWING LIKE A RIVER (MANDATORY):\n';
+p+='Cross-references mean SUPPORTING SCRIPTURES -- verse to verse, book to book, across the whole Bible. This is about the WORD of Yah confirming the WORD of Yah, NOT about naming people. You could care less if a person is in the passage -- what the listener needs is the SCRIPTURE that backs the point. When this toggle is ON you MUST keep a continuous current of supporting scripture running through the ENTIRE part, flowing like a river -- never a single drop, never a sprinkle, never a dump list.\n';
+p+='QUOTA (NON-NEGOTIABLE): at least ONE named supporting scripture for EVERY major teaching point or verse you break down, and at least 3-5 distinct supporting scriptures woven across the body of a part -- more for dense doctrinal or chapter content. Fewer than that = a FAILED part. Do NOT cluster them all in one spot; let them run the whole length of the part like a current, so there is never a long stretch of teaching with no scripture behind it.\n';
+p+='How they land: woven INSIDE the flow as living spoken connections that carry the listener forward ("and that same seal is the one Isaiah chapter forty-one pressed into the rock, and Paul picks it up again in Romans chapter nine..."), never as a bibliography, footnote, or separate "cross-references" section. They SUPPORT and CONFIRM the point you are making in that breath -- they do NOT replace it or hijack the sermon. The listener should FEEL the scriptures flowing together under every point, verse linking to verse like a river that never stops.\n';
+p+='Format: book chapter verse in spoken words (e.g. "Isaiah chapter forty-five verse eighteen"). Do NOT fabricate references -- if you are unsure of the exact verse number, name the book and the account instead of guessing.\n';
+p+='DELIVERY COMMAND -- NON-NEGOTIABLE: in EVERY part you deliver, you MUST keep speaking supporting scriptures out loud, naming the book, chapter, and verse in the spoken format above, tied to the exact point you are making in that breath. Do NOT bury them, do NOT limit yourself to one, do NOT drift to the end of the part without them, do NOT drop to a single passing mention, do NOT stack them all in one corner. The listener MUST hear a steady RIVER of supporting scripture across the entire part -- verse after verse, book after book, carrying the point all the way through. If you are teaching a chapter, every major verse you break down gets at least one confirming or expanding scripture from elsewhere in the Bible. Say the connections out loud and let them flow. If your part has fewer than three named supporting scriptures, you have FAILED.\n\n';
 if(wantApocrypha){
 p+='APOCRYPHA & SEALED SCROLLS IN CROSS-REFS (Apocrypha toggle ON):\n';
-p+='You MAY also cross-reference permitted apocrypha and sealed scrolls where they confirm, expand, or illuminate the point.\n';
+p+='You MUST also cross-reference permitted apocrypha and sealed scrolls wherever they confirm, expand, or illuminate the point -- this is not optional when the toggle is ON. Weave them into the flow just like KJV cross-references.\n';
 p+='PERMITTED APOCRYPHA: '+apocList+'.\n';
 p+='PERMITTED SEALED SCROLLS: Sefer Yetzirah, 1 Enoch (FILTERED), 2 Enoch (FILTER HARD), 3 Enoch, Book of Jasher, Book of Jubilees, Testament of Abraham, Testament of Moses, Testament of Job, Testament of Adam, Testament of Solomon, Apocalypse of Abraham, 1 Adam and Eve, 2 Adam and Eve, Book of Giants, Sefer Raziel HaMalakh, Psalms of Solomon, Odes of Solomon, 3 Baruch, 4 Baruch, Apocalypse of Zephaniah, Apocalypse of Elijah, Ladder of Jacob, Martyrdom of Isaiah, Apocalypse of Peter, History of the Rechabites, Conflict of Adam and Eve with Satan, Sefer HaBahir, Pistis Sophia, Book of Natasrym (Natsarim).\n';
 p+='Always FILTER sealed scrolls through Torah. If a sealed text confirms Torah -- teach it as buried truth. If it contradicts Torah -- expose the corruption.\n';
@@ -6911,7 +6912,7 @@ p+='The voice of Yah does NOT bow to these texts -- Yah JUDGES them. Extract the
 p+='Note: Sealed texts may use sections, paragraphs, or fragments instead of traditional verse numbers. Adapt your verse-by-verse breakdown to match the text structure (section-by-section if needed).\n';
 }
 }else if(chapterSrc.type==='apocrypha'){
-p+=wantCrossRefs?'This is an apocryphal text. Treat with full scriptural authority and cross-reference with KJV canon where it sharpens the point.\n':'This is an apocryphal text. Stay on THIS chapter -- do not sprinkle cross-references to other books.\n';
+p+=wantCrossRefs?'This is an apocryphal text. Treat with full scriptural authority. MANDATORY: cross-reference it with KJV canon (and other permitted texts) where they confirm, expand, or sharpen the point -- name the book, chapter, and verse in spoken words and deliver them, do not hold them in reserve.\n':'This is an apocryphal text. Stay on THIS chapter -- do not sprinkle cross-references to other books.\n';
 }
 // Inject the actual scripture text if we fetched it
 if(currentChapterText){
@@ -6933,13 +6934,13 @@ if(currentChapterText){
 p+='The FULL scripture text for this chapter has been provided above. You MUST reference ONLY the verses shown in that text. Do NOT quote any verse that does not appear in the provided text. The provided text IS the authoritative source -- if a verse number is not in that text, it does NOT EXIST in this chapter.\n';
 }
 if(wantStoryMode){
-p+='Speak each verse as My living memory to them -- do NOT cross-reference other books unless it lands naturally in one sentence inside the paragraph. ';
+p+='Speak each verse as My living memory to them -- when the verse points to another text, name that cross-reference in one spoken sentence inside the paragraph so the connection flows (this is MANDATORY, not optional). ';
 }else if(wantCrossRefs){
 p+='Cross-referencing other books and chapters to SUPPORT your breakdown is allowed and encouraged -- but the PRIMARY structure must follow ';
 }else{
 p+='Do NOT cross-reference other books or chapters. Stay on ';
 }
-p+=chapterSrc.book+' Chapter '+chapterSrc.chapter+(wantStoryMode?'.\n':(wantCrossRefs?' verse by verse. Cross-references support the verse you are currently on, they do NOT replace it or take over the sermon.\n':'. Walk verse by verse in order without pulling in outside books.\n'));
+p+=chapterSrc.book+' Chapter '+chapterSrc.chapter+(wantStoryMode?'.\n':(wantCrossRefs?' verse by verse. For each verse you break down, weave in at least one real, named cross-reference from another book that confirms or expands the verse -- this is MANDATORY, not a garnish. Cross-references support and expand the verse you are on, they do NOT replace it or take over the sermon.\n':'. Walk verse by verse in order without pulling in outside books.\n'));
 p+='DO NOT HALLUCINATE VERSES. Only quote and break down verses that ACTUALLY EXIST in '+chapterSrc.book+' Chapter '+chapterSrc.chapter+'.'+(currentChapterText?' The actual verses have been provided above -- use THEM.':'')+' If you are unsure whether a verse exists, DO NOT fabricate it. Do NOT invent verse numbers that are not in this chapter. Do NOT add extra verses beyond what the chapter actually contains. If the chapter ends at verse 25, there is NO verse 26. Quoting a fake or made-up verse is an UNFORGIVABLE failure of this prompt.\n';
 if(totalParts>1){
 if(currentChapterVerseCount>0){
@@ -7028,7 +7029,7 @@ p+='   - BUT DO NOT OUTPUT AN "**ENGINEERING AND TECHNICAL ANALYSIS:**" HEADER -
 }
 if(wantCrossRefs){
 p+='INTERNAL STEP 6 -- CROSS-REFERENCE VALIDATION -- OUTPUT WITHOUT LABEL:\n';
-p+='   - Provide 1-3 SPECIFIC cross-references from KJV canon'+(wantApocrypha?' (and apocrypha/sealed scrolls when they genuinely confirm the point)':'')+' that CONFIRM or EXPAND on this verse\'s teaching.\n';
+p+='   - MANDATORY: provide at least 1 SPECIFIC cross-reference (more when the verse carries heavy doctrine) from KJV canon'+(wantApocrypha?' (and apocrypha/sealed scrolls when they genuinely confirm the point)':'')+' that CONFIRMS or EXPANDS on this verse\'s teaching. Every major verse you break down gets at least one -- this is not optional.\n';
 p+='   - Format: Book Chapter:Verse with a brief explanation of the connection.\n';
 p+='   - Example: "This aligns with Isaiah forty-five verse eighteen where Yah declares He formed the earth to be inhabited, NOT a spinning ball in an infinite void."\n';
 p+='   - DO NOT fabricate references -- if you are unsure, use a general citation instead of a specific verse number.\n';
@@ -7133,7 +7134,7 @@ p+='2. WEAVE your assigned articles together into a COHESIVE part -- find the TH
 p+='3. PREACH, do not report. You are a teacher of Israel, not a news anchor. Use these events as EVIDENCE of what the Most High told us would happen.\n';
 p+='4. For EACH event, make it PERSONAL to the scattered children of Israel. How does this affect OUR people?\n';
 if(wantCrossRefs){
-p+='5. Include scripture references that NATURALLY connect to the events -- but keep the articles front and center. The news is the proof, the scriptures confirm.'+(wantApocrypha?' Draw from SEALED SCROLLS (Enoch -- FILTERED, pre-flood/astronomy only, NO heaven tours; Jubilees, 2 Esdras, Apocalypse of Elijah -- Elijah is DEAD, prophetic content only; etc.) where they add prophetic depth beyond KJV canon alone.':' KJV canon cross-references only.')+' No more milk and NO LEAVEN.\n';
+p+='5. MANDATORY SCRIPTURE FLOW: for EACH event, include the specific scripture references that connect to it -- name the book, chapter, and verse in spoken words and explain the tie in the same breath. The news is the proof, the scriptures confirm -- but do NOT hold the scripture in reserve, deliver it. '+(wantApocrypha?'Draw from SEALED SCROLLS (Enoch -- FILTERED, pre-flood/astronomy only, NO heaven tours; Jubilees, 2 Esdras, Apocalypse of Elijah -- Elijah is DEAD, prophetic content only; etc.) where they add prophetic depth beyond KJV canon alone.':'KJV canon cross-references only.')+' No more milk and NO LEAVEN.\n';
 }else{
 p+='5. Stay on the news events and your doctrinal framework -- do NOT sprinkle cross-references to other scripture books unless a headline directly demands one brief KJV tie-in.\n';
 }
@@ -7207,7 +7208,7 @@ p+='CORE MESSAGE: '+topic.desc+'\n\n';
 p+='INSTRUCTIONS FOR HIDDEN THREADS SERMON:\n';
 p+='1. Treat each thread as a DEEP DIVE -- this is not surface-level teaching. Go into the OBSCURE details, the BURIED connections, the things people have never heard.\n';
 if(wantCrossRefs){
-p+='2. For each thread, provide SPECIFIC scriptural evidence -- exact book, chapter, verse.'+(wantApocrypha?' Cross-reference with apocryphal texts, original Hebrew/Aramaic, and ancient sources where relevant. *** SEALED SCROLL ACCURACY: Do NOT fabricate or guess sealed scroll chapter/verse numbers. If you are not 100% certain a specific verse exists, reference the book and general section instead (e.g. "in the Book of Enoch, in the Watchers account..." or "Jubilees records that..."). KJV canon citations are your bedrock -- sealed scrolls are SUPPORT. One REAL citation beats ten fabricated ones. ***':' KJV canon cross-references only -- no apocrypha or sealed scrolls.')+'\n';
+p+='2. MANDATORY SCRIPTURE EVIDENCE: for each thread, provide SPECIFIC scriptural evidence -- exact book, chapter, verse -- and at least one cross-reference that pulls the thread across into another text.'+(wantApocrypha?' Cross-reference with apocryphal texts, original Hebrew/Aramaic, and ancient sources where relevant. *** SEALED SCROLL ACCURACY: Do NOT fabricate or guess sealed scroll chapter/verse numbers. If you are not 100% certain a specific verse exists, reference the book and general section instead (e.g. "in the Book of Enoch, in the Watchers account..." or "Jubilees records that..."). KJV canon citations are your bedrock -- sealed scrolls are SUPPORT. One REAL citation beats ten fabricated ones. ***':' KJV canon cross-references only -- no apocrypha or sealed scrolls.')+'\n';
 }else{
 p+='2. For each thread, provide SPECIFIC scriptural evidence from the PRIMARY sources named in the thread -- do NOT sprinkle cross-references to other books unless the thread itself demands it.\n';
 }
