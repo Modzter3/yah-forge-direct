@@ -38,8 +38,8 @@ function checkCollection(dir, label, minBooks) {
   console.log(`${label}: OK (${manifest.totalBooks} books, ${manifest.totalChapters} chapters)`);
 }
 
-checkCollection(apocDir, 'apocrypha', 40);
-checkCollection(sealedDir, 'sealed', 20);
+checkCollection(apocDir, 'apocrypha', 56);
+checkCollection(sealedDir, 'sealed', 35);
 
 const natasrym = path.join(apocDir, 'Book of Natasrym (Natsarim).json');
 const natData = JSON.parse(fs.readFileSync(natasrym, 'utf8'));

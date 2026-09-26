@@ -2,6 +2,7 @@
 """Build apocrypha + sealed scroll JSON corpora under public/corpus/."""
 from __future__ import annotations
 
+import html
 import json
 import re
 import urllib.error
@@ -17,6 +18,15 @@ NATASRYM_SRC = ROOT / "public" / "corpus" / "book-of-natasrym.json"
 KJV1611_BASE = "https://raw.githubusercontent.com/aruljohn/Bible-kjv-1611/main"
 SCROLL_BASE = (
     "https://raw.githubusercontent.com/scrollmapper/bible_databases_deuterocanonical/master/sources/en"
+)
+SCROLL_ETC_BASE = (
+    "https://raw.githubusercontent.com/scrollmapper/bible_databases_deuterocanonical/master/etc/en"
+)
+SCROLL_2024_RAW = (
+    "https://raw.githubusercontent.com/scrollmapper/bible_databases_deuterocanonical/2024"
+)
+PISTIS_BASE = (
+    "https://raw.githubusercontent.com/crucifly/bible-obsidian/main/08-Nag%20Hammadi/Pistis%20Sophia"
 )
 
 # Must match APOC_BOOKS[].n / SEALED_BOOKS[].n in public/index.html
@@ -208,6 +218,432 @@ def fetch_json(url: str) -> dict:
         return json.loads(resp.read().decode("utf-8"))
 
 
+def fetch_text(url: str, *, timeout: int = 180) -> str:
+    req = urllib.request.Request(url, headers={"User-Agent": "yah-forge-direct-corpus-build/1.0"})
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return resp.read().decode("utf-8", errors="replace")
+
+
+def wikisource_wikitext(page_title: str) -> str:
+    params = urllib.parse.urlencode(
+        {
+            "action": "query",
+            "prop": "revisions",
+            "rvprop": "content",
+            "format": "json",
+            "titles": page_title,
+        }
+    )
+    url = f"https://en.wikisource.org/w/api.php?{params}"
+    data = fetch_json(url)
+    page = next(iter(data["query"]["pages"].values()))
+    if page.get("missing"):
+        raise ValueError(f"wikisource page missing: {page_title}")
+    rev = page["revisions"][0]
+    return rev.get("*") or rev.get("slots", {}).get("main", {}).get("*") or ""
+
+
+_ROMAN: dict[str, int] = {
+    "I": 1,
+    "II": 2,
+    "III": 3,
+    "IV": 4,
+    "V": 5,
+    "VI": 6,
+    "VII": 7,
+    "VIII": 8,
+    "IX": 9,
+    "X": 10,
+    "XI": 11,
+    "XII": 12,
+    "XIII": 13,
+    "XIV": 14,
+    "XV": 15,
+    "XVI": 16,
+    "XVII": 17,
+    "XVIII": 18,
+    "XIX": 19,
+    "XX": 20,
+    "XXX": 30,
+    "XL": 40,
+    "L": 50,
+    "LX": 60,
+    "LXX": 70,
+}
+
+
+def roman_to_int(token: str) -> int:
+    token = token.strip().upper()
+    if token.isdigit():
+        return int(token)
+    if token in _ROMAN:
+        return _ROMAN[token]
+    # Fallback for longer Roman numerals used in Malan (e.g. LXIX).
+    vals = {"I": 1, "V": 5, "X": 10, "L": 50, "C": 100, "D": 500, "M": 1000}
+    total = 0
+    prev = 0
+    for ch in reversed(token):
+        v = vals.get(ch, 0)
+        if v < prev:
+            total -= v
+        else:
+            total += v
+            prev = v
+    return total or int(token, 10)
+
+
+def parse_wikisource_inline_verses(wikitext: str) -> dict[str, str]:
+    """Parse {{verse|chapter=N|verse=M}} markers with trailing plain text."""
+    chapters: dict[str, list[tuple[int, str]]] = {}
+    pattern = re.compile(
+        r"\{\{verse\|chapter=(\d+)\|verse=(\d+)\}\}\s*",
+        re.IGNORECASE,
+    )
+    matches = list(pattern.finditer(wikitext))
+    for idx, match in enumerate(matches):
+        ch, vs = match.group(1), int(match.group(2))
+        start = match.end()
+        end = matches[idx + 1].start() if idx + 1 < len(matches) else len(wikitext)
+        text = wikitext[start:end]
+        text = re.sub(r"\{\{[^}]+\}\}", " ", text)
+        text = re.sub(r"<[^>]+>", " ", text)
+        text = re.sub(r"\[\[[^\]|]+\|([^\]]+)\]\]", r"\1", text)
+        text = re.sub(r"\[\[([^\]]+)\]\]", r"\1", text)
+        text = re.sub(r"\s+", " ", text).strip()
+        if text:
+            chapters.setdefault(ch, []).append((vs, text))
+    out: dict[str, str] = {}
+    for ch in sorted(chapters.keys(), key=int):
+        lines = [f"{vs}. {txt}" for vs, txt in sorted(chapters[ch], key=lambda t: t[0])]
+        out[str(int(ch))] = "\n".join(lines)
+    return out
+
+
+def lines_to_chapter_body(lines: list[str]) -> str:
+    body: list[str] = []
+    for i, line in enumerate(lines, start=1):
+        line = re.sub(r"\s+", " ", line.strip())
+        if line:
+            body.append(f"{i}. {line}")
+    return "\n".join(body)
+
+
+def bucket_lines(lines: list[str], target_chapters: int) -> dict[str, str]:
+    if not lines or target_chapters < 1:
+        return {}
+    buckets: list[list[str]] = [[] for _ in range(target_chapters)]
+    for i, line in enumerate(lines):
+        buckets[i % target_chapters].append(line)
+    out: dict[str, str] = {}
+    for i, bucket in enumerate(buckets, start=1):
+        body = lines_to_chapter_body(bucket)
+        if body:
+            out[str(i)] = body
+    return out
+
+
+def sefaria_section_texts(ref: str) -> list[str]:
+    url = f"https://www.sefaria.org/api/texts/{urllib.parse.quote(ref)}"
+    data = fetch_json(url)
+    texts: list[str] = []
+
+    def walk(node) -> None:
+        if isinstance(node, str):
+            t = re.sub(r"<[^>]+>", " ", html.unescape(node))
+            t = re.sub(r"\s+", " ", t).strip()
+            if t:
+                texts.append(t)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item)
+
+    walk(data.get("text"))
+    return texts
+
+
+def sefaria_bucketed(ref: str, target_chapters: int, source_note: str, forge_name: str) -> dict:
+    sections = sefaria_section_texts(ref)
+    chapters = bucket_lines(sections, target_chapters)
+    return {
+        "book": forge_name,
+        "aliases": ALIASES.get(forge_name, []),
+        "translation": "English (Sefaria community translation)",
+        "source": source_note,
+        "chapters": chapters,
+    }
+
+
+def bible_api_book_chapters(book_label: str, chapter_count: int) -> dict[str, str]:
+    chapters: dict[str, str] = {}
+    for ch in range(1, chapter_count + 1):
+        q = urllib.parse.quote(f"{book_label} {ch}")
+        url = f"https://bible-api.com/{q}"
+        data = fetch_json(url)
+        verses = data.get("verses") or []
+        lines: list[str] = []
+        for v in verses:
+            num = str(v.get("verse", "")).strip()
+            text = re.sub(r"\s+", " ", str(v.get("text", "")).strip())
+            if num and text:
+                lines.append(f"{num}. {text}")
+        if lines:
+            chapters[str(ch)] = "\n".join(lines)
+    return chapters
+
+
+def load_scrollmapper_etc(relative_path: str) -> dict:
+    return fetch_json(f"{SCROLL_ETC_BASE}/{relative_path}")
+
+
+def fetch_didache_chapters() -> dict[str, str]:
+    try:
+        chapters = parse_wikisource_inline_verses(
+            wikisource_wikitext("Didache_(Lightfoot_translation)")
+        )
+        if chapters:
+            return chapters
+    except (urllib.error.URLError, urllib.error.HTTPError, ValueError, KeyError) as exc:
+        print(f"  Didache wikisource fallback: {exc}")
+    data = load_scrollmapper_etc(
+        "church_history/ante-nicene/teaching-of-the-twelve-apostles/"
+        "teaching-of-the-twelve-apostles.json"
+    )
+    payload = scrollmapper_to_forge(
+        "Didache (Teaching of the Twelve)",
+        data,
+        "scrollmapper/bible_databases_deuterocanonical (Teaching of the Twelve Apostles)",
+        renumber=True,
+    )
+    return payload["chapters"]
+
+
+def fetch_three_maccabees() -> dict[str, str]:
+    try:
+        chapters = parse_wikisource_inline_verses(wikisource_wikitext("Translation:3_Maccabees"))
+        if chapters:
+            return chapters
+    except (urllib.error.URLError, urllib.error.HTTPError, ValueError, KeyError):
+        pass
+    return bible_api_book_chapters("3 Maccabees", 7)
+
+
+def fetch_four_maccabees() -> dict[str, str]:
+    return bible_api_book_chapters("4 Maccabees", 18)
+
+
+def fetch_three_enoch() -> dict[str, str]:
+    md = fetch_text(f"{SCROLL_2024_RAW}/md/3-enoch/3-enoch.md")
+    chapters: dict[str, list[tuple[int, str]]] = {}
+    for ch, vs, text in re.findall(r"\*\*\[(\d+):(\d+)\]\*\*\s*(.+)", md):
+        chapters.setdefault(ch, []).append((int(vs), re.sub(r"\s+", " ", text.strip())))
+    out: dict[str, str] = {}
+    for ch in sorted(chapters.keys(), key=int):
+        lines = [f"{vs}. {txt}" for vs, txt in sorted(chapters[ch], key=lambda t: t[0])]
+        out[str(int(ch))] = "\n".join(lines)
+    return out
+
+
+def fetch_pistis_sophia(merge_to: int = 6) -> dict[str, str]:
+    raw_chapters: list[str] = []
+    for n in range(1, 145):
+        fname = f"Chapter%20{n:03d}.md"
+        md = fetch_text(f"{PISTIS_BASE}/{fname}", timeout=60)
+        verses = re.findall(r"^###\s+(\d+)\s*\n(.+?)(?=^###\s+\d+\s|\Z)", md, re.M | re.S)
+        lines: list[str] = []
+        for vnum, vtext in verses:
+            text = re.sub(r"\s+", " ", vtext.strip())
+            if text:
+                lines.append(f"{vnum}. {text}")
+        if lines:
+            raw_chapters.append("\n".join(lines))
+    if not raw_chapters:
+        return {}
+    if merge_to >= len(raw_chapters):
+        return {str(i + 1): body for i, body in enumerate(raw_chapters)}
+    buckets: list[list[str]] = [[] for _ in range(merge_to)]
+    for i, body in enumerate(raw_chapters):
+        buckets[i % merge_to].append(body)
+    out: dict[str, str] = {}
+    v = 1
+    for i, parts in enumerate(buckets, start=1):
+        lines: list[str] = []
+        for part in parts:
+            for line in part.split("\n"):
+                line = line.strip()
+                if not line:
+                    continue
+                if re.match(r"^\d+\.\s", line):
+                    line = re.sub(r"^\d+\.\s", "", line)
+                lines.append(f"{v}. {line}")
+                v += 1
+        if lines:
+            out[str(i)] = "\n".join(lines)
+    return out
+
+
+def fetch_malan_conflict(max_chapters: int = 40) -> dict[str, str]:
+    url = (
+        "https://archive.org/stream/bookofadamandeve00malauoft/"
+        "bookofadamandeve00malauoft_djvu.txt"
+    )
+    text = fetch_text(url, timeout=240)
+    book_i = re.split(r"BOOK\s+II\.", text, maxsplit=1, flags=re.I)[0]
+    parts = re.split(r"CHAPTER\s+([IVXLCDM\d]+)\.", book_i, flags=re.I)
+    chunks: list[tuple[int, str]] = []
+    for i in range(1, len(parts), 2):
+        label, body = parts[i], parts[i + 1]
+        try:
+            ch_num = roman_to_int(label)
+        except ValueError:
+            continue
+        body = re.sub(r"\s+", " ", body.strip())
+        if body:
+            chunks.append((ch_num, body))
+    chunks.sort(key=lambda t: t[0])
+    out: dict[str, str] = {}
+    for ch_num, body in chunks[:max_chapters]:
+        sentences = re.split(r"(?<=[.!?])\s+", body)
+        lines = lines_to_chapter_body([s for s in sentences if s.strip()])
+        if lines:
+            out[str(ch_num)] = lines
+    return renumber_chapters_sequential(out)
+
+
+def urantiapedia_chapter_lines(book_slug: str, chapter: int) -> list[str]:
+    url = f"https://urantiapedia.org/en/Bible/{book_slug}/{chapter}"
+    page = fetch_text(url, timeout=60)
+    # Content lives in wiki-markdown islands; grab paragraph-like lines.
+    stripped = re.sub(r"<script[\s\S]*?</script>", " ", page, flags=re.I)
+    stripped = re.sub(r"<style[\s\S]*?</style>", " ", stripped, flags=re.I)
+    stripped = re.sub(r"<[^>]+>", "\n", stripped)
+    stripped = html.unescape(stripped)
+    lines: list[str] = []
+    for raw in stripped.split("\n"):
+        line = re.sub(r"\s+", " ", raw.strip())
+        if not line or len(line) < 20:
+            continue
+        if line.startswith("var ") or line.startswith("@import"):
+            continue
+        if "Urantiapedia" in line and chapter != 1:
+            continue
+        if re.match(r"^(Index|Testament|Treatise|Apocalypse)", line) and "Chapter" in line:
+            continue
+        if re.match(r"^\d+$", line):
+            continue
+        if re.match(r"^\d+\s+[A-Za-z]", line):
+            line = re.sub(r"^\d+\s+", "", line)
+        lines.append(line)
+    return lines
+
+
+def fetch_treatise_of_shem() -> dict[str, str]:
+    out: dict[str, str] = {}
+    for ch in range(1, 13):
+        lines = urantiapedia_chapter_lines("Treatise_of_Shem", ch)
+        body = lines_to_chapter_body(lines)
+        if body:
+            out[str(ch)] = body
+    return out
+
+
+def fetch_testament_of_adam() -> dict[str, str]:
+    """Budge, Book of the Cave of Treasures — Testamentum Adami (4 conventional parts)."""
+    page = fetch_text("https://sacred.plzhalp.us/chr/bct/bct10.htm", timeout=60)
+    stripped = re.sub(r"<script[\s\S]*?</script>", " ", page, flags=re.I)
+    stripped = re.sub(r"<[^>]+>", "\n", stripped)
+    stripped = html.unescape(stripped)
+    text = re.sub(r"\s+", " ", stripped)
+    markers = [
+        ("THE HOURS OF THE DAY.", "THE HOURS OF THE NIGHT."),
+        ("THE HOURS OF THE NIGHT.", "ADAM FORETELLS THE COMING OF CHRIST."),
+        ("ADAM FORETELLS THE COMING OF CHRIST.", None),
+    ]
+    sections: list[str] = []
+    for start, end in markers:
+        i = text.find(start)
+        if i < 0:
+            continue
+        chunk = text[i + len(start) :]
+        if end:
+            j = chunk.find(end)
+            if j >= 0:
+                chunk = chunk[:j]
+        chunk = chunk.strip()
+        if chunk:
+            sections.append(chunk)
+    if len(sections) >= 3:
+        prophecy = sections[2]
+        mid = len(prophecy) // 2
+        split_at = prophecy.find(". ", mid)
+        if split_at < 0:
+            split_at = mid
+        sections = [sections[0], sections[1], prophecy[: split_at + 1].strip(), prophecy[split_at + 1 :].strip()]
+    out: dict[str, str] = {}
+    for idx, section in enumerate(sections[:4], start=1):
+        sentences = re.split(r"(?<=[.!?])\s+", section)
+        body = lines_to_chapter_body([s for s in sentences if s.strip()])
+        if body:
+            out[str(idx)] = body
+    return out
+
+
+def fetch_apocalypse_of_zephaniah() -> dict[str, str]:
+    lines = urantiapedia_chapter_lines("Apocalypse_of_Zephaniah", 1)
+    return bucket_lines(lines, 12)
+
+
+def fetch_martyrdom_of_isaiah() -> dict[str, str]:
+    data = load_scrollmapper("ascension-of-isaiah/ascension-of-isaiah.json")
+    book = data["books"][0]
+    out: dict[str, str] = {}
+    for ch in book.get("chapters") or []:
+        ch_num = int(ch.get("chapter", 0))
+        if 1 <= ch_num <= 5:
+            body = chapter_to_lines(ch)
+            if body:
+                out[str(ch_num)] = body
+    return out
+
+
+def fetch_sefer_raziel() -> dict[str, str]:
+    page = fetch_text("https://www.emol.org/kabbalah/seferraziel/chapters/chapter1.html", timeout=60)
+    stripped = re.sub(r"<script[\s\S]*?</script>", " ", page, flags=re.I)
+    stripped = re.sub(r"<[^>]+>", "\n", stripped)
+    stripped = html.unescape(stripped)
+    paragraphs = [
+        re.sub(r"\s+", " ", p.strip())
+        for p in re.split(r"\n\s*\n", stripped)
+        if len(p.strip()) > 80
+    ]
+    if not paragraphs:
+        paragraphs = [
+            re.sub(r"\s+", " ", p.strip())
+            for p in stripped.split("\n")
+            if len(p.strip()) > 80
+        ]
+    return bucket_lines(paragraphs, 7)
+
+
+def forge_payload(
+    forge_name: str,
+    chapters: dict[str, str],
+    *,
+    translation: str,
+    source: str,
+    extra_aliases: list[str] | None = None,
+) -> dict:
+    aliases = list(ALIASES.get(forge_name, []))
+    if extra_aliases:
+        aliases.extend(extra_aliases)
+    return {
+        "book": forge_name,
+        "aliases": aliases,
+        "translation": translation,
+        "source": source,
+        "chapters": chapters,
+    }
+
+
 def chapter_to_lines(chapter_obj: dict) -> str:
     lines: list[str] = []
     for v in chapter_obj.get("verses") or []:
@@ -365,6 +801,89 @@ def build_book(forge_name: str) -> dict | None:
             "source": "scrollmapper/bible_databases_deuterocanonical (Five Psalms of David)",
             "chapters": chapters,
         }
+
+    extra_builders: dict[str, tuple] = {
+        "Didache (Teaching of the Twelve)": (
+            fetch_didache_chapters,
+            "English (Lightfoot / ante-nicene corpus)",
+            "Wikisource Didache (Lightfoot) + scrollmapper Teaching of the Twelve Apostles",
+        ),
+        "3 Maccabees": (
+            fetch_three_maccabees,
+            "English (public-domain translation)",
+            "Wikisource Translation:3 Maccabees / bible-api.com",
+        ),
+        "4 Maccabees": (
+            fetch_four_maccabees,
+            "English (public-domain translation)",
+            "bible-api.com (4 Maccabees)",
+        ),
+        "Sefer Yetzirah (Book of Formation)": (
+            lambda: sefaria_bucketed(
+                "Sefer_Yetzirah",
+                6,
+                "Sefaria — Sefer Yetzirah (community English)",
+                forge_name,
+            )["chapters"],
+            "English (Sefaria community translation)",
+            "Sefaria — Sefer Yetzirah",
+        ),
+        "Sefer HaBahir (Book of Brightness)": (
+            lambda: sefaria_bucketed(
+                "Sefer_HaBahir",
+                5,
+                "Sefaria — Sefer HaBahir (community English)",
+                forge_name,
+            )["chapters"],
+            "English (Sefaria community translation)",
+            "Sefaria — Sefer HaBahir",
+        ),
+        "3 Enoch (Hebrew Book of Enoch)": (
+            fetch_three_enoch,
+            "English (Odeberg / Trumpp tradition)",
+            "scrollmapper/bible_databases_deuterocanonical (2024 branch md/3-enoch)",
+        ),
+        "Pistis Sophia": (
+            lambda: fetch_pistis_sophia(6),
+            "English (G.R.S. Mead)",
+            "crucifly/bible-obsidian (Pistis Sophia, merged to 6 books)",
+        ),
+        "Conflict of Adam and Eve with Satan": (
+            lambda: fetch_malan_conflict(40),
+            "English (S. C. Malan, 1882)",
+            "Internet Archive — Conflict of Adam and Eve with Satan (Malan)",
+        ),
+        "Treatise of Shem": (
+            fetch_treatise_of_shem,
+            "English (Mingana / Urantiapedia)",
+            "Urantiapedia — Treatise of Shem (12 zodiac chapters)",
+        ),
+        "Testament of Adam": (
+            fetch_testament_of_adam,
+            "English (Bezold / Urantiapedia)",
+            "Urantiapedia — Testament of Adam",
+        ),
+        "Apocalypse of Zephaniah": (
+            fetch_apocalypse_of_zephaniah,
+            "English (fragmentary; James / Urantiapedia)",
+            "Urantiapedia — Apocalypse of Zephaniah (sections bucketed)",
+        ),
+        "Martyrdom of Isaiah": (
+            fetch_martyrdom_of_isaiah,
+            "English (public-domain apocrypha corpus)",
+            "scrollmapper Ascension of Isaiah (chapters 1–5)",
+        ),
+        "Sefer Raziel HaMalakh": (
+            fetch_sefer_raziel,
+            "English (Emol.org Sefer Raziel excerpt)",
+            "emol.org/kabbalah/seferraziel (chapter 1, bucketed to 7)",
+        ),
+    }
+    if forge_name in extra_builders:
+        fn, translation, source = extra_builders[forge_name]
+        chapters = fn() if callable(fn) else {}
+        if isinstance(chapters, dict) and chapters:
+            return forge_payload(forge_name, chapters, translation=translation, source=source)
 
     if forge_name in KJV1611_FILE:
         url = f"{KJV1611_BASE}/{urllib.parse.quote(KJV1611_FILE[forge_name])}"

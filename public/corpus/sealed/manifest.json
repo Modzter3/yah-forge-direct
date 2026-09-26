@@ -2,6 +2,11 @@
   "collection": "sealed",
   "books": [
     {
+      "book": "Sefer Yetzirah (Book of Formation)",
+      "file": "Sefer Yetzirah (Book of Formation).json",
+      "chapters": 6
+    },
+    {
       "book": "1 Enoch (Ethiopian Enoch)",
       "file": "1 Enoch (Ethiopian Enoch).json",
       "chapters": 107
@@ -10,6 +15,11 @@
       "book": "2 Enoch (Slavonic Secrets of Enoch)",
       "file": "2 Enoch (Slavonic Secrets of Enoch).json",
       "chapters": 68
+    },
+    {
+      "book": "3 Enoch (Hebrew Book of Enoch)",
+      "file": "3 Enoch (Hebrew Book of Enoch).json",
+      "chapters": 48
     },
     {
       "book": "Book of Jasher (Sefer HaYashar)",
@@ -37,6 +47,11 @@
       "chapters": 12
     },
     {
+      "book": "Testament of Adam",
+      "file": "Testament of Adam.json",
+      "chapters": 4
+    },
+    {
       "book": "Testament of Solomon",
       "file": "Testament of Solomon.json",
       "chapters": 1
@@ -62,9 +77,19 @@
       "chapters": 1
     },
     {
+      "book": "Sefer Raziel HaMalakh",
+      "file": "Sefer Raziel HaMalakh.json",
+      "chapters": 7
+    },
+    {
       "book": "Shepherd of Hermas",
       "file": "Shepherd of Hermas.json",
       "chapters": 26
+    },
+    {
+      "book": "Didache (Teaching of the Twelve)",
+      "file": "Didache (Teaching of the Twelve).json",
+      "chapters": 16
     },
     {
       "book": "Gospel of Nicodemus (Acts of Pilate)",
@@ -92,6 +117,11 @@
       "chapters": 9
     },
     {
+      "book": "Apocalypse of Zephaniah",
+      "file": "Apocalypse of Zephaniah.json",
+      "chapters": 12
+    },
+    {
       "book": "Apocalypse of Elijah",
       "file": "Apocalypse of Elijah.json",
       "chapters": 5
@@ -102,9 +132,19 @@
       "chapters": 8
     },
     {
+      "book": "Treatise of Shem",
+      "file": "Treatise of Shem.json",
+      "chapters": 12
+    },
+    {
       "book": "Lives of the Prophets",
       "file": "Lives of the Prophets.json",
       "chapters": 24
+    },
+    {
+      "book": "Martyrdom of Isaiah",
+      "file": "Martyrdom of Isaiah.json",
+      "chapters": 5
     },
     {
       "book": "Apocalypse of Peter",
@@ -117,12 +157,27 @@
       "chapters": 22
     },
     {
+      "book": "Sefer HaBahir (Book of Brightness)",
+      "file": "Sefer HaBahir (Book of Brightness).json",
+      "chapters": 5
+    },
+    {
+      "book": "Pistis Sophia",
+      "file": "Pistis Sophia.json",
+      "chapters": 6
+    },
+    {
+      "book": "Conflict of Adam and Eve with Satan",
+      "file": "Conflict of Adam and Eve with Satan.json",
+      "chapters": 40
+    },
+    {
       "book": "Book of Natasrym (Natsarim)",
       "file": "Book of Natasrym (Natsarim).json",
       "chapters": 21
     }
   ],
-  "totalBooks": 24,
-  "totalChapters": 727,
+  "totalBooks": 35,
+  "totalChapters": 888,
   "source": "scripts/build-apoc-sealed-corpus.py"
 }
