@@ -76,13 +76,20 @@
       'Begin with: ' + refLabel(meta.book, meta.chapter, meta.range.start, meta.range.start),
       'End after completing: ' + refLabel(meta.book, meta.chapter, meta.range.end, meta.range.end),
       '',
-      'Advance through the assigned verses IN ORDER. Cross-references are optional one-sentence support only — they never replace walking the assigned band.',
+      'Advance through the assigned verses IN ORDER.' +
+      (meta.wantCrossRefs
+        ? ' MANDATORY RIVER: as you walk each verse, weave in at least one named supporting scripture (book chapter verse) from another book that confirms or expands that verse -- this is NOT optional, NOT a one-sentence garnish. Supporting scripture SUPPORTS and CONFIRMS the assigned verse; it never stops you from walking the band, but you MUST keep the current of named scripture running the whole part (3-5+ per part, spread out, never clustered in one spot, never a single drop). This is about the WORD confirming the WORD -- name the scripture that backs the point, NOT the people.'
+        : ' Cross-references are OFF: do NOT pull in other books, apocrypha, or sealed scrolls. Stay locked on walking the assigned band.') +
+      '\n',
       'Write the sermon directly — no <think>, <thinking>, or hidden reasoning blocks.',
     ];
     return lines.join('\n');
   }
 
   function buildHardVerseDiscipline(meta) {
+    var crossRefLine = meta.wantCrossRefs
+      ? '- MANDATORY RIVER: keep named supporting scripture (book chapter verse) flowing under the assigned band -- at least one per major verse you break down, 3-5+ per part, spread across the part so there is never a long stretch without a named scripture. It CONFIRMS the assigned verse; it does not stop you from walking it.\n'
+      : '- Cross-references are OFF -- do NOT pull in other books, apocrypha, or sealed scrolls. Stay locked on walking the assigned band.\n';
     return (
       'HARD VERSE DISCIPLINE (LOCAL LLM — MANDATORY):\n' +
       '- Never cite another chapter as though it belongs to ' +
@@ -95,7 +102,7 @@
       refLabel(meta.book, meta.chapter, meta.range.start, meta.range.end) +
       '.\n' +
       '- Every major teaching point must anchor to a verse in this band (or a clearly labeled cross-reference).\n' +
-      '- Cross-references must NOT replace progression through the assigned verses.\n' +
+      crossRefLine +
       '- Census counts, shekel totals, and other numeric facts must match the KJV chapter text exactly (do not guess or recompute).\n'
     );
   }
@@ -231,7 +238,11 @@
       refLabel(meta.book, meta.chapter, range.start, range.end) +
       ' ONLY (' +
       meta.verseCount +
-      ' verses in full chapter). Primary exposition must use ONLY these verses; cross-refs stay one sentence.\n';
+      ' verses in full chapter). Primary exposition must use ONLY these verses.' +
+      (meta.wantCrossRefs
+        ? ' Named supporting scripture (book chapter verse) from other books is MANDATORY and must flow under the band -- it confirms the assigned verse, it does not replace it.'
+        : ' Cross-refs are OFF -- do not pull in other books.') +
+      '\n';
     return hdr + out.join('\n');
   }
 
@@ -292,6 +303,17 @@
     };
   }
 
+  function isCrossRefsToggleOn() {
+    try {
+      if (typeof document !== 'undefined') {
+        var el = document.getElementById('toggleCrossReferences');
+        if (el) return !!el.checked;
+      }
+      if (global && typeof global.isCrossReferencesActive === 'function') return !!global.isCrossReferencesActive();
+    } catch (e) {}
+    return false;
+  }
+
   function buildPartMeta(partNum, state) {
     var totalParts = state.totalParts || global.selectedPartCount;
     var range = getVerseRange(partNum, totalParts, state.verseCount);
@@ -304,6 +326,7 @@
       range: range,
       coveredThrough: state.coveredThrough || 0,
       wordTarget: wordsForVerseBand(range),
+      wantCrossRefs: isCrossRefsToggleOn(),
     };
   }
 
