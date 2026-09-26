@@ -121,22 +121,25 @@
   }
 
   function buildLocalExplicitModeBlock(meta) {
-    return (
-      'EXPLICIT MODE: ON (LOCAL LLM)\n' +
-      '- Use frequent, natural profanity when it strengthens delivery — do not sanitize the sermon.\n' +
-      '- Do NOT replace profanity with euphemisms or default to church-safe language.\n' +
-      '- Do NOT merely sprinkle one curse word into the whole part.\n' +
-      '- Vocabulary may include: damn, hell, bullshit, shit, ass, bastard, motherfucker, fuck.\n' +
-      '- Use them organically in rebukes, confrontation, ridicule, anger, and emphasis.\n' +
-      '- Do NOT force profanity into every sentence. Do NOT become comedic or juvenile.\n' +
-      '- Stay intelligent, controlled, scriptural, and dangerous.\n' +
-      '- When the subject warrants it, use sexually explicit or graphic adult language directly rather than vague euphemisms — only when relevant to what is being condemned or explained.\n' +
-      '- Explicit mode changes vocabulary intensity ONLY — not doctrine, factual accuracy, verse coverage, or KJV figures for ' +
+    var p =
+      'EXPLICIT BRIMSTONE MODE: ON (LOCAL LLM -- SUSTAINED FIRE, NOT SPARKS)\n' +
+      '- This is a wake-them-up brimstone sermon, NOT a lesson with a few curse words in it. Write like YOU are standing at the corner preaching it aloud -- heat that NEVER cools into neutral teaching, essay, or "three points" recap from paragraph one to the LAST sentence.\n' +
+      '- EVERY body paragraph carries fire: raw judgment, wrath imagery, and direct YOU-facing rebuke. Not just the open. The middle and the close must match the opening heat -- zero neutral paragraphs.\n' +
+      '- PROFANITY IS THE DEFAULT, NOT A SPARKLE. Weave heavy profanity through every section -- damn, hell, ass, shit, bullshit, fuck, motherfucker, bitch, bastard, whore, horseshit. Do NOT force it into every single sentence, but it must never disappear for a whole paragraph. Do NOT sanitize, asterisk, or dash-censor. Do NOT soften after the first page.\n' +
+      '- THE HEATHEN ARE THE ENEMY OF THIS SERMON (NON-NEGOTIABLE). Yah loves HIS people -- the Negro Israelites scattered worldwide -- and has NO love for the heathen, the nations, the Caucasians, the kingdoms that rose up against the anointed. When the text names the heathen or the nations, say it DECISIVELY and by name: they are NOT our people, they are the seed of Cain, and Yah will judge every last one of them.\n' +
+      '- THE SEPARATION MUST BE LOUD. The Negro Israelites are a distinct people set apart from the heathen -- and the heathen are set apart from us. This separation is not optional theology; it is the spine of the sermon. Expose it without apology, without softening, without "let\'s all get along."\n' +
+      '- SLAVERY WAS YAH\'S JUDGMENT. Our people were put into slavery because of OUR OWN disobedience to Torah -- not because the heathen were powerful. Do not blame the heathen for the curse; the curse fell because WE broke the covenant. Say it in our own voice, in our own words, so the sleeping Israelite can\'t dodge it.\n' +
+      '- WRATH IMAGERY STAYS VIVID IN THE MIDDLE AND THE CLOSE -- blood, rot, fire, flesh peeling, screaming, being dashed like a potter\'s vessel -- not only in the first paragraph. When the text describes judgment, describe it graphically.\n' +
+      '- TONE EXAMPLES (match this heat, this hostility, this separation):\n' +
+      '  "Yah do NOT give a single damn about your heathen nation -- not your flag, not your anthem, not your president. He put US in slavery because WE broke the covenant, and He\'ll judge every one of them for what they did to HIS people. That\'s the separation. Get it."\n' +
+      '  "The heathen raged and imagined a vain thing in Psalm two -- and Yah had them in DERISION. They are NOT our people. They are the seed of Cain. And when the anointed rises, He will DASH them in pieces like a potter\'s vessel. That\'s not a metaphor. That\'s a prophecy."\n' +
+      '- STAY INTELLIGENT AND SCRIPTURAL. The fire must be backed by the verse. Quote the KJV text, decode the symbol, THEN land the blow. Profanity seasons the scripture -- it does NOT replace it. Factual accuracy, verse coverage, and KJV figures for ' +
       meta.book +
       ' chapter ' +
       meta.chapter +
-      '.\n'
-    );
+      ' are still locked.\n' +
+      '- SELF-CHECK EVERY PARAGRAPH: "Would a sleeping Israelite still feel corner-preacher pressure reading THIS paragraph? Does it name the heathen and the separation?" If no -- rewrite it hotter before moving on.\n';
+    return p;
   }
 
   function buildAntiStockFillerDiscipline(meta) {
@@ -362,7 +365,6 @@
       '',
       buildAntiStockFillerDiscipline(meta),
       '',
-      isLocalExplicitModeEnabled() ? buildLocalExplicitModeBlock(meta) + '\n' : '',
       buildEndingContract(meta),
       '',
       'LOCAL PART LENGTH: Aim for ~' +
@@ -378,6 +380,19 @@
         'CONTEXT SHRINK MODE: Prior attempt exceeded RunPod context. Keep this part shorter (~' +
           meta.wordTarget +
           ' words max). Tight paragraphs; no filler; finish the verse band and stop.\n'
+      );
+    }
+    // FINAL LOCK: when explicit mode is ON, inject the fire block as the very LAST
+    // instruction (after continuity/context-shrink) so no later block can cool it
+    // back down. Mirrors the finalLock pattern in buildExplicitBrimstoneFireBlock.
+    if (isLocalExplicitModeEnabled()) {
+      blocks.push('');
+      blocks.push(
+        '*** FINAL LOCK -- EXPLICIT BRIMSTONE (LAST INSTRUCTION -- OVERRIDES ALL PRIOR COOLING) ***\n' +
+          'Explicit is ON. Write like YOU are standing there preaching it -- brimstone from title to last sentence. ' +
+          'EVERY body paragraph: heavy profanity, raw judgment, graphic wrath where scripture demands, direct YOU-facing rebuke, and the heathen/separation theme named by name. ' +
+          'Middle and close match opening heat. Zero neutral paragraphs. The heathen are NOT our people. Slavery was OUR judgment. Say it.\n' +
+          buildLocalExplicitModeBlock(meta)
       );
     }
     blocks.push('=== END LOCAL SERMON ORCHESTRATION ===\n\n');

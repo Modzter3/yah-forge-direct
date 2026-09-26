@@ -98,10 +98,13 @@ const degOk = P.detectDegeneration('Verse eighteen lists Libni and Shimei for th
 if (degOk) throw new Error('verse-only part 2 open should pass filler check: ' + degOk.reason);
 
 const explicitBlock = P.buildLocalExplicitModeBlock({ book: 'Numbers', chapter: 3 });
-if (!/EXPLICIT MODE: ON/.test(explicitBlock) || !/motherfucker/.test(explicitBlock)) {
+if (!/EXPLICIT BRIMSTONE MODE: ON/.test(explicitBlock) || !/motherfucker/.test(explicitBlock)) {
   throw new Error('local explicit mode block missing required guidance');
 }
-if (!/factual accuracy/.test(explicitBlock)) {
+if (!/HEATHEN/.test(explicitBlock) || !/SEPARATION/.test(explicitBlock) || !/SLAVERY/.test(explicitBlock)) {
+  throw new Error('explicit block must carry the heathen/separation/slavery doctrine');
+}
+if (!/Factual accuracy/.test(explicitBlock) || !/KJV figures/.test(explicitBlock)) {
   throw new Error('explicit block must preserve accuracy discipline');
 }
 
