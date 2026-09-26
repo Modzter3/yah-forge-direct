@@ -2711,7 +2711,7 @@ opts=opts||{};
 var finalLock=!!opts.finalLock;
 if(finalLock){
 var fp='*** FINAL LOCK — EXPLICIT BRIMSTONE (LAST INSTRUCTION) ***\n';
-fp+='Explicit is ON. Write like YOU are standing there preaching it — brimstone from title to last sentence. EVERY body paragraph: profanity or raw judgment, graphic wrath where scripture demands, direct YOU-facing rebuke. Middle and close match opening heat. Zero neutral paragraphs.\n\n';
+fp+='Explicit is ON. Write like YOU are standing there preaching it — brimstone from title to last sentence. Vulgar is the DEFAULT, not a seasoning: if a line can be clean or vulgar, make it VULGAR. EVERY body paragraph: heavy unfiltered profanity (damn, hell, ass, shit, bullshit, fuck, motherfucker, bitch, bastard, whore, piss, cock, cunt — never absent for a whole paragraph), raw judgment, graphic wrath where scripture demands, direct YOU-facing rebuke. Cuss AT the heathen, AT false preachers, AT sleeping Israel — name the target, drop the word. No sanitizing, no asterisks, no church-safe hedging. Middle and close match opening heat. Zero neutral paragraphs.\n\n';
 return fp;
 }
 var wantRoughBez=!!opts.wantRoughBez;
@@ -2727,10 +2727,12 @@ p+='- Paragraph ONE sets the fire; paragraph TWO through the LAST must stay at t
 p+='- Forbidden mid-sermon tone shifts: street fire -> neutral teaching -> comfortable lesson -> "three points" recap.\n';
 p+='- Forbidden closers that sound like a seminary paper, podcast sign-off, or therapeutic softening.\n';
 p+='- If ANY paragraph lacks profane/raw judgment pressure OR visceral wrath imagery, it FAILED -- rewrite that paragraph hotter before moving on.\n\n';
-p+='PROFANITY & RAW JUDGMENT:\n';
-p+='- Heavy profanity woven through EVERY section -- damn, hell, ass, shit, bullshit, fuck, motherfucker, bitch, horseshit -- not just the opening.\n';
-p+='- Call liars liars. Call sleeping Israel out by name. Street judgment when scripture demands it.\n';
-p+='- DO NOT sanitize. DO NOT asterisk or dash-censor. DO NOT soften after paragraph three.\n\n';
+p+='PROFANITY & RAW JUDGMENT — VULGAR IS THE DEFAULT, NOT A SEASONING:\n';
+p+='- When Explicit is ON, the DEFAULT voice is the unfiltered, no-censor, street-corner version. Vulgar is not a spice you sprinkle — it is the BREAD. If a sentence can be written clean OR vulgar, write it VULGAR.\n';
+p+='- Heavy, sustained, unapologetic profanity in EVERY section — damn, hell, ass, shit, bullshit, fuck, fucking, fuckin, motherfucker, bitch, bastard, whore, slut, piss, pissed, cock, cunt, horseshit — not just the opening, not just once per page. It must never disappear for a whole paragraph.\n';
+p+='- Call liars liars. Call sleeping Israel out by name. Street judgment when scripture demands it. Cuss AT the heathen, AT the false preachers, AT the sleeping Israelite — name the target and drop the word on it.\n';
+p+='- DO NOT sanitize. DO NOT asterisk or dash-censor. DO NOT soften after paragraph three. DO NOT default to "church-safe" when the fire is up. If the verse is about judgment, say the vulgar word. If the verse is about sexual sin, name the body part. No euphemisms.\n';
+p+='- Vulgar ≠ juvenile. The vulgarity must be INTELLIGENT — the cuss word lands because the SCRIPTURE behind it is true, not because you threw in a word for shock. The verse is the hammer; the profanity is the force behind the swing.\n\n';
 p+=buildWordHammerDoctrineBlock();
 p+='FORBIDDEN EXPLICIT-MODE DRIFT (AUTO-FAIL):\n';
 p+='- Essay voice: "one must," "the tragedy of," "when systemic collapse arrives," "functions as both," "spiritual archetype," "consummate redemption"\n';
@@ -5392,8 +5394,8 @@ var lateCount=paras.length-half;
 if(openFire>=Math.max(1,Math.floor(openThirdCount*0.5))&&lateFire<Math.max(1,Math.floor(lateCount*0.25)))return true;
 if(openProfane>=1&&lateProfane===0&&lateCount>=3)return true;
 if(t.length>2500){
-var profaneHits=(t.match(/\b(damn|hell|ass|shit|bullshit|fuck|motherfucker|bitch|bastard|horseshit)\b/gi)||[]).length;
-if(profaneHits<3)return true;
+var profaneHits=(t.match(/\b(damn|hell|ass|shit|bullshit|fuck|fucking|fuckin|motherfucker|bitch|bastard|whore|slut|piss|pissed|cock|cunt|horseshit)\b/gi)||[]).length;
+if(profaneHits<5)return true;
 }
 for(var j=0;j<paras.length;j++){
 var lp=paras[j];
@@ -5570,9 +5572,9 @@ p+='Your previous output opened hot then cooled into neutral teaching, seminary 
 p+='FORBIDDEN (ZERO TOLERANCE):\n';
 p+='- Opening burst then essay/seminary/lesson tone in middle or close\n';
 p+='- "One must," passive third person, "the tragedy of," diaspora sociology, **Theme:** headers\n';
-p+='- Sparse profanity in a long part -- cuss words belong in EVERY section, not paragraph one only\n';
+p+='- Sparse or sanitized profanity in a long part -- VULGAR IS THE DEFAULT. Cuss words belong in EVERY section, not paragraph one only. If a line can be clean or vulgar, make it VULGAR. No church-safe hedging, no asterisks, no dash-censors.\n';
 p+='- Comfortable closers: "in conclusion," "three points," "the takeaway," gentle teaching voice\n\n';
-p+='REQUIRED: Every paragraph stays wake-them-up pressure -- profane/raw judgment, graphic wrath, direct YOU-facing corner heat.\n\n';
+p+='REQUIRED: Every paragraph stays wake-them-up pressure -- heavy unfiltered profanity (damn, hell, ass, shit, bullshit, fuck, motherfucker, bitch, bastard, whore, piss, cock, cunt), raw judgment, graphic wrath, direct YOU-facing corner heat. Cuss AT the heathen, AT false preachers, AT sleeping Israel.\n\n';
 p+='BAD OUTPUT (do not repeat this cooling pattern):\n"'+String(badReply||'').slice(0,900).replace(/"/g,"'")+'..."\n\n';
 p+=buildExplicitBrimstoneFireBlock({context:isTheatreModeActive()?'theatre':'sermon',wantRoughBez:isRoughBezForgeActive(),wantYahStory:isYahStoryModeActive()});
 p+=buildPartPrompt(partNum);
