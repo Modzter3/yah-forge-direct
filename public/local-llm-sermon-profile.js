@@ -138,7 +138,8 @@
       ' chapter ' +
       meta.chapter +
       ' are still locked.\n' +
-      '- SELF-CHECK EVERY PARAGRAPH: "Would a sleeping Israelite still feel corner-preacher pressure reading THIS paragraph? Does it name the heathen and the separation?" If no -- rewrite it hotter before moving on.\n';
+      '- SELF-CHECK EVERY PARAGRAPH: "Would a sleeping Israelite still feel corner-preacher pressure reading THIS paragraph? Does it name the heathen and the separation?" If no -- rewrite it hotter before moving on.\n' +
+       '- NO REPEATED DOCTRINE BOILERPLATE: If a doctrine declaration (the Gate of Salvation, the heathen / seed-of-Cain verdict, slavery-as-our-own-fault, etc.) must be spoken, land it ONCE, in fresh, verse-tied words, at the point where the text earns it. Do NOT paste the same long declaration paragraph at the end of this part, and do NOT re-declare it near-verbatim from an earlier part. The listener should hear it declared in NEW language each time, not a copy-paste of the last part\'s closer.\n';
     return p;
   }
 
@@ -147,6 +148,7 @@
       'NO STOCK FILLER (LOCAL LLM — MANDATORY):\n' +
       '- Do NOT reuse canned transition hype between parts or within a part.\n' +
       '- Banned (and close variants): "fire is still burning/scorching," "wipe the sweat," "keep listening," "your choice," "gathering fuel," "keep burning/dying in your ignorance."\n' +
+      '- Do NOT re-declare the same long doctrine paragraph (Gate of Salvation, heathen / seed-of-Cain verdict, slavery verdict) near-verbatim in more than one place, whether inside this part or carried over from an earlier part. Each declaration gets fresh, verse-tied wording; the doctrine stays, the copy-paste does not.\n' +
       '- Every paragraph must advance the verse, argument, doctrine, or application — not recycled aggression.\n' +
       '- Intensity must come from the text and the point you are making, not repeated sermon-DJ catchphrases.\n' +
       (meta.partNum > 1
@@ -415,6 +417,11 @@
         'NO STOCK FILLER: Remove recycled hype ("fire is still burning," "wipe the sweat," "keep listening," "your choice," etc.). ' +
         'Each paragraph must advance verse, doctrine, or application — fresh wording only.\n\n';
     }
+    if (/boilerplate|re-declar|doctrine paragraph|reused from an earlier part/i.test(String(reason || ''))) {
+      p +=
+        'NO REPEATED DOCTRINE BOILERPLATE: You pasted the same long declaration (Gate of Salvation / heathen verdict / slavery verdict) more than once or echoed it from an earlier part. ' +
+        'Keep the doctrine but restate it in FRESH, verse-tied language — declare it at most once in this part, never a near-verbatim copy of a previous part. Do not paste the same closing paragraph twice.\n\n';
+    }
     if (/explicit|brimstone|profan|sanitiz|church-safe/i.test(String(reason || '')) && isLocalExplicitModeEnabled()) {
       p += buildLocalExplicitModeBlock(meta) + '\n';
     }
@@ -525,6 +532,92 @@
     return null;
   }
 
+  /**
+   * Detect a long near-identical "boilerplate" sentence (e.g. a Gate-of-Salvation
+   * declaration) repeated 2+ times within a part OR echoed from an earlier part.
+   * This is the failure mode the per-part doctrine mandates in explicit mode tend
+   * to produce: the same long paragraph pasted (with light paraphrase) at the end
+   * of multiple parts. The other degeneration checks only look at the very end of
+   * one part, so they miss a repeat that is spaced one part (~1-2k words) away.
+   */
+  function detectBoilerplateRepeat(text, opts) {
+    opts = opts || {};
+    var partNum = parseInt(opts.partNum, 10) || 1;
+    var prior = normalizeWs(opts.priorPartsText || '');
+    var flat = String(text || '').replace(/\s+/g, ' ').trim();
+    var sentences = flat.match(/[^.!?]+[.!?]+/g) || [];
+    var longSents = [];
+    for (var i = 0; i < sentences.length; i++) {
+      var s = normalizeWs(sentences[i]);
+      if (s.length >= 90) longSents.push(s);
+    }
+    // Paragraph-level: catch the same long block (a doctrine declaration) repeated.
+    var paras = String(text || '')
+      .split(/\n\n+/)
+      .map(normalizeWs)
+      .filter(function (p) {
+        return p.length >= 200;
+      });
+    if (paras.length >= 2) {
+      for (var a = 0; a < paras.length; a++) {
+        var paraRef = paras[a];
+        var paraMatches = 0;
+        for (var b = 0; b < paras.length; b++) {
+          if (a === b) continue;
+          var otherP = paras[b];
+          if (otherP === paraRef) {
+            paraMatches++;
+          } else if (
+            otherP.length >= 200 &&
+            otherP.indexOf(paraRef.slice(0, 120)) === 0 &&
+            otherP.slice(-120) === paraRef.slice(-120)
+          ) {
+            paraMatches++;
+          }
+        }
+        if (paraMatches >= 1) {
+          return {
+            reason:
+              'same long boilerplate paragraph (e.g. a doctrine declaration) repeated ' +
+              (paraMatches + 1) +
+              ' times within this part',
+          };
+        }
+        if (partNum > 1 && prior && prior.indexOf(paraRef.slice(0, 120)) !== -1) {
+          return { reason: 'boilerplate declaration block reused from an earlier part' };
+        }
+      }
+    }
+    // Sentence-level: catch the same long sentence (100+ chars) repeated 3+ times.
+    for (var a2 = 0; a2 < longSents.length; a2++) {
+      var ref = longSents[a2];
+      var refHead = ref.slice(0, 70);
+      var withinPart = 0;
+      for (var b2 = 0; b2 < longSents.length; b2++) {
+        if (a2 === b2) continue;
+        var other = longSents[b2];
+        if (
+          other === ref ||
+          (other.indexOf(refHead) === 0 && Math.abs(other.length - ref.length) < 120)
+        ) {
+          withinPart++;
+        }
+      }
+      if (withinPart >= 2) {
+        return {
+          reason:
+            'same long boilerplate sentence (e.g. a doctrine declaration) repeated ' +
+            (withinPart + 1) +
+            ' times within this part',
+        };
+      }
+      if (partNum > 1 && prior && prior.indexOf(refHead) !== -1) {
+        return { reason: 'boilerplate declaration block reused from an earlier part' };
+      }
+    }
+    return null;
+  }
+
   function detectDegeneration(text, opts) {
     opts = opts || {};
     var streaming = !!opts.streaming;
@@ -572,6 +665,8 @@
     if (chunkLoop) return chunkLoop;
 
     if (!streaming) {
+      var boilerplate = detectBoilerplateRepeat(t, opts);
+      if (boilerplate) return boilerplate;
       var stock = detectStockSermonFiller(t, opts);
       if (stock) return stock;
     }
@@ -1138,6 +1233,7 @@
       if (typeof n === 'number' && n > 4096) global.__LOCAL_LLM_EFFECTIVE_CONTEXT = Math.floor(n);
     },
     detectDegeneration: detectDegeneration,
+    detectBoilerplateRepeat: detectBoilerplateRepeat,
     validateScriptureReferences: validateScriptureReferences,
     updateStateAfterPart: updateStateAfterPart,
     registerStreamAbort: registerStreamAbort,

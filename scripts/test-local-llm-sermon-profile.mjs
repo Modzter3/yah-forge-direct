@@ -97,6 +97,48 @@ const degOk = P.detectDegeneration('Verse eighteen lists Libni and Shimei for th
 });
 if (degOk) throw new Error('verse-only part 2 open should pass filler check: ' + degOk.reason);
 
+// --- Boilerplate / repeated doctrine-block detection ---------------------------
+// A long declaration pasted twice inside a single part must trip the detector.
+const gateBlock =
+  'Yah saved the Negro people who carry the true covenant, and only them, and the gate is shut in the faces of the other nations.' +
+  ' The white nations, the Khazar Japhet who call themselves Jews, the European churches, and every Babylonian religion have no part in this salvation at all.';
+const pad = 'Verse exposition that advances the band. '.repeat(12);
+const boilerSamePart = pad + gateBlock + '\n\n' + pad + gateBlock;
+const degBoiler = P.detectDegeneration(boilerSamePart, { partNum: 1 });
+if (!degBoiler || !/boilerplate/i.test(degBoiler.reason)) {
+  throw new Error(
+    'should detect same boilerplate block repeated within a part: ' + (degBoiler && degBoiler.reason)
+  );
+}
+// A long declaration that was already said in an earlier part must trip it on a later part.
+const boilerReuse = pad + gateBlock;
+const degReuseGate = P.detectDegeneration(boilerReuse, {
+  partNum: 2,
+  priorPartsText: 'Part one earlier. ' + gateBlock + ' More teaching here.',
+});
+if (!degReuseGate || !/earlier part/i.test(degReuseGate.reason)) {
+  throw new Error(
+    'should detect boilerplate declaration reused from an earlier part: ' +
+      (degReuseGate && degReuseGate.reason)
+  );
+}
+// A part with fresh, distinct teaching (no repeated long block) must NOT trip it.
+const distinctTeaching =
+  pad +
+  gateBlock +
+  '\n\n' +
+  'Then the text turns to the census of the Levites, counted by their families, and the keeper of the ark is named and set over the charge of the sanctuary, a wholly different long teaching point.' +
+  '\n\n' +
+  pad;
+const degFresh = P.detectDegeneration(distinctTeaching, { partNum: 1 });
+if (degFresh && /boilerplate/i.test(degFresh.reason)) {
+  throw new Error('fresh distinct part should not be flagged as boilerplate: ' + degFresh.reason);
+}
+// The direct detector should agree with the wrapper.
+if (!P.detectBoilerplateRepeat || !P.detectBoilerplateRepeat(boilerSamePart, { partNum: 1 })) {
+  throw new Error('detectBoilerplateRepeat should flag a within-part repeat');
+}
+
 const explicitBlock = P.buildLocalExplicitModeBlock({ book: 'Numbers', chapter: 3 });
 if (!/EXPLICIT BRIMSTONE MODE: ON/.test(explicitBlock) || !/motherfucker/.test(explicitBlock)) {
   throw new Error('local explicit mode block missing required guidance');
