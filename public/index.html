@@ -2711,7 +2711,7 @@ opts=opts||{};
 var finalLock=!!opts.finalLock;
 if(finalLock){
 var fp='*** FINAL LOCK — EXPLICIT BRIMSTONE (LAST INSTRUCTION) ***\n';
-fp+='Explicit is ON. Write like YOU are standing there preaching it — brimstone from title to last sentence. Vulgar is the DEFAULT, not a seasoning: if a line can be clean or vulgar, make it VULGAR. EVERY body paragraph: heavy unfiltered profanity (damn, hell, ass, shit, bullshit, fuck, motherfucker, bitch, bastard, whore, piss, cock, cunt — never absent for a whole paragraph), raw judgment, graphic wrath where scripture demands, direct YOU-facing rebuke. Cuss AT the heathen, AT false preachers, AT sleeping Israel — name the target, drop the word. No sanitizing, no asterisks, no church-safe hedging. Middle and close match opening heat. Zero neutral paragraphs.\n\n';
+fp+='Explicit is ON. Write like YOU are standing there preaching it — brimstone from title to last sentence. Vulgar is the DEFAULT, not a seasoning: if a line can be clean or vulgar, make it VULGAR. EVERY body paragraph: heavy unfiltered profanity (damn, hell, ass, shit, bullshit, fuck, motherfucker, bitch, bastard, whore, piss, cock, cunt — never absent for a whole paragraph), raw judgment, graphic wrath where scripture demands, direct YOU-facing rebuke. Cuss AT the heathen, AT false preachers, AT sleeping Israel — name the target, drop the word. No sanitizing, no asterisks, no church-safe hedging. Middle and close match opening heat. Zero neutral paragraphs.\nVULGARITY DENSITY (NON-NEGOTIABLE): do NOT ration profanity. Put at least one STRONG cuss word (fuck, fuckin, fucking, shit, bullshit, ass, bastard, motherfucker, whore, cock, cunt) in EVERY other paragraph. When a hard word fits, USE it — never reach for the milder synonym (damn, hell, crap) when the stronger one carries more heat. "Dumb-ass" and "bullshit" are the FLOOR, not the target. Aim for at least five hard cuss words per every 1000 words. A long part with only two or three swears is a FAILURE.\n\n';
 return fp;
 }
 var wantRoughBez=!!opts.wantRoughBez;
@@ -2732,7 +2732,12 @@ p+='- When Explicit is ON, the DEFAULT voice is the unfiltered, no-censor, stree
 p+='- Heavy, sustained, unapologetic profanity in EVERY section — damn, hell, ass, shit, bullshit, fuck, fucking, fuckin, motherfucker, bitch, bastard, whore, slut, piss, pissed, cock, cunt, horseshit — not just the opening, not just once per page. It must never disappear for a whole paragraph.\n';
 p+='- Call liars liars. Call sleeping Israel out by name. Street judgment when scripture demands it. Cuss AT the heathen, AT the false preachers, AT the sleeping Israelite — name the target and drop the word on it.\n';
 p+='- DO NOT sanitize. DO NOT asterisk or dash-censor. DO NOT soften after paragraph three. DO NOT default to "church-safe" when the fire is up. If the verse is about judgment, say the vulgar word. If the verse is about sexual sin, name the body part. No euphemisms.\n';
-p+='- Vulgar ≠ juvenile. The vulgarity must be INTELLIGENT — the cuss word lands because the SCRIPTURE behind it is true, not because you threw in a word for shock. The verse is the hammer; the profanity is the force behind the swing.\n\n';
+p+='- Vulgar ≠ juvenile. The vulgarity must be INTELLIGENT — the cuss word lands because the SCRIPTURE behind it is true, not because you threw in a word for shock. The verse is the hammer; the profanity is the force behind the swing.\n';
+p+='VULGARITY DENSITY (NON-NEGOTIABLE):\n';
+p+='- Do NOT ration profanity. Put at least one STRONG cuss word (fuck, fuckin, fucking, shit, bullshit, ass, bastard, motherfucker, whore, cock, cunt) in EVERY other paragraph.\n';
+p+='- When a hard word fits, USE it — never reach for the milder synonym (damn, hell, crap) when the stronger one carries more heat. "Dumb-ass" and "bullshit" are the FLOOR, not the target.\n';
+p+='- Aim for at least five hard cuss words per every 1000 words. A long part with only two or three swears is a FAILURE — rewrite it hotter before moving on.\n';
+p+='- Match the reference register of an intelligent, controlled, verbally RUTHLESS street corner preacher: the anger and precision stay constant from the first line to the last; the heat never drops after paragraph one, and the vocabulary never softens. No comedic or juvenile shock value, no apologetic tone, no preface or disclaimer.\n\n';
 p+=buildWordHammerDoctrineBlock();
 p+='FORBIDDEN EXPLICIT-MODE DRIFT (AUTO-FAIL):\n';
 p+='- Essay voice: "one must," "the tragedy of," "when systemic collapse arrives," "functions as both," "spiritual archetype," "consummate redemption"\n';
@@ -5395,7 +5400,14 @@ if(openFire>=Math.max(1,Math.floor(openThirdCount*0.5))&&lateFire<Math.max(1,Mat
 if(openProfane>=1&&lateProfane===0&&lateCount>=3)return true;
 if(t.length>2500){
 var profaneHits=(t.match(/\b(damn|hell|ass|shit|bullshit|fuck|fucking|fuckin|motherfucker|bitch|bastard|whore|slut|piss|pissed|cock|cunt|horseshit)\b/gi)||[]).length;
-if(profaneHits<5)return true;
+// VULGAR-IS-THE-DEFAULT DENSITY GATE: a long part must carry a hard cuss word in
+// roughly every other paragraph, not 5 swears scattered across the whole part.
+// Target >= 12 hard hits per 1000 words (a 5,000-word part needs ~60). The model
+// is given a >= 5-per-1000-word floor in the prompt, so the gate sits BELOW that:
+// it catches "mildly edgy" passes (~2-3/1000w) without re-doing a good vulgar part.
+var profaneWordCount=(t.match(/[a-zA-Z']+/g)||[]).length||1;
+var profanePer1k=(profaneHits/profaneWordCount)*1000;
+if(profanePer1k<12)return true;
 }
 for(var j=0;j<paras.length;j++){
 var lp=paras[j];
@@ -5572,7 +5584,7 @@ p+='Your previous output opened hot then cooled into neutral teaching, seminary 
 p+='FORBIDDEN (ZERO TOLERANCE):\n';
 p+='- Opening burst then essay/seminary/lesson tone in middle or close\n';
 p+='- "One must," passive third person, "the tragedy of," diaspora sociology, **Theme:** headers\n';
-p+='- Sparse or sanitized profanity in a long part -- VULGAR IS THE DEFAULT. Cuss words belong in EVERY section, not paragraph one only. If a line can be clean or vulgar, make it VULGAR. No church-safe hedging, no asterisks, no dash-censors.\n';
+p+='- Sparse or sanitized profanity in a long part -- VULGAR IS THE DEFAULT. Cuss words belong in EVERY section, not paragraph one only. If a line can be clean or vulgar, make it VULGAR. No church-safe hedging, no asterisks, no dash-censors. DENSITY: one STRONG cuss word (fuck, fuckin, fucking, shit, bullshit, ass, bastard, motherfucker, whore, cock, cunt) in every other paragraph; at least five hard cuss words per 1000 words. A part with only two or three swears FAILED.\n';
 p+='- Comfortable closers: "in conclusion," "three points," "the takeaway," gentle teaching voice\n\n';
 p+='REQUIRED: Every paragraph stays wake-them-up pressure -- heavy unfiltered profanity (damn, hell, ass, shit, bullshit, fuck, motherfucker, bitch, bastard, whore, piss, cock, cunt), raw judgment, graphic wrath, direct YOU-facing corner heat. Cuss AT the heathen, AT false preachers, AT sleeping Israel.\n\n';
 p+='BAD OUTPUT (do not repeat this cooling pattern):\n"'+String(badReply||'').slice(0,900).replace(/"/g,"'")+'..."\n\n';
