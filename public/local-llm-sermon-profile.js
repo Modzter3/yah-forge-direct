@@ -168,7 +168,7 @@
       meta.chapter +
       ' are still locked.\n' +
       '- SELF-CHECK EVERY PARAGRAPH: "Would a sleeping Israelite still feel corner-preacher pressure reading THIS paragraph? Does it name the heathen and the separation?" If no -- rewrite it hotter before moving on.\n' +
-       '- NO REPEATED DOCTRINE BOILERPLATE: If a doctrine declaration (the Gate of Salvation, the heathen / seed-of-Cain verdict, slavery-as-our-own-fault, etc.) must be spoken, land it ONCE, in fresh, verse-tied words, at the point where the text earns it. Do NOT paste the same long declaration paragraph at the end of this part, and do NOT re-declare it near-verbatim from an earlier part. The listener should hear it declared in NEW language each time, not a copy-paste of the last part\'s closer.\n';
+       '- NO GATE-OF-SALVATION SPAM: Do NOT paste mandatory "Gate of Salvation" closers or per-part salvation formulas. Do NOT end every part with the same Negro-only / gate-shut paragraph. Identity only when the verse earns it, in fresh words.\n';
     return p;
   }
 
@@ -177,7 +177,7 @@
       'NO STOCK FILLER (LOCAL LLM — MANDATORY):\n' +
       '- Do NOT reuse canned transition hype between parts or within a part.\n' +
       '- Banned (and close variants): "fire is still burning/scorching," "wipe the sweat," "keep listening," "your choice," "gathering fuel," "keep burning/dying in your ignorance."\n' +
-      '- Do NOT re-declare the same long doctrine paragraph (Gate of Salvation, heathen / seed-of-Cain verdict, slavery verdict) near-verbatim in more than one place, whether inside this part or carried over from an earlier part. Each declaration gets fresh, verse-tied wording; the doctrine stays, the copy-paste does not.\n' +
+      '- Do NOT re-declare the same long doctrine paragraph (Gate of Salvation spam, heathen / seed-of-Cain verdict, slavery verdict) near-verbatim in more than one place. No stock closers; advance the assigned verses.\n' +
       '- Every paragraph must advance the verse, argument, doctrine, or application — not recycled aggression.\n' +
       '- Intensity must come from the text and the point you are making, not repeated sermon-DJ catchphrases.\n' +
       (meta.partNum > 1
@@ -450,8 +450,8 @@
     }
     if (/boilerplate|re-declar|doctrine paragraph|reused from an earlier part/i.test(String(reason || ''))) {
       p +=
-        'NO REPEATED DOCTRINE BOILERPLATE: You pasted the same long declaration (Gate of Salvation / heathen verdict / slavery verdict) more than once or echoed it from an earlier part. ' +
-        'Keep the doctrine but restate it in FRESH, verse-tied language — declare it at most once in this part, never a near-verbatim copy of a previous part. Do not paste the same closing paragraph twice.\n\n';
+        'NO DOCTRINE BOILERPLATE: You pasted the same long declaration (especially Gate of Salvation spam) more than once or echoed it from an earlier part. ' +
+        'Remove stock closers; keep identity touches only where the verse earns them, in fresh language. Advance the assigned band.\n\n';
     }
     if (/explicit|brimstone|profan|sanitiz|church-safe/i.test(String(reason || '')) && isLocalExplicitModeEnabled()) {
       p += buildLocalExplicitModeBlock(meta) + '\n';
