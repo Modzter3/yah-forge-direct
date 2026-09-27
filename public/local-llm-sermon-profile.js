@@ -5,7 +5,7 @@
   var WORD_MIN = 1800;
   var WORD_TARGET = 2200;
   var WORD_MAX = 2800;
-  var MAX_LOCAL_LLM_RETRIES = 1;
+  var MAX_LOCAL_LLM_RETRIES = 0;
   var MAX_TRUNC_CONTINUATIONS = 1;
   /** Server default LOCAL_LLM_SERMON_MAX_TOKENS — client calc stays below this */
   var SERMON_TOKEN_CEILING = 4800;

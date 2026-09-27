@@ -173,7 +173,7 @@ try {
 if (!fetchAborted) throw new Error('abortStream must abort registered fetch');
 
 if (P.recommendedPartsForChapter(51) !== 5) throw new Error('51 verses -> 5 parts');
-if (P.maxRetries() !== 1) throw new Error('expected exactly 1 local LLM retry');
+if (P.maxRetries() !== 0) throw new Error('expected zero local LLM auto-retries');
 
 const params = P.applyGenerationParams({}, 1, state, { promptCharLength: 12000 });
 if (params.local_llm_sermon !== true) throw new Error('local_llm_sermon flag');
