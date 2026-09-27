@@ -120,6 +120,33 @@
     return false;
   }
 
+  function buildLocalSymbolDepthBlock(meta) {
+    var tabernacle = false;
+    try {
+      if (typeof global.isTabernacleLeviChapterContext === 'function') {
+        var src =
+          meta && meta.book
+            ? { book: meta.book, chapter: meta.chapter }
+            : global.currentChapterSource;
+        tabernacle = global.isTabernacleLeviChapterContext(src);
+      }
+    } catch (e) {
+      tabernacle = false;
+    }
+    var p =
+      'SYMBOL DEPTH (LOCAL LLM -- DEFAULT, NOT OPTIONAL):\n' +
+      '- For EVERY major verse band: quote KJV → decode symbol/name/number/furniture/direction → THEN wrath or application.\n' +
+      '- Cross-reference rivers SUPPORT the assigned verse; they do NOT replace decoding what THIS verse encodes.\n' +
+      '- Minimum one explicit symbol unpack per major verse in this part.\n';
+    if (tabernacle) {
+      p +=
+        '- TABERNACLE/LEVI CHAPTER: Minimum TWO name meanings or short Paleo unpackings in this part (tribes, furniture, compass, strange fire, firstborn/shekel patterns). Follow TABERNACLE & LEVI SYMBOL ATLAS in the base prompt.\n';
+    }
+    p +=
+      '- Explicit brimstone NEVER skips step two. If the draft rebukes without teaching what the verse symbolized, rewrite.\n';
+    return p;
+  }
+
   function buildLocalExplicitModeBlock(meta) {
     var p =
       'EXPLICIT BRIMSTONE MODE: ON (LOCAL LLM -- SUSTAINED FIRE, NOT SPARKS)\n' +
@@ -135,7 +162,7 @@
       '- TONE EXAMPLES (match this heat, this hostility, this separation):\n' +
       '  "Yah do NOT give a single damn about your heathen nation -- not your flag, not your anthem, not your president. He put US in slavery because WE broke the covenant, and He\'ll judge every one of them for what they did to HIS people. That\'s the separation. Get it."\n' +
       '  "The heathen raged and imagined a vain thing in Psalm two -- and Yah had them in DERISION. They are NOT our people. They are the seed of Cain. And when the anointed rises, He will DASH them in pieces like a potter\'s vessel. That\'s not a metaphor. That\'s a prophecy."\n' +
-      '- STAY INTELLIGENT AND SCRIPTURAL. The fire must be backed by the verse. Quote the KJV text, decode the symbol, THEN land the blow. Profanity seasons the scripture -- it does NOT replace it. Factual accuracy, verse coverage, and KJV figures for ' +
+      '- STAY INTELLIGENT AND SCRIPTURAL. The fire must be backed by the verse. Quote the KJV text, decode the symbol/name/number/furniture/direction (symbol layer is mandatory on every major verse), THEN land the blow. Profanity seasons the scripture -- it does NOT replace symbolism or verse decode. Factual accuracy, verse coverage, and KJV figures for ' +
       meta.book +
       ' chapter ' +
       meta.chapter +
@@ -389,12 +416,14 @@
     // FINAL LOCK: when explicit mode is ON, inject the fire block as the very LAST
     // instruction (after continuity/context-shrink) so no later block can cool it
     // back down. Mirrors the finalLock pattern in buildExplicitBrimstoneFireBlock.
+    blocks.push('');
+    blocks.push(buildLocalSymbolDepthBlock(meta));
     if (isLocalExplicitModeEnabled()) {
       blocks.push('');
       blocks.push(
-        '*** FINAL LOCK -- EXPLICIT BRIMSTONE (LAST INSTRUCTION -- OVERRIDES ALL PRIOR COOLING) ***\n' +
+        '*** FINAL LOCK -- EXPLICIT BRIMSTONE (LAST INSTRUCTION -- OVERRIDES COOLING ONLY, NOT SYMBOL DECODE) ***\n' +
           'Explicit is ON. Write like YOU are standing there preaching it -- brimstone from title to last sentence. ' +
-          'EVERY body paragraph: heavy profanity, raw judgment, graphic wrath where scripture demands, direct YOU-facing rebuke, and the heathen/separation theme named by name. ' +
+          'EVERY body paragraph: heavy profanity, raw judgment, graphic wrath where scripture demands, direct YOU-facing rebuke, and the heathen/separation theme named by name -- BUT each paragraph still decodes the verse symbol BEFORE or woven into the fire. ' +
           'Middle and close match opening heat. Zero neutral paragraphs. The heathen are NOT our people. Slavery was OUR judgment. Say it.\n' +
           buildLocalExplicitModeBlock(meta)
       );
