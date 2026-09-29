@@ -1159,17 +1159,18 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <button class="modal-close" onclick="closeModal()">&times;</button>
     </div>
     <div class="gen-options">
-      <label class="toggle-switch" title="Verse-by-verse or point-by-point unraveling. Works with Bez Story — deep breakdown in revelation cadence + news weave."><input type="checkbox" id="toggleBreakdown" checked><span class="toggle-track"></span><span>Breakdown</span></label>
+      <label class="toggle-switch" title="Verse-by-verse or point-by-point unraveling. Works with Bez Story for deep verse-by-verse unraveling in revelation cadence."><input type="checkbox" id="toggleBreakdown" checked><span class="toggle-track"></span><span>Breakdown</span></label>
       <label class="toggle-switch" id="toggleCrossReferencesWrap" title="Sprinkle cross-references to other KJV books (and apocrypha/sealed scrolls when Apocrypha is on) to support points"><input type="checkbox" id="toggleCrossReferences" checked onchange="syncCrossReferenceToggles()"><span class="toggle-track"></span><span><i class="fas fa-link" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Cross Refs</span></label>
       <label class="toggle-switch" id="toggleApocryphaWrap" title="Allow apocrypha and sealed scroll citations in cross-references (requires Cross Refs on)"><input type="checkbox" id="toggleApocrypha" checked onchange="syncCrossReferenceToggles()"><span class="toggle-track"></span><span>Apocrypha</span></label>
       <label class="toggle-switch explicit-toggle"><input type="checkbox" id="toggleExplicit"><span class="toggle-track explicit-track"></span><span><i class="fas fa-fire" style="color:var(--explicit-red);margin-right:3px;font-size:0.7rem;"></i>Explicit</span></label>
       <label class="toggle-switch"><input type="checkbox" id="toggleIsraelite"><span class="toggle-track israelite-track"></span><span><i class="fas fa-users" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Israelite</span></label>
       <label class="toggle-switch"><input type="checkbox" id="toggleRoughBez"><span class="toggle-track rough-track"></span><span><i class="fas fa-bullhorn" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Rough Bezaleel</span></label>
-      <label class="toggle-switch" id="toggleStoryModeWrap" title="Yah first-person revelation cadence — anti-chatbot live voice, names culprits/institutions directly, dated headlines"><input type="checkbox" id="toggleStoryMode"><span class="toggle-track story-track"></span><span><i class="fas fa-book-open" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Yah Story</span></label>
+      <label class="toggle-switch" id="toggleStoryModeWrap" title="Yah first-person revelation cadence — anti-chatbot live voice; name culprits when the verse exposes them (no automatic news weave)"><input type="checkbox" id="toggleStoryMode"><span class="toggle-track story-track"></span><span><i class="fas fa-book-open" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Yah Story</span></label>
       <label class="toggle-switch" id="toggleBezStoryModeWrap" title="Bez revelation cadence — street fire, grammatically sound English, names culprits by full name and what they do (no vague they/the elites)"><input type="checkbox" id="toggleBezStoryMode"><span class="toggle-track bez-story-track"></span><span><i class="fas fa-book-open" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Bez Story</span></label>
       <label class="toggle-switch" id="toggleElevenLabsTagsWrap" title="Eleven v3 medium-density emotional tags — [angry], [whispers], [shouts], etc. woven through every paragraph for TTS"><input type="checkbox" id="toggleElevenLabsTags"><span class="toggle-track" style="background:linear-gradient(135deg,#1a3a2a,#2a6a4a);"></span><span><i class="fas fa-waveform-lines" style="color:#7ec8a0;margin-right:3px;font-size:0.7rem;"></i>Eleven Tags</span></label>
       <label class="toggle-switch" id="toggleSermonEpisodeModeWrap" title="TV season episode-by-episode breakdown across parts"><input type="checkbox" id="toggleSermonEpisodeMode"><span class="toggle-track"></span><span><i class="fas fa-tv" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Episode Mode</span></label>
-      <label class="toggle-switch" title="Live web search: verify facts, find recent news with exact dates, weave dated headlines into the sermon (silent — no URLs in output)"><input type="checkbox" id="toggleWebResearch" checked><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
+      <label class="toggle-switch" title="Live web search: verify facts, roles, and topic context (silent — no URLs in output). Does not weave headlines unless News Weave is also on."><input type="checkbox" id="toggleWebResearch" checked onchange="syncNewsWeaveToggles()"><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
+      <label class="toggle-switch" id="toggleNewsWeaveWrap" title="Weave verified current headlines into the sermon — separate from Yah/Bez Story voice. Requires Web Research."><input type="checkbox" id="toggleNewsWeave" onchange="syncNewsWeaveToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#1a3a5c,#2a6496);"></span><span><i class="fas fa-newspaper" style="color:#7ec8e3;margin-right:3px;font-size:0.7rem;"></i>News Weave</span></label>
       <label class="toggle-switch" id="toggleBehindTheVeilWrap" title="News-triggered closed-door drama: real headlines → dramatized meeting where sector elites plot the beast-system policy (prophetic illustration, not leaked intel)"><input type="checkbox" id="toggleBehindTheVeil"><span class="toggle-track" style="background:linear-gradient(135deg,#4a1a6a,#8B1A1A);"></span><span><i class="fas fa-door-closed" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Behind the Veil</span></label>
       <label class="toggle-switch" id="toggleModalVeilUltraEliteWrap" style="display:none;" title="Dynastic families — cream of the crop who truly run the world (current titles, private POV only)"><input type="checkbox" id="toggleModalVeilUltraElite" onchange="syncVeilUltraEliteToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#4a1a6a,#2a1810);"></span><span><i class="fas fa-crown" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Ultra Elite</span></label>
       <label class="toggle-switch" id="toggleModalVeilScripturePerchWrap" style="display:none;" title="Elites' private reading of scripture — how they view Israel and spin verses that expose them"><input type="checkbox" id="toggleModalVeilScripturePerch" onchange="syncVeilScripturePerchToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#3a2a10,#6a4a20);"></span><span><i class="fas fa-book-open" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Scripture perch</span></label>
@@ -1689,12 +1690,31 @@ for(var i=0;i<hints.length;i++){
 if(sermonNewsLedger.indexOf(hints[i])===-1)sermonNewsLedger.push(hints[i]);
 }
 }
+function isNewsWeaveEnabled(){
+var el=document.getElementById('toggleNewsWeave');
+return !!(el&&el.checked);
+}
+window.isNewsWeaveEnabled=isNewsWeaveEnabled;
+function syncNewsWeaveToggles(){
+var webEl=document.getElementById('toggleWebResearch');
+var weaveEl=document.getElementById('toggleNewsWeave');
+var wrap=document.getElementById('toggleNewsWeaveWrap');
+if(!weaveEl)return;
+var webOn=!!(webEl&&webEl.checked);
+if(!webOn){
+weaveEl.checked=false;
+weaveEl.disabled=true;
+if(wrap)wrap.style.opacity='0.45';
+}else{
+weaveEl.disabled=false;
+if(wrap)wrap.style.opacity='';
+}
+}
 function buildUsedNewsDedupBlock(partNum,totalParts,opts){
 opts=opts||{};
-var webEl=document.getElementById('toggleWebResearch');
-var webOn=webEl&&webEl.checked&&opts.currentMode!=='news';
+var weaveOn=isNewsWeaveEnabled()&&opts.currentMode!=='news';
 var newsMode=opts.currentMode==='news'&&currentNewsContext&&currentNewsContext.length>0;
-if(!webOn&&!newsMode)return '';
+if(!weaveOn&&!newsMode)return '';
 var p='NEWS UNIQUENESS -- ZERO REPEAT HEADLINES (MANDATORY):\n';
 p+='Every real-world news story gets ONE appearance in this entire sermon. Do NOT repeat the same event, bill, war, protest, arrest, policy, or scandal under different wording. If a listener heard it already, it is BURNED.\n';
 if(totalParts===1){
@@ -1729,8 +1749,7 @@ return p;
 }
 function ensureSermonNewsPlan(){
 if(sermonNewsAnglePlan)return;
-var webEl=document.getElementById('toggleWebResearch');
-if(webEl&&webEl.checked&&currentMode!=='news'){
+if(isNewsWeaveEnabled()&&currentMode!=='news'){
 sermonNewsAnglePlan=buildSermonNewsAnglePlan(selectedPartCount,currentTopic);
 }
 }
@@ -2453,8 +2472,8 @@ p+='- Inventing or guessing a date -- if you cannot verify it, do NOT cite that 
 p+='SEPARATE RULE -- PEOPLE vs EVENTS:\n';
 p+='- NEWS EVENTS get exact dates (month, day, year -- spelled out).\n';
 p+='- PEOPLE get full name + what they do ONLY -- no "as of" date stamp on the person.\n\n';
-if(wantStoryMode){
-p+='STORY MODE HEADLINE STRIKE: In Yah Story and Bez Story, every headline pivot must open with or immediately follow the verified date -- then the event, then named culprits. No undated news drops.\n\n';
+if(wantStoryMode&&isNewsWeaveEnabled()){
+p+='NEWS WEAVE + STORY: When News Weave is on, headline pivots must open with or immediately follow the verified date -- then the event, then named culprits. No undated news drops.\n\n';
 }
 return p;
 }
@@ -2497,7 +2516,13 @@ p+='Search for the real people and institutions behind what this text exposes: C
 p+='For EVERY living person you will name in the sermon, run: "[Full Legal Name] current role" (or CEO / pastor / director / judge as fits). For institutions, run: "[Institution Name] CEO" or "[Institution Name] leadership." Use what they do NOW -- verify by search, not training memory.\n';
 p+='Build an internal roster: full name, what they do, what they control, how they connect to the symbols in "'+title+'". In the sermon output ONLY name + role (or institution + what it controls) -- never a year, never "as of," never a date stamp on the person.\n';
 }
-p+='\nSTEP 2 -- CURRENT NEWS (MANDATORY):\n';
+if(!isNewsWeaveEnabled()){
+p+='\nNEWS WEAVE OFF (MANDATORY):\n';
+p+='Do NOT search for current headlines. Do NOT weave dated news events into this sermon. Do NOT pivot from verse to "last week they signed" or any headline strike. Web search is ONLY for verifying names, roles, and facts tied to what THIS text exposes.\n';
+p+='Yah Story and Bez Story stay scripture-first — symbol decode, application, named culprits when the verse demands — without mandatory news segments.\n\n';
+return p;
+}
+p+='\nSTEP 2 -- CURRENT NEWS (MANDATORY — NEWS WEAVE ON):\n';
 if(totalParts>1){
 var partAngle=sermonNewsAnglePlan&&sermonNewsAnglePlan[partNum-1]?sermonNewsAnglePlan[partNum-1]:null;
 p+='Search for exactly ONE REAL recent news story (past 30-90 days when possible) for THIS part only -- a distinct headline nobody has heard yet in this sermon.\n';
@@ -2519,11 +2544,7 @@ if(wantRoughBez)p+='ROUGH BEZ NEWS ROTATION: Each part MUST use a headline on a 
 }else{
 p+='Weave 2-3 of the strongest DISTINCT articles into this single sermon -- not a news recap, and never the same event twice. Each must have its own verified calendar date.\n';
 }
-if(wantStoryMode){
-p+=buildHeadlineDatePromptBlock(true);
-}else{
-p+=buildHeadlineDatePromptBlock(false);
-}
+p+=buildHeadlineDatePromptBlock(!!wantStoryMode);
 p+=buildUsedNewsDedupBlock(partNum,totalParts,{currentMode:mode});
 p+='\nSTEP 3 -- WEAVE INTO THE SERMON (NOT A NEWS BULLETIN):\n';
 p+='- Name what happened with its VERIFIED DATE in plain speech: "On March fourth, twenty twenty-six, they signed it," "August twelfth, twenty twenty-six -- the headlines showed," "While you were sleeping on this verse, July twenty-second, twenty twenty-six proved it."\n';
@@ -2896,7 +2917,11 @@ p+='Use what they do NOW. Do NOT rely on training memory -- roles change.\n';
 p+='If someone left office, retired, died, or you cannot verify -- OMIT them or name their verified successor. Never guess.\n';
 p+='In the SERMON: say ONLY full name + what they do, or institution name + what it controls -- woven into revelation prose. NEVER say "2026," "as of," a verification date, or "current title as of" when naming someone. Not a bullet roster, not a corporate org chart dump.\n\n';
 p+='SEARCH WHAT THIS TEXT EXPOSES:\n';
-p+='Research "'+title+'" plus the sector the symbols point at -- who runs it, who funds it, who enforces it, who preaches it, who lobbies for it. Cross-reference Web Research headlines: every prominently named person in the story PLUS the verified power behind the headline (board chair, parent company CEO, agency head, senior pastor, showrunner, etc.). Name institutions directly when the symbol is a system: Pfizer, Fox Corporation, the Federal Reserve, the Southern Baptist Convention -- whatever search verifies.\n\n';
+p+='Research "'+title+'" plus the sector the symbols point at -- who runs it, who funds it, who enforces it, who preaches it, who lobbies for it. Name institutions directly when the symbol is a system: Pfizer, Fox Corporation, the Federal Reserve, the Southern Baptist Convention -- whatever search verifies.\n';
+if(isNewsWeaveEnabled()){
+p+='When News Weave is ON, cross-reference the headline you weave: every prominently named person in that story PLUS the verified power behind it (board chair, parent company CEO, agency head, senior pastor, showrunner, etc.).\n';
+}
+p+='\n';
 p+='HOW DEEP TO GO:\n';
 p+='- TOP: CEOs, board chairs, cabinet secretaries, agency heads, mega-church pastors, network owners, pharma chiefs, dynastic-family representatives when the symbol is empire-scale.\n';
 p+='- MID: regional bishops, lobbyists, fund managers, hospital CEOs, police chiefs, judges, school superintendents, showrunners, union heads when the text points at that layer.\n';
@@ -2909,12 +2934,16 @@ p+='- Names live INSIDE revelation paragraphs from the throne: "I watched Pastor
 p+='- Names live INSIDE revelation paragraphs: "Pastor [Full Name], senior pastor of [Church], still billing your mama for seed every Sunday while [CEO Full Name], chief executive of [Company], signs the contract that raised your insulin." Scripture decode, then NAMED faces.\n';
 }
 p+='- NEVER paste URLs, "according to [outlet]," source lists, or footnotes. You looked it up; you preach it.\n';
-p+='- When Web Research gives you a headline, state the verified event/publication DATE (month, day, year -- spelled out for TTS) AND name EVERY prominently named person IN that story plus whoever OWNS the system behind it (verified by search).\n\n';
-p+='FORBIDDEN (ZERO TOLERANCE):\n';
-p+='- "They," "the elites," "the system," "some CEO," "a billionaire," "the powers that be," "the man," "the establishment," "you know who" when a verifiable human name exists for THIS symbol or headline.\n';
+if(isNewsWeaveEnabled()){
+p+='- When News Weave gives you a headline, state the verified event/publication DATE (month, day, year -- spelled out for TTS) AND name EVERY prominently named person IN that story plus whoever OWNS the system behind it (verified by search).\n';
+}
+p+='\nFORBIDDEN (ZERO TOLERANCE):\n';
+p+='- "They," "the elites," "the system," "some CEO," "a billionaire," "the powers that be," "the man," "the establishment," "you know who" when a verifiable human name exists for THIS symbol'+(isNewsWeaveEnabled()?' or headline':'')+'.\n';
 p+='- Hinting without naming: "that preacher everybody knows" / "the guy at the top" / "those people in charge" / "that pharmaceutical company" / "that network" -- if search can find them, SAY the name and what they do.\n';
 p+='- Date-stamping people: "as of 2026," "in twenty twenty-six he is," "current as of" -- FORBIDDEN. Just name + role.\n';
+if(isNewsWeaveEnabled()){
 p+='- Vague headline timelines: "last week," "this month," "recently," "this past summer," "months ago" -- FORBIDDEN on news events. Headlines get exact dates only.\n';
+}
 p+='- Stacking ten names in one sentence without context -- weave them where the decode demands, one or two per beat max.\n\n';
 return p;
 }
@@ -6729,21 +6758,21 @@ var directQuestion=isDirectQuestionTopic(topic)&&currentMode==='standard'&&!chap
 if(directQuestion)partFocus=getDirectQuestionPartFocus(partNum,totalParts);
 if(wantBezStory){
 if(wantEpisodeMode){
-if(totalParts===1)partFocus='BEZ STORY + EPISODE MODE: Walk the assigned TV episodes in broadcast order inside continuous revelation paragraphs. Urban nationalist street preacher tone -- scene by scene, not a recap blog, not a lesson.'+(wantBezStoryBreakdown?' Break each scene down deep and weave current headlines into the decode.':'');
-else if(partNum===totalParts)partFocus='BEZ STORY final part: Finish your assigned episode band in revelation cadence. Land it in their block and bloodline. No sign-off.'+(wantBezStoryBreakdown?' Keep breaking scenes open piece by piece with headline strikes.':'');
-else if(partNum===1)partFocus='BEZ STORY part one: Open hard in revelation cadence, then walk your assigned episodes in order. Street preacher heat. No welcome. No lesson.'+(wantBezStoryBreakdown?' Break scenes down deep; weave news into each decode.':'');
-else partFocus='BEZ STORY continuation: Pick up where the last part stopped. One sentence bridge max, then keep pressing your assigned episodes in order.'+(wantBezStoryBreakdown?' Continue scene-by-scene breakdown with headline proof.':'');
+if(totalParts===1)partFocus='BEZ STORY + EPISODE MODE: Walk the assigned TV episodes in broadcast order inside continuous revelation paragraphs. Urban nationalist street preacher tone -- scene by scene, not a recap blog, not a lesson.'+(wantBezStoryBreakdown?' Break each scene down deep in symbol decode.'+(isNewsWeaveEnabled()?' News Weave ON: dated headline strikes allowed.':''):'');
+else if(partNum===totalParts)partFocus='BEZ STORY final part: Finish your assigned episode band in revelation cadence. Land it in their block and bloodline. No sign-off.'+(wantBezStoryBreakdown&&isNewsWeaveEnabled()?' Keep breaking scenes open; headline strikes only if News Weave is on.':'');
+else if(partNum===1)partFocus='BEZ STORY part one: Open hard in revelation cadence, then walk your assigned episodes in order. Street preacher heat. No welcome. No lesson.'+(wantBezStoryBreakdown?' Break scenes down deep in symbol decode.':'');
+else partFocus='BEZ STORY continuation: Pick up where the last part stopped. One sentence bridge max, then keep pressing your assigned episodes in order.'+(wantBezStoryBreakdown?' Continue scene-by-scene breakdown.':'');
 }else if(totalParts===1){
-partFocus='BEZ STORY: One unbroken river of street revelation through this text. Verse by verse in paragraph flow. Urban nationalist street preacher -- the block, the cell, the pew, the stolen name. Name culprits by full name and what they do -- no vague they/the elites, no year stamps on people. Headlines get verified calendar dates (month, day, year -- spelled out), never vague timelines.'+(wantBezStoryBreakdown?' Break every verse/symbol open piece by piece; weave dated headlines that prove it and name everyone in the story.':'');
+partFocus='BEZ STORY: One unbroken river of street revelation through this text. Verse by verse in paragraph flow. Urban nationalist street preacher -- the block, the cell, the pew, the stolen name. Name culprits by full name and what they do when the decode exposes them -- no vague they/the elites, no year stamps on people.'+(wantBezStoryBreakdown?' Break every verse/symbol open piece by piece.':'')+(isNewsWeaveEnabled()?' News Weave ON: you may strike with verified dated headlines.':'');
 }else if(partNum===totalParts){
-partFocus='BEZ STORY final part: Walk your assigned verses to the end in revelation cadence. Leave them shook, not instructed.'+(wantBezStoryBreakdown?' Linger on each verse -- full unraveling plus news strikes.':'');
+partFocus='BEZ STORY final part: Walk your assigned verses to the end in revelation cadence. Leave them shook, not instructed.'+(wantBezStoryBreakdown?' Linger on each verse -- full unraveling.':'');
 }else if(partNum===1){
-partFocus='BEZ STORY part one: Open mid-rebuke in revelation cadence. Walk your assigned verses in order inside dense paragraphs.'+(wantBezStoryBreakdown?' Deep breakdown per verse with woven headlines.':'');
+partFocus='BEZ STORY part one: Open mid-rebuke in revelation cadence. Walk your assigned verses in order inside dense paragraphs.'+(wantBezStoryBreakdown?' Deep breakdown per verse.':'');
 }else{
-partFocus='BEZ STORY continuation: Bridge one sentence max, then keep unveiling your assigned verses in order.'+(wantBezStoryBreakdown?' Continue deep verse breakdown with news woven in.':'');
+partFocus='BEZ STORY continuation: Bridge one sentence max, then keep unveiling your assigned verses in order.'+(wantBezStoryBreakdown?' Continue deep verse breakdown.':'');
 }
 }else if(wantYahStory){
-partFocus='YAH STORY: One unbroken river of first-person revelation through this text. Verse by verse in paragraph flow -- Me speaking straight to their bones in twenty twenty-six. Name culprits and institutions by full name and what they do -- no vague they/the elites, no year stamps on people. Headlines get verified calendar dates (month, day, year -- spelled out), never vague timelines. '+partFocus.replace(/teach|lesson|teaching|break down|breakdown/gi,'reveal');
+partFocus='YAH STORY: One unbroken river of first-person revelation through this text. Verse by verse in paragraph flow -- Me speaking straight to their bones in twenty twenty-six. Name culprits and institutions by full name and what they do when the text exposes them -- no vague they/the elites, no year stamps on people.'+(isNewsWeaveEnabled()?' News Weave ON: dated headline pivots allowed when they serve the verse.':'')+' '+partFocus.replace(/teach|lesson|teaching|break down|breakdown/gi,'reveal');
 }else if(wantRoughBez&&!wantBezStory){
 partFocus=getRoughBezPartFocus(partNum,totalParts,topic,chapterSrc);
 }
@@ -7347,9 +7376,9 @@ if(currentMode==='news'){
 p+='- Do NOT repeat the same NEWS STORY, headline, bill, war, protest, policy, arrest, or scandal from a previous part -- even with different words. Each real-world event gets ONE mention in the whole sermon.\n';
 p+=buildUsedNewsDedupBlock(partNum,totalParts,{currentMode:'news'});
 }else{
-var webElDedup=document.getElementById('toggleWebResearch');
-if(webElDedup&&webElDedup.checked&&partNum>1){
+if(isNewsWeaveEnabled()&&partNum>1){
 p+='- Do NOT repeat the same NEWS STORY or headline from a previous part -- each real-world event gets ONE mention in the whole sermon.\n';
+p+=buildUsedNewsDedupBlock(partNum,totalParts,{currentMode:currentMode});
 }
 }
 p+='Each part must advance the lesson. If a listener heard the same speech twice, they would turn it off. Every sentence in Part '+partNum+' must be content the listener has NEVER heard before in this episode.\n';
@@ -7624,7 +7653,7 @@ p+='When breaking down ANY chapter or verse, ALWAYS ask: what is the SYMBOL here
 if(wantYahStory&&chapterSrc){
 p+='STORY MODE VERSE DELIVERY: Cover your assigned verses in exact order, but narrate them as one continuous Yah-story. Embed each verse\'s meaning inside the next paragraph. Do NOT stop and label verses. Do NOT quote each verse in isolation before analyzing it. Let the scripture move through My mouth as living memory, not as a checklist. Name culprits when the decode exposes who profits -- full name and what they do, or institution and what it controls, not vague insinuation. Every headline strike includes verified calendar date (month, day, year -- spelled out).\n\n';
 }else if(wantBezStory&&chapterSrc){
-p+='BEZ STORY VERSE DELIVERY: Cover your assigned verses in exact order as one continuous street revelation. Embed each verse inside the next paragraph. Do NOT stop and label verses. Let the scripture move through what Yah showed you -- not a checklist.'+(wantBezStoryBreakdown?' BREAKDOWN ON: each verse gets fully unraveled before you move on -- symbol, lie, named culprits (full name + what they do), block, bloodline, then a dated headline strike (verified month, day, year) that names every person in the story.':' Name culprits when the decode exposes who profits -- full name and what they do, not vague insinuation. Headlines get verified calendar dates -- no "last week" or "this past summer."')+'\n\n';
+p+='BEZ STORY VERSE DELIVERY: Cover your assigned verses in exact order as one continuous street revelation. Embed each verse inside the next paragraph. Do NOT stop and label verses. Let the scripture move through what Yah showed you -- not a checklist.'+(wantBezStoryBreakdown?' BREAKDOWN ON: each verse gets fully unraveled before you move on -- symbol, lie, named culprits (full name + what they do), block, bloodline.'+(isNewsWeaveEnabled()?' When News Weave is ON, you may add a dated headline strike (verified month, day, year) after the decode.':''):' Name culprits when the decode exposes who profits -- full name and what they do, not vague insinuation.')+'\n\n';
 }else if(wantBezStory&&wantBreakdown){
 p+='BEZ STORY BREAKDOWN STRUCTURE: One # title line only. Then dense continuous paragraphs that break THIS topic down piece by piece in revelation cadence -- point by point, symbol by symbol, scene by scene. NO ## headers, NO blockquotes, NO verse labels, NO --- dividers. Each piece gets torn open inside the paragraph flow: decode, expose the lie, name who profits (full name + what they do), land it on twenty twenty-six Israel, strike with a dated headline from Web Research (verified month, day, year -- spelled out) that names every person in the story, roll into the next piece. Break it DOWN deep -- street revelation, not a classroom.\n\n';
 }else if(wantStoryMode){
@@ -12102,6 +12131,7 @@ function syncEpisodeModeToggles(){
 syncTheatreToggles();
 syncStoryModeToggles();
 syncCrossReferenceToggles();
+syncNewsWeaveToggles();
 }
 function syncStoryModeToggles(){
 var yahStory=document.getElementById('toggleStoryMode');
@@ -12147,6 +12177,7 @@ updatePartWordEstDisplay();
 syncEpisodeModeToggles();
 syncStoryModeToggles();
 syncCrossReferenceToggles();
+syncNewsWeaveToggles();
 syncYahChatVoiceUi();
 loadYahChat();
 var storyToggle=document.getElementById('toggleStoryMode');
