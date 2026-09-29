@@ -183,4 +183,12 @@ if (params.max_tokens < 2000) throw new Error('65536 ctx should allow >2k max_to
 const budgetOnly = P.applyLocalBudgetParams({ max_tokens: 8192 }, { promptCharLength: 12000 });
 if (budgetOnly.max_tokens < 2000) throw new Error('applyLocalBudgetParams should not clamp to 768');
 
+const html = readFileSync(join(dir, '../public/index.html'), 'utf8');
+if (!html.includes('buildYahushaMinistryIsraelIdentityBlock')) {
+  throw new Error('index.html missing Yahusha ministry Israel identity block');
+}
+if (!html.includes('Northern Kingdom') || !html.includes('isYahushaMinistryChapterContext')) {
+  throw new Error('index.html missing centurion / ministry context helpers');
+}
+
 console.log('\nall checks passed');
