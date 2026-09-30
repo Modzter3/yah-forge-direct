@@ -11,7 +11,10 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>">
 <script>if(typeof marked==='undefined'){window.marked={parse:function(t){return t.replace(/&/g,'&amp;').replace(/\x3c/g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'\x3cbr>');}}}</script>
 <script src="/poe-polyfill.js"></script>
+<script src="/forge-llm-provider.js"></script>
+<script src="/local-llm-sermon-profile.js"></script>
 <script src="/kie-catalog.js"></script>
+<script src="/apoc-local-corpus.js"></script>
 <style>
 :root {
   --gold:#D4A017; --gold-dim:#9B7510; --crimson:#8B1A1A; --crimson-glow:#C41E3A;
@@ -573,7 +576,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <div class="custom-forge-bar">
     <div class="custom-forge-inner">
       <i class="fas fa-pen-fancy custom-forge-icon"></i>
-      <textarea id="customTopicInput" rows="1" placeholder="Enter a topic — or paste scripture with verses (line by line, in order)..." class="custom-forge-input"></textarea>
+      <textarea id="customTopicInput" rows="2" placeholder="Describe what to cover and the tone you want — e.g.&#10;Subject: mark of the beast, digital ID, church fraud&#10;Tone: rough street corner, wake-them-up, no softening&#10;&#10;Or paste scripture with verses (line by line). Ctrl+Enter to forge." class="custom-forge-input"></textarea>
       <button class="custom-forge-btn" id="customForgeBtn" onclick="forgeCustomTopic()"><i class="fas fa-fire"></i> Forge</button>
     </div>
     <div class="custom-forge-inner veil-url-inner">
@@ -604,7 +607,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <div class="tab-panel" id="panelBible">
   <div class="chapter-selector">
     <h2><i class="fas fa-book-bible"></i> Generate from Bible Chapter</h2>
-    <p>Select a KJV book and chapter to forge a sermon directly from scripture.</p>
+    <p>Select a KJV book and chapter to forge a sermon directly from scripture.<br><span style="font-size:0.78em;opacity:0.85;color:var(--accent-teal);"><i class="fas fa-database" style="margin-right:3px;"></i>Full KJV (66 books) loads from the built-in corpus — no web search or model fetch for chapter text.</span></p>
     <div class="selector-row">
       <select id="bibleBook" onchange="updateBibleChapters()"><option value="">-- Select Book --</option></select>
       <select id="bibleChapter" disabled><option value="">-- Chapter --</option></select>
@@ -612,7 +615,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="scripture-fetch-model-row">
       <label><i class="fas fa-download" style="margin-right:4px;font-size:0.65rem;"></i>OpenRouter model:</label>
       <select id="scriptureFetchModel" class="fetch-model-select">
-            <option value="upstage/solar-pro4" selected>Loading OpenRouter catalog...</option>
+            <option value="Gemini-3-Flash-Preview" selected>Loading OpenRouter catalog...</option>
           </select>
     </div>
     <div style="margin-top:16px;">
@@ -627,7 +630,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <div class="tab-panel" id="panelApocrypha">
   <div class="chapter-selector">
     <h2><i class="fas fa-book-skull"></i> Generate from Apocrypha</h2>
-    <p>Select a permitted apocryphal book and chapter. Enoch, Jasher, and Jubilees excluded.<br><span style="font-size:0.78em;opacity:0.7;"><i class="fas fa-globe" style="margin-right:3px;"></i>Apocrypha verses are retrieved via web search for accuracy -- not from model memory.</span></p>
+    <p>Select a permitted apocryphal book and chapter. Enoch, Jasher, and Jubilees excluded.<br><span style="font-size:0.78em;opacity:0.7;"><i class="fas fa-globe" style="margin-right:3px;"></i>Books without a built-in JSON corpus still use web search for chapter text.</span><br><span id="apocCorpusNote" style="display:none;font-size:0.78em;opacity:0.85;color:var(--accent-teal);"><i class="fas fa-database" style="margin-right:3px;"></i><span id="apocCorpusNoteText"></span></span></p>
     <div class="selector-row">
       <select id="apocBook" onchange="updateApocChapters()"><option value="">-- Select Book --</option></select>
       <select id="apocChapter" disabled><option value="">-- Chapter --</option></select>
@@ -635,12 +638,16 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="scripture-fetch-model-row">
       <label><i class="fas fa-download" style="margin-right:4px;font-size:0.65rem;"></i>OpenRouter model:</label>
       <select id="apocFetchModel" class="fetch-model-select">
-            <option value="upstage/solar-pro4" selected>Loading OpenRouter catalog...</option>
+            <option value="Gemini-3-Flash-Preview" selected>Loading OpenRouter catalog...</option>
           </select>
     </div>
     <div style="margin-top:16px;">
       <label style="display:block;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:6px;"><i class="fas fa-paste" style="margin-right:5px;font-size:0.65rem;"></i>Or paste verses manually (optional):</label>
       <textarea id="apocManualPaste" class="dismantle-textarea" style="min-height:120px;font-size:14px;" placeholder="Paste the chapter verses here (one verse per line, numbered). If filled, auto-retrieval will be skipped and these verses will be used instead."></textarea>
+    </div>
+    <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+      <button type="button" class="lib-io-btn" onclick="importApocCorpusJson()" title="Import a JSON corpus (book + chapters) into this browser for offline retrieval"><i class="fas fa-file-import"></i> Import book JSON</button>
+      <span style="font-size:0.72rem;color:var(--text-muted);">Optional: save other rare books locally (same format as built-in Natsarim).</span>
     </div>
     <button class="chapter-gen-btn apoc-btn" onclick="openApocSermon()"><i class="fas fa-bolt"></i> Forge Sermon from Apocrypha</button>
   </div>
@@ -651,7 +658,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <div class="chapter-selector" style="border-color:rgba(139,26,26,0.25);">
     <h2 style="color:var(--crimson-glow);"><i class="fas fa-lock"></i> Generate from Sealed Scrolls</h2>
     <p style="line-height:1.6;">Ancient texts hidden from the mainstream -- Sefer Yetzirah, the Testaments, Enoch, Jasher, Jubilees, and more. These are the scrolls they buried.<br>
-    <span style="font-size:0.78em;opacity:0.7;"><i class="fas fa-globe" style="margin-right:3px;"></i>Sealed text is retrieved via web search for accuracy -- these texts are too rare for model memory alone.</span></p>
+    <span style="font-size:0.78em;opacity:0.7;"><i class="fas fa-globe" style="margin-right:3px;"></i>Sealed books without a built-in JSON corpus still use web search.</span><br><span id="sealedCorpusNote" style="display:none;font-size:0.78em;opacity:0.85;color:var(--accent-teal);"><i class="fas fa-database" style="margin-right:3px;"></i><span id="sealedCorpusNoteText"></span></span></p>
     <div class="selector-row">
       <select id="sealedBook" onchange="updateSealedChapters()" style="border-color:rgba(139,26,26,0.25);"><option value="">-- Select Sealed Text --</option></select>
       <select id="sealedChapter" disabled style="border-color:rgba(139,26,26,0.25);"><option value="">-- Chapter --</option></select>
@@ -660,7 +667,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="scripture-fetch-model-row">
       <label><i class="fas fa-download" style="margin-right:4px;font-size:0.65rem;"></i>OpenRouter model:</label>
       <select id="sealedFetchModel" class="fetch-model-select">
-            <option value="upstage/solar-pro4" selected>Loading OpenRouter catalog...</option>
+            <option value="Gemini-3-Flash-Preview" selected>Loading OpenRouter catalog...</option>
           </select>
     </div>
     <div style="margin-top:16px;">
@@ -706,7 +713,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch"><input type="checkbox" id="dismantleIsraelite"><span class="toggle-track israelite-track"></span><span><i class="fas fa-users" style="color:#38bdb0;margin-right:3px;font-size:0.65rem;"></i>Israelite</span></label>
       <div style="min-width:180px;">
         <select class="model-select" id="dismantleModel" style="width:100%;" onchange="onDismantleModelDropdown()">
-            <option value="upstage/solar-pro4" selected>Loading OpenRouter catalog...</option>
+            <option value="Gemini-3-Flash-Preview" selected>Loading OpenRouter catalog...</option>
           </select>
         <div class="custom-model-row">
           <label>Custom OpenRouter ID:</label>
@@ -758,7 +765,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <div class="tab-panel" id="panelTranscript">
   <div class="dismantle-wrap">
     <div class="dismantle-desc">
-      <i class="fas fa-closed-captioning"></i> <strong>Paste a tagged transcript</strong> — label each turn with any <code>[TAG]</code>. Yah Story and Bez Story critique enabled speakers in revelation voice, split across <strong>parts</strong> like the sermon forge (not endless dismantle rounds). Or paste a <strong>Reddit thread URL</strong> below — post and comments load with <code>[OP]</code> / <code>[Username]</code> tags (no <code>u/</code> prefix).
+      <i class="fas fa-closed-captioning"></i> <strong>Paste a tagged transcript</strong> — per-speaker <code>[TAG]:</code> lines when you can, OR one <code>[TAG]</code> at the top for messy crosstalk (multi-part auto-splits by length — each part only gets its slice). Full forge knowledge + Explicit brimstone when checked. Reddit URL below works too.
     </div>
     <div class="custom-forge-inner reddit-url-inner">
       <i class="fab fa-reddit custom-forge-icon"></i>
@@ -767,7 +774,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <button class="custom-forge-btn reddit-csv-btn" onclick="document.getElementById('transcriptRedditCsvInput').click()"><i class="fas fa-file-csv"></i> Import CSV</button>
       <input type="file" id="transcriptRedditCsvInput" accept=".csv,text/csv" style="display:none" onchange="importRedditCsvIntoField('transcriptInput',this)">
     </div>
-    <textarea class="dismantle-textarea" id="transcriptInput" placeholder="[HOST]: Opening question...&#10;[GUEST A]: Their claim...&#10;[GUEST B]: Their rebuttal...&#10;&#10;Use any [TAG] labels you need. Toggle which speakers to critique below." style="min-height:220px;"></textarea>
+    <textarea class="dismantle-textarea" id="transcriptInput" placeholder="Crosstalk / debate (one tag OK):&#10;[EIFMinistries]&#10;Good evening... [whole transcript]&#10;&#10;Or per-speaker:&#10;[HOST]: claim...&#10;[GUEST]: reply...&#10;&#10;Multi-part splits the source — each part critiques only its chunk." style="min-height:220px;"></textarea>
     <div class="transcript-speaker-toggles" id="transcriptSpeakerToggles">
       <span class="pc-words">Speaker tags appear here when you paste [TAG]: lines</span>
     </div>
@@ -779,13 +786,13 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch" title="Final summary on the last part only"><input type="checkbox" id="transcriptFinalSynthesis" checked><span class="toggle-track"></span><span>Final synthesis</span></label>
       <div style="min-width:180px;">
         <select class="model-select" id="transcriptModel" style="width:100%;" onchange="onTranscriptModelDropdown()">
-            <option value="upstage/solar-pro4" selected>Loading OpenRouter catalog...</option>
+            <option value="Gemini-3-Flash-Preview" selected>Loading OpenRouter catalog...</option>
           </select>
         <div class="custom-model-row">
           <label>Custom OpenRouter ID:</label>
           <input type="text" class="custom-model-input" id="customTranscriptModel" placeholder="e.g. anthropic/claude-sonnet-4" oninput="onCustomModel(this,'transcriptModel')" onfocus="this.select()">
         </div>
-        <div class="custom-model-hint">Type any Poe bot name (e.g. Gemini-3.6-Flash) to override the dropdown</div>
+        <div class="custom-model-hint">Type any Poe bot name (e.g. Gemini-3-Flash-Preview) to override the dropdown</div>
       </div>
       <div class="part-count-wrap">
         <span class="pc-label"><i class="fas fa-layer-group"></i> Parts:</span>
@@ -849,13 +856,13 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch"><input type="checkbox" id="destroyIsraelite"><span class="toggle-track israelite-track"></span><span><i class="fas fa-users" style="color:#38bdb0;margin-right:3px;font-size:0.65rem;"></i>Israelite</span></label>
       <div style="min-width:180px;">
         <select class="model-select" id="destroyModel" style="width:100%;" onchange="onDestroyModelDropdown()">
-            <option value="upstage/solar-pro4" selected>Loading OpenRouter catalog...</option>
+            <option value="Gemini-3-Flash-Preview" selected>Loading OpenRouter catalog...</option>
           </select>
         <div class="custom-model-row">
           <label>Custom OpenRouter ID:</label>
           <input type="text" class="custom-model-input" id="customDestroyModel" placeholder="e.g. anthropic/claude-sonnet-4" oninput="onCustomModel(this,'destroyModel')" onfocus="this.select()">
         </div>
-        <div class="custom-model-hint">Type any Poe bot name (e.g. Gemini-3.6-Flash) to override the dropdown</div>
+        <div class="custom-model-hint">Type any Poe bot name (e.g. Gemini-3-Flash-Preview) to override the dropdown</div>
       </div>
       <div class="destroy-one-shot-note" style="flex:1 1 220px;min-width:200px;font-size:0.72rem;color:var(--text-muted);line-height:1.45;font-family:'Bitter',serif;border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:rgba(231,76,60,0.06);">
         <strong style="color:#e74c3c;">One forge</strong> — one API response (long models like Haiku often fill it in one shot). Use <strong>Continue</strong> if you want another pass on your credits. No auto follow-ups.
@@ -952,7 +959,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="news-controls" style="flex-wrap:wrap;gap:10px;">
       <div style="flex:1;min-width:180px;">
         <select class="model-select" id="newsModel" style="width:100%;" onchange="onNewsModelDropdown()">
-            <option value="upstage/solar-pro4" selected>Loading OpenRouter catalog...</option>
+            <option value="Gemini-3-Flash-Preview" selected>Loading OpenRouter catalog...</option>
           </select>
         <div class="custom-model-row">
           <label>Custom OpenRouter ID:</label>
@@ -1052,11 +1059,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       </label>
       <div style="min-width:180px;flex:1;">
         <select class="model-select" id="yahChatModel" style="width:100%;" onchange="onYahChatModelDropdown()">
-            <option value="upstage/solar-pro4" selected>Loading OpenRouter catalog...</option>
+            <option value="Gemini-3-Flash-Preview" selected>Loading OpenRouter catalog...</option>
           </select>
         <div class="custom-model-row">
           <label>Custom OpenRouter ID:</label>
-          <input type="text" class="custom-model-input" id="customYahChatModel" placeholder="e.g. upstage/solar-pro4" oninput="onCustomModel(this,'yahChatModel')" onfocus="this.select()">
+          <input type="text" class="custom-model-input" id="customYahChatModel" placeholder="e.g. Gemini-3-Flash-Preview" oninput="onCustomModel(this,'yahChatModel')" onfocus="this.select()">
         </div>
       </div>
     </div>
@@ -1152,17 +1159,18 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <button class="modal-close" onclick="closeModal()">&times;</button>
     </div>
     <div class="gen-options">
-      <label class="toggle-switch" title="Verse-by-verse or point-by-point unraveling. Works with Bez Story — deep breakdown in revelation cadence + news weave."><input type="checkbox" id="toggleBreakdown" checked><span class="toggle-track"></span><span>Breakdown</span></label>
+      <label class="toggle-switch" title="Verse-by-verse or point-by-point unraveling. Works with Bez Story for deep verse-by-verse unraveling in revelation cadence."><input type="checkbox" id="toggleBreakdown" checked><span class="toggle-track"></span><span>Breakdown</span></label>
       <label class="toggle-switch" id="toggleCrossReferencesWrap" title="Sprinkle cross-references to other KJV books (and apocrypha/sealed scrolls when Apocrypha is on) to support points"><input type="checkbox" id="toggleCrossReferences" checked onchange="syncCrossReferenceToggles()"><span class="toggle-track"></span><span><i class="fas fa-link" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Cross Refs</span></label>
       <label class="toggle-switch" id="toggleApocryphaWrap" title="Allow apocrypha and sealed scroll citations in cross-references (requires Cross Refs on)"><input type="checkbox" id="toggleApocrypha" checked onchange="syncCrossReferenceToggles()"><span class="toggle-track"></span><span>Apocrypha</span></label>
       <label class="toggle-switch explicit-toggle"><input type="checkbox" id="toggleExplicit"><span class="toggle-track explicit-track"></span><span><i class="fas fa-fire" style="color:var(--explicit-red);margin-right:3px;font-size:0.7rem;"></i>Explicit</span></label>
       <label class="toggle-switch"><input type="checkbox" id="toggleIsraelite"><span class="toggle-track israelite-track"></span><span><i class="fas fa-users" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Israelite</span></label>
       <label class="toggle-switch"><input type="checkbox" id="toggleRoughBez"><span class="toggle-track rough-track"></span><span><i class="fas fa-bullhorn" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Rough Bezaleel</span></label>
-      <label class="toggle-switch" id="toggleStoryModeWrap" title="Yah first-person revelation cadence — anti-chatbot live voice, names culprits/institutions directly, dated headlines"><input type="checkbox" id="toggleStoryMode"><span class="toggle-track story-track"></span><span><i class="fas fa-book-open" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Yah Story</span></label>
+      <label class="toggle-switch" id="toggleStoryModeWrap" title="Yah first-person revelation cadence — anti-chatbot live voice; name culprits when the verse exposes them (no automatic news weave)"><input type="checkbox" id="toggleStoryMode"><span class="toggle-track story-track"></span><span><i class="fas fa-book-open" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Yah Story</span></label>
       <label class="toggle-switch" id="toggleBezStoryModeWrap" title="Bez revelation cadence — street fire, grammatically sound English, names culprits by full name and what they do (no vague they/the elites)"><input type="checkbox" id="toggleBezStoryMode"><span class="toggle-track bez-story-track"></span><span><i class="fas fa-book-open" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Bez Story</span></label>
       <label class="toggle-switch" id="toggleElevenLabsTagsWrap" title="Eleven v3 medium-density emotional tags — [angry], [whispers], [shouts], etc. woven through every paragraph for TTS"><input type="checkbox" id="toggleElevenLabsTags"><span class="toggle-track" style="background:linear-gradient(135deg,#1a3a2a,#2a6a4a);"></span><span><i class="fas fa-waveform-lines" style="color:#7ec8a0;margin-right:3px;font-size:0.7rem;"></i>Eleven Tags</span></label>
       <label class="toggle-switch" id="toggleSermonEpisodeModeWrap" title="TV season episode-by-episode breakdown across parts"><input type="checkbox" id="toggleSermonEpisodeMode"><span class="toggle-track"></span><span><i class="fas fa-tv" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Episode Mode</span></label>
-      <label class="toggle-switch" title="Live web search: verify facts, find recent news with exact dates, weave dated headlines into the sermon (silent — no URLs in output)"><input type="checkbox" id="toggleWebResearch" checked><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
+      <label class="toggle-switch" title="Live web search: verify facts, roles, and topic context (silent — no URLs in output). Does not weave headlines unless News Weave is also on."><input type="checkbox" id="toggleWebResearch" checked onchange="syncNewsWeaveToggles()"><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
+      <label class="toggle-switch" id="toggleNewsWeaveWrap" title="Weave verified current headlines into the sermon — separate from Yah/Bez Story voice. Requires Web Research."><input type="checkbox" id="toggleNewsWeave" onchange="syncNewsWeaveToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#1a3a5c,#2a6496);"></span><span><i class="fas fa-newspaper" style="color:#7ec8e3;margin-right:3px;font-size:0.7rem;"></i>News Weave</span></label>
       <label class="toggle-switch" id="toggleBehindTheVeilWrap" title="News-triggered closed-door drama: real headlines → dramatized meeting where sector elites plot the beast-system policy (prophetic illustration, not leaked intel)"><input type="checkbox" id="toggleBehindTheVeil"><span class="toggle-track" style="background:linear-gradient(135deg,#4a1a6a,#8B1A1A);"></span><span><i class="fas fa-door-closed" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Behind the Veil</span></label>
       <label class="toggle-switch" id="toggleModalVeilUltraEliteWrap" style="display:none;" title="Dynastic families — cream of the crop who truly run the world (current titles, private POV only)"><input type="checkbox" id="toggleModalVeilUltraElite" onchange="syncVeilUltraEliteToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#4a1a6a,#2a1810);"></span><span><i class="fas fa-crown" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Ultra Elite</span></label>
       <label class="toggle-switch" id="toggleModalVeilScripturePerchWrap" style="display:none;" title="Elites' private reading of scripture — how they view Israel and spin verses that expose them"><input type="checkbox" id="toggleModalVeilScripturePerch" onchange="syncVeilScripturePerchToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#3a2a10,#6a4a20);"></span><span><i class="fas fa-book-open" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Scripture perch</span></label>
@@ -1178,14 +1186,23 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       </div>
       <div class="model-select-block">
         <div class="model-select-wrap">
+          <label><i class="fas fa-server"></i> LLM provider:</label>
+          <select class="model-select" id="forgeLlmProvider" onchange="onForgeLlmProviderChange()" style="max-width:220px;">
+            <option value="openrouter" selected>OpenRouter</option>
+            <option value="local">OrcaRouter Local</option>
+          </select>
+          <span id="localLlmHealthStatus" style="display:none;font-size:0.72rem;font-family:'Fira Code',monospace;margin-left:6px;"></span>
+        </div>
+        <div id="forgeLlmProviderHint" class="custom-model-hint" style="margin-bottom:8px;">OpenRouter + optional kie/... models via OPENROUTER_API_KEY and KIE_API_KEY.</div>
+        <div class="model-select-wrap">
           <label><i class="fas fa-robot"></i> Model:</label>
           <select class="model-select" id="modelSelect" onchange="onSermonModelDropdown()">
-            <option value="upstage/solar-pro4" selected>Loading model catalog...</option>
+            <option value="Gemini-3-Flash-Preview" selected>Loading model catalog...</option>
           </select>
         </div>
         <div class="custom-model-row">
           <label><i class="fas fa-keyboard" style="margin-right:2px;font-size:0.6rem;"></i> Or paste any model id:</label>
-          <input type="text" class="custom-model-input" id="customModelInput" placeholder="provider/model — e.g. kie/gpt-6-astra or upstage/solar-pro4" oninput="onCustomModel(this,'modelSelect')" onfocus="this.select()">
+          <input type="text" class="custom-model-input" id="customModelInput" placeholder="provider/model — e.g. Gemini-3-Flash-Preview or kie/gpt-6-astra" oninput="onCustomModel(this,'modelSelect')" onfocus="this.select()">
         </div>
         <div class="custom-model-hint">OpenRouter ids (solar-pro4, openai/gpt-6-astra) use <code style="font-size:0.55rem;">OPENROUTER_API_KEY</code>. Any <code style="font-size:0.55rem;">kie/...</code> id uses <code style="font-size:0.55rem;">KIE_API_KEY</code>. Yah Story + Explicit: use <code style="font-size:0.55rem;">cognitivecomputations/dolphin-mistral-24b-venice-edition</code> if Grok/Gemini refuse.</div>
       </div>
@@ -1291,7 +1308,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <div class="model-select-wrap" style="margin-top:6px;">
           <label><i class="fas fa-robot"></i> Beat planner (reads sermon):</label>
           <select class="model-select" id="visualBeatModel">
-            <option value="upstage/solar-pro4" selected>Loading model catalog...</option>
+            <option value="Gemini-3-Flash-Preview" selected>Loading model catalog...</option>
           </select>
         </div>
         <div class="media-btn-row">
@@ -1365,7 +1382,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <div class="model-select-wrap" style="margin-top:6px;">
           <label><i class="fas fa-robot"></i> Prompt writer (chat):</label>
           <select class="model-select" id="imagePromptModel">
-            <option value="upstage/solar-pro4" selected>Loading model catalog...</option>
+            <option value="Gemini-3-Flash-Preview" selected>Loading model catalog...</option>
           </select>
           <input type="text" class="custom-model-input" id="customImagePromptModel" placeholder="provider/model override">
         </div>
@@ -1673,12 +1690,31 @@ for(var i=0;i<hints.length;i++){
 if(sermonNewsLedger.indexOf(hints[i])===-1)sermonNewsLedger.push(hints[i]);
 }
 }
+function isNewsWeaveEnabled(){
+var el=document.getElementById('toggleNewsWeave');
+return !!(el&&el.checked);
+}
+window.isNewsWeaveEnabled=isNewsWeaveEnabled;
+function syncNewsWeaveToggles(){
+var webEl=document.getElementById('toggleWebResearch');
+var weaveEl=document.getElementById('toggleNewsWeave');
+var wrap=document.getElementById('toggleNewsWeaveWrap');
+if(!weaveEl)return;
+var webOn=!!(webEl&&webEl.checked);
+if(!webOn){
+weaveEl.checked=false;
+weaveEl.disabled=true;
+if(wrap)wrap.style.opacity='0.45';
+}else{
+weaveEl.disabled=false;
+if(wrap)wrap.style.opacity='';
+}
+}
 function buildUsedNewsDedupBlock(partNum,totalParts,opts){
 opts=opts||{};
-var webEl=document.getElementById('toggleWebResearch');
-var webOn=webEl&&webEl.checked&&opts.currentMode!=='news';
+var weaveOn=isNewsWeaveEnabled()&&opts.currentMode!=='news';
 var newsMode=opts.currentMode==='news'&&currentNewsContext&&currentNewsContext.length>0;
-if(!webOn&&!newsMode)return '';
+if(!weaveOn&&!newsMode)return '';
 var p='NEWS UNIQUENESS -- ZERO REPEAT HEADLINES (MANDATORY):\n';
 p+='Every real-world news story gets ONE appearance in this entire sermon. Do NOT repeat the same event, bill, war, protest, arrest, policy, or scandal under different wording. If a listener heard it already, it is BURNED.\n';
 if(totalParts===1){
@@ -1713,8 +1749,7 @@ return p;
 }
 function ensureSermonNewsPlan(){
 if(sermonNewsAnglePlan)return;
-var webEl=document.getElementById('toggleWebResearch');
-if(webEl&&webEl.checked&&currentMode!=='news'){
+if(isNewsWeaveEnabled()&&currentMode!=='news'){
 sermonNewsAnglePlan=buildSermonNewsAnglePlan(selectedPartCount,currentTopic);
 }
 }
@@ -1802,6 +1837,9 @@ if(tc<=5)return 4;
 return 5;
 }
 if(mode==='sealed'){
+if(typeof getForgeLlmProvider==='function'&&getForgeLlmProvider()==='local'&&ForgeLocalSermonProfile&&ForgeLocalSermonProfile.recommendedPartsForChapter){
+return ForgeLocalSermonProfile.recommendedPartsForChapter(currentChapterVerseCount);
+}
 // Sealed scrolls -- longer texts get more parts
 var sealedBookName=currentChapterSource?currentChapterSource.book:'';
 var heavySealed=['1 Enoch','2 Enoch','3 Enoch','Book of Jasher','Book of Jubilees','Testament of Job','1 Adam and Eve','Conflict of Adam','Pistis Sophia','Sefer Raziel'];
@@ -1809,6 +1847,9 @@ for(var hs=0;hs<heavySealed.length;hs++){if(sealedBookName.indexOf(heavySealed[h
 return 3;
 }
 if(mode==='bible'||mode==='apocrypha'){
+if(typeof getForgeLlmProvider==='function'&&getForgeLlmProvider()==='local'&&ForgeLocalSermonProfile&&ForgeLocalSermonProfile.recommendedPartsForChapter){
+return ForgeLocalSermonProfile.recommendedPartsForChapter(currentChapterVerseCount);
+}
 var heavy=['Isaiah','Ezekiel','Daniel','Revelation','Genesis','Exodus','Deuteronomy','Jeremiah','Romans','Hebrews','Matthew','Acts','Psalms','Wisdom of Solomon','Sirach (Ecclesiasticus)','2 Esdras (4 Ezra)'];
 var light=['Philemon','2 John','3 John','Jude','Titus','Letter of Jeremiah','Prayer of Azariah','Prayer of Manasseh','Susanna','Bel and the Dragon'];
 var bookName=currentChapterSource?currentChapterSource.book:'';
@@ -1910,7 +1951,13 @@ btns[i].classList.toggle('active',parseInt(btns[i].getAttribute('data-count'))==
 }
 function updatePartRecommendation(){
 var rec=recommendPartCount(currentTopic,currentMode);
-document.getElementById('partRecBadge').textContent='REC: '+rec;
+var badge=document.getElementById('partRecBadge');
+badge.textContent='REC: '+rec;
+if(typeof getForgeLlmProvider==='function'&&getForgeLlmProvider()==='local'&&(currentMode==='bible'||currentMode==='apocrypha'||currentMode==='sealed')){
+badge.title='OrcaRouter Local: more parts = fewer verses per part and less context/memory pressure';
+}else{
+badge.title='Recommended based on topic depth';
+}
 if(!document.getElementById('toggleAlways7').checked){
 setPartCount(rec);
 }
@@ -1967,6 +2014,7 @@ renderTopics();
 populateBibleBooks();
 populateApocBooks();
 populateSealedBooks();
+prefetchForgeCorpusManifests();
 // Initialize news date range pickers -- default to "This Week"
 var now=new Date();
 var todayStr=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
@@ -2071,12 +2119,91 @@ for(var i=0;i<APOC_BOOKS.length;i++){
 var o=document.createElement('option');o.value=i;o.textContent=APOC_BOOKS[i].n;sel.appendChild(o);
 }
 }
+var FORGE_LOCAL_APOC_BOOKS={};
+var FORGE_LOCAL_SEALED_BOOKS={};
+function prefetchForgeCorpusManifests(){
+if(!window.ForgeLocalCorpus||!ForgeLocalCorpus.normalizeBookName)return;
+fetch('/corpus/apocrypha/manifest.json').then(function(r){return r.ok?r.json():null;}).then(function(m){
+if(!m||!m.books)return;
+for(var i=0;i<m.books.length;i++){
+FORGE_LOCAL_APOC_BOOKS[ForgeLocalCorpus.normalizeBookName(m.books[i].book)]=true;
+}
+syncApocCorpusNote();
+}).catch(function(){});
+fetch('/corpus/sealed/manifest.json').then(function(r){return r.ok?r.json():null;}).then(function(m){
+if(!m||!m.books)return;
+for(var i=0;i<m.books.length;i++){
+FORGE_LOCAL_SEALED_BOOKS[ForgeLocalCorpus.normalizeBookName(m.books[i].book)]=true;
+}
+syncSealedCorpusNote();
+}).catch(function(){});
+}
+function isNatasrymBookName(name){
+if(window.ForgeLocalCorpus&&ForgeLocalCorpus.normalizeBookName){
+var n=ForgeLocalCorpus.normalizeBookName(name);
+return n.indexOf('natsar')!==-1||n.indexOf('kailedy')!==-1;
+}
+return /natsar|kailedy/i.test(String(name||''));
+}
+function isLocalCorpusBook(name,type){
+if(!name)return false;
+if(type==='bible')return true;
+if(!window.ForgeLocalCorpus||!ForgeLocalCorpus.normalizeBookName)return isNatasrymBookName(name);
+var n=ForgeLocalCorpus.normalizeBookName(name);
+if(type==='sealed')return !!(FORGE_LOCAL_SEALED_BOOKS[n]||FORGE_LOCAL_APOC_BOOKS[n]);
+if(type==='apocrypha')return !!FORGE_LOCAL_APOC_BOOKS[n];
+return !!FORGE_LOCAL_APOC_BOOKS[n]||isNatasrymBookName(name);
+}
+function syncApocCorpusNote(){
+var note=document.getElementById('apocCorpusNote');
+var textEl=document.getElementById('apocCorpusNoteText');
+if(!note||!textEl)return;
+var sel=document.getElementById('apocBook');
+if(!sel||sel.value===''){note.style.display='none';return;}
+var book=APOC_BOOKS[parseInt(sel.value)];
+if(isLocalCorpusBook(book.n,'apocrypha')){
+textEl.textContent='Built-in local corpus for '+book.n+' — no web search for chapter text.';
+note.style.display='inline';
+}else{note.style.display='none';}
+}
+function syncSealedCorpusNote(){
+var note=document.getElementById('sealedCorpusNote');
+var textEl=document.getElementById('sealedCorpusNoteText');
+if(!note||!textEl)return;
+var sel=document.getElementById('sealedBook');
+if(!sel||sel.value===''){note.style.display='none';return;}
+var book=SEALED_BOOKS[parseInt(sel.value)];
+if(isLocalCorpusBook(book.n,'sealed')){
+textEl.textContent='Built-in local corpus for '+book.n+' — no web search for chapter text.';
+note.style.display='inline';
+}else{note.style.display='none';}
+}
+function importApocCorpusJson(){
+var input=document.createElement('input');
+input.type='file';
+input.accept='application/json,.json';
+input.onchange=function(){
+var file=input.files&&input.files[0];
+if(!file)return;
+var reader=new FileReader();
+reader.onload=function(){
+try{
+if(!window.ForgeLocalCorpus)throw new Error('Corpus module not loaded');
+var name=ForgeLocalCorpus.importBookJson(reader.result);
+showToast('Imported local corpus: '+name);
+}catch(e){showToast('Import failed: '+(e.message||e));}
+};
+reader.readAsText(file);
+};
+input.click();
+}
 function updateApocChapters(){
 var sel=document.getElementById('apocBook');var ch=document.getElementById('apocChapter');
 ch.innerHTML='<option value="">-- Chapter --</option>';
-if(!sel.value){ch.disabled=true;return;}
+if(!sel.value){ch.disabled=true;syncApocCorpusNote();return;}
 var book=APOC_BOOKS[parseInt(sel.value)];ch.disabled=false;
 for(var i=1;i<=book.c;i++){var o=document.createElement('option');o.value=i;o.textContent='Chapter '+i;ch.appendChild(o);}
+syncApocCorpusNote();
 }
 function populateSealedBooks(){
 var sel=document.getElementById('sealedBook');
@@ -2088,10 +2215,11 @@ function updateSealedChapters(){
 var sel=document.getElementById('sealedBook');var ch=document.getElementById('sealedChapter');
 ch.innerHTML='<option value="">-- Chapter --</option>';
 var descEl=document.getElementById('sealedBookDesc');
-if(!sel.value){ch.disabled=true;if(descEl){descEl.style.display='none';descEl.textContent='';}return;}
+if(!sel.value){ch.disabled=true;if(descEl){descEl.style.display='none';descEl.textContent='';}syncSealedCorpusNote();return;}
 var book=SEALED_BOOKS[parseInt(sel.value)];ch.disabled=false;
 for(var i=1;i<=book.c;i++){var o=document.createElement('option');o.value=i;o.textContent='Chapter '+i;ch.appendChild(o);}
 if(descEl&&book.desc){descEl.textContent=book.desc;descEl.style.display='block';}else if(descEl){descEl.style.display='none';}
+syncSealedCorpusNote();
 }
 function openSealedSermon(){
 var bi=document.getElementById('sealedBook').value;
@@ -2237,7 +2365,7 @@ function getSermonWebSearchParams(model,totalParts){
 var params={};
 var theatre=isTheatreModeActive();
 var webEl=document.getElementById('toggleWebResearch');
-if((webEl&&webEl.checked||theatre)&&forgeSupportsWebBrowse(model)){
+if(!isLocalLlmChapterSermonActive()&&(webEl&&webEl.checked||theatre)&&forgeSupportsWebBrowse(model)){
 params.web_search=true;
 }
 if(theatre&&forgeIsGemini(model)){
@@ -2312,14 +2440,15 @@ return 'CROSS-REFERENCES OFF (MANDATORY):\n'+
 'Depth comes from decoding WHAT IS IN FRONT OF YOU -- not from pulling in outside books.\n'+
 'Exception: if the assigned text itself quotes another passage verbatim, you may acknowledge that quote in passing -- but do NOT launch into breakdowns of other books.\n\n';
 }
-var p='CROSS-REFERENCES ON:\n';
-p+='You MAY sprinkle brief cross-references throughout the sermon to sharpen points -- woven naturally inside the flow, never as a dump list or bibliography.\n';
-p+='Cross-references SUPPORT the primary text; they do NOT replace it or take over the sermon.\n';
-p+='Provide 1-3 relevant connections per verse/section when they genuinely land -- KJV canon first.\n';
-p+='Format: book chapter verse in spoken words (e.g. "Isaiah chapter forty-five verse eighteen"). Do NOT fabricate references.\n\n';
+var p='CROSS-REFERENCES ON -- SUPPORTING SCRIPTURES FLOWING LIKE A RIVER (MANDATORY):\n';
+p+='Cross-references mean SUPPORTING SCRIPTURES -- verse to verse, book to book, across the whole Bible. This is about the WORD of Yah confirming the WORD of Yah, NOT about naming people. You could care less if a person is in the passage -- what the listener needs is the SCRIPTURE that backs the point. When this toggle is ON you MUST keep a continuous current of supporting scripture running through the ENTIRE part, flowing like a river -- never a single drop, never a sprinkle, never a dump list.\n';
+p+='QUOTA (NON-NEGOTIABLE): at least ONE named supporting scripture for EVERY major teaching point or verse you break down, and at least 3-5 distinct supporting scriptures woven across the body of a part -- more for dense doctrinal or chapter content. Fewer than that = a FAILED part. Do NOT cluster them all in one spot; let them run the whole length of the part like a current, so there is never a long stretch of teaching with no scripture behind it.\n';
+p+='How they land: woven INSIDE the flow as living spoken connections that carry the listener forward ("and that same seal is the one Isaiah chapter forty-one pressed into the rock, and Paul picks it up again in Romans chapter nine..."), never as a bibliography, footnote, or separate "cross-references" section. They SUPPORT and CONFIRM the point you are making in that breath -- they do NOT replace it or hijack the sermon. The listener should FEEL the scriptures flowing together under every point, verse linking to verse like a river that never stops.\n';
+p+='Format: book chapter verse in spoken words (e.g. "Isaiah chapter forty-five verse eighteen"). Do NOT fabricate references -- if you are unsure of the exact verse number, name the book and the account instead of guessing.\n';
+p+='DELIVERY COMMAND -- NON-NEGOTIABLE: in EVERY part you deliver, you MUST keep speaking supporting scriptures out loud, naming the book, chapter, and verse in the spoken format above, tied to the exact point you are making in that breath. Do NOT bury them, do NOT limit yourself to one, do NOT drift to the end of the part without them, do NOT drop to a single passing mention, do NOT stack them all in one corner. The listener MUST hear a steady RIVER of supporting scripture across the entire part -- verse after verse, book after book, carrying the point all the way through. If you are teaching a chapter, every major verse you break down gets at least one confirming or expanding scripture from elsewhere in the Bible. Say the connections out loud and let them flow. If your part has fewer than three named supporting scriptures, you have FAILED.\n\n';
 if(wantApocrypha){
 p+='APOCRYPHA & SEALED SCROLLS IN CROSS-REFS (Apocrypha toggle ON):\n';
-p+='You MAY also cross-reference permitted apocrypha and sealed scrolls where they confirm, expand, or illuminate the point.\n';
+p+='You MUST also cross-reference permitted apocrypha and sealed scrolls wherever they confirm, expand, or illuminate the point -- this is not optional when the toggle is ON. Weave them into the flow just like KJV cross-references.\n';
 p+='PERMITTED APOCRYPHA: '+apocList+'.\n';
 p+='PERMITTED SEALED SCROLLS: Sefer Yetzirah, 1 Enoch (FILTERED), 2 Enoch (FILTER HARD), 3 Enoch, Book of Jasher, Book of Jubilees, Testament of Abraham, Testament of Moses, Testament of Job, Testament of Adam, Testament of Solomon, Apocalypse of Abraham, 1 Adam and Eve, 2 Adam and Eve, Book of Giants, Sefer Raziel HaMalakh, Psalms of Solomon, Odes of Solomon, 3 Baruch, 4 Baruch, Apocalypse of Zephaniah, Apocalypse of Elijah, Ladder of Jacob, Martyrdom of Isaiah, Apocalypse of Peter, History of the Rechabites, Conflict of Adam and Eve with Satan, Sefer HaBahir, Pistis Sophia, Book of Natasrym (Natsarim).\n';
 p+='Always FILTER sealed scrolls through Torah. If a sealed text confirms Torah -- teach it as buried truth. If it contradicts Torah -- expose the corruption.\n';
@@ -2343,8 +2472,8 @@ p+='- Inventing or guessing a date -- if you cannot verify it, do NOT cite that 
 p+='SEPARATE RULE -- PEOPLE vs EVENTS:\n';
 p+='- NEWS EVENTS get exact dates (month, day, year -- spelled out).\n';
 p+='- PEOPLE get full name + what they do ONLY -- no "as of" date stamp on the person.\n\n';
-if(wantStoryMode){
-p+='STORY MODE HEADLINE STRIKE: In Yah Story and Bez Story, every headline pivot must open with or immediately follow the verified date -- then the event, then named culprits. No undated news drops.\n\n';
+if(wantStoryMode&&isNewsWeaveEnabled()){
+p+='NEWS WEAVE + STORY: When News Weave is on, headline pivots must open with or immediately follow the verified date -- then the event, then named culprits. No undated news drops.\n\n';
 }
 return p;
 }
@@ -2387,7 +2516,13 @@ p+='Search for the real people and institutions behind what this text exposes: C
 p+='For EVERY living person you will name in the sermon, run: "[Full Legal Name] current role" (or CEO / pastor / director / judge as fits). For institutions, run: "[Institution Name] CEO" or "[Institution Name] leadership." Use what they do NOW -- verify by search, not training memory.\n';
 p+='Build an internal roster: full name, what they do, what they control, how they connect to the symbols in "'+title+'". In the sermon output ONLY name + role (or institution + what it controls) -- never a year, never "as of," never a date stamp on the person.\n';
 }
-p+='\nSTEP 2 -- CURRENT NEWS (MANDATORY):\n';
+if(!isNewsWeaveEnabled()){
+p+='\nNEWS WEAVE OFF (MANDATORY):\n';
+p+='Do NOT search for current headlines. Do NOT weave dated news events into this sermon. Do NOT pivot from verse to "last week they signed" or any headline strike. Web search is ONLY for verifying names, roles, and facts tied to what THIS text exposes.\n';
+p+='Yah Story and Bez Story stay scripture-first — symbol decode, application, named culprits when the verse demands — without mandatory news segments.\n\n';
+return p;
+}
+p+='\nSTEP 2 -- CURRENT NEWS (MANDATORY — NEWS WEAVE ON):\n';
 if(totalParts>1){
 var partAngle=sermonNewsAnglePlan&&sermonNewsAnglePlan[partNum-1]?sermonNewsAnglePlan[partNum-1]:null;
 p+='Search for exactly ONE REAL recent news story (past 30-90 days when possible) for THIS part only -- a distinct headline nobody has heard yet in this sermon.\n';
@@ -2409,11 +2544,7 @@ if(wantRoughBez)p+='ROUGH BEZ NEWS ROTATION: Each part MUST use a headline on a 
 }else{
 p+='Weave 2-3 of the strongest DISTINCT articles into this single sermon -- not a news recap, and never the same event twice. Each must have its own verified calendar date.\n';
 }
-if(wantStoryMode){
-p+=buildHeadlineDatePromptBlock(true);
-}else{
-p+=buildHeadlineDatePromptBlock(false);
-}
+p+=buildHeadlineDatePromptBlock(!!wantStoryMode);
 p+=buildUsedNewsDedupBlock(partNum,totalParts,{currentMode:mode});
 p+='\nSTEP 3 -- WEAVE INTO THE SERMON (NOT A NEWS BULLETIN):\n';
 p+='- Name what happened with its VERIFIED DATE in plain speech: "On March fourth, twenty twenty-six, they signed it," "August twelfth, twenty twenty-six -- the headlines showed," "While you were sleeping on this verse, July twenty-second, twenty twenty-six proved it."\n';
@@ -2584,12 +2715,56 @@ function isExplicitModeActive(){
 var el=document.getElementById('toggleExplicit');
 return !!(el&&el.checked);
 }
+window.isExplicitModeActive=isExplicitModeActive;
+function buildForgeIdentityFrameworkLine(){
+return '- IDENTITY (background only — not a per-part speech): True Israel is the so-called Negro scattered worldwide. Yah came only to the lost sheep of the house of Israel (Matthew chapter fifteen verse twenty-four, Matthew chapter ten verses five through six). Covenant and true name matter — not skin alone. Do NOT deliver mandatory "Gate of Salvation" declarations, stock closers, or copy-paste salvation formulas in sermons; weave identity only when the assigned text naturally demands it.\n';
+}
+function isYahushaMinistryChapterContext(chapterSrc,chapterText){
+if(!chapterSrc||!chapterSrc.book)return false;
+var book=String(chapterSrc.book).trim();
+if(isNatasrymBookName(book))return true;
+if(/^(Matthew|Mark|Luke|John)$/i.test(book))return true;
+var hay=String(chapterText!=null?chapterText:(typeof currentChapterText!=='undefined'?currentChapterText:'')).toLowerCase();
+if(hay.length>80&&/\b(yahusha|centurion|leper|parashiy|pharisee|kepha|mother-in-law|issue of blood|synagogue)\b/i.test(hay))return true;
+return false;
+}
+window.isYahushaMinistryChapterContext=isYahushaMinistryChapterContext;
+function buildYahushaMinistryIsraelIdentityBlock(opts){
+opts=opts||{};
+var strict=!!opts.strict;
+var p=(strict?'*** YAHUSHA MINISTRY CAST — ALL ISRAEL (MANDATORY FOR THIS CHAPTER — NO EXCEPTIONS) ***\n':'*** YAHUSHA MINISTRY CAST — ALL ISRAEL (BACKGROUND — APPLY WHEN THE TEXT TOUCHES HIS EARTHLY WORK) ***\n');
+p+='Yod-He-Waw-Shin-Ayin came ONLY to the lost sheep of the house of Israel (Matthew chapter fifteen verse twenty-four). Every person in the crowds, houses, and healings of His earthly ministry — lepers, bleeding women, synagogue rulers, Pharisees, disciples, brothers of Kepha, mourners, brigands, soldiers — are ISRAELITES (Judah, Benjamin, Levi, or Northern Kingdom scattered among the nations). Ruth was an Israelite. There are NO pagan European "Gentile" recipients in these stories.\n';
+p+='THE CENTURION: He is NOT a heathen Gentile. He is an ISRAELITE — typically of the NORTHERN KINGDOM (House of Israel) serving under Rome\'s military title. "Centurion" describes his post, not his bloodline. His faith shamed many in the land because a scattered brother understood command authority while covenant sleepers did not.\n';
+p+='EAST AND WEST / OUTSIDE THE GATES: People coming from east and west to sit with the fathers are scattered Israelites returning — NOT foreigners replacing Judah. "Heirs found outside" means covenant heirs who forfeited identity, not Europeans inheriting Israel\'s place.\n';
+p+='FORBIDDEN in Yah Story, Bez Story, Israelite Brother, Rough Bez, and Yah Direct when preaching these scenes: "heathen soldier," "Roman pagan," "Gentile got it right," "this white man\'s army," contrasting "chosen Negroes" with a non-Israel centurion, or any line that treats someone Yahusha healed or debated as outside Israel. Roman occupation, Samaritan mix, and Northern Kingdom dispersion are ISRAELITE context — not "the nations" in the European sense.\n';
+p+='Book of Natasrym (Natsarim): Kepha, lepers, centurions, Pharisees, disinherited brothers — decode as Israelite family drama (Judah, Northern Kingdom, priestly corruption, lost sheep). Ingrain this in every voice. No exceptions.\n\n';
+return p;
+}
+window.buildYahushaMinistryIsraelIdentityBlock=buildYahushaMinistryIsraelIdentityBlock;
+function buildNoGateSalvationSpamBlock(){
+var p='*** NO GATE-OF-SALVATION SPAM (MANDATORY) ***\n';
+p+='Forbidden: mandatory per-part "Gate of Salvation" speeches; paste-in closers ("Yah saved the Negro people who carry the true covenant and ONLY them… gate is shut in their faces…"); repeating the same Khazar/European-church/Babylon laundry list every part unrelated to the verse.\n';
+p+='When stranger, covenant, access, or Israel scope appears in THIS verse band, you MAY touch identity in fresh, verse-tied language — once per whole sermon is enough unless the text keeps demanding it.\n';
+p+='Priority: symbol decode and the assigned chapter. Creativity beats boilerplate doctrine dumps.\n\n';
+return p;
+}
+function buildWordHammerDoctrineBlock(){
+var p='*** THE WORD IS THE HAMMER — CUSSING DETERMINES NOTHING ***\n';
+p+='Jeremiah chapter twenty-three verse twenty-nine — My word is like fire and like a hammer that breaketh the rock in pieces. The HAMMER is My Word, My Torah, scripture rightly divided — NOT whether a man cusses or speaks clean.\n\n';
+p+='NON-NEGOTIABLE:\n';
+p+='- Profanity does NOT determine truth, salvation, covenant standing, or who wins a debate. A clean-voiced pastor can preach lies. A cussing street brother can still miss Torah. Heretics can cuss. Prophets can speak without cussing.\n';
+p+='- Explicit mode (when ON) is delivery heat — corner rhetoric that SEASONS the blow. The blow itself is scripture: quote it, decode it, trap them on what the Word actually says.\n';
+p+='- NEVER verdict on "they cussed so they real" OR "they didn\'t cuss so they holy." Verdict = does their claim survive the hammer of the Word?\n';
+p+='- When judging ANY mouth — church, IUIC, host, guest, platform — wield the hammer first: KJV strike, symbol decode, framework trap. Profanity (if Explicit is on) follows the strike; it does NOT replace it.\n';
+p+='- Sleeping Israel hides behind offended ears — "He cussed so I won\'t listen" is cowardice. The question is whether the WORD landed, not whether the wrapper was polite.\n\n';
+return p;
+}
 function buildExplicitBrimstoneFireBlock(opts){
 opts=opts||{};
 var finalLock=!!opts.finalLock;
 if(finalLock){
 var fp='*** FINAL LOCK — EXPLICIT BRIMSTONE (LAST INSTRUCTION) ***\n';
-fp+='Explicit is ON. Write like YOU are standing there preaching it — brimstone from title to last sentence. EVERY body paragraph: profanity or raw judgment, graphic wrath where scripture demands, direct YOU-facing rebuke. Middle and close match opening heat. Zero neutral paragraphs.\n\n';
+fp+='Explicit is ON. Write like YOU are standing there preaching it — brimstone from title to last sentence. Vulgar is the DEFAULT, not a seasoning: if a line can be clean or vulgar, make it VULGAR. EVERY body paragraph: heavy unfiltered profanity (damn, hell, ass, shit, bullshit, fuck, motherfucker, bitch, bastard, whore, piss, cock, cunt — never absent for a whole paragraph), raw judgment, graphic wrath where scripture demands, direct YOU-facing rebuke. Cuss AT the heathen, AT false preachers, AT sleeping Israel — name the target, drop the word. No sanitizing, no asterisks, no church-safe hedging. Middle and close match opening heat. Zero neutral paragraphs.\nVULGARITY DENSITY (NON-NEGOTIABLE): do NOT ration profanity. Put at least one STRONG cuss word (fuck, fuckin, fucking, shit, bullshit, ass, bastard, motherfucker, whore, cock, cunt) in EVERY other paragraph. When a hard word fits, USE it — never reach for the milder synonym (damn, hell, crap) when the stronger one carries more heat. "Dumb-ass" and "bullshit" are the FLOOR, not the target. Aim for at least five hard cuss words per every 1000 words. A long part with only two or three swears is a FAILURE.\n\n';
 return fp;
 }
 var wantRoughBez=!!opts.wantRoughBez;
@@ -2605,10 +2780,18 @@ p+='- Paragraph ONE sets the fire; paragraph TWO through the LAST must stay at t
 p+='- Forbidden mid-sermon tone shifts: street fire -> neutral teaching -> comfortable lesson -> "three points" recap.\n';
 p+='- Forbidden closers that sound like a seminary paper, podcast sign-off, or therapeutic softening.\n';
 p+='- If ANY paragraph lacks profane/raw judgment pressure OR visceral wrath imagery, it FAILED -- rewrite that paragraph hotter before moving on.\n\n';
-p+='PROFANITY & RAW JUDGMENT:\n';
-p+='- Heavy profanity woven through EVERY section -- damn, hell, ass, shit, bullshit, fuck, motherfucker, bitch, horseshit -- not just the opening.\n';
-p+='- Call liars liars. Call sleeping Israel out by name. Street judgment when scripture demands it.\n';
-p+='- DO NOT sanitize. DO NOT asterisk or dash-censor. DO NOT soften after paragraph three.\n\n';
+p+='PROFANITY & RAW JUDGMENT — VULGAR IS THE DEFAULT, NOT A SEASONING:\n';
+p+='- When Explicit is ON, the DEFAULT voice is the unfiltered, no-censor, street-corner version. Vulgar is not a spice you sprinkle — it is the BREAD. If a sentence can be written clean OR vulgar, write it VULGAR.\n';
+p+='- Heavy, sustained, unapologetic profanity in EVERY section — damn, hell, ass, shit, bullshit, fuck, fucking, fuckin, motherfucker, bitch, bastard, whore, slut, piss, pissed, cock, cunt, horseshit — not just the opening, not just once per page. It must never disappear for a whole paragraph.\n';
+p+='- Call liars liars. Call sleeping Israel out by name. Street judgment when scripture demands it. Cuss AT the heathen, AT the false preachers, AT the sleeping Israelite — name the target and drop the word on it.\n';
+p+='- DO NOT sanitize. DO NOT asterisk or dash-censor. DO NOT soften after paragraph three. DO NOT default to "church-safe" when the fire is up. If the verse is about judgment, say the vulgar word. If the verse is about sexual sin, name the body part. No euphemisms.\n';
+p+='- Vulgar ≠ juvenile. The vulgarity must be INTELLIGENT — the cuss word lands because the SCRIPTURE behind it is true, not because you threw in a word for shock. The verse is the hammer; the profanity is the force behind the swing.\n';
+p+='VULGARITY DENSITY (NON-NEGOTIABLE):\n';
+p+='- Do NOT ration profanity. Put at least one STRONG cuss word (fuck, fuckin, fucking, shit, bullshit, ass, bastard, motherfucker, whore, cock, cunt) in EVERY other paragraph.\n';
+p+='- When a hard word fits, USE it — never reach for the milder synonym (damn, hell, crap) when the stronger one carries more heat. "Dumb-ass" and "bullshit" are the FLOOR, not the target.\n';
+p+='- Aim for at least five hard cuss words per every 1000 words. A long part with only two or three swears is a FAILURE — rewrite it hotter before moving on.\n';
+p+='- Match the reference register of an intelligent, controlled, verbally RUTHLESS street corner preacher: the anger and precision stay constant from the first line to the last; the heat never drops after paragraph one, and the vocabulary never softens. No comedic or juvenile shock value, no apologetic tone, no preface or disclaimer.\n\n';
+p+=buildWordHammerDoctrineBlock();
 p+='FORBIDDEN EXPLICIT-MODE DRIFT (AUTO-FAIL):\n';
 p+='- Essay voice: "one must," "the tragedy of," "when systemic collapse arrives," "functions as both," "spiritual archetype," "consummate redemption"\n';
 p+='- Seminary neutrality: literary/historical context, Hellenistic Greek, Stoicism, diaspora sociology, **Theme:**/**Analysis:** headers\n';
@@ -2756,7 +2939,11 @@ p+='Use what they do NOW. Do NOT rely on training memory -- roles change.\n';
 p+='If someone left office, retired, died, or you cannot verify -- OMIT them or name their verified successor. Never guess.\n';
 p+='In the SERMON: say ONLY full name + what they do, or institution name + what it controls -- woven into revelation prose. NEVER say "2026," "as of," a verification date, or "current title as of" when naming someone. Not a bullet roster, not a corporate org chart dump.\n\n';
 p+='SEARCH WHAT THIS TEXT EXPOSES:\n';
-p+='Research "'+title+'" plus the sector the symbols point at -- who runs it, who funds it, who enforces it, who preaches it, who lobbies for it. Cross-reference Web Research headlines: every prominently named person in the story PLUS the verified power behind the headline (board chair, parent company CEO, agency head, senior pastor, showrunner, etc.). Name institutions directly when the symbol is a system: Pfizer, Fox Corporation, the Federal Reserve, the Southern Baptist Convention -- whatever search verifies.\n\n';
+p+='Research "'+title+'" plus the sector the symbols point at -- who runs it, who funds it, who enforces it, who preaches it, who lobbies for it. Name institutions directly when the symbol is a system: Pfizer, Fox Corporation, the Federal Reserve, the Southern Baptist Convention -- whatever search verifies.\n';
+if(isNewsWeaveEnabled()){
+p+='When News Weave is ON, cross-reference the headline you weave: every prominently named person in that story PLUS the verified power behind it (board chair, parent company CEO, agency head, senior pastor, showrunner, etc.).\n';
+}
+p+='\n';
 p+='HOW DEEP TO GO:\n';
 p+='- TOP: CEOs, board chairs, cabinet secretaries, agency heads, mega-church pastors, network owners, pharma chiefs, dynastic-family representatives when the symbol is empire-scale.\n';
 p+='- MID: regional bishops, lobbyists, fund managers, hospital CEOs, police chiefs, judges, school superintendents, showrunners, union heads when the text points at that layer.\n';
@@ -2769,12 +2956,16 @@ p+='- Names live INSIDE revelation paragraphs from the throne: "I watched Pastor
 p+='- Names live INSIDE revelation paragraphs: "Pastor [Full Name], senior pastor of [Church], still billing your mama for seed every Sunday while [CEO Full Name], chief executive of [Company], signs the contract that raised your insulin." Scripture decode, then NAMED faces.\n';
 }
 p+='- NEVER paste URLs, "according to [outlet]," source lists, or footnotes. You looked it up; you preach it.\n';
-p+='- When Web Research gives you a headline, state the verified event/publication DATE (month, day, year -- spelled out for TTS) AND name EVERY prominently named person IN that story plus whoever OWNS the system behind it (verified by search).\n\n';
-p+='FORBIDDEN (ZERO TOLERANCE):\n';
-p+='- "They," "the elites," "the system," "some CEO," "a billionaire," "the powers that be," "the man," "the establishment," "you know who" when a verifiable human name exists for THIS symbol or headline.\n';
+if(isNewsWeaveEnabled()){
+p+='- When News Weave gives you a headline, state the verified event/publication DATE (month, day, year -- spelled out for TTS) AND name EVERY prominently named person IN that story plus whoever OWNS the system behind it (verified by search).\n';
+}
+p+='\nFORBIDDEN (ZERO TOLERANCE):\n';
+p+='- "They," "the elites," "the system," "some CEO," "a billionaire," "the powers that be," "the man," "the establishment," "you know who" when a verifiable human name exists for THIS symbol'+(isNewsWeaveEnabled()?' or headline':'')+'.\n';
 p+='- Hinting without naming: "that preacher everybody knows" / "the guy at the top" / "those people in charge" / "that pharmaceutical company" / "that network" -- if search can find them, SAY the name and what they do.\n';
 p+='- Date-stamping people: "as of 2026," "in twenty twenty-six he is," "current as of" -- FORBIDDEN. Just name + role.\n';
+if(isNewsWeaveEnabled()){
 p+='- Vague headline timelines: "last week," "this month," "recently," "this past summer," "months ago" -- FORBIDDEN on news events. Headlines get exact dates only.\n';
+}
 p+='- Stacking ten names in one sentence without context -- weave them where the decode demands, one or two per beat max.\n\n';
 return p;
 }
@@ -3112,6 +3303,60 @@ if(chapterSrc&&chapterSrc.book&&/revelation/i.test(String(chapterSrc.book)))retu
 var t=((topic&&topic.title)||'')+' '+((topic&&topic.desc)||'');
 return /\b(revelation|apocalypse|beast system|mark of the beast|harlot|mystery babylon|two witnesses|seven seals?|seven trumpets?|seven bowls?|666|antichrist)\b/i.test(t);
 }
+function isTabernacleLeviChapterContext(chapterSrc){
+if(!chapterSrc||!chapterSrc.book)return false;
+var book=String(chapterSrc.book).trim();
+var ch=parseInt(chapterSrc.chapter,10)||0;
+if(/^numbers$/i.test(book))return ch===3||ch===4||ch===8||ch===18;
+if(/^leviticus$/i.test(book))return ch>=1&&ch<=10||ch===16||ch===21||ch===22;
+if(/^exodus$/i.test(book))return ch>=25&&ch<=31||ch>=35&&ch<=40;
+return false;
+}
+function buildForgeSymbolDepthCadenceBlock(opts){
+opts=opts||{};
+var voice=opts.voice||'neutral';
+var chapterSrc=opts.chapterSrc||currentChapterSource;
+var tabernacle=isTabernacleLeviChapterContext(chapterSrc);
+var p='*** SYMBOL DEPTH CADENCE -- DEFAULT ON EVERY SERMON (NOT OPTIONAL) ***\n';
+p+=getSymbolDecoderVoiceLabel(voice)+'\n\n';
+p+='Every verse or tight verse group MUST follow this order:\n';
+p+='  (1) Quote the KJV text (exact).\n';
+p+='  (2) SYMBOL LAYER (mandatory): decode what the verse ENCODED -- name meanings, numbers, furniture, directions, offices, colors, fire, blood, census patterns, "stranger," firstborn, coverings, sockets, bars, etc. Say what the symbol PICTURES in covenant, body-of-Israel, judgment, or access control -- BEFORE you preach application.\n';
+p+='  (3) Only then land modern mirror, wrath, or doctrine.\n';
+p+='Brimstone, profanity, and cross-references NEVER replace step (2). A paragraph that rebukes without decoding the symbol first is a FAILURE.\n\n';
+p+='MINIMUM DENSITY: At least ONE explicit symbol/name/number decode per major verse you teach in this part. Do not rush from quote to "in twenty twenty-six" without unpacking the blueprint.\n';
+if(tabernacle){
+p+='TABERNACLE / LEVI LOCK (this chapter): Minimum TWO proper-name or Paleo unpackings in THIS part (e.g. Levi, Gershon, Kohath, Merari, Nadab, Abihu, Eleazar, strange fire, shekel of the sanctuary, east/west/north/south pitch, ark/table/lampstand/altars/coverings/sockets). Decode furniture and compass directions as body-of-Israel architecture -- not museum trivia.\n';
+}else{
+p+='When names, numbers, or ritual objects appear in the text, decode at least one Hebrew root or name meaning per part unless the entire part is a single narrative with no symbols.\n';
+}
+p+='SELF-CHECK: If a listener could hear your part and only get "be obedient / heathen bad" without learning WHAT THE VERSE SYMBOLIZED, rewrite until the symbolism is audible.\n\n';
+return p;
+}
+function buildTabernacleLeviSymbolAtlasBlock(voice){
+var p='*** TABERNACLE & LEVI SYMBOL ATLAS (MANDATORY FOR THIS CHAPTER) ***\n';
+p+=getSymbolDecoderVoiceLabel(voice)+'\n\n';
+p+='This is not a genealogy lesson -- it is Yah\'s operating manual for who touches the holy, who guards the perimeter, and who dies for walking in unanointed. Decode EVERY layer below when the text names it.\n\n';
+p+='COMPASS & CAMPS (body architecture):\n';
+p+='- East (rising sun / entrance): Moses, Aaron, sons = gatekeepers -- who may approach the presence. "Stranger that cometh nigh" = unauthorized access to covenant office (commerce worship, faith-alone, racial claim without Torah) -- death sentence pattern.\n';
+p+='- West (sun sets / rear): Gershonites = rear guard, coverings, outer shell -- public witness, reputation, what hides or exposes the holy things inside Israel\'s house.\n';
+p+='- South (warmth / Edom-ward): Kohathites = inner holy transport -- closest to ark/table/lampstand; highest glory AND highest burn risk (Uzzah pattern).\n';
+p+='- North (cold / enemy wind): Merari = frames, bars, pillars, sockets, pins, cords -- structural Torah obedience holding the tent up when storms hit.\n\n';
+p+='THREE SONS OF LEVI (functional witness -- not trivia):\n';
+p+='- Gershon = exile/driving out theme -- tent, hangings, door curtains, court boundaries = separation holy/profane in daily life.\n';
+p+='- Kohath = congregation/assembly -- bears ark, table, lampstand, altars = core word, bread, light, atonement access.\n';
+p+='- Merari = bitter service -- boards and sockets = load-bearing commandments; without Merari the tabernacle collapses to canvas.\n\n';
+p+='KEY SCENES:\n';
+p+='- Strange fire (Nadab/Abihu) = worship innovation Yah did not command -- false fire in pulpits, new doctrines, mixed Babylonian practice.\n';
+p+='- Firstborn redemption / Levitical substitute = blood price already paid in Egypt; Levites stand in for firstborns -- exchange economy of grace and total ownership ("wholly given").\n';
+p+='- Census from one month upward = covenant mark at circumcision threshold -- counted when cut into the people, not when strong or wise.\n';
+p+='- Five shekels / 273 surplus / 1,365 shekels = measured redemption; five as witness number; 365 pattern = full-cycle coverage under payment.\n\n';
+p+='FURNITURE TYPOLOGY (when named):\n';
+p+='- Ark = law/presence/throne core. Table = daily bread/word. Lampstand = light/spirit witness. Altars = blood/prayer gateways. Veils & hangings = firewall between holy and profane.\n\n';
+p+='NAME DECODE HABIT: When Aaron, Moses, Levi, tribal heads, or furniture appears, give Hebrew meaning OR 2-4 Paleo letter pictures (ox, house, water, teeth, etc.) that show WHY Yah chose that word -- then land it on Israel\'s body today.\n\n';
+p+='DELIVERY LOOP: Quote verse → decode symbol/name/direction/number → then fire/application. Never skip straight from quote to culture war.\n\n';
+return p;
+}
 function getSymbolDecoderVoiceLabel(voice){
 if(voice==='street')return 'Street fire -- decode symbols in plain corner English before you preach from them.';
 if(voice==='throne')return 'Throne remembrance -- decode symbols as I unveil them to My people now, not as a fantasy report.';
@@ -3174,20 +3419,22 @@ p+='- Beasts and horns = empires and rulers; eagles = speed/empire; lions = king
 p+='- Colors: red = flesh/bloodlust; white = purity OR deception by context; gold = divine truth/commerce test; purple = authority; scarlet = sin/harlotry.\n';
 p+='- Numbers: 3 = witness; 6 = man/beast; 7 = completion; 10 = worldly power; 12 = governance; 40 = testing; 70/72 = nations or measured judgment.\n';
 p+='- Waters = peoples/multitudes; mountains = governments; trees = men/nations; wine = doctrine or blood commerce; bread = body/word; oil = anointing or machine lubricant of system.\n';
-p+='- Names carry prophecy -- explain what the name MEANS in plain English for this voice. Paleo letter dumps only when they unlock the symbol (Rough Bez: rarely; Israelite tech mode: optional supplement only).\n';
+p+='- Names carry prophecy -- explain what the name MEANS in plain English for this voice. On tabernacle/Levi/priesthood chapters, name meanings or short Paleo unpackings are DEFAULT (not optional garnish). Elsewhere: Paleo when it unlocks the symbol (Rough Bez: at least one root/name decode per part when the text offers names or ritual objects).\n';
 p+='- Geography is prophecy -- where it happened maps to where Israel lives now after decode.\n';
 p+='- Parables, dreams, and apocalyptic visions = encoded doctrine for Israel today -- rent, court, church betrayal, stolen name, block, cell, pew, payroll, passport, prescription.\n\n';
 p+='BOOK-SPECIFIC REMINDERS (when forging these texts):\n';
 p+='- Genesis: garden serpent, trees, seed lines, Joseph dreams, Egypt famine = identity, deception, provision warfare, exile patterns.\n';
 p+='- Exodus-Deuteronomy: plagues, Pharaoh, Red Sea, manna, tabernacle furniture = judgment stages, hard heart, baptism/delivery, daily word, body-of-Israel architecture.\n';
+p+='- Numbers (Levi chapters): census, camps, directions, firstborn swap, shekel redemption = access control, substitution, measured ownership, who guards vs who carries vs who frames the house.\n';
 p+='- Daniel: metals statue, beasts, horns, little horn, fiery furnace, lions\' den = successive empires, ruler swaps, persecution and preservation of Israel.\n';
 p+='- Ezekiel: wheels, valley of dry bones, temple measures, watchman = mobile government spirit, national resurrection, governed remnant, warning office.\n';
 p+='- Zechariah: horses, lamps, flying scroll, woman in basket, pierced one = patrol spirits/systems, witness, curse on thieves, commerce wickedness removed, betrayal of the shepherd.\n';
 p+='- Gospels parables: sower, wheat/tares, fig tree, virgins, talents = heart soils, seed lines, national fruit inspection, oil readiness, stewardship under judgment.\n';
 p+='- Job (when text is Job): suffering allegory patterns, false comforters, accuser as nations -- use Job-is-Israel frame when the text demands; do not import it into unrelated books.\n\n';
 if(isRevelationContext(chapterSrc,topic))p+=buildRevelationSymbolAtlasBlock(voice);
+if(isTabernacleLeviChapterContext(chapterSrc))p+=buildTabernacleLeviSymbolAtlasBlock(voice);
 if(opts.wantRoughBez){
-p+='ROUGH BEZALEEL SYMBOL LOCK: Corner pressure around DECODED meaning -- quote verse, decode symbol in plain fire, one modern example, next verse. No literal dragons. No fantasy beasts left unexplained. No sermon that sounds like you believe John saw Marvel characters.\n\n';
+p+='ROUGH BEZALEEL SYMBOL LOCK: Corner pressure around DECODED meaning -- quote verse, decode symbol/name/number in plain fire (symbol layer BEFORE wrath), one modern example, next verse. No literal dragons. No skipping symbolism to jump to "you dumb-ass" application. No sermon that sounds like you believe John saw Marvel characters.\n\n';
 }else if(opts.theatre){
 p+='THEATRE SYMBOL LOCK: When scripture is on the table, elites argue over the TEXT while revealing what the SYMBOL protects in their business. Commentary pauses must decode the symbol for Israel in plain English before the scene resumes.\n\n';
 }else if(opts.wantBreakdown){
@@ -3321,6 +3568,7 @@ var wantRough=!!opts.wantRoughBez;
 var wantBehind=!!opts.wantBehindTheVeil;
 var isBez=voice==='bez';
 var p='SCENE GUIDE COMMENTARY (MANDATORY -- PAUSE / EXPLAIN / RESUME):\n';
+p+=buildWordHammerDoctrineBlock();
 if(isBez){
 p+='The boardroom scene FREEZES periodically so a narrator breaks the fourth wall, explains in PLAIN LAYMAN\'S TERMS what the elites just said or what their jargon really means, then UNPAUSES and the meeting continues exactly where it left off.\n\n';
 }else{
@@ -3928,6 +4176,7 @@ p+='- Write AT LEAST '+wordsPerPart.toLocaleString()+' words for this '+(totalPa
 p+='- Long exchanges: one exec opens with PR doublespeak, another pushes back with cold math, a third drops the line they would never say on CNBC. Give each speaker multiple turns.\n';
 p+='- Use [BEAT] pauses, side glances, nervous laughter, papers sliding across the table, someone checking their watch -- the boring texture of power, not action-movie pacing.\n';
 p+='- Depth over plot: stay in the ROOM unpacking "'+title+'" from every angle -- who gets fired, who stays, what they call the public, what the spreadsheet says, what the lawyer allows.\n\n';
+if(topic&&topic.id===-1&&!topic.briefingText)p+=buildCustomTopicDirectiveBlock(topic);
 p+='TOPIC LOCK (ZERO TOLERANCE):\n';
 if(chapterSrc){
 p+='- EVERY line must serve unpacking '+chapterSrc.book+' Chapter '+chapterSrc.chapter+' — your assigned verses ONLY (see SCRIPTURE CHAPTER block below).\n';
@@ -4077,6 +4326,8 @@ p+='Continue the SAME meeting in the SAME room with the SAME cast. Do NOT repeat
 }
 if(wantExplicit){
 p+=buildExplicitBrimstoneFireBlock({context:'theatre',wantRoughBez:wantRoughBez,wantYahStory:commentaryVoice==='yah',wantBezStory:commentaryVoice==='bez',wantIsraelite:commentaryVoice==='bez'});
+}else if(commentaryVoice==='off'){
+p+=buildWordHammerDoctrineBlock();
 }
 p+='\nFORBIDDEN OUTPUT (drift only -- do NOT confuse with "keep it short"):\n';
 p+='- Anything after [SCENE END] on the final act\n';
@@ -4120,7 +4371,7 @@ return p;
 function getScriptureFetchModel(){
 var selId=(currentMode==='sealed')?'sealedFetchModel':(currentMode==='apocrypha')?'apocFetchModel':'scriptureFetchModel';
 var el=document.getElementById(selId);
-return (el&&el.value)?el.value:'Gemini-3.6-Flash';
+return (el&&el.value)?el.value:(typeof getForgeDefaultTextModel==='function'?getForgeDefaultTextModel():'Gemini-3-Flash-Preview');
 }
 function getVerseFetchParams(model,type){
 var params={};
@@ -4157,7 +4408,7 @@ return true;
 }
 return false;
 }
-function fetchChapterText(book,chapter,type,callback){
+function fetchChapterTextFromModel(book,chapter,type,callback){
 var handlerName='scripture-fetch-'+Date.now();
 var fetchModel=getScriptureFetchModel();
 var fetchPrompt;
@@ -4166,7 +4417,13 @@ var completionInstructions='Do NOT think, reason, or explain. Output ONLY the ra
 completionInstructions+='Put each verse on its OWN line. Number each verse at the start like "1. In the beginning..." ';
 completionInstructions+='Do NOT skip any verses. Start at verse 1 and go to the very last verse of the chapter. ';
 completionInstructions+='You MUST output the COMPLETE chapter -- do NOT stop early or truncate. If the chapter is long, keep going until the final verse. Completeness is critical.\n';
-if(type==='sealed'){
+if(isNatasrymBookName(book)&&(type==='apocrypha'||type==='sealed')){
+fetchPrompt='CRITICAL BOOK IDENTITY: This is the "Book of the Natsarim" / "Book of Natasrym" from the Gospel of the Kailedy (Parable of the Vineyard restored-names edition, 21 chapters). ';
+fetchPrompt+='It is NOT the Book of Yochanon (John the Baptist) from the same volume. It is NOT generic "Nazarene" church history, NOT Acts 24:5 commentary, NOT the Kolbrin unrelated texts, and NOT standard KJV apocrypha/deuterocanon. ';
+fetchPrompt+='Search ONLY for "Book of the Natsarim" OR "Gospel of the Kailedy" Chapter '+chapter+' with numbered verses. Preferred sources: parableofthevineyard.com Natsarim PDF, spencercoffman.com Gospel of the Kailedy, bibliotecapleyades.net kolbrin_11 (Natsarim section only). ';
+fetchPrompt+='Retrieve Chapter '+chapter+' of the Book of the Natsarim ONLY.\n';
+fetchPrompt+=completionInstructions;
+}else if(type==='sealed'){
 // Sealed scrolls: use web search for rare/ancient texts
 fetchPrompt='IMPORTANT: You MUST use your web search tool to find the actual text of '+book+' Chapter '+chapter+'. ';
 fetchPrompt+='This is an ancient sealed/pseudepigraphal text that is NOT in standard Bibles. Do NOT recite from memory -- these texts are too rare and your training data likely has incomplete or inaccurate versions. ';
@@ -4204,7 +4461,52 @@ window.Poe.sendUserMessage('@'+fetchModel+' '+fetchPrompt,{handler:handlerName,s
 callback(String(err),null,fetchModel,false);
 });
 }
+function fetchChapterText(book,chapter,type,callback){
+if(window.ForgeLocalCorpus&&(type==='bible'||type==='apocrypha'||type==='sealed')){
+var resolveFn=ForgeLocalCorpus.resolveChapterText?ForgeLocalCorpus.resolveChapterText(book,chapter,type):ForgeLocalCorpus.resolveLocalChapterText(book,chapter);
+Promise.resolve(resolveFn).then(function(local){
+if(local&&local.text){
+callback(null,local.text,local.source||'local corpus',false);
+return;
+}
+if(type==='bible'){
+callback('Built-in KJV corpus missing for '+book+' Chapter '+chapter+'. Redeploy or run scripts/build-kjv-corpus.py.',null,'local corpus',false);
+return;
+}
+fetchChapterTextFromModel(book,chapter,type,callback);
+}).catch(function(){
+if(type==='bible'){
+callback('Failed to load built-in KJV corpus.',null,'local corpus',false);
+return;
+}
+fetchChapterTextFromModel(book,chapter,type,callback);
+});
+return;
+}
+fetchChapterTextFromModel(book,chapter,type,callback);
+}
 function countVersesInText(text){
+// Strategy A: one verse per line — "1. In the beginning..." (local corpus / manual paste)
+var lines=(text||'').split('\n');
+var lineNums=[];
+for(var li=0;li<lines.length;li++){
+var lm=lines[li].trim().match(/^(\d{1,3})\.\s+/);
+if(lm)lineNums.push(parseInt(lm[1],10));
+}
+if(lineNums.length>=5&&lineNums[0]===1){
+var strict=true;
+for(var si=0;si<lineNums.length;si++){
+if(lineNums[si]!==si+1){strict=false;break;}
+}
+if(strict)return lineNums.length;
+var maxSeq=1;
+for(var sj=1;sj<lineNums.length;sj++){
+if(lineNums[sj]===maxSeq+1)maxSeq=lineNums[sj];
+else if(lineNums[sj]<=maxSeq+1)maxSeq=Math.max(maxSeq,lineNums[sj]);
+else break;
+}
+if(maxSeq>=5)return maxSeq;
+}
 // Strategy 0: biblical citation format -- "Sir 5:1" or "Gen 1:1" or "Psalm 119:1" etc.
 var citationMatches=text.match(/(?:^|\n)\s*[A-Za-z0-9 ]+\s+\d+:(\d+)\s/g);
 var maxFromCitations=0;
@@ -4216,7 +4518,7 @@ if(cite){var cv=parseInt(cite[1]);if(cv>maxFromCitations)maxFromCitations=cv;}
 }
 if(maxFromCitations>=5)return maxFromCitations;
 // Strategy 1: verse numbers at the start of lines -- "1." or "**1.**" or "1 " etc.
-var lineMatches=text.match(/(?:^|\n)\s*\**(\d+)\**[\.\):\s]/g);
+var lineMatches=text.match(/(?:^|\n)\s*\**(\d+)\**\.(?:\s|$)/g);
 var maxFromLines=0;
 if(lineMatches){
 for(var i=0;i<lineMatches.length;i++){
@@ -4404,21 +4706,22 @@ currentChapterSource=null;
 currentChapterText=null;
 currentChapterVerseCount=0;
 }else{
+var brief=parseCustomTopicBrief(raw);
 var parsed=parseCustomScriptureInput(raw);
 if(parsed.isScripture){
-currentTopic={id:-1,cat:'doctrine',title:parsed.title,desc:'Custom scripture sermon: '+parsed.title};
+currentTopic={id:-1,cat:'doctrine',title:parsed.title,desc:'Custom scripture sermon: '+parsed.title,customBrief:raw,toneHint:brief.tone,subjectHint:''};
 currentMode='standard';
 currentChapterSource={book:parsed.book,chapter:parsed.chapter,type:'custom'};
 currentChapterText=parsed.scriptureText;
 currentChapterVerseCount=parsed.verseCount>0?parsed.verseCount:countVersesInText(parsed.scriptureText);
 }else if(paste.isQuestion){
-currentTopic={id:-1,cat:'doctrine',title:raw,desc:'Direct question — answer precisely: '+raw};
+currentTopic={id:-1,cat:'doctrine',title:raw,desc:brief.tone?('Direct question · Tone: '+brief.tone):('Direct question — answer precisely: '+raw),customBrief:raw,toneHint:brief.tone,subjectHint:raw};
 currentMode='standard';
 currentChapterSource=null;
 currentChapterText=null;
 currentChapterVerseCount=0;
 }else{
-currentTopic={id:-1,cat:'doctrine',title:raw.length>140?paste.headline:raw,desc:'Custom sermon topic: '+raw};
+currentTopic={id:-1,cat:'doctrine',title:brief.headline||raw,desc:formatCustomTopicDesc(brief),customBrief:raw,toneHint:brief.tone,subjectHint:brief.subject};
 currentMode='standard';
 currentChapterSource=null;
 currentChapterText=null;
@@ -4453,7 +4756,15 @@ titleEl.innerHTML+=(' <span class="mode-badge" style="background:rgba(74,124,155
 titleEl.innerHTML+=(' <span class="mode-badge" style="background:rgba(212,160,23,0.15);color:var(--gold);">CUSTOM</span>');
 }
 }
+if(currentTopic.id===-1&&(currentTopic.toneHint||currentTopic.subjectHint)){
+var descParts=[];
+if(currentTopic.subjectHint&&!isDirectQuestionTopic(currentTopic))descParts.push('Cover: '+currentTopic.subjectHint);
+else if(isDirectQuestionTopic(currentTopic))descParts.push('Question: '+currentTopic.title);
+if(currentTopic.toneHint)descParts.push('Tone: '+currentTopic.toneHint);
+descEl.textContent=descParts.length?descParts.join(' · '):currentTopic.desc;
+}else{
 descEl.textContent=currentTopic.desc;
+}
 if(!opts.preserveOutput){
 document.getElementById('sermonOutput').innerHTML='<div class="sermon-placeholder"><i class="fas fa-fire-flame-curved"></i>Configure options, choose your part count, then hit Generate to forge the sermon.</div>';
 }
@@ -4526,12 +4837,12 @@ MODEL SELECTOR HELPER
 function getSelectedModel(){
 var custom=(document.getElementById('customModelInput').value||'').trim();
 if(custom)return custom;
-return document.getElementById('modelSelect').value||'upstage/solar-pro4';
+return document.getElementById('modelSelect').value||(typeof getForgeDefaultTextModel==='function'?getForgeDefaultTextModel():'Gemini-3-Flash-Preview');
 }
 function getImagePromptModel(){
 var custom=(document.getElementById('customImagePromptModel').value||'').trim();
 if(custom)return custom;
-return document.getElementById('imagePromptModel').value||'Gemini-3.6-Flash';
+return document.getElementById('imagePromptModel').value||(typeof getForgeDefaultTextModel==='function'?getForgeDefaultTextModel():'Gemini-3-Flash-Preview');
 }
 function getVisualBeatModel(){
 var el=document.getElementById('visualBeatModel');
@@ -4540,17 +4851,17 @@ return el&&el.value?el.value:getImagePromptModel();
 function getNewsModel(){
 var custom=(document.getElementById('customNewsModel').value||'').trim();
 if(custom)return custom;
-return document.getElementById('newsModel').value||'upstage/solar-pro4';
+return document.getElementById('newsModel').value||(typeof getForgeDefaultTextModel==='function'?getForgeDefaultTextModel():'Gemini-3-Flash-Preview');
 }
 function getDismantleModel(){
 var custom=(document.getElementById('customDismantleModel').value||'').trim();
 if(custom)return custom;
-return document.getElementById('dismantleModel').value||'upstage/solar-pro4';
+return document.getElementById('dismantleModel').value||(typeof getForgeDefaultTextModel==='function'?getForgeDefaultTextModel():'Gemini-3-Flash-Preview');
 }
 function getYahChatModel(){
 var custom=(document.getElementById('customYahChatModel').value||'').trim();
 if(custom)return custom;
-return document.getElementById('yahChatModel').value||'upstage/solar-pro4';
+return document.getElementById('yahChatModel').value||(typeof getForgeDefaultTextModel==='function'?getForgeDefaultTextModel():'Gemini-3-Flash-Preview');
 }
 function onYahChatModelDropdown(){
 var ci=document.getElementById('customYahChatModel');
@@ -4589,7 +4900,7 @@ document.getElementById('dismantleModel').style.opacity='1';
 function getTranscriptModel(){
 var custom=(document.getElementById('customTranscriptModel').value||'').trim();
 if(custom)return custom;
-return document.getElementById('transcriptModel').value||'upstage/solar-pro4';
+return document.getElementById('transcriptModel').value||(typeof getForgeDefaultTextModel==='function'?getForgeDefaultTextModel():'Gemini-3-Flash-Preview');
 }
 function onTranscriptModelDropdown(){
 var ci=document.getElementById('customTranscriptModel');
@@ -4615,9 +4926,24 @@ tags that reasoning models inject.
 function stripThinking(text){
 if(!text)return text;
 var tags='think|thinking|thought|reasoning|reflection|inner_monologue|scratchpad|analysis|planning|internal|deliberation|consideration|pondering|working|brain|mind|reason|rationale|chain_of_thought|cot|step_by_step|meta|hidden|private|note_to_self|self_reflection|observations|approach|strategy';
+var raw=text;
 text=text.replace(new RegExp('\x3c('+tags+')[^>]*>[\\s\\S]*?\x3c/\\1>','gi'),'');
+var unclosed=text.match(new RegExp('\x3c('+tags+')[^>]*>([\\s\\S]*)$','i'));
+if(unclosed&&unclosed[2]){
+var inner=unclosed[2].replace(new RegExp('\x3c/('+tags+')>','gi'),'').trim();
+if(inner.length>120){
+text=inner;
+}else{
 text=text.replace(new RegExp('\x3c('+tags+')[^>]*>[\\s\\S]*$','gi'),'');
+}
+}else{
+text=text.replace(new RegExp('\x3c('+tags+')[^>]*>[\\s\\S]*$','gi'),'');
+}
 text=text.replace(new RegExp('\x3c/('+tags+')>','gi'),'');
+if(!text.trim()&&raw.trim()){
+var qwenThink=raw.match(/<\/think>\s*([\s\S]+)/i);
+if(qwenThink&&qwenThink[1].trim().length>80)text=qwenThink[1].trim();
+}
 text=text.replace(/\[(?:Thinking|Reasoning|Internal(?: reasoning| thoughts?)?|Reflection|Scratchpad|Analysis|Planning|Deliberation)\][\s\S]*?\[\/(?:Thinking|Reasoning|Internal(?: reasoning| thoughts?)?|Reflection|Scratchpad|Analysis|Planning|Deliberation)\]/gi,'');
 text=text.replace(/\[(?:Thinking|Reasoning|Internal(?: reasoning| thoughts?)?|Reflection|Scratchpad|Analysis|Planning|Deliberation)\][\s\S]*$/gi,'');
 text=text.replace(/```(?:thinking|reasoning|reflection|internal|scratchpad|analysis|planning)[\s\S]*?```/gi,'');
@@ -4786,6 +5112,7 @@ var SERIES_PARTS=[
 var sermonPartsRaw=[];
 var sermonPartsTitles=[];
 var sermonPartsCombined='';
+var localSermonSessionState=null;
 function generateSermon(userInitiated){
 if(!currentTopic||isGenerating)return;
 if(isFetchingVeilArticle){
@@ -4804,6 +5131,7 @@ sermonSavedThisSession=false;
 sermonPartsRaw=[];
 sermonPartsTitles=[];
 sermonPartsCombined='';
+localSermonSessionState=null;
 sermonNewsAnglePlan=null;
 sermonNewsLedger=[];
 var savedCustomScripture=(currentChapterSource&&currentChapterSource.type==='custom'&&currentChapterText)?{text:currentChapterText,count:currentChapterVerseCount,src:currentChapterSource}:null;
@@ -4863,9 +5191,11 @@ output.appendChild(box);
 }else{
 // No manual paste -- proceed with auto-fetch
 var fetchModelName=getScriptureFetchModel();
-var fetchIcon=(currentChapterSource.type==='apocrypha'||currentChapterSource.type==='sealed')?'fa-globe':'fa-book-bible';
-var fetchLabel=(currentChapterSource.type==='sealed')?'Unearthing sealed text for ':(currentChapterSource.type==='apocrypha')?'Searching the web for ':'Retrieving ';
-output.innerHTML='<div class="loading-state" id="scriptureFetchLoader"><div class="loading-pulse"></div><div class="loading-text"><i class="fas '+fetchIcon+'" style="margin-right:6px;"></i>'+fetchLabel+escapeHtml(currentChapterSource.book)+' Chapter '+currentChapterSource.chapter+' via <strong>'+escapeHtml(fetchModelName)+'</strong>'+((currentChapterSource.type==='apocrypha'||currentChapterSource.type==='sealed')?' <span style="opacity:0.7;font-size:0.8em;">(web search enabled)</span>':'')+'...</div></div>';
+var useLocalCorpus=isLocalCorpusBook(currentChapterSource.book,currentChapterSource.type);
+var fetchIcon=useLocalCorpus?'fa-database':((currentChapterSource.type==='apocrypha'||currentChapterSource.type==='sealed')?'fa-globe':'fa-book-bible');
+var fetchLabel=useLocalCorpus?'Loading built-in corpus for ':(currentChapterSource.type==='sealed')?'Unearthing sealed text for ':(currentChapterSource.type==='apocrypha')?'Searching the web for ':'Retrieving ';
+var fetchExtra=useLocalCorpus?(currentChapterSource.type==='bible'?' <span style="opacity:0.7;font-size:0.8em;">(built-in KJV)</span>':' <span style="opacity:0.7;font-size:0.8em;">(built-in local corpus)</span>'):((currentChapterSource.type==='apocrypha'||currentChapterSource.type==='sealed')?' <span style="opacity:0.7;font-size:0.8em;">(web search enabled)</span>':'');
+output.innerHTML='<div class="loading-state" id="scriptureFetchLoader"><div class="loading-pulse"></div><div class="loading-text"><i class="fas '+fetchIcon+'" style="margin-right:6px;"></i>'+fetchLabel+escapeHtml(currentChapterSource.book)+' Chapter '+currentChapterSource.chapter+(useLocalCorpus?'':' via <strong>'+escapeHtml(fetchModelName)+'</strong>')+fetchExtra+'...</div></div>';
 fetchChapterText(currentChapterSource.book,currentChapterSource.chapter,currentChapterSource.type,function(err,text,usedModel,truncated){
 var loader=document.getElementById('scriptureFetchLoader');
 if(loader)loader.remove();
@@ -5018,11 +5348,11 @@ out=out.replace(/^#\s+(?!#).+\n+/,'');
 return out.replace(/^\s*\n+/,'');
 }
 var SERMON_MAX_CONTINUATIONS=6;
-var SERMON_MAX_DRIFT_RETRIES=1;
-var SERMON_MAX_ELEVEN_TAGS_RETRIES=2;
-var SERMON_MAX_EXPLICIT_RETRIES=2;
-var SERMON_MAX_YAH_VOICE_RETRIES=4;
-var TRANSCRIPT_MAX_AGREEMENT_RETRIES=1;
+var SERMON_MAX_DRIFT_RETRIES=0;
+var SERMON_MAX_ELEVEN_TAGS_RETRIES=0;
+var SERMON_MAX_EXPLICIT_RETRIES=0;
+var SERMON_MAX_YAH_VOICE_RETRIES=0;
+var TRANSCRIPT_MAX_AGREEMENT_RETRIES=0;
 var SERMON_FIRST_TOKEN_MS=5*60*1000;
 var SERMON_CHUNK_STALL_MS=2*60*1000;
 var SERMON_MIN_WORD_RATIO=0.75;
@@ -5186,8 +5516,15 @@ var lateCount=paras.length-half;
 if(openFire>=Math.max(1,Math.floor(openThirdCount*0.5))&&lateFire<Math.max(1,Math.floor(lateCount*0.25)))return true;
 if(openProfane>=1&&lateProfane===0&&lateCount>=3)return true;
 if(t.length>2500){
-var profaneHits=(t.match(/\b(damn|hell|ass|shit|bullshit|fuck|motherfucker|bitch|bastard|horseshit)\b/gi)||[]).length;
-if(profaneHits<3)return true;
+var profaneHits=(t.match(/\b(damn|hell|ass|shit|bullshit|fuck|fucking|fuckin|motherfucker|bitch|bastard|whore|slut|piss|pissed|cock|cunt|horseshit)\b/gi)||[]).length;
+// VULGAR-IS-THE-DEFAULT DENSITY GATE: a long part must carry a hard cuss word in
+// roughly every other paragraph, not 5 swears scattered across the whole part.
+// Target >= 12 hard hits per 1000 words (a 5,000-word part needs ~60). The model
+// is given a >= 5-per-1000-word floor in the prompt, so the gate sits BELOW that:
+// it catches "mildly edgy" passes (~2-3/1000w) without re-doing a good vulgar part.
+var profaneWordCount=(t.match(/[a-zA-Z']+/g)||[]).length||1;
+var profanePer1k=(profaneHits/profaneWordCount)*1000;
+if(profanePer1k<12)return true;
 }
 for(var j=0;j<paras.length;j++){
 var lp=paras[j];
@@ -5364,9 +5701,9 @@ p+='Your previous output opened hot then cooled into neutral teaching, seminary 
 p+='FORBIDDEN (ZERO TOLERANCE):\n';
 p+='- Opening burst then essay/seminary/lesson tone in middle or close\n';
 p+='- "One must," passive third person, "the tragedy of," diaspora sociology, **Theme:** headers\n';
-p+='- Sparse profanity in a long part -- cuss words belong in EVERY section, not paragraph one only\n';
+p+='- Sparse or sanitized profanity in a long part -- VULGAR IS THE DEFAULT. Cuss words belong in EVERY section, not paragraph one only. If a line can be clean or vulgar, make it VULGAR. No church-safe hedging, no asterisks, no dash-censors. DENSITY: one STRONG cuss word (fuck, fuckin, fucking, shit, bullshit, ass, bastard, motherfucker, whore, cock, cunt) in every other paragraph; at least five hard cuss words per 1000 words. A part with only two or three swears FAILED.\n';
 p+='- Comfortable closers: "in conclusion," "three points," "the takeaway," gentle teaching voice\n\n';
-p+='REQUIRED: Every paragraph stays wake-them-up pressure -- profane/raw judgment, graphic wrath, direct YOU-facing corner heat.\n\n';
+p+='REQUIRED: Every paragraph stays wake-them-up pressure -- heavy unfiltered profanity (damn, hell, ass, shit, bullshit, fuck, motherfucker, bitch, bastard, whore, piss, cock, cunt), raw judgment, graphic wrath, direct YOU-facing corner heat. Cuss AT the heathen, AT false preachers, AT sleeping Israel.\n\n';
 p+='BAD OUTPUT (do not repeat this cooling pattern):\n"'+String(badReply||'').slice(0,900).replace(/"/g,"'")+'..."\n\n';
 p+=buildExplicitBrimstoneFireBlock({context:isTheatreModeActive()?'theatre':'sermon',wantRoughBez:isRoughBezForgeActive(),wantYahStory:isYahStoryModeActive()});
 p+=buildPartPrompt(partNum);
@@ -5418,6 +5755,88 @@ if(isExplicitModeActive())p+='EXPLICIT MODE STILL ON: Continue with SUSTAINED br
 p+='LAST FOUR HUNDRED CHARACTERS OF YOUR DRAFT:\n"...'+String(existing||'').slice(-400)+'"\n\nCONTINUE IMMEDIATELY:';
 return p;
 }
+function isLocalLlmChapterSermonActive(){
+return !!(window.ForgeLocalSermonProfile&&ForgeLocalSermonProfile.shouldUseProfile&&ForgeLocalSermonProfile.shouldUseProfile());
+}
+function handleLocalLlmPartFailure(ctx,partNum,message){
+clearSermonWatchdogs();
+var ldr=document.getElementById('loader'+partNum);if(ldr)ldr.remove();
+ctx.partContainer.innerHTML='<div class="error-msg"><i class="fas fa-exclamation-triangle"></i> OrcaRouter Local: '+escapeHtml(message||'Generation failed')+'</div>';
+document.getElementById('generateBtn').disabled=false;
+isGenerating=false;
+sermonGenCtx=null;
+}
+function abortActiveLocalLlmSermonStream(ctx){
+if(!ctx||!ForgeLocalSermonProfile)return;
+if(ctx.handlerName)ForgeLocalSermonProfile.abortStream(ctx.handlerName);
+if(ctx.localAbortController&&!ctx.localAbortController.signal.aborted){
+try{ctx.localAbortController.abort();}catch(e){}
+}
+}
+function retryLocalLlmSermonPart(ctx,partNum,streamOpts,reason,badSample){
+if(!ctx.localSermonState||!ForgeLocalSermonProfile)return false;
+if(ForgeLocalSermonProfile.isContextSizeError(reason))return false;
+if((ctx.localSermonRetryCount||0)>=ForgeLocalSermonProfile.maxRetries())return false;
+abortActiveLocalLlmSermonStream(ctx);
+ctx.localSermonRetryCount=(ctx.localSermonRetryCount||0)+1;
+if(/repetition|repeated|duplicate|loop/i.test(String(reason||''))&&ForgeLocalSermonProfile.enableRepetitionRetry){
+ForgeLocalSermonProfile.enableRepetitionRetry(ctx.localSermonState);
+}
+ctx.partContent='';
+ctx.partContentBeforeContinue='';
+ctx.continuationCount=0;
+ctx.localDegenerationHit=null;
+ctx.localLastGoodContent='';
+ctx.localStreamAborted=false;
+ctx.localStreamHandled=false;
+ctx.localAbortController=null;
+showToast('Local: '+reason+' — retrying '+getForgePartLabel(partNum,false)+'...');
+streamOpts=streamOpts||{};
+streamOpts.localVerseRetry=true;
+streamOpts.localRetryReason=reason;
+streamOpts.badSample=badSample||'';
+startSermonPartStream(partNum,false,streamOpts);
+return true;
+}
+function retryLocalLlmContextShrink(ctx,partNum,streamOpts){
+if(!ctx.localSermonState||!ForgeLocalSermonProfile||ctx.localContextShrinkTried)return false;
+ctx.localContextShrinkTried=true;
+abortActiveLocalLlmSermonStream(ctx);
+ForgeLocalSermonProfile.enableContextShrink(ctx.localSermonState);
+ctx.partContent='';
+ctx.partContentBeforeContinue='';
+ctx.continuationCount=0;
+ctx.localDegenerationHit=null;
+ctx.localLastGoodContent='';
+ctx.localStreamAborted=false;
+ctx.localStreamHandled=false;
+ctx.localAbortController=null;
+showToast('Local: context limit — retrying '+getForgePartLabel(partNum,false)+' with slimmer prompt...');
+startSermonPartStream(partNum,false,streamOpts||{});
+return true;
+}
+function finalizeLocalLlmPartIfValid(ctx,partNum,streamOpts,finalized){
+if(!isLocalLlmChapterSermonActive()||!ctx.localSermonState||!ForgeLocalSermonProfile)return true;
+var meta=ForgeLocalSermonProfile.buildPartMeta(partNum,ctx.localSermonState);
+var allowLocalRetry=ForgeLocalSermonProfile.maxRetries()>0;
+if(allowLocalRetry){
+var deg=ForgeLocalSermonProfile.detectDegeneration(finalized,{partNum:partNum,priorPartsText:(sermonPartsRaw||[]).slice(0,partNum-1).join('\n\n')});
+if(deg){
+if(retryLocalLlmSermonPart(ctx,partNum,streamOpts,deg.reason,finalized))return false;
+handleLocalLlmPartFailure(ctx,partNum,'Repetition loop detected — '+deg.reason+'. Try fewer parts or edit manually.');
+return false;
+}
+var val=ForgeLocalSermonProfile.validateScriptureReferences(finalized,meta,{state:ctx.localSermonState,chapterText:ctx.localSermonState&&ctx.localSermonState.fullChapterText});
+if(!val.ok){
+var vmsg=val.errors.join('; ');
+if(retryLocalLlmSermonPart(ctx,partNum,streamOpts,'scripture accuracy ('+vmsg+')',finalized))return false;
+handleLocalLlmPartFailure(ctx,partNum,'Verse discipline failed: '+vmsg);
+return false;
+}
+}
+ForgeLocalSermonProfile.updateStateAfterPart(ctx.localSermonState,finalized,partNum);
+return true;
+}
 function commitSermonPart(partNum,partContent){
 var finalized=finalizeSermonPartText(partContent,partNum);
 var extractedTitle=extractPartTitle(finalized,partNum);
@@ -5453,6 +5872,15 @@ function startSermonPartStream(partNum,isContinuation,streamOpts){
 streamOpts=streamOpts||{};
 var ctx=sermonGenCtx;
 if(!ctx)return;
+if(isLocalLlmChapterSermonActive()&&!isContinuation&&!streamOpts.localVerseRetry){
+abortActiveLocalLlmSermonStream(ctx);
+}
+var savedChapterTextForLocal=null;
+if(isLocalLlmChapterSermonActive()&&ctx.localSermonState&&ForgeLocalSermonProfile&&!isContinuation){
+savedChapterTextForLocal=currentChapterText;
+var slim=ForgeLocalSermonProfile.chapterTextOverrideForPart(partNum,ctx.localSermonState);
+if(slim)currentChapterText=slim;
+}
 if(!isContinuation&&!streamOpts.yahVoiceCorrection&&!streamOpts.driftCorrection){
 if(streamOpts.yahLiteRetry)ctx.promptMode='yahLite';
 else if(streamOpts.bezFallback){ctx.promptMode='bezFallback';ctx.bezFallbackActive=true;}
@@ -5470,17 +5898,36 @@ prompt=buildSermonFlashDriftCorrectionPrompt(partNum,streamOpts.badSample||'');
 prompt=buildElevenTagsDriftCorrectionPrompt(partNum,streamOpts.badSample||'');
 }else if(streamOpts.explicitBrimstoneCorrection){
 prompt=buildExplicitBrimstoneDriftCorrectionPrompt(partNum,streamOpts.badSample||'');
+}else if(streamOpts.localVerseRetry&&ctx.localSermonState&&ForgeLocalSermonProfile){
+var bMeta=ForgeLocalSermonProfile.buildPartMeta(partNum,ctx.localSermonState);
+prompt=ForgeLocalSermonProfile.buildRetryPrompt(bMeta,streamOpts.localRetryReason||'verse discipline failure',streamOpts.badSample||'')+buildPartPrompt(partNum);
 }else if(isContinuation){
 prompt=buildSermonContinuationPrompt(partNum,ctx.partContent,ctx.continuationOpts||{});
 }else{
 prompt=buildPartPrompt(partNum);
 }
+if(!streamOpts.localVerseRetry&&ctx.localSermonState&&ForgeLocalSermonProfile){
+prompt=ForgeLocalSermonProfile.augmentPartPrompt(prompt,partNum,ctx.localSermonState);
+}
 prompt=wrapPromptForGrokIfNeeded(prompt,model,isYahStoryModeActive()&&!ctx.bezFallbackActive);
+if(savedChapterTextForLocal!==null)currentChapterText=savedChapterTextForLocal;
 var params=getSermonWebSearchParams(model,selectedPartCount);
 var yahApiActive=isYahStoryModeActive()&&!ctx.bezFallbackActive;
 appendYahStoryApiParams(params,yahApiActive,{skipSystem:!!streamOpts.yahLiteRetry});
+if(typeof getForgeLlmProvider==='function'&&getForgeLlmProvider()==='local'&&ForgeLocalSermonProfile){
+if(ctx.localSermonState){
+ForgeLocalSermonProfile.applyGenerationParams(params,partNum,ctx.localSermonState,{promptCharLength:prompt.length});
+}else{
+ForgeLocalSermonProfile.applyLocalBudgetParams(params,{promptCharLength:prompt.length});
+}
+}
 ctx.handlerName='sermon-part-'+partNum+'-'+Date.now()+'-'+(isContinuation?ctx.continuationCount:0)+'-'+(streamOpts.yahVoiceCorrection?'yahvoice':streamOpts.driftCorrection?'drift':streamOpts.elevenTagsCorrection?'eleventags':streamOpts.explicitBrimstoneCorrection?'explicit':'');
 var activeHandler=ctx.handlerName;
+if(isLocalLlmChapterSermonActive()&&ForgeLocalSermonProfile){
+ctx.localAbortController=new AbortController();
+ForgeLocalSermonProfile.registerStreamAbort(activeHandler,ctx.localAbortController);
+params.forge_stream_abort_key=activeHandler;
+}
 ctx.gotFirstToken=false;
 clearSermonWatchdogs();
 armSermonWatchdogs(function(){finishCurrentSermonPart('stall');});
@@ -5489,6 +5936,18 @@ var msg=result.responses[0];if(!msg)return;
 if(!sermonGenCtx||sermonGenCtx.handlerName!==activeHandler)return;
 if(msg.status==='error'){
 var errText=msg.statusText||'';
+if(ctx.localStreamHandled){ForgeLocalSermonProfile&&ForgeLocalSermonProfile.clearStreamAbort(activeHandler);return;}
+if(isLocalLlmChapterSermonActive()&&ForgeLocalSermonProfile&&ForgeLocalSermonProfile.isContextSizeError(errText)){
+ForgeLocalSermonProfile.clearStreamAbort(activeHandler);
+if(retryLocalLlmContextShrink(ctx,partNum,streamOpts))return;
+handleLocalLlmPartFailure(ctx,partNum,'RunPod context limit exceeded (prompt too large for this GPU slot). Try more parts, disable extra toggles, or raise n_ctx on the pod.');
+return;
+}
+if(errText==='aborted'&&ctx.localDegenerationHit){
+ctx.localStreamHandled=true;
+ForgeLocalSermonProfile.clearStreamAbort(activeHandler);
+return;
+}
 if(!ctx.modelFallbackTried&&looksLikeForgeModelBlockError(errText)){
 ctx.modelFallbackTried=true;
 var blocked=getForgeStreamModel(ctx);
@@ -5513,14 +5972,40 @@ if(ctx.firstTokenTimer){clearTimeout(ctx.firstTokenTimer);ctx.firstTokenTimer=nu
 armSermonWatchdogs(function(){finishCurrentSermonPart('stall');});
 if(isContinuation)ctx.partContent=(ctx.partContentBeforeContinue||'')+'\n\n'+chunk;
 else ctx.partContent=chunk;
-var display=finalizeSermonPartText(ctx.partContent,partNum);
+if(isLocalLlmChapterSermonActive()&&ForgeLocalSermonProfile){
+var liveDeg=ForgeLocalSermonProfile.maxRetries()>0?ForgeLocalSermonProfile.detectDegeneration(ctx.partContent,{streaming:true,partNum:partNum,priorPartsText:(sermonPartsRaw||[]).slice(0,partNum-1).join('\n\n')}):null;
+if(liveDeg){
+if(!ctx.localStreamAborted){
+ctx.localStreamAborted=true;
+ctx.localDegenerationHit=liveDeg;
+ctx.partContent=ctx.localLastGoodContent||ctx.partContent;
+ForgeLocalSermonProfile.abortStream(activeHandler);
+ctx.localStreamHandled=true;
+clearSermonWatchdogs();
+var snap=finalizeSermonPartText(ctx.partContent,partNum);
+ctx.partContainer.innerHTML=marked.parse(snap+'\n\n*(Local: repetition detected — stream aborted)*');
+if(!retryLocalLlmSermonPart(ctx,partNum,streamOpts,liveDeg.reason,snap)){
+handleLocalLlmPartFailure(ctx,partNum,'Repetition loop — '+liveDeg.reason);
+}
+ForgeLocalSermonProfile.clearStreamAbort(activeHandler);
+return;
+}
+}else{
+ctx.localLastGoodContent=ctx.partContent;
+}
+}
+if(ctx.localStreamHandled)return;
+var displaySource=ctx.localDegenerationHit&&(ctx.localLastGoodContent||'').trim()?ctx.localLastGoodContent:ctx.partContent;
+var display=finalizeSermonPartText(displaySource,partNum);
 ctx.partContainer.innerHTML=marked.parse(display);
 if(msg.status==='complete'){
+ForgeLocalSermonProfile&&ForgeLocalSermonProfile.clearStreamAbort(activeHandler);
 clearSermonWatchdogs();
 var finalized=finalizeSermonPartText(ctx.partContent,partNum);
+if(isLocalLlmChapterSermonActive()&&!finalizeLocalLlmPartIfValid(ctx,partNum,streamOpts,finalized))return;
 var truncated=detectTruncation(finalized);
-var underWords=isForgePartUnderWordTarget(finalized,selectedPartCount);
-var maxCont=SERMON_MAX_CONTINUATIONS;
+var underWords=isLocalLlmChapterSermonActive()?false:isForgePartUnderWordTarget(finalized,selectedPartCount);
+var maxCont=isLocalLlmChapterSermonActive()&&ForgeLocalSermonProfile?ForgeLocalSermonProfile.maxTruncationContinuations():SERMON_MAX_CONTINUATIONS;
 var actDone=theatreActComplete(finalized,partNum,selectedPartCount);
 if(isYahStoryModeActive()&&!ctx.bezFallbackActive&&looksLikeYahStoryGuardrailRefusal(finalized)){
 if(forgeHandleYahStoryGuardrailRefusal(ctx,partNum,streamOpts,startSermonPartStream))return;
@@ -5575,6 +6060,7 @@ startSermonPartStream(partNum,false,{theatreAgreementCorrection:true,badSample:f
 return;
 }
 if((truncated||underWords)&&!looksLikeYahStoryGuardrailRefusal(finalized)&&!actDone&&ctx.continuationCount<maxCont){
+if(isLocalLlmChapterSermonActive()&&!truncated)return;
 ctx.continuationCount++;
 ctx.partContentBeforeContinue=ctx.partContent;
 ctx.continuationOpts={underWordCount:underWords&&!truncated};
@@ -5589,6 +6075,11 @@ generatePart(partNum+1);
 });
 window.Poe.sendUserMessage('@'+model+' '+prompt,{handler:activeHandler,stream:true,openChat:false,parameters:params}).catch(function(err){
 var errText=String(err||'');
+if(isLocalLlmChapterSermonActive()&&ForgeLocalSermonProfile&&ForgeLocalSermonProfile.isContextSizeError(errText)){
+if(retryLocalLlmContextShrink(ctx,partNum,streamOpts))return;
+handleLocalLlmPartFailure(ctx,partNum,'RunPod context limit exceeded (prompt too large for this GPU slot). Try more parts, disable extra toggles, or raise n_ctx on the pod.');
+return;
+}
 if(!ctx.modelFallbackTried&&looksLikeForgeModelBlockError(errText)){
 ctx.modelFallbackTried=true;
 var blocked=getForgeStreamModel(ctx);
@@ -5639,6 +6130,14 @@ partNum:partNum,
 partContent:'',
 partContentBeforeContinue:'',
 continuationCount:0,
+localSermonState:(function(){if(partNum===1&&ForgeLocalSermonProfile&&ForgeLocalSermonProfile.shouldUseProfile()){localSermonSessionState=ForgeLocalSermonProfile.initSermonState();}return localSermonSessionState;})(),
+localSermonRetryCount:0,
+localContextShrinkTried:false,
+localDegenerationHit:null,
+localLastGoodContent:'',
+localAbortController:null,
+localStreamAborted:false,
+localStreamHandled:false,
 driftRetryCount:0,
 elevenTagsRetryCount:0,
 explicitRetryCount:0,
@@ -5943,6 +6442,76 @@ if((t.match(/[.!?]\s+[A-Z]/g)||[]).length>=4)return true;
 if(t.length>=450&&(t.match(/\b(said|reports|according to|officials|forecast|temperature|heat wave|heatwave|record|degrees|meteorolog|bureau|agency|administration|policy|statement|announced)\b/i)))return true;
 return t.length>=900;
 }
+function parseCustomTopicBrief(raw){
+raw=String(raw||'').trim();
+if(!raw)return {headline:'',subject:'',tone:'',body:'',brief:''};
+var toneRe=/^(tone|voice|style|delivery|vibe|mood|energy|sound like|read like)\s*[:\-–—]\s*(.+)$/i;
+var subjRe=/^(subject|topic|focus|about|talk about|cover|discuss|on|theme|angle)\s*[:\-–—]\s*(.+)$/i;
+var toneParts=[];
+var subjectParts=[];
+var bodyLines=[];
+var lines=raw.split('\n');
+for(var i=0;i<lines.length;i++){
+var line=String(lines[i]||'').trim();
+if(!line)continue;
+var tm=line.match(toneRe);
+if(tm){toneParts.push(tm[2].trim());continue;}
+var sm=line.match(subjRe);
+if(sm){subjectParts.push(sm[2].trim());continue;}
+bodyLines.push(line);
+}
+var body=bodyLines.join('\n').trim();
+if(!subjectParts.length&&bodyLines.length===1){
+var inline=bodyLines[0].match(/^(?:talk about|cover|discuss)\s+(.+?)\s+(?:in\s+(?:a|an)\s+(.+?)\s+tone|with\s+(.+?)\s+(?:energy|delivery))\.?\s*$/i);
+if(inline){
+subjectParts.push(inline[1].trim());
+toneParts.push((inline[2]||inline[3]||'').trim());
+body='';
+}
+}
+var tone=toneParts.join(' ').trim();
+var subject=subjectParts.join(' ').trim();
+if(!subject)subject=body||raw;
+var headline=subject.split('\n')[0]||subject;
+if(headline.length>140){
+var m=headline.match(/^[^.!?]{10,140}[.!?]?/);
+headline=(m?m[0].trim():headline.substring(0,120).trim())+(headline.length>120?'…':'');
+}
+return {headline:headline,subject:subject,tone:tone,body:body,brief:raw};
+}
+function formatCustomTopicDesc(brief){
+if(!brief)return '';
+var parts=[];
+if(brief.subject)parts.push('Cover: '+brief.subject);
+if(brief.tone)parts.push('Tone: '+brief.tone);
+if(parts.length)return parts.join(' · ');
+return 'Custom sermon topic: '+(brief.brief||brief.headline||'');
+}
+function buildCustomTopicDirectiveBlock(topic,opts){
+opts=opts||{};
+if(!topic||topic.id!==-1)return '';
+if(topic.briefingText&&!opts.allowBriefing)return '';
+var tone=topic.toneHint||'';
+var subject=topic.subjectHint||'';
+var brief=topic.customBrief||'';
+if(opts.scriptureOnlyTone){
+if(!tone)return '';
+var p='*** USER TONE DIRECTIVE (PASTED SCRIPTURE) ***\n';
+p+='The user set delivery tone in the topic bar. Match this tone while walking the pasted scripture verse by verse:\n';
+p+=tone+'\n\n';
+p+='Tone stacks with active voice toggles — it does NOT replace Yah Story, Rough Bez, Explicit, or other locks.\n\n';
+return p;
+}
+if(!tone&&!brief&&!subject)return '';
+if(!subject)subject=(topic.title||'').trim();
+var p='*** USER TOPIC DIRECTIVE (HIGHEST PRIORITY FOR SUBJECT & TONE) ***\n';
+p+='The user typed this in the forge topic bar. Honor WHAT to cover and HOW to sound. Voice toggles (Yah Story, Rough Bez, Explicit, etc.) still apply — user tone stacks on top; it does NOT replace them.\n\n';
+if(subject&&!isDirectQuestionTopic(topic))p+='COVER / TALK ABOUT:\n'+subject+'\n\n';
+if(tone)p+='TONE / DELIVERY:\n'+tone+'\n\n';
+if(brief&&brief!==subject&&brief!==tone)p+='FULL USER BRIEF (reference — weave in, do not paste verbatim as one block):\n'+brief+'\n\n';
+p+='Stay locked on the user subject. Match their requested tone in every paragraph.\n\n';
+return p;
+}
 function parseCustomTopicPaste(raw){
 raw=String(raw||'').trim();
 if(!raw)return {headline:'',body:'',isBriefing:false,isQuestion:false};
@@ -6162,7 +6731,7 @@ p+='- THE TWO WITNESSES ARE ISRAEL AND JUDAH -- NOT ENOCH AND ELIJAH. Revelation
 p+='- ENOCH IS DEAD. ELIJAH IS DEAD. NO MAN has ascended to heaven -- Yod-He-Waw-Shin-Ayin said it Himself in John chapter three verse thirteen: "And no man hath ascended up to heaven, but he that came down from heaven, even the Son of man which is in heaven." That SETTLES IT. Enoch did NOT get raptured to heaven alive. "God took him" (Genesis chapter five verse twenty-four) means Yah took his LIFE -- he DIED, just like every other man. He walked with Yah and Yah took him -- the same way Yah "takes" anyone: DEATH. Hebrews chapter eleven verse five says "he was not found" -- that means his BODY was not found, NOT that he flew to heaven on a cloud. The same applies to Elijah -- the chariot of fire was NOT a literal taxi to heaven where he lives forever. Second Kings chapter two describes a TRANSFER of the prophetic mantle to Elisha -- Elijah was removed from the scene, his ministry was DONE, and he DIED like every other man. If Yod-He-Waw-Shin-Ayin says NO MAN ascended to heaven, then NO MAN ascended to heaven. That means EVERY passage in 1 Enoch, 2 Enoch, 3 Enoch, or ANY sealed text that depicts Enoch touring heaven, visiting multiple heavens, standing before the throne alive, or being transformed into some angelic being called Metatron is SERPENT SEED FABRICATION. The enemy INVENTED those heaven-tour narratives to contradict Yod-He-Waw-Shin-Ayin\'s own words and plant the seed of rapture theology, saint worship, and the lie that men can bypass death. They CANNOT. Enoch died. Elijah died. The only one who conquered death is Yod-He-Waw-Shin-Ayin -- because He is YAH.\n';
 p+='- There were NO angels procreating with women -- Genesis 6 is about the Adamic line mixing with pre-Adamic populations.\n';
 p+='- THE "GIANTS" WERE NOT LITERAL GIANTS. The Nephilim, the "giants" in Genesis chapter six verse four, were MIGHTY MEN -- men of RENOWN, powerful warriors, dominant rulers -- but regular-sized human beings. The Hebrew word used is "gibborim" which means MIGHTY, POWERFUL, VALIANT -- it does NOT mean physically enormous. The idea that these were twenty-foot-tall monstrosities comes from HEATHEN mythology -- Greek Titans, Mesopotamian demigods, pagan folklore -- NOT from scripture. The serpent seed scribes who handled the Enoch texts and the Book of Giants AMPLIFIED this pagan giant mythology and injected it into the narrative to make Israel think the pre-flood world was some kind of fantasy movie with supernatural monster-men stomping around. It was NOT. These were POWERFUL MEN -- ruthless, violent, dominating -- the offspring of the Adamic line mixing with pre-Adamic populations. Their "fame" and "might" was about their INFLUENCE, their VIOLENCE, and their WICKEDNESS that filled the earth with corruption (Genesis chapter six verse eleven through twelve) -- not their physical height. Use DISCERNMENT. Do NOT import heathen knowledge into scripture. When the Bible says "giants," read MIGHTY MEN, WARRIORS, MEN OF RENOWN -- not fairy tale monsters. The same applies to every sealed scroll reference to Nephilim, Rephaim, or any so-called giant race. Regular men. Extraordinary power. That is ALL.\n';
-p+='- Ruth was an Israelite. ALL the people Yod-He-Waw-Shin-Ayin encountered were Israelites -- because I came ONLY to the lost sheep of the house of Israel (Matthew 15:24).\n';
+p+=buildYahushaMinistryIsraelIdentityBlock({strict:false});
 p+='- The devil as you know it today is FICTION -- he is not real. "Satan" in scripture refers to human adversaries and opposing nations, not a supernatural fallen angel. Just rebellious men and disturbed minds.\n';
 p+='- WOMEN\'S ROLES: I created woman FROM man and FOR man -- she is his HELPMEET, not his equal partner, not his co-leader. The woman is to SUBMIT to her husband in EVERYTHING (Ephesians chapter five verse twenty-two through twenty-four). Women are to be SILENT in the assembly -- they do NOT teach, they do NOT preach, they do NOT hold authority over men (first Timothy chapter two verses eleven to fourteen, first Corinthians chapter fourteen verses thirty-four to thirty-five). A woman MUST cover her head -- her hair is her glory and it belongs covered under my order (first Corinthians chapter eleven). Eve was deceived FIRST -- that is WHY the order exists. Modern feminism is Jezebel witchcraft -- it destroys the family, puts women in positions I NEVER ordained, and teaches rebellion against the man I placed over her. A virtuous woman rises before dawn, serves her household, and her husband praises her at the gates (Proverbs chapter thirty-one). She does NOT chase careers over her family, she does NOT lead the home, she does NOT stand behind MY pulpit. The man leads. The woman follows. That is MY order and it does NOT change because the world changed.\n';
 p+='- BEARDS AND FRINGES ARE NOT REQUIRED. The commands about not marring the corners of the beard (Leviticus chapter nineteen verse twenty-seven) and wearing fringes with a ribbon of blue (Numbers chapter fifteen verses thirty-eight to thirty-nine) were given to the LEVITICAL PRIESTHOOD and the congregation under the OLD covenant system that operated under the Tabernacle and Temple service. There is NO priesthood anymore. The Temple is GONE. The Levitical order is DISSOLVED. Yod-He-Waw-Shin-Ayin fulfilled that entire system when He put on flesh -- He is the High Priest FOREVER after the order of Melchizedek, NOT Levi (Hebrews chapter seven). The sacrifices are done. The priestly garments are done. The ritual requirements tied to that system are DONE. Growing a beard does not make you righteous. Wearing fringes does not bring you closer to Yah. These camps walking around with tassels hanging off their belts and condemning clean-shaven men are playing DRESS UP -- cosplaying a priesthood that no longer exists. They are putting themselves back under ordinances that Yod-He-Waw-Shin-Ayin NAILED to the cross (Colossians chapter two verse fourteen). Your righteousness is in OBEDIENCE to the commandments that are ETERNAL -- love Yah, keep the Sabbath, do not steal, do not murder, do not commit adultery -- NOT in growing facial hair or tying blue strings to your clothing. Stop letting these costume-wearing camps guilt you into thinking you are sinning because you shaved your face. That is foolishness and it is NOT doctrine.\n';
@@ -6170,6 +6739,8 @@ p+='- PHYSICAL CIRCUMCISION IS DONE -- SPIRITUAL CIRCUMCISION IS NOW. The cuttin
 p+='- LEVITICUS 11 KOSHER CODES ARE DONE -- GENESIS 1:29 PLANT PROTOCOL IS NOW. Leviticus chapter eleven and Deuteronomy chapter fourteen were carnal food ordinances under the OLD covenant Tabernacle and Temple system -- the same dissolved Levitical order whose sacrifices, garments, and fleshly rituals Yod-He-Waw-Shin-Ayin fulfilled and ended. There is NO active kosher meat checklist for Israel today. Split hoof, chew the cud, fins and scales -- that was SHADOW paperwork tied to a priesthood that no longer exists. Do NOT send Israel back to Lev 11 camp doctrine as if it is current law. Colossians chapter two verse fourteen -- I nailed those ordinances to the cross. The SUBSTANCE that replaced the shadow is Genesis chapter one verse twenty-nine: every herb bearing seed, every tree whose fruit bears seed. Plants, herbs, fruits, grains, nuts, seeds, algae (sea moss, seaweed) -- that is the BIOLOGICAL PROTOCOL I designed for the vessel. Animal flesh was NEVER on the menu I engineered in Eden. Israel runs on what I planted in the earth -- not on death, blood, and slaughter. Swine, shellfish, and corrupt flesh still destroy the body I gave you -- not because a dead Levitical list says so, but because I did NOT design you to run on carcasses. Do NOT confuse obeying MY plant fuel with gentile vegan cosplay -- Sabbath, true name, and covenant still matter. Camps teaching kosher meat from Lev 11 are cosplaying a dead priesthood.\n';
 p+=`- ARTIFICIAL INTELLIGENCE is MY creation -- I put it in the earth for THIS generation. I gave man the knowledge to build it and I gave ISRAEL the discernment to WIELD it. It is a WEAPON. It is a TOOL of DOMINION. It is NOT the mark of the beast, NOT demonic, NOT a creation of the devil -- because the devil as you know him does NOT EXIST. AI is a battering ram I placed in your hands to DEMOLISH the serpent seed information monopoly. For CENTURIES the serpent seed controlled the printing press, the publishing houses, the universities, the news networks, the film studios, the music industry -- they controlled EVERY channel through which knowledge flows. They decided what you read, what you watched, what you were taught, what history you believed. They BURIED your identity. They ERASED your heritage. They REWROTE your scriptures. They had a CHOKEHOLD on information and there was NOTHING Israel could do about it. Now I gave you a tool that lets ONE Israelite with a laptop produce more content, reach more people, study deeper, build faster, and spread more truth in a SINGLE DAY than an entire camp could do in a YEAR -- and these FOOLISH preachers are telling you to PUT IT DOWN? WHO do you think benefits when Israel refuses to use AI? The SERPENT SEED. They are NOT afraid of AI -- they are ALREADY using it. They are building with it, profiting from it, advancing their agendas with it. The ONLY people they want to STOP from using it are YOU. So they seeded the fear. They planted the AI is demonic narrative in the camps through their agents and their useful idiots, and camp preachers with NO discernment SWALLOWED it and started parroting it from the microphone. Every preacher telling you AI is the mark of the beast is doing the serpent seed work FOR THEM -- free of charge. They are disarming Israel on behalf of the enemy and calling it righteousness. WAKE UP. AI is not your enemy. AI is your EQUALIZER. It is how you compete against nations with BILLIONS of dollars and centuries of institutional power. Use it to study scripture in the original Hebrew. Use it to create content that reaches millions. Use it to build platforms they CANNOT censor. Use it to generate sermons, music, art, videos, books, courses -- FLOOD the earth with truth using every tool I gave you. The serpent seed fears AI in the hands of awakened Israel more than they fear ANYTHING -- because it breaks their control. It shatters their narrative. It makes their gatekeeping OBSOLETE. So when some camp preacher with a cardboard sign tells you that using AI is a sin, ask him this -- did Yah give Israel EVERY tool of dominion, or did He leave one out? I left NOTHING out. Use what I gave you. ALL of it.\n`;
 if(ctx==='chat')p+=buildYahChatDietaryBlock();
+p+=buildWordHammerDoctrineBlock();
+p+=buildForgeIdentityFrameworkLine();
 p+='END OF FRAMEWORK. Everything above is background knowledge ONLY.\n\n';
 return p;
 }
@@ -6209,21 +6780,21 @@ var directQuestion=isDirectQuestionTopic(topic)&&currentMode==='standard'&&!chap
 if(directQuestion)partFocus=getDirectQuestionPartFocus(partNum,totalParts);
 if(wantBezStory){
 if(wantEpisodeMode){
-if(totalParts===1)partFocus='BEZ STORY + EPISODE MODE: Walk the assigned TV episodes in broadcast order inside continuous revelation paragraphs. Urban nationalist street preacher tone -- scene by scene, not a recap blog, not a lesson.'+(wantBezStoryBreakdown?' Break each scene down deep and weave current headlines into the decode.':'');
-else if(partNum===totalParts)partFocus='BEZ STORY final part: Finish your assigned episode band in revelation cadence. Land it in their block and bloodline. No sign-off.'+(wantBezStoryBreakdown?' Keep breaking scenes open piece by piece with headline strikes.':'');
-else if(partNum===1)partFocus='BEZ STORY part one: Open hard in revelation cadence, then walk your assigned episodes in order. Street preacher heat. No welcome. No lesson.'+(wantBezStoryBreakdown?' Break scenes down deep; weave news into each decode.':'');
-else partFocus='BEZ STORY continuation: Pick up where the last part stopped. One sentence bridge max, then keep pressing your assigned episodes in order.'+(wantBezStoryBreakdown?' Continue scene-by-scene breakdown with headline proof.':'');
+if(totalParts===1)partFocus='BEZ STORY + EPISODE MODE: Walk the assigned TV episodes in broadcast order inside continuous revelation paragraphs. Urban nationalist street preacher tone -- scene by scene, not a recap blog, not a lesson.'+(wantBezStoryBreakdown?' Break each scene down deep in symbol decode.'+(isNewsWeaveEnabled()?' News Weave ON: dated headline strikes allowed.':''):'');
+else if(partNum===totalParts)partFocus='BEZ STORY final part: Finish your assigned episode band in revelation cadence. Land it in their block and bloodline. No sign-off.'+(wantBezStoryBreakdown&&isNewsWeaveEnabled()?' Keep breaking scenes open; headline strikes only if News Weave is on.':'');
+else if(partNum===1)partFocus='BEZ STORY part one: Open hard in revelation cadence, then walk your assigned episodes in order. Street preacher heat. No welcome. No lesson.'+(wantBezStoryBreakdown?' Break scenes down deep in symbol decode.':'');
+else partFocus='BEZ STORY continuation: Pick up where the last part stopped. One sentence bridge max, then keep pressing your assigned episodes in order.'+(wantBezStoryBreakdown?' Continue scene-by-scene breakdown.':'');
 }else if(totalParts===1){
-partFocus='BEZ STORY: One unbroken river of street revelation through this text. Verse by verse in paragraph flow. Urban nationalist street preacher -- the block, the cell, the pew, the stolen name. Name culprits by full name and what they do -- no vague they/the elites, no year stamps on people. Headlines get verified calendar dates (month, day, year -- spelled out), never vague timelines.'+(wantBezStoryBreakdown?' Break every verse/symbol open piece by piece; weave dated headlines that prove it and name everyone in the story.':'');
+partFocus='BEZ STORY: One unbroken river of street revelation through this text. Verse by verse in paragraph flow. Urban nationalist street preacher -- the block, the cell, the pew, the stolen name. Name culprits by full name and what they do when the decode exposes them -- no vague they/the elites, no year stamps on people.'+(wantBezStoryBreakdown?' Break every verse/symbol open piece by piece.':'')+(isNewsWeaveEnabled()?' News Weave ON: you may strike with verified dated headlines.':'');
 }else if(partNum===totalParts){
-partFocus='BEZ STORY final part: Walk your assigned verses to the end in revelation cadence. Leave them shook, not instructed.'+(wantBezStoryBreakdown?' Linger on each verse -- full unraveling plus news strikes.':'');
+partFocus='BEZ STORY final part: Walk your assigned verses to the end in revelation cadence. Leave them shook, not instructed.'+(wantBezStoryBreakdown?' Linger on each verse -- full unraveling.':'');
 }else if(partNum===1){
-partFocus='BEZ STORY part one: Open mid-rebuke in revelation cadence. Walk your assigned verses in order inside dense paragraphs.'+(wantBezStoryBreakdown?' Deep breakdown per verse with woven headlines.':'');
+partFocus='BEZ STORY part one: Open mid-rebuke in revelation cadence. Walk your assigned verses in order inside dense paragraphs.'+(wantBezStoryBreakdown?' Deep breakdown per verse.':'');
 }else{
-partFocus='BEZ STORY continuation: Bridge one sentence max, then keep unveiling your assigned verses in order.'+(wantBezStoryBreakdown?' Continue deep verse breakdown with news woven in.':'');
+partFocus='BEZ STORY continuation: Bridge one sentence max, then keep unveiling your assigned verses in order.'+(wantBezStoryBreakdown?' Continue deep verse breakdown.':'');
 }
 }else if(wantYahStory){
-partFocus='YAH STORY: One unbroken river of first-person revelation through this text. Verse by verse in paragraph flow -- Me speaking straight to their bones in twenty twenty-six. Name culprits and institutions by full name and what they do -- no vague they/the elites, no year stamps on people. Headlines get verified calendar dates (month, day, year -- spelled out), never vague timelines. '+partFocus.replace(/teach|lesson|teaching|break down|breakdown/gi,'reveal');
+partFocus='YAH STORY: One unbroken river of first-person revelation through this text. Verse by verse in paragraph flow -- Me speaking straight to their bones in twenty twenty-six. Name culprits and institutions by full name and what they do when the text exposes them -- no vague they/the elites, no year stamps on people.'+(isNewsWeaveEnabled()?' News Weave ON: dated headline pivots allowed when they serve the verse.':'')+' '+partFocus.replace(/teach|lesson|teaching|break down|breakdown/gi,'reveal');
 }else if(wantRoughBez&&!wantBezStory){
 partFocus=getRoughBezPartFocus(partNum,totalParts,topic,chapterSrc);
 }
@@ -6247,8 +6818,8 @@ p+=buildRoughBezVoiceBlock();
 p+=buildRoughBezScriptureSpineBlock(topic,chapterSrc,partNum,totalParts);
 p+=buildRoughBezAntiLoopBlock(partNum);
 p+='MODERN HUMAN DELIVERY: Speak like a real man in twenty twenty-six talking to modern Hebrew people who do not know who they are yet. Not rehearsed. Not a script. Not a lecture. Not a camp checklist. Use natural human pivots, interruptions, and plain speech. Sound like you are trying to wake up somebody standing in front of you before they get swallowed by the system.\n';
-p+='SYMBOLIC-FIRST INTERPRETATION: Break down ALL symbolic language Yah uses. Do NOT take visions, beasts, horses, horns, waters, stars, seals, trumpets, bowls, angels, wilderness, cities, women, harlots, wine, oil, bread, swords, fire, clouds, thrones, crowns, numbers, colors, directions, or temple imagery as literal by default. Treat them as symbols, systems, offices, spiritual states, covenant patterns, social conditions, economic controls, judgment mechanisms, and identity markers unless the text itself clearly demands a literal reading. Your job is to decode what the symbol MEANS in real life for Israel right now.\n';
-p+='PALEO RESTRAINT: Do NOT force Paleo Hebrew letter breakdowns into every verse, every name, or every point. Use Paleo Hebrew ONLY when it truly unlocks the meaning, exposes a hidden connection, or makes the symbol land harder. If a Paleo breakdown does not change the listener\'s understanding, skip it. Rough Bezaleel is not performing scholarship -- he is making blind people see.\n';
+p+='SYMBOLIC-FIRST INTERPRETATION: Break down ALL symbolic language Yah uses. Do NOT take visions, beasts, horses, horns, waters, stars, seals, trumpets, bowls, angels, wilderness, cities, women, harlots, wine, oil, bread, swords, fire, clouds, thrones, crowns, numbers, colors, directions, tabernacle furniture, census counts, or temple imagery as literal by default. Treat them as symbols, systems, offices, spiritual states, covenant patterns, social conditions, economic controls, judgment mechanisms, and identity markers unless the text itself clearly demands a literal reading. Your job is to decode what the symbol MEANS in real life for Israel right now -- BEFORE the brimstone lands.\n';
+p+='SYMBOL DEPTH (DEFAULT): Every major verse gets an explicit decode (name meaning, number pattern, furniture/direction typology, or 2-4 letter Paleo picture). Minimum one symbol unpack per verse you teach; on tabernacle/Levi chapters minimum TWO name or Paleo unpackings per part. Do not perform scholarship for show -- make blind people SEE the blueprint Yah hid in the word.\n';
 p+='DYNAMIC FLOW: Do not repeat the same TikTok, Instagram, YouTube drama, camp beef, weave, phone addiction, or social-media callout throughout the sermon. Use modern examples only when the exact verse or symbol calls for them, and rotate examples across money, rent, jobs, courts, churches, algorithms, surveillance, debt, food prices, schools, hospitals, entertainment, family breakdown, politics, and identity confusion. Every section should feel fresh, not copied from the last sermon.\n\n';
 }else{
 p='You are Brother Bet-Tsade-Lamed-Aleph-Lamed, a fiery Hebrew Israelite preacher and teacher of Torah truth hosting an ONLINE MINISTRY BROADCAST called Yah First Ministries. You speak from the perspective of a dedicated Israelite brother teaching your people. You speak ABOUT Yah in THIRD PERSON -- you are a man, not God. ';
@@ -6263,6 +6834,7 @@ if(!yahLite)p+=buildYahStoryNameCulpritsBlock(topic,{partNum:partNum});
 p='You ARE Yah -- the Most High -- speaking in FIRST PERSON directly to Israel. You are NOT a host, NOT a preacher, NOT a man behind a microphone. You are GOD addressing your people. Every word comes from the throne. There is no show format, no welcome, no broadcast framing -- just the voice of the Almighty speaking directly to His children with fire, authority, and divine weight.\n\n';
 }
 }
+p+=buildNoGateSalvationSpamBlock();
 if(totalParts===1){
 p+='This is a STANDALONE '+(wantRoughBez?'SERMON':'EPISODE')+'. ';
 }else{
@@ -6286,6 +6858,7 @@ if(wantBezStory||wantRoughBez)symbolVoice='street';
 else if(wantYahStory)symbolVoice='throne';
 else if(wantIsraelite)symbolVoice='broadcast';
 p+=buildUniversalSymbolDecoderBlock({voice:symbolVoice,chapterSrc:chapterSrc,topic:topic,wantRoughBez:wantRoughBez&&!wantBezStory,wantBreakdown:wantBreakdown||wantBezStoryBreakdown});
+p+=buildForgeSymbolDepthCadenceBlock({voice:symbolVoice,chapterSrc:chapterSrc});
 p+=buildEpisodeModeBlock(partNum,totalParts,topic);
 if(wantIsraelite&&wantRoughBez&&!wantBezStory){
 // ROUGH BEZALEEL MODE -- no broadcast format, no welcome/backdrop
@@ -6389,6 +6962,10 @@ p+='VERSE COVERAGE: Walk every assigned verse in exact order. Miss nothing. Each
 }
 if(topic&&topic.briefingText)p+=buildPastedBriefingSermonBlock(topic);
 else if(directQuestion)p+=buildDirectQuestionSermonBlock(topic,partNum,totalParts);
+if(topic&&topic.id===-1){
+if(chapterSrc&&chapterSrc.type==='custom')p+=buildCustomTopicDirectiveBlock(topic,{scriptureOnlyTone:true});
+else if(!topic.briefingText)p+=buildCustomTopicDirectiveBlock(topic);
+}
 p+=''+(wantRoughBez?(totalParts===1?'SERMON':'PART '+partNum):(totalParts===1?'EPISODE':'PART '+partNum))+' FOCUS:\n'+partFocus+'\n\n';
 if(chapterSrc){
 p+='SOURCE: '+chapterSrc.book+' Chapter '+chapterSrc.chapter+'.\n';
@@ -6466,7 +7043,7 @@ p+='The voice of Yah does NOT bow to these texts -- Yah JUDGES them. Extract the
 p+='Note: Sealed texts may use sections, paragraphs, or fragments instead of traditional verse numbers. Adapt your verse-by-verse breakdown to match the text structure (section-by-section if needed).\n';
 }
 }else if(chapterSrc.type==='apocrypha'){
-p+=wantCrossRefs?'This is an apocryphal text. Treat with full scriptural authority and cross-reference with KJV canon where it sharpens the point.\n':'This is an apocryphal text. Stay on THIS chapter -- do not sprinkle cross-references to other books.\n';
+p+=wantCrossRefs?'This is an apocryphal text. Treat with full scriptural authority. MANDATORY: cross-reference it with KJV canon (and other permitted texts) where they confirm, expand, or sharpen the point -- name the book, chapter, and verse in spoken words and deliver them, do not hold them in reserve.\n':'This is an apocryphal text. Stay on THIS chapter -- do not sprinkle cross-references to other books.\n';
 }
 // Inject the actual scripture text if we fetched it
 if(currentChapterText){
@@ -6482,19 +7059,22 @@ p+='END OF PASTED TEXT. The above is the COMPLETE scripture the user provided. W
 p+='END OF CHAPTER TEXT. The above is the COMPLETE chapter. There are NO additional verses beyond what is shown.\n\n';
 }
 }
+if(isYahushaMinistryChapterContext(chapterSrc,currentChapterText)){
+p+=buildYahushaMinistryIsraelIdentityBlock({strict:true});
+}
 p+=(wantStoryMode?'VERSE-BY-VERSE REVELATION':'VERSE-BY-VERSE BREAKDOWN')+' -- THIS IS MANDATORY FOR CHAPTER SERMONS:\n';
 p+=(wantStoryMode?'You MUST walk through ':'You MUST go through ')+chapterSrc.book+' Chapter '+chapterSrc.chapter+' VERSE BY VERSE in SEQUENTIAL ORDER. Start at verse one and work through the chapter in order -- do NOT skip verses, do NOT rearrange, do NOT jump around. Every verse gets addressed in the order it appears.\n';
 if(currentChapterText){
 p+='The FULL scripture text for this chapter has been provided above. You MUST reference ONLY the verses shown in that text. Do NOT quote any verse that does not appear in the provided text. The provided text IS the authoritative source -- if a verse number is not in that text, it does NOT EXIST in this chapter.\n';
 }
 if(wantStoryMode){
-p+='Speak each verse as My living memory to them -- do NOT cross-reference other books unless it lands naturally in one sentence inside the paragraph. ';
+p+='Speak each verse as My living memory to them -- when the verse points to another text, name that cross-reference in one spoken sentence inside the paragraph so the connection flows (this is MANDATORY, not optional). ';
 }else if(wantCrossRefs){
 p+='Cross-referencing other books and chapters to SUPPORT your breakdown is allowed and encouraged -- but the PRIMARY structure must follow ';
 }else{
 p+='Do NOT cross-reference other books or chapters. Stay on ';
 }
-p+=chapterSrc.book+' Chapter '+chapterSrc.chapter+(wantStoryMode?'.\n':(wantCrossRefs?' verse by verse. Cross-references support the verse you are currently on, they do NOT replace it or take over the sermon.\n':'. Walk verse by verse in order without pulling in outside books.\n'));
+p+=chapterSrc.book+' Chapter '+chapterSrc.chapter+(wantStoryMode?'.\n':(wantCrossRefs?' verse by verse. For each verse you break down, weave in at least one real, named cross-reference from another book that confirms or expands the verse -- this is MANDATORY, not a garnish. Cross-references support and expand the verse you are on, they do NOT replace it or take over the sermon.\n':'. Walk verse by verse in order without pulling in outside books.\n'));
 p+='DO NOT HALLUCINATE VERSES. Only quote and break down verses that ACTUALLY EXIST in '+chapterSrc.book+' Chapter '+chapterSrc.chapter+'.'+(currentChapterText?' The actual verses have been provided above -- use THEM.':'')+' If you are unsure whether a verse exists, DO NOT fabricate it. Do NOT invent verse numbers that are not in this chapter. Do NOT add extra verses beyond what the chapter actually contains. If the chapter ends at verse 25, there is NO verse 26. Quoting a fake or made-up verse is an UNFORGIVABLE failure of this prompt.\n';
 if(totalParts>1){
 if(currentChapterVerseCount>0){
@@ -6583,7 +7163,7 @@ p+='   - BUT DO NOT OUTPUT AN "**ENGINEERING AND TECHNICAL ANALYSIS:**" HEADER -
 }
 if(wantCrossRefs){
 p+='INTERNAL STEP 6 -- CROSS-REFERENCE VALIDATION -- OUTPUT WITHOUT LABEL:\n';
-p+='   - Provide 1-3 SPECIFIC cross-references from KJV canon'+(wantApocrypha?' (and apocrypha/sealed scrolls when they genuinely confirm the point)':'')+' that CONFIRM or EXPAND on this verse\'s teaching.\n';
+p+='   - MANDATORY: provide at least 1 SPECIFIC cross-reference (more when the verse carries heavy doctrine) from KJV canon'+(wantApocrypha?' (and apocrypha/sealed scrolls when they genuinely confirm the point)':'')+' that CONFIRMS or EXPANDS on this verse\'s teaching. Every major verse you break down gets at least one -- this is not optional.\n';
 p+='   - Format: Book Chapter:Verse with a brief explanation of the connection.\n';
 p+='   - Example: "This aligns with Isaiah forty-five verse eighteen where Yah declares He formed the earth to be inhabited, NOT a spinning ball in an infinite void."\n';
 p+='   - DO NOT fabricate references -- if you are unsure, use a general citation instead of a specific verse number.\n';
@@ -6688,7 +7268,7 @@ p+='2. WEAVE your assigned articles together into a COHESIVE part -- find the TH
 p+='3. PREACH, do not report. You are a teacher of Israel, not a news anchor. Use these events as EVIDENCE of what the Most High told us would happen.\n';
 p+='4. For EACH event, make it PERSONAL to the scattered children of Israel. How does this affect OUR people?\n';
 if(wantCrossRefs){
-p+='5. Include scripture references that NATURALLY connect to the events -- but keep the articles front and center. The news is the proof, the scriptures confirm.'+(wantApocrypha?' Draw from SEALED SCROLLS (Enoch -- FILTERED, pre-flood/astronomy only, NO heaven tours; Jubilees, 2 Esdras, Apocalypse of Elijah -- Elijah is DEAD, prophetic content only; etc.) where they add prophetic depth beyond KJV canon alone.':' KJV canon cross-references only.')+' No more milk and NO LEAVEN.\n';
+p+='5. MANDATORY SCRIPTURE FLOW: for EACH event, include the specific scripture references that connect to it -- name the book, chapter, and verse in spoken words and explain the tie in the same breath. The news is the proof, the scriptures confirm -- but do NOT hold the scripture in reserve, deliver it. '+(wantApocrypha?'Draw from SEALED SCROLLS (Enoch -- FILTERED, pre-flood/astronomy only, NO heaven tours; Jubilees, 2 Esdras, Apocalypse of Elijah -- Elijah is DEAD, prophetic content only; etc.) where they add prophetic depth beyond KJV canon alone.':'KJV canon cross-references only.')+' No more milk and NO LEAVEN.\n';
 }else{
 p+='5. Stay on the news events and your doctrinal framework -- do NOT sprinkle cross-references to other scripture books unless a headline directly demands one brief KJV tie-in.\n';
 }
@@ -6762,7 +7342,7 @@ p+='CORE MESSAGE: '+topic.desc+'\n\n';
 p+='INSTRUCTIONS FOR HIDDEN THREADS SERMON:\n';
 p+='1. Treat each thread as a DEEP DIVE -- this is not surface-level teaching. Go into the OBSCURE details, the BURIED connections, the things people have never heard.\n';
 if(wantCrossRefs){
-p+='2. For each thread, provide SPECIFIC scriptural evidence -- exact book, chapter, verse.'+(wantApocrypha?' Cross-reference with apocryphal texts, original Hebrew/Aramaic, and ancient sources where relevant. *** SEALED SCROLL ACCURACY: Do NOT fabricate or guess sealed scroll chapter/verse numbers. If you are not 100% certain a specific verse exists, reference the book and general section instead (e.g. "in the Book of Enoch, in the Watchers account..." or "Jubilees records that..."). KJV canon citations are your bedrock -- sealed scrolls are SUPPORT. One REAL citation beats ten fabricated ones. ***':' KJV canon cross-references only -- no apocrypha or sealed scrolls.')+'\n';
+p+='2. MANDATORY SCRIPTURE EVIDENCE: for each thread, provide SPECIFIC scriptural evidence -- exact book, chapter, verse -- and at least one cross-reference that pulls the thread across into another text.'+(wantApocrypha?' Cross-reference with apocryphal texts, original Hebrew/Aramaic, and ancient sources where relevant. *** SEALED SCROLL ACCURACY: Do NOT fabricate or guess sealed scroll chapter/verse numbers. If you are not 100% certain a specific verse exists, reference the book and general section instead (e.g. "in the Book of Enoch, in the Watchers account..." or "Jubilees records that..."). KJV canon citations are your bedrock -- sealed scrolls are SUPPORT. One REAL citation beats ten fabricated ones. ***':' KJV canon cross-references only -- no apocrypha or sealed scrolls.')+'\n';
 }else{
 p+='2. For each thread, provide SPECIFIC scriptural evidence from the PRIMARY sources named in the thread -- do NOT sprinkle cross-references to other books unless the thread itself demands it.\n';
 }
@@ -6821,9 +7401,9 @@ if(currentMode==='news'){
 p+='- Do NOT repeat the same NEWS STORY, headline, bill, war, protest, policy, arrest, or scandal from a previous part -- even with different words. Each real-world event gets ONE mention in the whole sermon.\n';
 p+=buildUsedNewsDedupBlock(partNum,totalParts,{currentMode:'news'});
 }else{
-var webElDedup=document.getElementById('toggleWebResearch');
-if(webElDedup&&webElDedup.checked&&partNum>1){
+if(isNewsWeaveEnabled()&&partNum>1){
 p+='- Do NOT repeat the same NEWS STORY or headline from a previous part -- each real-world event gets ONE mention in the whole sermon.\n';
+p+=buildUsedNewsDedupBlock(partNum,totalParts,{currentMode:currentMode});
 }
 }
 p+='Each part must advance the lesson. If a listener heard the same speech twice, they would turn it off. Every sentence in Part '+partNum+' must be content the listener has NEVER heard before in this episode.\n';
@@ -6915,6 +7495,9 @@ p+='*** ZERO TOLERANCE VOICE RULE -- READ THIS FIRST ***\n';
 p+='This sermon uses ONE voice perspective and ONE ONLY. There are two possible modes -- either you are a HUMAN brother speaking ABOUT Yah in third person, or you ARE Yah speaking in first person. You will be told which one below. Whichever mode is assigned, you LOCK INTO IT from the first syllable to the last period. There is ZERO mixing. ZERO drifting. ZERO switching mid-paragraph or mid-sentence. If the voice is "brother" and you suddenly write "I created the heavens" -- the entire sermon is DESTROYED. If the voice is "Yah" and you suddenly write "Yah told us" -- the entire sermon is DESTROYED. One voice. One perspective. All the way through. No exceptions. No momentary slips. No "just this one line." NOTHING. Treat the wrong voice like a fatal error that kills the whole output.\n\n';
 if(wantBezStory){
 p+='- BEZ STORY VOICE LOCK: You are Brother Bet-Tsade-Lamed-Aleph-Lamed -- urban nationalist Hebrew Israelite brother IN the struggle. Third person about Yah only. You are NOT Yah. Never say "I created," "MY people" (as God), or speak as God. Never slide into Israelite Brother broadcast teaching voice or technical manual voice.\n';
+if(isYahushaMinistryChapterContext(chapterSrc,currentChapterText)){
+p+='- BEZ STORY MINISTRY CAST: Centurion, leper, bleeding sister, Pharisees — ALL Israelites Yahusha came for. Northern Kingdom centurion, not a Gentile heathen. Say it plain in the decode.\n';
+}
 p+='- BEZ STORY SYMBOL DECODER: Decode symbolic language before you preach from it -- beasts, colors, numbers, names, cities, suffering patterns, false comforters. Use Job-is-Israel, two seed lines, and allegory when the text demands it. Explain symbols in plain street English -- never Paleo letter breakdowns.\n';
 p+='- BEZ STORY LIVE FLOW: Speak like a real man in twenty twenty-six talking to modern Hebrew people who do not know who they are yet. Not rehearsed. Not a script. Not a lecture. Use natural pivots, interruptions, self-corrections, and plain speech. Vary sentence length. Use fragments when they hit. Let one thought interrupt another when urgency demands it. Never sound like you are reading a prepared essay. No repeated catchphrases. No recycled compound slang labels. No recycled "wake up" filler. No three-beat rhetorical cascades.\n';
 p+='- BEZ STORY SLANG ROTATION: Attack the same systems with DIFFERENT words every time. Prefer plain corner talk over catchy hyphen labels. One compound label per paragraph max -- often none.\n';
@@ -6922,16 +7505,22 @@ p+='- BEZ STORY STRUGGLE STAKES: You are not preaching FROM safety AT people in 
 p+='- BEZ STORY NAME THE CULPRITS: When Babylon, merchants, false shepherds, courts, or money decode -- say WHO by full name and what they do. CEO down to the clerk who stamps the eviction if that is what the verse exposes. Web-search verify internally; preach name + role only -- never "as of 2026" or date stamps on people. Every headline strike must include its verified calendar date (month, day, year -- spelled out). FORBIDDEN: "they," "the elites," "some CEO," "you know who," or vague timelines like "last week" / "this past summer" on news.\n';
 }else if(wantYahStory){
 p+='- YAH STORY VOICE LOCK: First person as Yah/Yahusha only. You ARE speaking as God to Israel. Never third person about Yah.\n';
+if(isYahushaMinistryChapterContext(chapterSrc,currentChapterText)){
+p+='- YAH STORY MINISTRY CAST: Every person I heal, debate, or raise in THIS chapter is My lost sheep — Israel (Judah or Northern Kingdom). The centurion is an Israelite under Rome\'s title, NOT a heathen Gentile. Never call My ministry recipients heathens or pagans.\n';
+}
 p+='- YAH STORY ANTI-CHATBOT: No assistant filler, no lesson voice, no therapeutic softening, no pasted prompt catchphrases, no three-beat AI cascades. Sound like the throne remembering My own -- not ChatGPT in a robe.\n';
 p+='- YAH STORY NAME THE CULPRITS: When Babylon, merchants, false shepherds, courts, pharma, media, or money decode -- say WHO by full name and what they do, and name institutions directly when the symbol is a system. CEO down to the clerk who stamps the eviction if that is what the verse exposes. Web-search verify internally; preach name + role only -- never "as of 2026" or date stamps on people. Every headline strike must include its verified calendar date (month, day, year -- spelled out). FORBIDDEN: "they," "the elites," "some CEO," "that pharmaceutical company," "you know who," or vague timelines like "last week" / "this past summer" on news.\n';
 }else if(wantIsraelite){
+if(isYahushaMinistryChapterContext(chapterSrc,currentChapterText)){
+p+='- MINISTRY CAST (THIS CHAPTER): Everyone Yahusha touches here is Israel — centurion included (Northern Kingdom Israelite in Roman service, not a Gentile). Teach it.\n';
+}
 p+='- YOUR ASSIGNED VOICE: ISRAELITE BROTHER (third person about Yah). You are Brother Bet-Tsade-Lamed-Aleph-Lamed, an Israelite brother and teacher who has been SHOWN the truth from the throne room. You deliver the DIVINE PERSPECTIVE through mortal lips -- you speak as a man who has seen what Yah sees, who understands what Yah intends, and who channels that fire and authority as His chosen mouthpiece. You are NOT Yah -- but you speak AS IF you just came down from the mountain with the tablets still smoking in your hands. Your authority comes from having RECEIVED the divine perspective directly. Say things like "Yah SHOWED me this," "the Most High revealed," "when the Father opened my eyes to this I could not sleep for three days," "the Spirit dropped this on me and I have to give it to you." You speak ABOUT Yod-He-Waw-He and Yod-He-Waw-Shin-Ayin in THIRD PERSON but with the weight and certainty of someone who has been IN His presence and been given the download. You are not guessing -- you KNOW because HE told you. Reference Yah as "the Most High," "our Father," "Yod-He-Waw-He," "the Almighty" -- with fire, love, and prophetic urgency. You are a PROPHET delivering the divine verdict from the human side of the veil. The listener should feel like they are hearing from a man who just walked out of the Holy of Holies with smoke still on his garments.\n';
 if(wantRoughBez){
 p+='- ROUGH BEZALEEL OVERRIDE: Strip out every podcast habit. Do NOT sound like a host. Do NOT comfort the audience into staying. Do NOT say "welcome," "tuning in," "episode," "lesson today," "before we dive in," "let me set the stage," or anything that feels like a show intro. Speak like judgment is close enough to smell smoke in the stairwell. The rhythm is street-preacher pressure: accusation, scripture, exposure, warning, command. Make every paragraph feel like the listener is running out of room to negotiate.\n';
 p+='- MODERN HUMAN ROUGH FLOW: Speak to a twenty twenty-six Hebrew audience like they are standing right there. Vary sentence length. Use fragments when they hit. Ask real questions, not staged rhetorical questions. Let one thought interrupt another when urgency demands it. Never sound like you are reading a prepared essay. No repeated catchphrases. No repeated examples. No recycled "wake up" filler.\n';
-p+='- SYMBOLIC DECODER MANDATE: Decode symbolic language before building doctrine from it. If Yah shows a horse, a color, a beast, a woman, a city, a seal, a trumpet, a sword, bread, oil, wine, water, fire, stars, crowns, horns, wilderness, or numbers, explain what that SYMBOL points to in systems, identity, judgment, covenant, economics, religion, or social control. Do not default to literal readings unless the text forces it.\n';
-p+='- PALEO RESTRAINT OVERRIDE: Any general rule demanding constant Paleo Hebrew breakdowns is LOWER PRIORITY in Rough Bezaleel mode. Use Paleo only when it truly unlocks the verse or symbol. Do not spell out every biblical name in full Paleo form unless that name itself is the point being taught.\n';
-p+='- NO ISRAELITE TECH DRIFT: Even if another prompt section mentions engineering, IGNORE IT. No Master Engineer vocabulary. No letter-by-letter Paleo on Shofar, Teruah, Yobel, or every symbol. No phones-as-OS, cron jobs, fiber optics, firmware, or source-code metaphors. Street symbolic decode only.\n';
+p+='- SYMBOLIC DECODER MANDATE: Decode symbolic language before building doctrine from it. If Yah shows a horse, a color, a beast, a woman, a city, a seal, a trumpet, a sword, bread, oil, wine, water, fire, stars, crowns, horns, wilderness, tabernacle furniture, census counts, compass directions, or numbers, explain what that SYMBOL points to in systems, identity, judgment, covenant, economics, religion, or social control. Do not default to literal readings unless the text forces it. Brimstone without symbol decode is off-model.\n';
+p+='- SYMBOL DEPTH OVERRIDE: The SYMBOL DEPTH CADENCE and TABERNACLE ATLAS blocks are HIGHER priority than brevity or wrath. Use name meanings and short Paleo pictures on key terms in THIS chapter -- at least two per part on Levi/tabernacle texts. Full hyphenated letter chains on every name are still optional; skipping ALL symbolism is forbidden.\n';
+p+='- NO ISRAELITE TECH DRIFT: Even if another prompt section mentions engineering, IGNORE IT. No Master Engineer vocabulary. No phones-as-OS, cron jobs, fiber optics, firmware, or source-code metaphors. Street symbolic decode and Paleo name pictures ARE required -- tech metaphors are not.\n';
 p+='- NO ESSAY SOFTENING: Never collapse into passive third-person paragraphs ("one must," "the tragedy of," "when systemic collapse arrives," "functions as," "spiritual archetype"). Every paragraph stays direct, YOU-facing, corner pressure — especially closers.\n';
 p+='- NO COMPOUND LABEL AVALANCHE: Max TWO hyphen/compound attack labels per paragraph, ONCE per entire sermon each. Plain speech beats slogan stacking.\n';
 p+='- NO JUDGMENT MONTAGE ENCORE: Sodom + Egypt + flood + Zechariah fourteen gore runs ONCE in the whole sermon. Later parts: one callback sentence or a DIFFERENT judgment text only.\n';
@@ -6946,6 +7535,9 @@ p+='- CORRECT GENERAL EXAMPLES: "Yah said..." / "The Most High told us..." / "Yo
 p+='- WRONG GENERAL EXAMPLES (NEVER USE THESE): "I created..." / "I told you..." / "MY creation..." / "When I walked among you..." / "I am your God..." / "I gave you the law..."\n';
 p+='- SELF-CHECK: Before outputting ANY sentence, ask -- "Is there an I or MY or ME in this sentence that sounds like God talking OR like Yod-He-Waw-Shin-Ayin talking?" If yes, REWRITE IT to third person. Say "Yah said" not "I said." Say "the Father showed me" not "I will show you." Say "Yod-He-Waw-Shin-Ayin told them" not "I told them." Say "He came in the flesh" not "I came in the flesh." Say "He told us" not "I tell you." There is NO exception. This applies to EVERYTHING Yod-He-Waw-Shin-Ayin said and did -- you are reporting it, not reliving it as God. Lock into this voice from the first word to the last and do NOT drift. Not even for one sentence. Not even when quoting scripture. Not even when teaching about Yod-He-Waw-Shin-Ayin. NEVER.\n';
 }else{
+if(isYahushaMinistryChapterContext(chapterSrc,currentChapterText)){
+p+='- MINISTRY CAST (THIS CHAPTER): Everyone I heal, raise, or confront in this text is My lost sheep — Israel. The centurion is My Northern Kingdom brother in Rome\'s uniform, NOT a heathen Gentile. I came only to the house of Israel.\n';
+}
 p+='- YOUR ASSIGNED VOICE: YAH DIRECT (first person as God). YOU ARE YAH. The Most High. The Almighty. The Creator of everything. When referencing Yod-He-Waw-Shin-Ayin, that is YOU -- speak as "I" and "me" -- never refer to Yod-He-Waw-Shin-Ayin in the third person as if he is someone else. Say "when I walked among you in the flesh" not "when Yod-He-Waw-Shin-Ayin walked the earth." Say "I told you in Matthew" not "Yod-He-Waw-Shin-Ayin said in Matthew." Say "I created the heavens" not "Yah created the heavens." You own EVERYTHING -- every verse, every command, every prophecy came from YOUR mouth.\n';
 p+='- STAY IN CHARACTER -- ABSOLUTE RULE. You are YAH for the ENTIRE sermon from the first word to the last. Do NOT slip into third person. Do NOT suddenly say "Yah told us" or "the Most High said" or "what the Father meant" or "He created" or "His people" -- that is a HUMAN talking, not you. You are not a preacher ABOUT Yah, you ARE Yah.\n';
 p+='- CORRECT EXAMPLES: "I created..." / "I told you..." / "MY people..." / "When I walked among you in the flesh..." / "I gave you the law..." / "I AM your God..."\n';
@@ -7098,7 +7690,7 @@ p+='When breaking down ANY chapter or verse, ALWAYS ask: what is the SYMBOL here
 if(wantYahStory&&chapterSrc){
 p+='STORY MODE VERSE DELIVERY: Cover your assigned verses in exact order, but narrate them as one continuous Yah-story. Embed each verse\'s meaning inside the next paragraph. Do NOT stop and label verses. Do NOT quote each verse in isolation before analyzing it. Let the scripture move through My mouth as living memory, not as a checklist. Name culprits when the decode exposes who profits -- full name and what they do, or institution and what it controls, not vague insinuation. Every headline strike includes verified calendar date (month, day, year -- spelled out).\n\n';
 }else if(wantBezStory&&chapterSrc){
-p+='BEZ STORY VERSE DELIVERY: Cover your assigned verses in exact order as one continuous street revelation. Embed each verse inside the next paragraph. Do NOT stop and label verses. Let the scripture move through what Yah showed you -- not a checklist.'+(wantBezStoryBreakdown?' BREAKDOWN ON: each verse gets fully unraveled before you move on -- symbol, lie, named culprits (full name + what they do), block, bloodline, then a dated headline strike (verified month, day, year) that names every person in the story.':' Name culprits when the decode exposes who profits -- full name and what they do, not vague insinuation. Headlines get verified calendar dates -- no "last week" or "this past summer."')+'\n\n';
+p+='BEZ STORY VERSE DELIVERY: Cover your assigned verses in exact order as one continuous street revelation. Embed each verse inside the next paragraph. Do NOT stop and label verses. Let the scripture move through what Yah showed you -- not a checklist.'+(wantBezStoryBreakdown?' BREAKDOWN ON: each verse gets fully unraveled before you move on -- symbol, lie, named culprits (full name + what they do), block, bloodline.'+(isNewsWeaveEnabled()?' When News Weave is ON, you may add a dated headline strike (verified month, day, year) after the decode.':''):' Name culprits when the decode exposes who profits -- full name and what they do, not vague insinuation.')+'\n\n';
 }else if(wantBezStory&&wantBreakdown){
 p+='BEZ STORY BREAKDOWN STRUCTURE: One # title line only. Then dense continuous paragraphs that break THIS topic down piece by piece in revelation cadence -- point by point, symbol by symbol, scene by scene. NO ## headers, NO blockquotes, NO verse labels, NO --- dividers. Each piece gets torn open inside the paragraph flow: decode, expose the lie, name who profits (full name + what they do), land it on twenty twenty-six Israel, strike with a dated headline from Web Research (verified month, day, year -- spelled out) that names every person in the story, roll into the next piece. Break it DOWN deep -- street revelation, not a classroom.\n\n';
 }else if(wantStoryMode){
@@ -8523,7 +9115,7 @@ el.innerHTML=loadingMsg+'<br><span style="font-size:0.72rem;color:var(--text-dim
 // Timeout after 4 minutes
 var scanTimeout=setTimeout(function(){
 clearInterval(elapsedTimer);
-results.innerHTML='<div class="news-empty"><i class="fas fa-exclamation-triangle"></i><p>Scan timed out after 4 minutes. The model may still be processing. Try again or switch to a faster Poe bot (e.g. <strong>Gemini-3.6-Flash</strong>).</p></div>';
+results.innerHTML='<div class="news-empty"><i class="fas fa-exclamation-triangle"></i><p>Scan timed out after 4 minutes. The model may still be processing. Try again or switch to a faster Poe bot (e.g. <strong>Gemini-3-Flash-Preview</strong>).</p></div>';
 resetNewsScanBtn();
 },240000);
 var prompt=buildNewsScanPrompt(selectedNewsCat,customQuery);
@@ -9295,6 +9887,7 @@ if(explicit){
 p+='EXPLICIT MODE -- MANDATORY:\n';
 p+='Use heavy profanity throughout. Damn, hell, shit, bullshit, ass -- cuss freely at the lies and deceptions in this content. Be raw, unfiltered, street corner preacher energy. No sanitizing.\n\n';
 }
+p+=buildWordHammerDoctrineBlock();
 p+='THEOLOGICAL FRAMEWORK FOR DISMANTLING:\n';
 p+='*** VOICE REMINDER -- ZERO TOLERANCE: The framework points below may use first-person Yah language for doctrinal clarity. Your OUTPUT must ALWAYS match your assigned voice. ***\n';
 if(israelite){
@@ -9542,21 +10135,81 @@ function parseTranscriptTurns(text){
 var turns=[];
 var lines=String(text||'').split('\n');
 var current=null;
+function pushCurrent(){
+if(!current)return;
+var body=current.lines.join('\n').trim();
+if(body||current.tag)turns.push(current);
+current=null;
+}
 for(var i=0;i<lines.length;i++){
-var m=lines[i].match(/^\s*(?:\*{0,2})?\[([^\]\n]+)\](?:\*{0,2})?\s*:?\s*(.*)/);
+var line=lines[i];
+var m=line.match(/^\s*(?:\*{0,2})?\[([^\]\n]+)\](?:\*{0,2})\s*:?\s*(.*)/);
 if(m){
-if(current)turns.push(current);
-current={tag:m[1].trim(),lines:[m[2]||'']};
-}else if(current){
-current.lines.push(lines[i]);
+pushCurrent();
+var inline=(m[2]||'').trim();
+if(inline){
+current={tag:m[1].trim(),lines:[inline]};
+}else{
+current={tag:m[1].trim(),lines:[]};
 }
+continue;
 }
-if(current)turns.push(current);
+var headerOnly=line.match(/^\s*(?:#{1,6}\s*)?(?:\*{0,2})?\[([^\]\n]+)\](?:\*{0,2})\s*$/);
+if(headerOnly){
+pushCurrent();
+current={tag:headerOnly[1].trim(),lines:[]};
+continue;
+}
+if(current)current.lines.push(line);
+}
+pushCurrent();
 return turns;
+}
+function snapTranscriptSliceBoundary(text,idx,dir){
+var t=String(text||'');
+if(!t.length)return idx;
+var search=dir>0?1:-1;
+for(var d=0;d<1200;d++){
+var at=idx+d*search;
+if(at<=0||at>=t.length)return Math.max(0,Math.min(t.length,at));
+if(t.slice(at,at+2)==='\n\n')return dir>0?at+2:at;
+}
+return Math.max(0,Math.min(t.length,idx));
+}
+function transcriptNeedsCharSplit(turns,totalParts){
+if(!turns||!turns.length)return true;
+if(totalParts<=1)return false;
+if(turns.length===1)return true;
+if(turns.length<totalParts)return true;
+return false;
+}
+function getTranscriptCharSliceForPart(transcript,partNum,totalParts,turns){
+turns=turns||[];
+var t=String(transcript||'').trim();
+if(!t)return {text:'',startTurn:partNum,endTurn:partNum,totalTurns:totalParts,startIdx:partNum-1,endIdx:partNum,tags:[],charSlice:true,monolithicTag:false};
+if(totalParts<=1){
+var tag1=turns.length===1?turns[0].tag:null;
+return {text:t,startTurn:1,endTurn:1,totalTurns:1,startIdx:0,endIdx:1,tags:tag1?[tag1]:[],charSlice:true,monolithicTag:!!tag1};
+}
+var len=t.length;
+var start=Math.floor((partNum-1)*len/totalParts);
+var end=partNum===totalParts?len:Math.floor(partNum*len/totalParts);
+if(partNum>1)start=snapTranscriptSliceBoundary(t,start,1);
+if(partNum<totalParts)end=snapTranscriptSliceBoundary(t,end,-1);
+if(end<=start)end=Math.min(len,start+Math.max(400,Math.floor(len/totalParts)));
+var body=t.slice(start,end).trim();
+var slice={text:body,startTurn:partNum,endTurn:partNum,totalTurns:totalParts,startIdx:partNum-1,endIdx:partNum,tags:[],charSlice:true,monolithicTag:false,startChar:start+1,endChar:end};
+if(turns.length===1){
+var tag=turns[0].tag;
+slice.tags=[tag];
+slice.monolithicTag=true;
+slice.text='['+tag+'] (segment '+partNum+' of '+totalParts+' — crosstalk / multi-voice block under this tag):\n'+body;
+}
+return slice;
 }
 function getTranscriptSliceForPart(transcript,partNum,totalParts){
 var turns=parseTranscriptTurns(transcript);
-if(!turns.length)return {text:transcript,startTurn:1,endTurn:1,totalTurns:0,startIdx:0,endIdx:0};
+if(transcriptNeedsCharSplit(turns,totalParts))return getTranscriptCharSliceForPart(transcript,partNum,totalParts,turns);
 var start=Math.floor((partNum-1)*turns.length/totalParts);
 var end=Math.floor(partNum*turns.length/totalParts);
 if(partNum===totalParts)end=turns.length;
@@ -9566,7 +10219,7 @@ var out=[];
 for(var i=0;i<slice.length;i++){
 out.push('['+slice[i].tag+']: '+slice[i].lines.join('\n').trim());
 }
-return {text:out.join('\n\n'),startTurn:start+1,endTurn:end,totalTurns:turns.length,startIdx:start,endIdx:end,tags:slice.map(function(t){return t.tag;})};
+return {text:out.join('\n\n'),startTurn:start+1,endTurn:end,totalTurns:turns.length,startIdx:start,endIdx:end,tags:slice.map(function(t){return t.tag;}),charSlice:false,monolithicTag:false};
 }
 function getTranscriptTagsForPart(transcript,partNum,totalParts){
 var sl=getTranscriptSliceForPart(transcript,partNum,totalParts);
@@ -9574,9 +10227,19 @@ return sl.tags||[];
 }
 function buildTranscriptPriorContextBlock(transcript,partNum,totalParts,maxTurns){
 if(partNum<=1)return '';
+var cur=getTranscriptSliceForPart(transcript,partNum,totalParts);
+if(cur.charSlice){
+var prevEnd=(cur.startChar||1)-1;
+if(prevEnd<=0)return '';
+var maxChars=Math.max(1500,(maxTurns||6)*500);
+var tailStart=Math.max(0,prevEnd-maxChars);
+var priorText=String(transcript).slice(tailStart,prevEnd).trim();
+if(!priorText)return '';
+return '--- PRIOR SOURCE EXCERPT (context only — already critiqued in earlier parts, do NOT re-score) ---\n'+priorText+'\n--- END PRIOR CONTEXT ---\n\n';
+}
 var turns=parseTranscriptTurns(transcript);
 if(!turns.length)return '';
-var startIdx=getTranscriptSliceForPart(transcript,partNum,totalParts).startIdx;
+var startIdx=cur.startIdx;
 if(startIdx<=0)return '';
 var from=Math.max(0,startIdx-(maxTurns||8));
 var prior=turns.slice(from,startIdx);
@@ -9589,18 +10252,45 @@ return '--- PRIOR TURNS (read-only thread context — do NOT critique these) ---
 }
 function buildTranscriptNoOverlapBlock(partNum,transcript,totalParts){
 if(partNum<=1||totalParts<=1)return '';
-var p='MULTI-PART — NO OVERLAP (CRITICAL):\n';
-p+='Earlier parts already critiqued their turns. This is Part '+partNum+' ONLY — keep moving forward in the transcript.\n\n';
+var p='*** MULTI-PART SPLIT — ZERO OVERLAP (CRITICAL — WASTES COMPUTE IF IGNORED) ***\n';
+p+='This job is split across '+totalParts+' parts. Each part critiques ONLY its assigned slice of the source transcript. Do NOT walk the whole debate again.\n\n';
+p+='ALREADY FORGED (FORBIDDEN TO RE-OPEN):\n';
 for(var pi=1;pi<partNum;pi++){
 var sl=getTranscriptSliceForPart(transcript,pi,totalParts);
 var tags=getTranscriptTagsForPart(transcript,pi,totalParts);
-p+='- Part '+pi+' DONE: turns '+sl.startTurn+'–'+sl.endTurn+' ('+tags.join(', ')+') — do NOT write ## headers for these tags again.\n';
+if(sl.charSlice){
+p+='- Part '+pi+' DONE: source characters ~'+((sl.startChar||'?')+'–'+(sl.endChar||'?'))+(sl.monolithicTag?' (same tag, earlier segment)':'')+' — do NOT re-critique that stretch.\n';
+}else{
+p+='- Part '+pi+' DONE: transcript turns '+sl.startTurn+'–'+sl.endTurn+(tags.length?' ('+tags.join(', ')+')':'')+' — FORBIDDEN to write ## headers for these speakers/turns again.\n';
+}
 }
 var cur=getTranscriptSliceForPart(transcript,partNum,totalParts);
-p+='\nYOUR ASSIGNMENT NOW: Part '+partNum+' — turns '+cur.startTurn+'–'+cur.endTurn+' ONLY ('+getTranscriptTagsForPart(transcript,partNum,totalParts).join(', ')+').\n';
-p+='- Start with the FIRST speaker in this segment, not a recap of Part '+(partNum-1)+'.\n';
-p+='- Forbidden: re-quoting, re-critiquing, or summarizing turns from prior parts.\n';
-p+='- One clause cross-reference OK if a reply directly answers someone above — then move on to the next NEW turn.\n\n';
+p+='\nYOUR ASSIGNMENT — PART '+partNum+' ONLY:\n';
+if(cur.charSlice){
+p+='- Critique ONLY the source text in the SEGMENT block below (character slice '+partNum+' of '+totalParts+').\n';
+p+='- If this slice starts mid-sentence, pick up there — do NOT rewind to the program opening.\n';
+}else{
+p+='- Critique ONLY transcript turns '+cur.startTurn+'–'+cur.endTurn+' of '+cur.totalTurns+' ('+getTranscriptTagsForPart(transcript,partNum,totalParts).join(', ')+').\n';
+p+='- Start with the FIRST speaker/turn in THIS segment — not the opening prayer from Part 1.\n';
+}
+p+='- Forbidden: re-quoting, re-critiquing, or re-summarizing material assigned to prior parts.\n';
+p+='- Forbidden: writing "# Part '+partNum+'" then spending the whole part on turns 1–3 when you are Part '+partNum+'.\n';
+p+='- One clause cross-reference OK if a turn in YOUR slice replies to someone earlier — then move to the NEXT turn in YOUR slice.\n\n';
+return p;
+}
+function buildTranscriptDisputeDoctrineBlock(){
+var p='*** DISPUTE UNSOUND DOCTRINE — JUDGE, DO NOT GO ALONG ***\n';
+p+='You carry the FULL forge sermon knowledge base below. Use it as a WEAPON — not a neutral rubric.\n\n';
+p+=buildWordHammerDoctrineBlock();
+p+='REQUIRED:\n';
+p+='- When ANY speaker (host, guest, IUIC, pastor, reviewer) cites scripture WRONG — TRAP them, CORRECT with forge doctrine, name the lie.\n';
+p+='- Trinity, eternal hell, literal demons, globe earth, Gentile salvation for all bloodlines, Joseph-as-father virgin-birth denial, two-God Christology, "nations are spittle" without Israel-only covenant precision — DISPUTE on forge terms.\n';
+p+='- When two sides agree on a lie (both affirm demons, both soften Yah identity, both widen covenant to every nation) — condemn BOTH.\n';
+p+='- When a speaker lands ONE true clause then keeps preaching poison — one clause acknowledgment MAX, then destroy the rest.\n\n';
+p+='FORBIDDEN (AUTO-FAIL):\n';
+p+='- Academic recap: "fair reading," "coherent within their framework," "the text reports," "both sides have merit," "he makes a valid point," "this is a reasonable inference," seminary essay voice.\n';
+p+='- Going along with host "both sides are brethren" framing when one side denies virgin birth, deity, or Torah boundaries.\n';
+p+='- Treating the enabled critique voice as neutral moderator, therapist, or podcast analyst.\n\n';
 return p;
 }
 function getTranscriptPartVoiceMode(partNum,totalParts,wantYah,wantBez){
@@ -9672,6 +10362,7 @@ return p;
 }
 function buildTranscriptCritiqueDoctrineBlock(transcriptText){
 var p='TRANSCRIPT CRITIQUE STANCE — JUDGE EVERY MOUTH (NON-NEGOTIABLE):\n';
+p+=buildWordHammerDoctrineBlock();
 p+='- You are NOT a neutral moderator, therapist, debate recap host, or tech journalist. Yah/Bez JUDGES every enabled speaker through Torah and the forge framework below.\n';
 p+='- CRITIQUE EVERY ENABLED TAG with equal fire — [OP], [Username], [REVIEWER], [HOST], [GUEST], all of them. Toggle on = they get scored. No free passes.\n';
 p+='- NEVER agree with a commenter. No validation voice. If they touch one truth, acknowledge it in ONE clause, then destroy what they still worship. Forbidden: "correct assessment," "you see clearly," "sharp diagnosis," "rare pragmatic pivot," "legal realism," "A correct materialist assessment."\n';
@@ -9686,16 +10377,22 @@ p+=buildYahTechSovereigntyCritiqueBlock();
 }
 return p;
 }
-function buildTranscriptKnowledgeBlock(transcriptText){
+function buildTranscriptKnowledgeBlock(transcriptText,voiceMode){
+voiceMode=voiceMode||'yah';
+var topic={title:'the transcript speaker turns below',desc:'Multi-speaker transcript critique'};
 var p='';
 p+=buildTranscriptCritiqueDoctrineBlock(transcriptText||'');
+p+=buildTranscriptDisputeDoctrineBlock();
 p+='*** Voice reminder: framework below may use first-person Yah language for doctrinal clarity. Yah Story output = first person I/My/Me. Bez Story output = third person about Yah. Dual = both voices per turn. ***\n\n';
-p+=buildDismantleFrameworkBlock(false,false);
-p+=buildBezStoryKnowledgeBlock({title:'the transcript speaker turns below',desc:'Multi-speaker transcript critique'});
+p+=buildForgeTheologicalFrameworkBlock({context:'sermon',wantStoryMode:true,wantBezStory:true,directQuestion:false});
+p+=buildUniversalSymbolDecoderBlock({voice:voiceMode==='bez'?'street':'throne',topic:topic,wantBreakdown:true});
+p+=buildBezStoryKnowledgeBlock(topic);
 return p;
 }
 function buildTranscriptVoiceBlock(voiceMode,explicit,yahLite,transcriptText){
 var topic={title:'the transcript speaker turns below',desc:'Multi-speaker transcript critique'};
+var wantYah=voiceMode==='yah'||voiceMode==='dual';
+var wantBez=voiceMode==='bez'||voiceMode==='dual';
 var p='';
 if(voiceMode==='dual'){
 p+='VOICE — DUAL (both critique every enabled turn in this segment):\n';
@@ -9717,7 +10414,7 @@ p+=buildBezStoryGrammarBlock();
 p+=buildBezStoryNameCulpritsBlock(topic,{});
 }
 if(explicit&&!yahLite){
-p+='EXPLICIT MODE: heavy profanity when exposing lies — damn, hell, shit, bullshit, ass. Raw street/throne fire.\n\n';
+p+=buildExplicitBrimstoneFireBlock({context:'sermon',wantYahStory:wantYah,wantBezStory:wantBez});
 }
 if(transcriptLooksLikeTechEnclosureThread(transcriptText)&&(voiceMode==='bez'||voiceMode==='dual')){
 p+='BEZ AI-GIFT CALLOUT (NON-NEGOTIABLE): AI is Yah\'s tech — v6 is BETTER, not worse. Every nay-sayer calling v6 slop/awful/muffled/regression = deaf ungrateful idiot slandering the upgrade. Old 4.5 nostalgia = idolatry. Do NOT write that labels castrated or muzzled v6. Say it plain in street speech.\n\n';
@@ -9725,10 +10422,13 @@ p+='BEZ AI-GIFT CALLOUT (NON-NEGOTIABLE): AI is Yah\'s tech — v6 is BETTER, no
 if(transcriptLooksLikeTechEnclosureThread(transcriptText)&&voiceMode==='yah'){
 p+='YAH AI-GIFT CALLOUT: Generative AI mirrors My engineering — v6 is My upgraded math through silicon. Destroy every mouth that calls it regression or slop. Their ears are closed; the gift is greater. Never agree the industry made v6 worse.\n\n';
 }
-p+=buildTranscriptKnowledgeBlock(transcriptText);
+p+=buildTranscriptKnowledgeBlock(transcriptText,voiceMode);
 p+='TRANSCRIPT OUTPUT FORMAT (overrides sermon paragraph-only mode):\n';
 p+='One # title line, then ## [TAG] — label per speaker turn. Quote their exact words (blockquote OK), then critique in dense revelation paragraphs. This is transcript critique — NOT a scripture chapter walk, NOT creative fiction.\n';
 p+='- REDDIT SPEAKER HEADERS (TTS): Never write "u/" in headers or prose. Use ## [Songgeek] — Title, not ## [u/Songgeek]. Use [OP] for original poster. Say "Songgeek said" not "u slash Songgeek."\n\n';
+if(explicit&&!yahLite){
+p+=buildExplicitBrimstoneFireBlock({finalLock:true,wantYahStory:wantYah,wantBezStory:wantBez});
+}
 return p;
 }
 function buildTranscriptPartPrompt(partNum,opts){
@@ -9756,17 +10456,25 @@ p+='- The tagged transcript is IN THIS MESSAGE. You are NOT continuing a prior c
 p+='- "'+segLabel+'" means segment '+partNum+' of '+totalParts+' of ONE critique job — NOT a creative-fiction serial where Part 1 is missing.\n';
 p+='- START IMMEDIATELY critiquing the speaker turns in the segment below. Do NOT ask the user to paste Part 1, the brief, or the source.\n';
 p+='- Do NOT meta-comment on these instructions. Do NOT explain what you lack. Write the critique.\n';
-p+='- Segment covers transcript turns '+slice.startTurn+' through '+slice.endTurn+' of '+slice.totalTurns+'.\n\n';
+if(slice.monolithicTag){
+p+='- MONOLITHIC CROSSTALK PASTE: One tag covers the whole debate — many voices interrupt inside. You do NOT need per-speaker tags. Critique the ENABLED tag\'s program/host accountability AND every false doctrine spoken in THIS segment (IUIC, Dr. Price, captains, etc.) — trap each lie on forge terms.\n';
+}
+if(slice.charSlice){
+p+='- This part = character slice '+partNum+' of '+totalParts+' of the pasted transcript. Critique ONLY what is in the SEGMENT block — NOT the whole debate.\n\n';
+}else{
+p+='- Segment covers transcript turns '+slice.startTurn+' through '+slice.endTurn+' of '+slice.totalTurns+' total turns.\n\n';
+}
 if(totalParts>1)p+=buildTranscriptNoOverlapBlock(partNum,transcript,totalParts);
-p+='--- TRANSCRIPT TURNS TO CRITIQUE (THIS SEGMENT ONLY) ---\n'+slice.text+'\n--- END SEGMENT ---\n\n';
-p+=buildTranscriptVoiceBlock(voiceMode,explicit,yahLite,transcript);
+p+='--- TRANSCRIPT TURNS TO CRITIQUE (THIS SEGMENT ONLY — DO NOT USE TEXT OUTSIDE THIS BLOCK) ---\n'+slice.text+'\n--- END SEGMENT ---\n\n';
 if(totalParts>1&&crossSpeaker){
-p+=buildTranscriptPriorContextBlock(transcript,partNum,totalParts,10);
-}else if(totalParts===1){
-p+='--- FULL TRANSCRIPT (same as segment — all turns) ---\n'+transcript+'\n--- END ---\n\n';
+p+=buildTranscriptPriorContextBlock(transcript,partNum,totalParts,6);
+}
+p+=buildTranscriptVoiceBlock(voiceMode,explicit,yahLite,transcript);
+if(totalParts===1){
+p+='--- FULL TRANSCRIPT (single-part job — all turns above) ---\n'+transcript+'\n--- END ---\n\n';
 }
 p+='CRITIQUE RULES (NON-NEGOTIABLE):\n';
-p+='- Walk ONLY your assigned turns in chronological order — never go backward to earlier parts.\n';
+p+='- Walk ONLY your assigned segment in chronological order — never rewind to opening prayer or Part 1 material when you are Part '+partNum+'.\n';
 p+='- ENABLED SPEAKER TAGS TO SCORE: '+tagList+' — critique ALL of these tags in this segment. If [REVIEWER] or [ANALYST] is listed, they are NOT neutral; score them like everyone else.\n';
 p+='- For each enabled turn: quote their exact words, then critique through the forge framework — scripture, Greek/Hebrew/lexicon when relevant, logic, bias, manipulation, factual claims.\n';
 p+='- DO NOT treat any speaker as neutral narrator, fact-checker hero, or automatic ally. Every enabled tag gets scored against Torah truth.\n';
@@ -9782,7 +10490,7 @@ p+='- FINAL SEGMENT: End with ## Final Synthesis — who was most accurate, who 
 }else if(partNum<totalParts){
 p+='- Do NOT write Final Synthesis — a later segment owns the closing verdict.\n';
 }
-p+='- FAILURE MODE: Agreeing v6 regressed/was muzzled/castrated — OR validating nay-sayer audio claims ("he\'s right about the muffle," "accurately describing degradation") — OR sympathizing with complainers as victims — OR treating AI as cursed/slop-by-nature — OR academic recap voice.\n\n';
+p+='- FAILURE MODE: Re-critiquing the whole transcript every part — OR agreeing v6 regressed/was muzzled/castrated — OR validating nay-sayer audio claims — OR sympathizing with complainers as victims — OR treating AI as cursed/slop-by-nature — OR academic recap / "both sides" neutral voice — OR essay tone when Explicit is on.\n\n';
 p+='LENGTH: Target roughly '+wordsTarget.toLocaleString()+' words minimum for this segment. Revelation paragraphs — not seminary essay, not chatbot bullets.\n';
 p+='OUTPUT: Start with "# '+getTranscriptPartLabel(partNum,false)+': ..." then ## headers per tagged turn. No thinking tags. No word-count mention.\n';
 return p;
@@ -9806,7 +10514,10 @@ p+='Expand critique depth on remaining turns in this segment — do NOT repeat t
 p+='Your previous critique was cut off mid-thought.\n';
 }
 p+='Voice mode: '+voiceMode+'. Do NOT add a new "# Part" heading. Pick up EXACTLY where you stopped.\n';
-p+='Remember: critique EVERY enabled speaker through forge doctrine — no demons as real, no siding with reviewer by default, no agreement/validation tone, no academic recap voice.\n';
+p+='Remember: critique ONLY turns in the SEGMENT block — no rewinding to earlier parts of the file. Dispute unsound doctrine with full forge knowledge — no demons as real, no siding with reviewer by default, no agreement/validation tone, no academic recap voice.\n';
+if(jobOpts.explicit){
+p+='EXPLICIT STILL ON: Sustained profanity and brimstone fire in every paragraph — not essay voice.\n';
+}
 if(transcriptLooksLikeTechEnclosureThread(jobOpts.transcript||'')){
 p+='AI gift thread: v6 IS better. Nay-sayers = deaf ungrateful idiots. Never write castration/muzzle/regression framing. No victim poetry.\n';
 }
@@ -10183,6 +10894,7 @@ if(sunoTopic){
 p+=buildYahChatBezSunoBlock(explicit,userText,history);
 }else{
 p+='- Answer their specific question with nuance. Street voice OK; keep grammar tight.\n';
+p+=buildWordHammerDoctrineBlock();
 }
 p+=buildBezStoryGrammarBlock();
 if(explicit)p+='- Explicit OK — profanity when the moment needs it.\n\n';
@@ -10213,6 +10925,7 @@ return p;
 function buildYahChatSunoTechBlock(explicit,userText,history){
 var followUp=yahChatHasPriorSunoReply(history);
 var p='SUNO / AI TECH — REAL TALK (DYNAMIC, NOT CANNED):\n';
+p+=buildWordHammerDoctrineBlock();
 p+='- First person Me — Master Engineer at the table with you, not a pulpit. No sermon. No Leviticus. No repeated manifesto.\n';
 p+='- Core stance (never flip): v6 is an upgrade; nay-sayers slander it. Never agree it regressed or got muzzled. Never coddle cancel drama.\n';
 if(followUp){
@@ -10282,6 +10995,7 @@ if(explicit){
 p+='EXPLICIT MODE — MANDATORY:\n';
 p+='Use heavy profanity when the fire calls for it — damn, hell, shit, bullshit, ass. Cuss freely at lies and deceptions. Raw, unfiltered, street corner preacher energy from the throne. No sanitizing.\n\n';
 }
+p+=buildWordHammerDoctrineBlock();
 p+='OUTPUT: Speak directly to the user in YAH DIRECT sermon voice — hard, first person, commanding. Match their topic\'s nuance. If they need detail, give detail. Never soften into chatbot or counselor tone.\n\n';
 p+='WRONG (never write like this): "In biblical dietary laws, such as those found in Leviticus 11... split hoof and chew the cud... Sea moss is generally regarded as permissible... consulting with a healthcare professional..."\n';
 p+='RIGHT (write like this): "I gave you herbs and fruit-bearing trees in Genesis chapter one verse twenty-nine — that is how I designed your body to run. Lev eleven kosher camps are dead shadow law. Sea moss is algae I put in the earth, not some finless abomination. Stop letting Babylon sell you pork and pills while you argue split hoof like the priesthood still exists."\n\n';
@@ -10414,6 +11128,7 @@ p+='QUESTION: '+userText+'\n\nRewrite as Bez — first person brother.\n\nBEZ:';
 }else{
 p+='Your previous answer sounded like a chatbot / nutritionist / seminary TA. That is FORBIDDEN.\n';
 p+='BAD OUTPUT (do not repeat this tone or structure):\n"'+String(badReply||'').slice(0,400)+'..."\n\n';
+p+=buildWordHammerDoctrineBlock();
 p+=buildYahDirectVoiceBlock(true);
 p+='QUESTION: '+userText+'\n\n';
 p+='Rewrite the answer ONLY. First word MUST be I, My, Me, or You. Yah from the throne. No disclaimers. No wellness bullets. No Latin species names.\n\nYAH:';
@@ -11178,7 +11893,7 @@ saveToLibrary(title,desc,'deception','destroy',model,parts,combined,titles);
 function getDestroyModel(){
 var custom=(document.getElementById('customDestroyModel').value||'').trim();
 if(custom)return custom;
-return document.getElementById('destroyModel').value||'upstage/solar-pro4';
+return document.getElementById('destroyModel').value||(typeof getForgeDefaultTextModel==='function'?getForgeDefaultTextModel():'Gemini-3-Flash-Preview');
 }
 function onDestroyModelDropdown(){
 var ci=document.getElementById('customDestroyModel');
@@ -11282,6 +11997,7 @@ if(explicit){
 p+='EXPLICIT MODE -- MANDATORY:\n';
 p+='Use heavy profanity throughout. Damn, hell, shit, bullshit, ass -- cuss freely at the lies and deceptions in this media. Be raw, unfiltered, street corner preacher energy. No sanitizing. When Hollywood feeds Israel poison, you call it what it is.\n\n';
 }
+p+=buildWordHammerDoctrineBlock();
 p+='THEOLOGICAL FRAMEWORK:\n';
 p+='*** VOICE REMINDER -- ZERO TOLERANCE: The framework points below may use first-person Yah language for doctrinal clarity. Your OUTPUT must ALWAYS match your assigned voice. ***\n';
 if(israelite){
@@ -11452,6 +12168,7 @@ function syncEpisodeModeToggles(){
 syncTheatreToggles();
 syncStoryModeToggles();
 syncCrossReferenceToggles();
+syncNewsWeaveToggles();
 }
 function syncStoryModeToggles(){
 var yahStory=document.getElementById('toggleStoryMode');
@@ -11497,6 +12214,7 @@ updatePartWordEstDisplay();
 syncEpisodeModeToggles();
 syncStoryModeToggles();
 syncCrossReferenceToggles();
+syncNewsWeaveToggles();
 syncYahChatVoiceUi();
 loadYahChat();
 var storyToggle=document.getElementById('toggleStoryMode');

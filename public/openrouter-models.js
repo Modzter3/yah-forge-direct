@@ -5,6 +5,12 @@
  * Falls back silently (keeps loading placeholder) if the catalog cannot be loaded.
  */
 (function () {
+  /** OpenRouter id — default for every Forge text model dropdown when catalog hydrates */
+  window.FORGE_DEFAULT_TEXT_MODEL = 'google/gemini-3-flash-preview';
+  window.getForgeDefaultTextModel = function () {
+    return window.FORGE_DEFAULT_TEXT_MODEL || 'google/gemini-3-flash-preview';
+  };
+
   var MODELS_URL = 'https://openrouter.ai/api/v1/models';
   var KIE_MODELS = (window.KIE_CHAT_MODELS && window.KIE_CHAT_MODELS.length)
     ? window.KIE_CHAT_MODELS
@@ -126,10 +132,12 @@
 
   function preferredDefault(models) {
     var want = [
-      'upstage/solar-pro4',
+      window.getForgeDefaultTextModel(),
+      'kie/gemini-3-flash',
       'google/gemini-3.6-flash',
       'google/gemini-2.5-flash',
       'google/gemini-2.5-pro',
+      'upstage/solar-pro4',
       'anthropic/claude-sonnet-4',
       'anthropic/claude-opus-4',
       'openai/gpt-4.1',
@@ -157,10 +165,20 @@
     }
     var def = preferredDefault(models);
     if (flashBias) {
+      var flashWant = window.getForgeDefaultTextModel();
       for (var k = 0; k < models.length; k++) {
-        if (models[k].id && models[k].id.indexOf('gemini') !== -1 && models[k].id.indexOf('flash') !== -1) {
-          def = models[k].id;
+        if (models[k].id === flashWant) {
+          def = flashWant;
           break;
+        }
+      }
+      if (def !== flashWant) {
+        for (var k2 = 0; k2 < models.length; k2++) {
+          var mid = models[k2].id || '';
+          if (mid.indexOf('gemini') !== -1 && mid.indexOf('flash') !== -1 && mid.indexOf('preview') !== -1) {
+            def = mid;
+            break;
+          }
         }
       }
     }

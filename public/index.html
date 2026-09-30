@@ -615,7 +615,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="scripture-fetch-model-row">
       <label><i class="fas fa-download" style="margin-right:4px;font-size:0.65rem;"></i>OpenRouter model:</label>
       <select id="scriptureFetchModel" class="fetch-model-select">
-            <option value="upstage/solar-pro4" selected>Loading OpenRouter catalog...</option>
+            <option value="google/gemini-3-flash-preview" selected>Loading OpenRouter catalog...</option>
           </select>
     </div>
     <div style="margin-top:16px;">
@@ -638,7 +638,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="scripture-fetch-model-row">
       <label><i class="fas fa-download" style="margin-right:4px;font-size:0.65rem;"></i>OpenRouter model:</label>
       <select id="apocFetchModel" class="fetch-model-select">
-            <option value="upstage/solar-pro4" selected>Loading OpenRouter catalog...</option>
+            <option value="google/gemini-3-flash-preview" selected>Loading OpenRouter catalog...</option>
           </select>
     </div>
     <div style="margin-top:16px;">
@@ -667,7 +667,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="scripture-fetch-model-row">
       <label><i class="fas fa-download" style="margin-right:4px;font-size:0.65rem;"></i>OpenRouter model:</label>
       <select id="sealedFetchModel" class="fetch-model-select">
-            <option value="upstage/solar-pro4" selected>Loading OpenRouter catalog...</option>
+            <option value="google/gemini-3-flash-preview" selected>Loading OpenRouter catalog...</option>
           </select>
     </div>
     <div style="margin-top:16px;">
@@ -713,7 +713,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch"><input type="checkbox" id="dismantleIsraelite"><span class="toggle-track israelite-track"></span><span><i class="fas fa-users" style="color:#38bdb0;margin-right:3px;font-size:0.65rem;"></i>Israelite</span></label>
       <div style="min-width:180px;">
         <select class="model-select" id="dismantleModel" style="width:100%;" onchange="onDismantleModelDropdown()">
-            <option value="upstage/solar-pro4" selected>Loading OpenRouter catalog...</option>
+            <option value="google/gemini-3-flash-preview" selected>Loading OpenRouter catalog...</option>
           </select>
         <div class="custom-model-row">
           <label>Custom OpenRouter ID:</label>
@@ -786,7 +786,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch" title="Final summary on the last part only"><input type="checkbox" id="transcriptFinalSynthesis" checked><span class="toggle-track"></span><span>Final synthesis</span></label>
       <div style="min-width:180px;">
         <select class="model-select" id="transcriptModel" style="width:100%;" onchange="onTranscriptModelDropdown()">
-            <option value="upstage/solar-pro4" selected>Loading OpenRouter catalog...</option>
+            <option value="google/gemini-3-flash-preview" selected>Loading OpenRouter catalog...</option>
           </select>
         <div class="custom-model-row">
           <label>Custom OpenRouter ID:</label>
@@ -856,7 +856,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch"><input type="checkbox" id="destroyIsraelite"><span class="toggle-track israelite-track"></span><span><i class="fas fa-users" style="color:#38bdb0;margin-right:3px;font-size:0.65rem;"></i>Israelite</span></label>
       <div style="min-width:180px;">
         <select class="model-select" id="destroyModel" style="width:100%;" onchange="onDestroyModelDropdown()">
-            <option value="upstage/solar-pro4" selected>Loading OpenRouter catalog...</option>
+            <option value="google/gemini-3-flash-preview" selected>Loading OpenRouter catalog...</option>
           </select>
         <div class="custom-model-row">
           <label>Custom OpenRouter ID:</label>
@@ -959,7 +959,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="news-controls" style="flex-wrap:wrap;gap:10px;">
       <div style="flex:1;min-width:180px;">
         <select class="model-select" id="newsModel" style="width:100%;" onchange="onNewsModelDropdown()">
-            <option value="upstage/solar-pro4" selected>Loading OpenRouter catalog...</option>
+            <option value="google/gemini-3-flash-preview" selected>Loading OpenRouter catalog...</option>
           </select>
         <div class="custom-model-row">
           <label>Custom OpenRouter ID:</label>
@@ -1059,11 +1059,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       </label>
       <div style="min-width:180px;flex:1;">
         <select class="model-select" id="yahChatModel" style="width:100%;" onchange="onYahChatModelDropdown()">
-            <option value="upstage/solar-pro4" selected>Loading OpenRouter catalog...</option>
+            <option value="google/gemini-3-flash-preview" selected>Loading OpenRouter catalog...</option>
           </select>
         <div class="custom-model-row">
           <label>Custom OpenRouter ID:</label>
-          <input type="text" class="custom-model-input" id="customYahChatModel" placeholder="e.g. upstage/solar-pro4" oninput="onCustomModel(this,'yahChatModel')" onfocus="this.select()">
+          <input type="text" class="custom-model-input" id="customYahChatModel" placeholder="e.g. google/gemini-3-flash-preview" oninput="onCustomModel(this,'yahChatModel')" onfocus="this.select()">
         </div>
       </div>
     </div>
@@ -1197,14 +1197,14 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <div class="model-select-wrap">
           <label><i class="fas fa-robot"></i> Model:</label>
           <select class="model-select" id="modelSelect" onchange="onSermonModelDropdown()">
-            <option value="upstage/solar-pro4" selected>Loading model catalog...</option>
+            <option value="google/gemini-3-flash-preview" selected>Loading model catalog...</option>
           </select>
         </div>
         <div class="custom-model-row">
           <label><i class="fas fa-keyboard" style="margin-right:2px;font-size:0.6rem;"></i> Or paste any model id:</label>
-          <input type="text" class="custom-model-input" id="customModelInput" placeholder="provider/model — e.g. kie/gpt-6-astra or upstage/solar-pro4" oninput="onCustomModel(this,'modelSelect')" onfocus="this.select()">
+          <input type="text" class="custom-model-input" id="customModelInput" placeholder="provider/model — e.g. google/gemini-3-flash-preview or kie/gpt-6-astra" oninput="onCustomModel(this,'modelSelect')" onfocus="this.select()">
         </div>
-        <div class="custom-model-hint">OpenRouter ids (solar-pro4, openai/gpt-6-astra) use <code style="font-size:0.55rem;">OPENROUTER_API_KEY</code>. Any <code style="font-size:0.55rem;">kie/...</code> id uses <code style="font-size:0.55rem;">KIE_API_KEY</code>. Yah Story + Explicit: use <code style="font-size:0.55rem;">cognitivecomputations/dolphin-mistral-24b-venice-edition</code> if Grok/Gemini refuse.</div>
+        <div class="custom-model-hint">OpenRouter ids (google/gemini-3-flash-preview, openai/gpt-6-astra) use <code style="font-size:0.55rem;">OPENROUTER_API_KEY</code>. Any <code style="font-size:0.55rem;">kie/...</code> id uses <code style="font-size:0.55rem;">KIE_API_KEY</code>. Yah Story + Explicit: use <code style="font-size:0.55rem;">cognitivecomputations/dolphin-mistral-24b-venice-edition</code> if Grok/Gemini refuse.</div>
       </div>
       <div class="part-count-wrap">
         <span class="pc-label"><i class="fas fa-layer-group"></i> Parts:</span>
@@ -1308,7 +1308,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <div class="model-select-wrap" style="margin-top:6px;">
           <label><i class="fas fa-robot"></i> Beat planner (reads sermon):</label>
           <select class="model-select" id="visualBeatModel">
-            <option value="upstage/solar-pro4" selected>Loading model catalog...</option>
+            <option value="google/gemini-3-flash-preview" selected>Loading model catalog...</option>
           </select>
         </div>
         <div class="media-btn-row">
@@ -1382,7 +1382,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <div class="model-select-wrap" style="margin-top:6px;">
           <label><i class="fas fa-robot"></i> Prompt writer (chat):</label>
           <select class="model-select" id="imagePromptModel">
-            <option value="upstage/solar-pro4" selected>Loading model catalog...</option>
+            <option value="google/gemini-3-flash-preview" selected>Loading model catalog...</option>
           </select>
           <input type="text" class="custom-model-input" id="customImagePromptModel" placeholder="provider/model override">
         </div>
@@ -4371,7 +4371,7 @@ return p;
 function getScriptureFetchModel(){
 var selId=(currentMode==='sealed')?'sealedFetchModel':(currentMode==='apocrypha')?'apocFetchModel':'scriptureFetchModel';
 var el=document.getElementById(selId);
-return (el&&el.value)?el.value:'google/gemini-2.5-flash';
+return (el&&el.value)?el.value:(typeof getForgeDefaultTextModel==='function'?getForgeDefaultTextModel():'google/gemini-3-flash-preview');
 }
 function getVerseFetchParams(model,type){
 var params={};
@@ -4837,12 +4837,12 @@ MODEL SELECTOR HELPER
 function getSelectedModel(){
 var custom=(document.getElementById('customModelInput').value||'').trim();
 if(custom)return custom;
-return document.getElementById('modelSelect').value||'upstage/solar-pro4';
+return document.getElementById('modelSelect').value||(typeof getForgeDefaultTextModel==='function'?getForgeDefaultTextModel():'google/gemini-3-flash-preview');
 }
 function getImagePromptModel(){
 var custom=(document.getElementById('customImagePromptModel').value||'').trim();
 if(custom)return custom;
-return document.getElementById('imagePromptModel').value||'google/gemini-2.5-flash';
+return document.getElementById('imagePromptModel').value||(typeof getForgeDefaultTextModel==='function'?getForgeDefaultTextModel():'google/gemini-3-flash-preview');
 }
 function getVisualBeatModel(){
 var el=document.getElementById('visualBeatModel');
@@ -4851,17 +4851,17 @@ return el&&el.value?el.value:getImagePromptModel();
 function getNewsModel(){
 var custom=(document.getElementById('customNewsModel').value||'').trim();
 if(custom)return custom;
-return document.getElementById('newsModel').value||'upstage/solar-pro4';
+return document.getElementById('newsModel').value||(typeof getForgeDefaultTextModel==='function'?getForgeDefaultTextModel():'google/gemini-3-flash-preview');
 }
 function getDismantleModel(){
 var custom=(document.getElementById('customDismantleModel').value||'').trim();
 if(custom)return custom;
-return document.getElementById('dismantleModel').value||'upstage/solar-pro4';
+return document.getElementById('dismantleModel').value||(typeof getForgeDefaultTextModel==='function'?getForgeDefaultTextModel():'google/gemini-3-flash-preview');
 }
 function getYahChatModel(){
 var custom=(document.getElementById('customYahChatModel').value||'').trim();
 if(custom)return custom;
-return document.getElementById('yahChatModel').value||'upstage/solar-pro4';
+return document.getElementById('yahChatModel').value||(typeof getForgeDefaultTextModel==='function'?getForgeDefaultTextModel():'google/gemini-3-flash-preview');
 }
 function onYahChatModelDropdown(){
 var ci=document.getElementById('customYahChatModel');
@@ -4900,7 +4900,7 @@ document.getElementById('dismantleModel').style.opacity='1';
 function getTranscriptModel(){
 var custom=(document.getElementById('customTranscriptModel').value||'').trim();
 if(custom)return custom;
-return document.getElementById('transcriptModel').value||'upstage/solar-pro4';
+return document.getElementById('transcriptModel').value||(typeof getForgeDefaultTextModel==='function'?getForgeDefaultTextModel():'google/gemini-3-flash-preview');
 }
 function onTranscriptModelDropdown(){
 var ci=document.getElementById('customTranscriptModel');
@@ -11893,7 +11893,7 @@ saveToLibrary(title,desc,'deception','destroy',model,parts,combined,titles);
 function getDestroyModel(){
 var custom=(document.getElementById('customDestroyModel').value||'').trim();
 if(custom)return custom;
-return document.getElementById('destroyModel').value||'upstage/solar-pro4';
+return document.getElementById('destroyModel').value||(typeof getForgeDefaultTextModel==='function'?getForgeDefaultTextModel():'google/gemini-3-flash-preview');
 }
 function onDestroyModelDropdown(){
 var ci=document.getElementById('customDestroyModel');

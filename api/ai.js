@@ -39,7 +39,8 @@ const GROK_YAH_STORY_SYSTEM_SUFFIX =
 
 const PROVIDER_ALIASES = {
   openrouter: {
-    'Gemini-3-Flash':               'google/gemini-2.5-flash',
+    'Gemini-3-Flash':               'google/gemini-3-flash-preview',
+    'Gemini-3-Flash-Preview':       'google/gemini-3-flash-preview',
     'Gemini-3.6-Flash':             'google/gemini-3.6-flash',
     'Gemini-3-Pro':                 'google/gemini-2.5-pro',
     'Gemini-3.1-Pro':               'google/gemini-2.5-pro',
@@ -496,7 +497,7 @@ function redirectDeprecatedModel(modelId) {
 
 function resolveModel({ requestedModel, providerName }) {
   const model        = String(requestedModel || '').trim();
-  const defaultModel = String(process.env.DEFAULT_TEXT_MODEL || '').trim();
+  const defaultModel = String(process.env.DEFAULT_TEXT_MODEL || 'google/gemini-3-flash-preview').trim();
   const requested    = model || defaultModel;
   if (!requested) return '';
 

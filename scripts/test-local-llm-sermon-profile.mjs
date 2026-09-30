@@ -190,5 +190,9 @@ if (!html.includes('buildYahushaMinistryIsraelIdentityBlock')) {
 if (!html.includes('Northern Kingdom') || !html.includes('isYahushaMinistryChapterContext')) {
   throw new Error('index.html missing centurion / ministry context helpers');
 }
+const orModels = readFileSync(join(dir, '../public/openrouter-models.js'), 'utf8');
+if (!orModels.includes("'google/gemini-3-flash-preview'")) {
+  throw new Error('openrouter-models.js must default to google/gemini-3-flash-preview');
+}
 
 console.log('\nall checks passed');
