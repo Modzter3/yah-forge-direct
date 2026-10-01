@@ -197,5 +197,8 @@ if (!orModels.includes("'google/gemini-3-flash-preview'")) {
 if (!html.includes('NO fixed list of people') || !html.includes('Stock cast recycling')) {
   throw new Error('index.html missing anti-stock-cast Yah/Bez naming rules');
 }
+if (!html.includes('GRAVITY DOES NOT EXIST') || !html.includes('Gravity Is A Lie')) {
+  throw new Error('index.html missing buoyancy/density gravity doctrine and topic');
+}
 
 console.log('\nall checks passed');
