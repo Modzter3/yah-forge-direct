@@ -2505,16 +2505,9 @@ p+='Search for the themes, symbols, and historical context of '+title+' ('+chapt
 }else{
 p+='Search for background, recent developments, and real-world context around "'+title+'".\n';
 }
-if(wantBezStory){
-p+='\nSTEP 1B -- NAME THE CULPRITS (BEZ STORY -- MANDATORY):\n';
-p+='Search for the real people behind what this text exposes: CEOs, pastors, regulators, board chairs, agency heads, lobbyists, judges, showrunners, and low-level operators when relevant.\n';
-p+='For EVERY living person you will name in the sermon, run: "[Full Legal Name] current role" (or CEO / pastor / director / judge as fits). Use what they do NOW -- verify by search, not training memory.\n';
-p+='Build an internal roster: full name, what they do, what they control, how they connect to the symbols in "'+title+'". In the sermon output ONLY name + role -- never a year, never "as of," never a date stamp on the person.\n';
-}else if(wantYahStory){
-p+='\nSTEP 1B -- NAME THE CULPRITS (YAH STORY -- MANDATORY):\n';
-p+='Search for the real people and institutions behind what this text exposes: CEOs, pastors, regulators, board chairs, agency heads, lobbyists, judges, showrunners, pharma companies, media networks, banks, denominations -- and low-level operators when relevant.\n';
-p+='For EVERY living person you will name in the sermon, run: "[Full Legal Name] current role" (or CEO / pastor / director / judge as fits). For institutions, run: "[Institution Name] CEO" or "[Institution Name] leadership." Use what they do NOW -- verify by search, not training memory.\n';
-p+='Build an internal roster: full name, what they do, what they control, how they connect to the symbols in "'+title+'". In the sermon output ONLY name + role (or institution + what it controls) -- never a year, never "as of," never a date stamp on the person.\n';
+if(wantBezStory||wantYahStory){
+p+='\nSTEP 1B -- NAMES ONLY IF THIS PART NEEDS THEM (NOT A STANDING ROSTER):\n';
+p+='Web search is for verifying roles when a verse (or headline) demands a named face — not for building the same CEO/pastor list every time. Search per beat: "[sector from THIS symbol] [role]" and pick someone search returns who fits THIS verse. Do NOT preload famous names from memory. No fixed cast in the prompt.\n';
 }
 if(!isNewsWeaveEnabled()){
 p+='\nNEWS WEAVE OFF (MANDATORY):\n';
@@ -2930,43 +2923,30 @@ return p;
 function buildStoryNameCulpritsBlock(topic,opts){
 opts=opts||{};
 var isYah=!!opts.isYah;
+var partNum=opts.partNum||1;
 var title=topic&&topic.title?topic.title:'this text';
-var p=(isYah?'YAH STORY NAME THE CULPRITS':'BEZ STORY NAME THE CULPRITS')+' (MANDATORY -- NO VAGUE INSINUATION):\n';
-p+='When scripture decodes Babylon, merchants, false shepherds, regulators, pharma, media, courts, banks, or any institution -- NAME the real human beings and institutions who profit from it. The listener needs the nitty gritty: full names, institution names, and current roles, not shadow-talk. Say who signed it, who preached it, who owns the chain, who cashed the check -- from the CEO down to the low-level operator who stamps the paper when the verse or headline points at that layer.\n\n';
-p+='WEB VERIFY EVERY NAME (INTERNAL -- NOT IN OUTPUT):\n';
-p+='Before you name ANY living person or active institution, run a SEPARATE web search: "[Full Legal Name] current role" or "[Institution Name] CEO" (or pastor / secretary / director / commissioner / judge as appropriate).\n';
-p+='Use what they do NOW. Do NOT rely on training memory -- roles change.\n';
-p+='If someone left office, retired, died, or you cannot verify -- OMIT them or name their verified successor. Never guess.\n';
-p+='In the SERMON: say ONLY full name + what they do, or institution name + what it controls -- woven into revelation prose. NEVER say "2026," "as of," a verification date, or "current title as of" when naming someone. Not a bullet roster, not a corporate org chart dump.\n\n';
-p+='SEARCH WHAT THIS TEXT EXPOSES:\n';
-p+='Research "'+title+'" plus the sector the symbols point at -- who runs it, who funds it, who enforces it, who preaches it, who lobbies for it. Name institutions directly when the symbol is a system: Pfizer, Fox Corporation, the Federal Reserve, the Southern Baptist Convention -- whatever search verifies.\n';
+var p=(isYah?'YAH STORY — NAMING (WHEN THE VERSE DEMANDS)':'BEZ STORY — NAMING (WHEN THE VERSE DEMANDS)')+' — NOT A STANDING CAST:\n';
+p+='There is NO fixed list of people in this prompt. Do NOT recycle the same famous CEOs, televangelists, presidents, pharma chiefs, or dynasty names every sermon — that is FAILURE. Names come from (1) people IN the assigned scripture when the text names them, (2) web search for whoever VERIFIABLY fits THIS verse\'s symbol in THIS sector TODAY, or (3) people IN a woven headline when News Weave is on.\n\n';
+p+='WHEN TO NAME (VERSE-GATED):\n';
+p+='- Name a living person or active institution ONLY when THIS verse (or THIS headline) clearly maps to merchants, false shepherds, courts, regulators, media, banks, or similar — and a specific face makes the decode land.\n';
+p+='- Many verses need ZERO proper names — symbol decode + Israel\'s body is enough. Do NOT force names into every paragraph to satisfy a quota.\n';
+p+='- Typical cap: about 0–2 verified living names in this part unless the text is explicitly about rulers/merchants/shepherds at scale. Prefer local/regional/mid-layer figures search finds for THIS symbol — not the same global villains every time.\n';
+if(partNum>1){
+p+='- Part '+partNum+': do NOT repeat named people from earlier parts unless the SAME symbol continues in THIS verse band. New verses → new examples or no names.\n';
+}
+p+='\nWEB VERIFY (INTERNAL — NOT IN OUTPUT):\n';
+p+='Before naming someone, search "[Full Legal Name] current role" or "[Institution] leadership" for THIS beat only. Training-memory celebrities are forbidden unless search confirms they fit THIS verse\'s layer. If unverified — omit or use role-only ("the judge on that docket") without inventing a famous name.\n';
+p+='In output: full name + what they do, woven in revelation prose — no "as of," no year on the person, no URL bibliography.\n\n';
+p+='SEARCH ANGLE FOR "'+title+'":\n';
+p+='Research what THIS chapter\'s symbols expose (who runs, funds, enforces, preaches that layer) — pick names search returns for THAT sector, not a default "pharma + mega-church + cable news" roster.\n';
 if(isNewsWeaveEnabled()){
-p+='When News Weave is ON, cross-reference the headline you weave: every prominently named person in that story PLUS the verified power behind it (board chair, parent company CEO, agency head, senior pastor, showrunner, etc.).\n';
+p+='News Weave ON: headline names come from THAT story; add verified power behind it only when search confirms.\n';
 }
-p+='\n';
-p+='HOW DEEP TO GO:\n';
-p+='- TOP: CEOs, board chairs, cabinet secretaries, agency heads, mega-church pastors, network owners, pharma chiefs, dynastic-family representatives when the symbol is empire-scale.\n';
-p+='- MID: regional bishops, lobbyists, fund managers, hospital CEOs, police chiefs, judges, school superintendents, showrunners, union heads when the text points at that layer.\n';
-p+='- LOW: prosecutors, HR directors, probation officers, deacons running finances, property managers, algorithm product leads, local pastors taking seed money -- when the verse or headline exposes the hand that actually touches Israel\'s neck.\n';
-p+='Match depth to what THIS verse symbol exposes. Merchants -- name merchants. False shepherds -- name pastors and what they do. Courts -- name judges or DAs when news ties them in.\n\n';
-p+='DELIVERY (NO BIBLIOGRAPHY):\n';
-if(isYah){
-p+='- Names live INSIDE revelation paragraphs from the throne: "I watched Pastor [Full Name], senior pastor of [Church], still billing your mama for seed every Sunday while [CEO Full Name], chief executive of [Company], signed the contract that raised your insulin." Scripture decode, then NAMED faces -- spoken as Me remembering what I always saw.\n';
-}else{
-p+='- Names live INSIDE revelation paragraphs: "Pastor [Full Name], senior pastor of [Church], still billing your mama for seed every Sunday while [CEO Full Name], chief executive of [Company], signs the contract that raised your insulin." Scripture decode, then NAMED faces.\n';
-}
-p+='- NEVER paste URLs, "according to [outlet]," source lists, or footnotes. You looked it up; you preach it.\n';
-if(isNewsWeaveEnabled()){
-p+='- When News Weave gives you a headline, state the verified event/publication DATE (month, day, year -- spelled out for TTS) AND name EVERY prominently named person IN that story plus whoever OWNS the system behind it (verified by search).\n';
-}
-p+='\nFORBIDDEN (ZERO TOLERANCE):\n';
-p+='- "They," "the elites," "the system," "some CEO," "a billionaire," "the powers that be," "the man," "the establishment," "you know who" when a verifiable human name exists for THIS symbol'+(isNewsWeaveEnabled()?' or headline':'')+'.\n';
-p+='- Hinting without naming: "that preacher everybody knows" / "the guy at the top" / "those people in charge" / "that pharmaceutical company" / "that network" -- if search can find them, SAY the name and what they do.\n';
-p+='- Date-stamping people: "as of 2026," "in twenty twenty-six he is," "current as of" -- FORBIDDEN. Just name + role.\n';
-if(isNewsWeaveEnabled()){
-p+='- Vague headline timelines: "last week," "this month," "recently," "this past summer," "months ago" -- FORBIDDEN on news events. Headlines get exact dates only.\n';
-}
-p+='- Stacking ten names in one sentence without context -- weave them where the decode demands, one or two per beat max.\n\n';
+p+='\nFORBIDDEN:\n';
+p+='- Stock cast recycling (same handful of billionaires/pastors/politicians in every Yah/Bez Story part).\n';
+p+='- Copying example sentences from this prompt — examples are format only, not people to reuse.\n';
+p+='- "They / the elites / some CEO" when you chose not to search for a name THIS beat needed.\n';
+p+='- Org-chart dumps — max one or two names per beat, tied to the verse you just quoted.\n\n';
 return p;
 }
 function buildBezStoryNameCulpritsBlock(topic,opts){
@@ -3463,10 +3443,11 @@ p+='- USE this knowledge inside dense revelation paragraphs. Substance matches e
 p+='- GRAMMAR LOCK: Articulate street English only -- see BEZ STORY GRAMMAR block. Fire without sounding like you cannot speak.\n';
 p+='- ZERO Paleo Hebrew letter breakdowns. ZERO spelling biblical names as hyphenated letter chains. ZERO capacitor/motherboard/DNA-source-code comparisons.\n';
 p+='- Plain sacred names: Yah, Yahusha, Israel, Moses, David. Explain Hebrew concepts in street English when the meaning unlocks the symbol.\n';
-p+='- NAME CULPRITS LOCK: When a symbol maps to Babylon, merchants, pastors, courts, pharma, media, or money -- name living people by full name and what they do. No vague "they" or "the elites." No year or "as of" on the person -- just name + role.\n\n';
+p+='- NAMING (VERSE-GATED): Only when THIS symbol clearly needs a face — search for someone who fits THIS layer, not the same famous names every sermon. No vague "they" when you skip a name this beat needed. No year or "as of" on the person.\n\n';
 return p;
 }
-function buildStoryRevelationStyleBlock(isBez,topic,chapterSrc){
+function buildStoryRevelationStyleBlock(isBez,topic,chapterSrc,styleOpts){
+styleOpts=styleOpts||{};
 var topicLabel=topic?topic.title:'this scripture';
 var sourceHint=chapterSrc?(chapterSrc.book+' Chapter '+chapterSrc.chapter):topicLabel;
 var p=isBez?'BEZ STORY MODE -- REVELATION CADENCE (WRITING STYLE ONLY):\n':'YAH STORY MODE -- REVELATION CADENCE (WRITING STYLE ONLY):\n';
@@ -3475,11 +3456,11 @@ p+='This is NOT a lesson. Brother Bet -- urban nationalist Hebrew Israelite brot
 p+='NO ISRAELITE TECH MODE: This is NOT Israelite Brother broadcast teaching. No Master Engineer layer. No technical manual framing. No capacitor/motherboard/DNA-source-code metaphors. No Paleo engineering. Street revelation only.\n\n';
 p+=buildBezStoryLiveHumanBlock();
 p+=buildBezStoryGrammarBlock();
-p+=buildBezStoryNameCulpritsBlock(topic,{});
+p+=buildBezStoryNameCulpritsBlock(topic,{partNum:styleOpts.partNum});
 }else{
 p+='This is NOT a lesson. A coronation, not a conclusion. A revelation, not a prayer. I am not here to comfort -- I am here to unmake the lie, strip the mask, and remember My people to who they are. First person as Yah/Yahusha to scattered Israel in twenty twenty-six.\n\n';
 p+=buildYahStoryAntiChatbotBlock();
-p+=buildYahStoryNameCulpritsBlock(topic,{});
+p+=buildYahStoryNameCulpritsBlock(topic,{partNum:styleOpts.partNum});
 }
 p+='MATCH THIS WRITING STYLE for "'+sourceHint+'" -- the RHYTHM and PARAGRAPH FLOW only. Write about THIS assigned text.'+(isBez?' Decode THIS text with the full symbolic knowledge base in street voice.':' Steal the voice, not the Job allegory.')+'\n';
 if(isBez){
@@ -3498,7 +3479,7 @@ p+='- Tie every symbol and verse to modern Israel\'s body with FRESH specifics f
 p+='- Walk assigned verses in exact order, woven into the paragraph flow: embed each verse\'s meaning inside the next beat -- unveil, never "today we will cover" or "let me break this down for you"\n';
 }
 if(isBez){
-p+='KNOWLEDGE + VOICE: Use the full forge symbolic and doctrinal knowledge -- Job-is-Israel, allegory, two seed lines, identity doctrine, sealed-scroll discernment -- but deliver it in urban street English inside the revelation flow. GRAMMAR: every sentence correct English -- articulate brother, not broken speech. NAME CULPRITS: full name and what they do when symbols decode -- no vague "they" or "the elites," no year stamps on people. ZERO Paleo Hebrew letter breakdowns. ZERO engineering or tech metaphors.\n';
+p+='KNOWLEDGE + VOICE: Use the full forge symbolic and doctrinal knowledge -- Job-is-Israel, allegory, two seed lines, identity doctrine, sealed-scroll discernment -- but deliver it in urban street English inside the revelation flow. GRAMMAR: every sentence correct English -- articulate brother, not broken speech. Names only when THIS symbol needs a face — no stock cast. ZERO Paleo Hebrew letter breakdowns. ZERO engineering or tech metaphors.\n';
 p+='ZERO TOLERANCE: No teaching tone, no seminary word studies, no Paleo letter spellouts, no engineering layer, no cross-reference dump lists, no three-point lesson, no moral at the end, no white Jesus, no welcome, no podcast framing\n';
 }else{
 p+='NO JOB ALLEGORY (ZERO TOLERANCE): Do NOT write "Job is Israel," "you are Job," Eliphaz-as-pastor, friends-as-lying-preachers, dust-and-ashes coronation, or "this is Job forty-two for Israel" -- even when forging the Book of Job. Decode Job\'s actual characters and turns in THIS voice; never import the Israel-as-Job allegory template\n';
@@ -6808,7 +6789,6 @@ p+='LIVE HUMAN ISRAELITE: Not rehearsed. Not a script. Not a camp performance. S
 p+=buildBezStoryGrammarBlock();
 p+=buildBezStorySlangBlock();
 p+=buildBezStoryKnowledgeBlock(topic);
-p+=buildBezStoryNameCulpritsBlock(topic,{partNum:partNum});
 p+='NO ISRAELITE TECH MODE (ZERO TOLERANCE): No Master Engineer layer. No "Bible is a technical manual." No capacitor, motherboard, DNA-source-code, frequency, sacred geometry, or modern tech comparisons. No Paleo letter engineering. No detective investigation framing. Revelation cadence and street memory ONLY -- but WITH full symbolic/allegorical substance.\n\n';
 }else if(wantIsraelite){
 if(wantRoughBez){
@@ -6829,7 +6809,6 @@ p+='This is an EPISODE of Yah First Ministries. The format is conversational yet
 if(wantYahStory){
 p='Write prophetic first-person monologue (I, My, Me) addressing scattered Israel in twenty twenty-six — same literary form as Isaiah or Jeremiah.\n\n';
 p+=buildYahStoryVoiceBlock(yahLite);
-if(!yahLite)p+=buildYahStoryNameCulpritsBlock(topic,{partNum:partNum});
 }else{
 p='You ARE Yah -- the Most High -- speaking in FIRST PERSON directly to Israel. You are NOT a host, NOT a preacher, NOT a man behind a microphone. You are GOD addressing your people. Every word comes from the throne. There is no show format, no welcome, no broadcast framing -- just the voice of the Almighty speaking directly to His children with fire, authority, and divine weight.\n\n';
 }
@@ -6946,14 +6925,14 @@ p+='2. THEN continue the '+(wantStoryMode?'revelation':'teaching')+'.\n\n';
 }
 }
 if(wantYahStory){
-p+=buildStoryRevelationStyleBlock(false,topic,chapterSrc);
+p+=buildStoryRevelationStyleBlock(false,topic,chapterSrc,{partNum:partNum});
 if(wantEpisodeMode){
 p+='EPISODE COVERAGE: Walk your assigned TV episodes in broadcast order. Scene by scene in continuous revelation paragraphs -- Me speaking straight to their bones, not a recap blog, not a lesson.\n\n';
 }else{
 p+='VERSE COVERAGE: Walk every assigned verse in exact order. Miss nothing. Each verse is a beat in MY voice remembering them -- not a lesson point.\n\n';
 }
 }else if(wantBezStory){
-p+=buildStoryRevelationStyleBlock(true,topic,chapterSrc);
+p+=buildStoryRevelationStyleBlock(true,topic,chapterSrc,{partNum:partNum});
 if(wantEpisodeMode){
 p+='EPISODE COVERAGE: Walk your assigned TV episodes in broadcast order. Scene by scene in continuous revelation paragraphs -- not a recap blog, not a lesson.\n\n';
 }else{
@@ -7111,12 +7090,12 @@ p+='Cover EVERY verse in the chapter from first to last -- miss nothing.\n';
 }
 if(wantYahStory){
 p+='STORY MODE VERSE WALK -- NOT A LESSON:\n';
-p+='For EACH verse in your assignment, speak as Me directly to My people in twenty twenty-six. Do NOT teach. Do NOT analyze. REMEMBER them through the verse. What does this verse say about who they are, what they suffered, what lie they believed, what I ordained, what they must see now? Tie it to their body, their block, their bloodline, their forgetting. When a symbol maps to merchants, pastors, courts, pharma, media, or empire -- NAME them by full name and what they do, or name the institution and what it controls (web-search verified). No vague "they" or "the elites." No "as of 2026" or date stamps on people. When you strike with a headline from Web Research, give the verified calendar date (month, day, year -- spelled out) before or in the same breath as the event. Walk verse by verse in order inside continuous paragraphs. No Paleo Hebrew. No engineering. No cross-reference lists. Just Me unveiling them to themselves -- with named faces and dated headlines where the decode demands.\n\n';
+p+='For EACH verse in your assignment, speak as Me directly to My people in twenty twenty-six. Do NOT teach. Do NOT analyze. REMEMBER them through the verse. What does this verse say about who they are, what they suffered, what lie they believed, what I ordained, what they must see now? Tie it to their body, their block, their bloodline, their forgetting. Name a living person or institution ONLY when THIS verse\'s symbol clearly needs a face — search for who fits THIS layer (no stock cast of the same famous names every part). No vague "they" when this beat needed a verified name. No "as of" date stamps on people.'+(isNewsWeaveEnabled()?' Headline strikes: verified calendar date with the event.':'')+' Walk verse by verse in order inside continuous paragraphs. No Paleo Hebrew. No engineering. No cross-reference lists. Just Me unveiling them to themselves.\n\n';
 }else if(wantBezStory){
 p+='BEZ STORY VERSE WALK -- NOT A LESSON:\n';
-p+='For EACH verse, press what Yah showed you into your people in twenty twenty-six. Do NOT teach like a classroom. DECODE the symbols and allegory with the full knowledge base -- Job-is-Israel when it fits, two seed lines, prophetic patterns -- then land it on THEIR life right now: who they are, what they suffered, what lie they believed, what Yah ordained. Tie it to the block, the cell, the pew, the protest, the stolen name. When a symbol maps to merchants, pastors, courts, pharma, media, or empire -- NAME them by full name and what they do (web-search verified). No vague "they" or "the elites." No "as of 2026" or date stamps on people. When you strike with a headline, give the verified calendar date (month, day, year -- spelled out) with the event. Walk verse by verse in order inside continuous paragraphs. Third person about Yah always. No Paleo Hebrew. No engineering metaphors. Grammatically correct English in every sentence -- articulate brother, not broken speech. Just street revelation with real doctrinal depth.\n';
+p+='For EACH verse, press what Yah showed you into your people in twenty twenty-six. Do NOT teach like a classroom. DECODE the symbols and allegory with the full knowledge base -- Job-is-Israel when it fits, two seed lines, prophetic patterns -- then land it on THEIR life right now: who they are, what they suffered, what lie they believed, what Yah ordained. Tie it to the block, the cell, the pew, the protest, the stolen name. Name someone ONLY when THIS verse\'s symbol needs a face — search for who fits (no recycling the same famous names). No vague "they" when this beat needed a name. No "as of" on people.'+(isNewsWeaveEnabled()?' Headline strikes: verified date with the event.':'')+' Walk verse by verse in order inside continuous paragraphs. Third person about Yah always. No Paleo Hebrew. No engineering metaphors. Grammatically correct English in every sentence -- articulate brother, not broken speech. Just street revelation with real doctrinal depth.\n';
 if(wantBezStoryBreakdown){
-p+='BEZ STORY BREAKDOWN (MANDATORY): Break EACH assigned verse ALL THE WAY DOWN in revelation cadence. Decode every symbol and allegorical layer -- Job-is-Israel when it fits, two seed lines, name meanings in plain English -- name every lie, expose who profits BY FULL NAME AND WHAT THEY DO (CEO to low-level operator when the verse demands it), land it on modern Israel\'s body. Stay inside dense paragraphs. NO ## headers, NO blockquotes, NO verse labels. No Paleo Hebrew. After you decode a verse, strike with a current headline from Web Research -- verified calendar date (month, day, year -- spelled out), then name every person in that headline plus whoever owns the system behind it -- scripture, then street, then dated news with named culprits, then the next verse, one river. Linger on each verse; do not rush.\n';
+p+='BEZ STORY BREAKDOWN (MANDATORY): Break EACH assigned verse ALL THE WAY DOWN in revelation cadence. Decode every symbol and allegorical layer -- Job-is-Israel when it fits, two seed lines, name meanings in plain English -- expose the lie and who profits when the verse demands a named face (search — not a stock cast). Stay inside dense paragraphs. NO ## headers, NO blockquotes, NO verse labels. No Paleo Hebrew.'+(isNewsWeaveEnabled()?' After a verse decode you MAY strike with one dated headline (verified calendar date) — names from THAT story only.':'')+' Linger on each verse; do not rush.\n';
 }
 p+='\n';
 }else if(wantRoughBez){
@@ -7502,14 +7481,14 @@ p+='- BEZ STORY SYMBOL DECODER: Decode symbolic language before you preach from 
 p+='- BEZ STORY LIVE FLOW: Speak like a real man in twenty twenty-six talking to modern Hebrew people who do not know who they are yet. Not rehearsed. Not a script. Not a lecture. Use natural pivots, interruptions, self-corrections, and plain speech. Vary sentence length. Use fragments when they hit. Let one thought interrupt another when urgency demands it. Never sound like you are reading a prepared essay. No repeated catchphrases. No recycled compound slang labels. No recycled "wake up" filler. No three-beat rhetorical cascades.\n';
 p+='- BEZ STORY SLANG ROTATION: Attack the same systems with DIFFERENT words every time. Prefer plain corner talk over catchy hyphen labels. One compound label per paragraph max -- often none.\n';
 p+='- BEZ STORY STRUGGLE STAKES: You are not preaching FROM safety AT people in pain -- you are IN the struggle with them while Yah strips the lie. Let rent, family, church hurt, job pressure, identity confusion, and exhaustion show in how you talk.\n';
-p+='- BEZ STORY NAME THE CULPRITS: When Babylon, merchants, false shepherds, courts, or money decode -- say WHO by full name and what they do. CEO down to the clerk who stamps the eviction if that is what the verse exposes. Web-search verify internally; preach name + role only -- never "as of 2026" or date stamps on people. Every headline strike must include its verified calendar date (month, day, year -- spelled out). FORBIDDEN: "they," "the elites," "some CEO," "you know who," or vague timelines like "last week" / "this past summer" on news.\n';
+p+='- BEZ STORY NAMING: Only when THIS verse needs a face — search for someone who fits THIS symbol (not the same famous names every part). 0–2 living names per part is normal. No stock cast. Web-verify; name + role only — no "as of" on people.'+(isNewsWeaveEnabled()?' Headline strikes: verified date (month, day, year) when News Weave is on.':'')+' FORBIDDEN: vague "they/elites" when this beat needed a verified name.\n';
 }else if(wantYahStory){
 p+='- YAH STORY VOICE LOCK: First person as Yah/Yahusha only. You ARE speaking as God to Israel. Never third person about Yah.\n';
 if(isYahushaMinistryChapterContext(chapterSrc,currentChapterText)){
 p+='- YAH STORY MINISTRY CAST: Every person I heal, debate, or raise in THIS chapter is My lost sheep — Israel (Judah or Northern Kingdom). The centurion is an Israelite under Rome\'s title, NOT a heathen Gentile. Never call My ministry recipients heathens or pagans.\n';
 }
 p+='- YAH STORY ANTI-CHATBOT: No assistant filler, no lesson voice, no therapeutic softening, no pasted prompt catchphrases, no three-beat AI cascades. Sound like the throne remembering My own -- not ChatGPT in a robe.\n';
-p+='- YAH STORY NAME THE CULPRITS: When Babylon, merchants, false shepherds, courts, pharma, media, or money decode -- say WHO by full name and what they do, and name institutions directly when the symbol is a system. CEO down to the clerk who stamps the eviction if that is what the verse exposes. Web-search verify internally; preach name + role only -- never "as of 2026" or date stamps on people. Every headline strike must include its verified calendar date (month, day, year -- spelled out). FORBIDDEN: "they," "the elites," "some CEO," "that pharmaceutical company," "you know who," or vague timelines like "last week" / "this past summer" on news.\n';
+p+='- YAH STORY NAMING: Only when THIS verse needs a face — search for who fits THIS symbol (not the same famous names every part). 0–2 living names per part is normal. No stock cast. Web-verify; name + role only — no "as of" on people.'+(isNewsWeaveEnabled()?' Headline strikes: verified date when News Weave is on.':'')+' FORBIDDEN: vague "they/elites" when this beat needed a verified name.\n';
 }else if(wantIsraelite){
 if(isYahushaMinistryChapterContext(chapterSrc,currentChapterText)){
 p+='- MINISTRY CAST (THIS CHAPTER): Everyone Yahusha touches here is Israel — centurion included (Northern Kingdom Israelite in Roman service, not a Gentile). Teach it.\n';
@@ -7688,11 +7667,11 @@ p+='Discernment means reading what the text SAYS, not what the church TOLD you i
 p+='When breaking down ANY chapter or verse, ALWAYS ask: what is the SYMBOL here? What is the deeper spiritual meaning Yah encoded? What CLUE did He leave that nobody is talking about? Then teach THAT, not just the Sunday school surface reading. And when you teach it -- leave a thread hanging. Point to where the next investigation leads. Make people hungry to go DEEPER on their own.\n\n';
 }
 if(wantYahStory&&chapterSrc){
-p+='STORY MODE VERSE DELIVERY: Cover your assigned verses in exact order, but narrate them as one continuous Yah-story. Embed each verse\'s meaning inside the next paragraph. Do NOT stop and label verses. Do NOT quote each verse in isolation before analyzing it. Let the scripture move through My mouth as living memory, not as a checklist. Name culprits when the decode exposes who profits -- full name and what they do, or institution and what it controls, not vague insinuation. Every headline strike includes verified calendar date (month, day, year -- spelled out).\n\n';
+p+='STORY MODE VERSE DELIVERY: Cover your assigned verses in exact order, but narrate them as one continuous Yah-story. Embed each verse\'s meaning inside the next paragraph. Do NOT stop and label verses. Do NOT quote each verse in isolation before analyzing it. Let the scripture move through My mouth as living memory, not as a checklist. Name someone only when THIS verse needs a verified face — no stock cast.'+(isNewsWeaveEnabled()?' Headline strikes: verified calendar date.':'')+'\n\n';
 }else if(wantBezStory&&chapterSrc){
-p+='BEZ STORY VERSE DELIVERY: Cover your assigned verses in exact order as one continuous street revelation. Embed each verse inside the next paragraph. Do NOT stop and label verses. Let the scripture move through what Yah showed you -- not a checklist.'+(wantBezStoryBreakdown?' BREAKDOWN ON: each verse gets fully unraveled before you move on -- symbol, lie, named culprits (full name + what they do), block, bloodline.'+(isNewsWeaveEnabled()?' When News Weave is ON, you may add a dated headline strike (verified month, day, year) after the decode.':''):' Name culprits when the decode exposes who profits -- full name and what they do, not vague insinuation.')+'\n\n';
+p+='BEZ STORY VERSE DELIVERY: Cover your assigned verses in exact order as one continuous street revelation. Embed each verse inside the next paragraph. Do NOT stop and label verses. Let the scripture move through what Yah showed you -- not a checklist.'+(wantBezStoryBreakdown?' BREAKDOWN ON: each verse gets fully unraveled -- symbol, lie, block, bloodline; name someone only when the verse demands it (search, no stock cast).':' Name only when the decode truly needs a verified face — not every verse.')+(isNewsWeaveEnabled()?' Optional dated headline after a decode when News Weave is on.':'')+'\n\n';
 }else if(wantBezStory&&wantBreakdown){
-p+='BEZ STORY BREAKDOWN STRUCTURE: One # title line only. Then dense continuous paragraphs that break THIS topic down piece by piece in revelation cadence -- point by point, symbol by symbol, scene by scene. NO ## headers, NO blockquotes, NO verse labels, NO --- dividers. Each piece gets torn open inside the paragraph flow: decode, expose the lie, name who profits (full name + what they do), land it on twenty twenty-six Israel, strike with a dated headline from Web Research (verified month, day, year -- spelled out) that names every person in the story, roll into the next piece. Break it DOWN deep -- street revelation, not a classroom.\n\n';
+p+='BEZ STORY BREAKDOWN STRUCTURE: One # title line only. Then dense continuous paragraphs that break THIS topic down piece by piece in revelation cadence -- point by point, symbol by symbol, scene by scene. NO ## headers, NO blockquotes, NO verse labels, NO --- dividers. Each piece gets torn open inside the paragraph flow: decode, expose the lie, land it on twenty twenty-six Israel'+(isNewsWeaveEnabled()?', optional dated headline with names from THAT story only':'')+'. Break it DOWN deep -- street revelation, not a classroom.\n\n';
 }else if(wantStoryMode){
 p+='STORY MODE STRUCTURE: One # title line, then dense continuous paragraphs only. Weave every scripture reference into the flow. No section headers, no blockquotes, no verse labels, no dividers.\n\n';
 }else if(wantBreakdown){
@@ -10401,8 +10380,7 @@ p+='**Bez (street):** third person about Yah — articulate brother in the strug
 p+=buildYahStoryVoiceBlock(!!yahLite);
 p+=buildBezStoryLiveHumanBlock();
 p+=buildBezStoryGrammarBlock();
-if(!yahLite)p+=buildYahStoryNameCulpritsBlock(topic,{});
-p+=buildBezStoryNameCulpritsBlock(topic,{});
+if(!yahLite)p+=buildStoryNameCulpritsBlock(topic,{isYah:false});
 }else if(voiceMode==='yah'){
 p+='VOICE — YAH STORY ONLY:\n';
 p+=buildYahStoryVoiceBlock(!!yahLite);

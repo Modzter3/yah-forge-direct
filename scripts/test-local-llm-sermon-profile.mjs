@@ -194,5 +194,8 @@ const orModels = readFileSync(join(dir, '../public/openrouter-models.js'), 'utf8
 if (!orModels.includes("'google/gemini-3-flash-preview'")) {
   throw new Error('openrouter-models.js must default to google/gemini-3-flash-preview');
 }
+if (!html.includes('NO fixed list of people') || !html.includes('Stock cast recycling')) {
+  throw new Error('index.html missing anti-stock-cast Yah/Bez naming rules');
+}
 
 console.log('\nall checks passed');
