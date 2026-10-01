@@ -1165,12 +1165,13 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch explicit-toggle"><input type="checkbox" id="toggleExplicit"><span class="toggle-track explicit-track"></span><span><i class="fas fa-fire" style="color:var(--explicit-red);margin-right:3px;font-size:0.7rem;"></i>Explicit</span></label>
       <label class="toggle-switch"><input type="checkbox" id="toggleIsraelite"><span class="toggle-track israelite-track"></span><span><i class="fas fa-users" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Israelite</span></label>
       <label class="toggle-switch"><input type="checkbox" id="toggleRoughBez"><span class="toggle-track rough-track"></span><span><i class="fas fa-bullhorn" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Rough Bezaleel</span></label>
-      <label class="toggle-switch" id="toggleStoryModeWrap" title="Yah first-person revelation cadence — anti-chatbot live voice; name culprits when the verse exposes them (no automatic news weave)"><input type="checkbox" id="toggleStoryMode"><span class="toggle-track story-track"></span><span><i class="fas fa-book-open" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Yah Story</span></label>
-      <label class="toggle-switch" id="toggleBezStoryModeWrap" title="Bez revelation cadence — street fire, grammatically sound English, names culprits by full name and what they do (no vague they/the elites)"><input type="checkbox" id="toggleBezStoryMode"><span class="toggle-track bez-story-track"></span><span><i class="fas fa-book-open" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Bez Story</span></label>
+      <label class="toggle-switch" id="toggleStoryModeWrap" title="Yah first-person revelation cadence — anti-chatbot live voice (no automatic news weave or name drops)"><input type="checkbox" id="toggleStoryMode"><span class="toggle-track story-track"></span><span><i class="fas fa-book-open" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Yah Story</span></label>
+      <label class="toggle-switch" id="toggleBezStoryModeWrap" title="Bez revelation cadence — street fire, grammatically sound English, revelation flow without mandatory name drops"><input type="checkbox" id="toggleBezStoryMode"><span class="toggle-track bez-story-track"></span><span><i class="fas fa-book-open" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Bez Story</span></label>
       <label class="toggle-switch" id="toggleElevenLabsTagsWrap" title="Eleven v3 medium-density emotional tags — [angry], [whispers], [shouts], etc. woven through every paragraph for TTS"><input type="checkbox" id="toggleElevenLabsTags"><span class="toggle-track" style="background:linear-gradient(135deg,#1a3a2a,#2a6a4a);"></span><span><i class="fas fa-waveform-lines" style="color:#7ec8a0;margin-right:3px;font-size:0.7rem;"></i>Eleven Tags</span></label>
       <label class="toggle-switch" id="toggleSermonEpisodeModeWrap" title="TV season episode-by-episode breakdown across parts"><input type="checkbox" id="toggleSermonEpisodeMode"><span class="toggle-track"></span><span><i class="fas fa-tv" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Episode Mode</span></label>
-      <label class="toggle-switch" title="Live web search: verify facts, roles, and topic context (silent — no URLs in output). Does not weave headlines unless News Weave is also on."><input type="checkbox" id="toggleWebResearch" checked onchange="syncNewsWeaveToggles()"><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
+      <label class="toggle-switch" title="Live web search: verify facts, roles, and topic context (silent — no URLs in output). Does not weave headlines unless News Weave is also on."><input type="checkbox" id="toggleWebResearch" checked onchange="syncNewsWeaveToggles();syncNameDropToggles()"><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
       <label class="toggle-switch" id="toggleNewsWeaveWrap" title="Weave verified current headlines into the sermon — separate from Yah/Bez Story voice. Requires Web Research."><input type="checkbox" id="toggleNewsWeave" onchange="syncNewsWeaveToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#1a3a5c,#2a6496);"></span><span><i class="fas fa-newspaper" style="color:#7ec8e3;margin-right:3px;font-size:0.7rem;"></i>News Weave</span></label>
+      <label class="toggle-switch" id="toggleNameDropWrap" title="Verse-gated living names in Yah/Bez Story (web-verified culprits — separate from story cadence). Requires Web Research."><input type="checkbox" id="toggleNameDrop" onchange="syncNameDropToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#3a2a18,#6a4a28);"></span><span><i class="fas fa-user-tag" style="color:#e8c080;margin-right:3px;font-size:0.7rem;"></i>Name Drop</span></label>
       <label class="toggle-switch" id="toggleBehindTheVeilWrap" title="News-triggered closed-door drama: real headlines → dramatized meeting where sector elites plot the beast-system policy (prophetic illustration, not leaked intel)"><input type="checkbox" id="toggleBehindTheVeil"><span class="toggle-track" style="background:linear-gradient(135deg,#4a1a6a,#8B1A1A);"></span><span><i class="fas fa-door-closed" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Behind the Veil</span></label>
       <label class="toggle-switch" id="toggleModalVeilUltraEliteWrap" style="display:none;" title="Dynastic families — cream of the crop who truly run the world (current titles, private POV only)"><input type="checkbox" id="toggleModalVeilUltraElite" onchange="syncVeilUltraEliteToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#4a1a6a,#2a1810);"></span><span><i class="fas fa-crown" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Ultra Elite</span></label>
       <label class="toggle-switch" id="toggleModalVeilScripturePerchWrap" style="display:none;" title="Elites' private reading of scripture — how they view Israel and spin verses that expose them"><input type="checkbox" id="toggleModalVeilScripturePerch" onchange="syncVeilScripturePerchToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#3a2a10,#6a4a20);"></span><span><i class="fas fa-book-open" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Scripture perch</span></label>
@@ -1696,6 +1697,11 @@ var el=document.getElementById('toggleNewsWeave');
 return !!(el&&el.checked);
 }
 window.isNewsWeaveEnabled=isNewsWeaveEnabled;
+function isNameDropEnabled(){
+var el=document.getElementById('toggleNameDrop');
+return !!(el&&el.checked);
+}
+window.isNameDropEnabled=isNameDropEnabled;
 function syncNewsWeaveToggles(){
 var webEl=document.getElementById('toggleWebResearch');
 var weaveEl=document.getElementById('toggleNewsWeave');
@@ -1708,6 +1714,22 @@ weaveEl.disabled=true;
 if(wrap)wrap.style.opacity='0.45';
 }else{
 weaveEl.disabled=false;
+if(wrap)wrap.style.opacity='';
+}
+syncNameDropToggles();
+}
+function syncNameDropToggles(){
+var webEl=document.getElementById('toggleWebResearch');
+var dropEl=document.getElementById('toggleNameDrop');
+var wrap=document.getElementById('toggleNameDropWrap');
+if(!dropEl)return;
+var webOn=!!(webEl&&webEl.checked);
+if(!webOn){
+dropEl.checked=false;
+dropEl.disabled=true;
+if(wrap)wrap.style.opacity='0.45';
+}else{
+dropEl.disabled=false;
 if(wrap)wrap.style.opacity='';
 }
 }
@@ -2506,14 +2528,20 @@ p+='Search for the themes, symbols, and historical context of '+title+' ('+chapt
 }else{
 p+='Search for background, recent developments, and real-world context around "'+title+'".\n';
 }
-if(wantBezStory||wantYahStory){
+if((wantBezStory||wantYahStory)&&isNameDropEnabled()){
 p+='\nSTEP 1B -- NAMES ONLY IF THIS PART NEEDS THEM (NOT A STANDING ROSTER):\n';
 p+='Web search is for verifying roles when a verse (or headline) demands a named face — not for building the same CEO/pastor list every time. Search per beat: "[sector from THIS symbol] [role]" and pick someone search returns who fits THIS verse. Do NOT preload famous names from memory. No fixed cast in the prompt.\n';
 }
 if(!isNewsWeaveEnabled()){
 p+='\nNEWS WEAVE OFF (MANDATORY):\n';
-p+='Do NOT search for current headlines. Do NOT weave dated news events into this sermon. Do NOT pivot from verse to "last week they signed" or any headline strike. Web search is ONLY for verifying names, roles, and facts tied to what THIS text exposes.\n';
+p+='Do NOT search for current headlines. Do NOT weave dated news events into this sermon. Do NOT pivot from verse to "last week they signed" or any headline strike.\n';
+if(isNameDropEnabled()){
+p+='Web search is ONLY for verifying names, roles, and facts tied to what THIS text exposes.\n';
 p+='Yah Story and Bez Story stay scripture-first — symbol decode, application, named culprits when the verse demands — without mandatory news segments.\n\n';
+}else{
+p+='Web search is ONLY for verifying topic background, symbols, and factual context tied to what THIS text exposes — not for hunting living names to drop into prose.\n';
+p+='Yah Story and Bez Story stay scripture-first — symbol decode and application to Israel\'s body — revelation cadence without mandatory name-drops or news segments.\n\n';
+}
 return p;
 }
 p+='\nSTEP 2 -- CURRENT NEWS (MANDATORY — NEWS WEAVE ON):\n';
@@ -3444,7 +3472,9 @@ p+='- USE this knowledge inside dense revelation paragraphs. Substance matches e
 p+='- GRAMMAR LOCK: Articulate street English only -- see BEZ STORY GRAMMAR block. Fire without sounding like you cannot speak.\n';
 p+='- ZERO Paleo Hebrew letter breakdowns. ZERO spelling biblical names as hyphenated letter chains. ZERO capacitor/motherboard/DNA-source-code comparisons.\n';
 p+='- Plain sacred names: Yah, Yahusha, Israel, Moses, David. Explain Hebrew concepts in street English when the meaning unlocks the symbol.\n';
+if(isNameDropEnabled()){
 p+='- NAMING (VERSE-GATED): Only when THIS symbol clearly needs a face — search for someone who fits THIS layer, not the same famous names every sermon. No vague "they" when you skip a name this beat needed. No year or "as of" on the person.\n\n';
+}
 return p;
 }
 function buildStoryRevelationStyleBlock(isBez,topic,chapterSrc,styleOpts){
@@ -3457,11 +3487,11 @@ p+='This is NOT a lesson. Brother Bet -- urban nationalist Hebrew Israelite brot
 p+='NO ISRAELITE TECH MODE: This is NOT Israelite Brother broadcast teaching. No Master Engineer layer. No technical manual framing. No capacitor/motherboard/DNA-source-code metaphors. No Paleo engineering. Street revelation only.\n\n';
 p+=buildBezStoryLiveHumanBlock();
 p+=buildBezStoryGrammarBlock();
-p+=buildBezStoryNameCulpritsBlock(topic,{partNum:styleOpts.partNum});
+if(isNameDropEnabled())p+=buildBezStoryNameCulpritsBlock(topic,{partNum:styleOpts.partNum});
 }else{
 p+='This is NOT a lesson. A coronation, not a conclusion. A revelation, not a prayer. I am not here to comfort -- I am here to unmake the lie, strip the mask, and remember My people to who they are. First person as Yah/Yahusha to scattered Israel in twenty twenty-six.\n\n';
 p+=buildYahStoryAntiChatbotBlock();
-p+=buildYahStoryNameCulpritsBlock(topic,{partNum:styleOpts.partNum});
+if(isNameDropEnabled())p+=buildYahStoryNameCulpritsBlock(topic,{partNum:styleOpts.partNum});
 }
 p+='MATCH THIS WRITING STYLE for "'+sourceHint+'" -- the RHYTHM and PARAGRAPH FLOW only. Write about THIS assigned text.'+(isBez?' Decode THIS text with the full symbolic knowledge base in street voice.':' Steal the voice, not the Job allegory.')+'\n';
 if(isBez){
@@ -6768,7 +6798,7 @@ else if(partNum===totalParts)partFocus='BEZ STORY final part: Finish your assign
 else if(partNum===1)partFocus='BEZ STORY part one: Open hard in revelation cadence, then walk your assigned episodes in order. Street preacher heat. No welcome. No lesson.'+(wantBezStoryBreakdown?' Break scenes down deep in symbol decode.':'');
 else partFocus='BEZ STORY continuation: Pick up where the last part stopped. One sentence bridge max, then keep pressing your assigned episodes in order.'+(wantBezStoryBreakdown?' Continue scene-by-scene breakdown.':'');
 }else if(totalParts===1){
-partFocus='BEZ STORY: One unbroken river of street revelation through this text. Verse by verse in paragraph flow. Urban nationalist street preacher -- the block, the cell, the pew, the stolen name. Name culprits by full name and what they do when the decode exposes them -- no vague they/the elites, no year stamps on people.'+(wantBezStoryBreakdown?' Break every verse/symbol open piece by piece.':'')+(isNewsWeaveEnabled()?' News Weave ON: you may strike with verified dated headlines.':'');
+partFocus='BEZ STORY: One unbroken river of street revelation through this text. Verse by verse in paragraph flow. Urban nationalist street preacher -- the block, the cell, the pew, the stolen name.'+(isNameDropEnabled()?' Name culprits by full name and what they do when the decode exposes them -- no vague they/the elites, no year stamps on people.':'')+(wantBezStoryBreakdown?' Break every verse/symbol open piece by piece.':'')+(isNewsWeaveEnabled()?' News Weave ON: you may strike with verified dated headlines.':'');
 }else if(partNum===totalParts){
 partFocus='BEZ STORY final part: Walk your assigned verses to the end in revelation cadence. Leave them shook, not instructed.'+(wantBezStoryBreakdown?' Linger on each verse -- full unraveling.':'');
 }else if(partNum===1){
@@ -6777,7 +6807,7 @@ partFocus='BEZ STORY part one: Open mid-rebuke in revelation cadence. Walk your 
 partFocus='BEZ STORY continuation: Bridge one sentence max, then keep unveiling your assigned verses in order.'+(wantBezStoryBreakdown?' Continue deep verse breakdown.':'');
 }
 }else if(wantYahStory){
-partFocus='YAH STORY: One unbroken river of first-person revelation through this text. Verse by verse in paragraph flow -- Me speaking straight to their bones in twenty twenty-six. Name culprits and institutions by full name and what they do when the text exposes them -- no vague they/the elites, no year stamps on people.'+(isNewsWeaveEnabled()?' News Weave ON: dated headline pivots allowed when they serve the verse.':'')+' '+partFocus.replace(/teach|lesson|teaching|break down|breakdown/gi,'reveal');
+partFocus='YAH STORY: One unbroken river of first-person revelation through this text. Verse by verse in paragraph flow -- Me speaking straight to their bones in twenty twenty-six.'+(isNameDropEnabled()?' Name culprits and institutions by full name and what they do when the text exposes them -- no vague they/the elites, no year stamps on people.':'')+(isNewsWeaveEnabled()?' News Weave ON: dated headline pivots allowed when they serve the verse.':'')+' '+partFocus.replace(/teach|lesson|teaching|break down|breakdown/gi,'reveal');
 }else if(wantRoughBez&&!wantBezStory){
 partFocus=getRoughBezPartFocus(partNum,totalParts,topic,chapterSrc);
 }
@@ -7093,12 +7123,12 @@ p+='Cover EVERY verse in the chapter from first to last -- miss nothing.\n';
 }
 if(wantYahStory){
 p+='STORY MODE VERSE WALK -- NOT A LESSON:\n';
-p+='For EACH verse in your assignment, speak as Me directly to My people in twenty twenty-six. Do NOT teach. Do NOT analyze. REMEMBER them through the verse. What does this verse say about who they are, what they suffered, what lie they believed, what I ordained, what they must see now? Tie it to their body, their block, their bloodline, their forgetting. Name a living person or institution ONLY when THIS verse\'s symbol clearly needs a face — search for who fits THIS layer (no stock cast of the same famous names every part). No vague "they" when this beat needed a verified name. No "as of" date stamps on people.'+(isNewsWeaveEnabled()?' Headline strikes: verified calendar date with the event.':'')+' Walk verse by verse in order inside continuous paragraphs. No Paleo Hebrew. No engineering. No cross-reference lists. Just Me unveiling them to themselves.\n\n';
+p+='For EACH verse in your assignment, speak as Me directly to My people in twenty twenty-six. Do NOT teach. Do NOT analyze. REMEMBER them through the verse. What does this verse say about who they are, what they suffered, what lie they believed, what I ordained, what they must see now? Tie it to their body, their block, their bloodline, their forgetting.'+(isNameDropEnabled()?' Name a living person or institution ONLY when THIS verse\'s symbol clearly needs a face — search for who fits THIS layer (no stock cast of the same famous names every part). No vague "they" when this beat needed a verified name. No "as of" date stamps on people.':' Keep revelation on scripture symbols and Israel\'s body — do NOT hunt living names unless Name Drop is on.')+(isNewsWeaveEnabled()?' Headline strikes: verified calendar date with the event.':'')+' Walk verse by verse in order inside continuous paragraphs. No Paleo Hebrew. No engineering. No cross-reference lists. Just Me unveiling them to themselves.\n\n';
 }else if(wantBezStory){
 p+='BEZ STORY VERSE WALK -- NOT A LESSON:\n';
-p+='For EACH verse, press what Yah showed you into your people in twenty twenty-six. Do NOT teach like a classroom. DECODE the symbols and allegory with the full knowledge base -- Job-is-Israel when it fits, two seed lines, prophetic patterns -- then land it on THEIR life right now: who they are, what they suffered, what lie they believed, what Yah ordained. Tie it to the block, the cell, the pew, the protest, the stolen name. Name someone ONLY when THIS verse\'s symbol needs a face — search for who fits (no recycling the same famous names). No vague "they" when this beat needed a name. No "as of" on people.'+(isNewsWeaveEnabled()?' Headline strikes: verified date with the event.':'')+' Walk verse by verse in order inside continuous paragraphs. Third person about Yah always. No Paleo Hebrew. No engineering metaphors. Grammatically correct English in every sentence -- articulate brother, not broken speech. Just street revelation with real doctrinal depth.\n';
+p+='For EACH verse, press what Yah showed you into your people in twenty twenty-six. Do NOT teach like a classroom. DECODE the symbols and allegory with the full knowledge base -- Job-is-Israel when it fits, two seed lines, prophetic patterns -- then land it on THEIR life right now: who they are, what they suffered, what lie they believed, what Yah ordained. Tie it to the block, the cell, the pew, the protest, the stolen name.'+(isNameDropEnabled()?' Name someone ONLY when THIS verse\'s symbol needs a face — search for who fits (no recycling the same famous names). No vague "they" when this beat needed a name. No "as of" on people.':' Symbol decode and Israel\'s body — no mandatory living names unless Name Drop is on.')+(isNewsWeaveEnabled()?' Headline strikes: verified date with the event.':'')+' Walk verse by verse in order inside continuous paragraphs. Third person about Yah always. No Paleo Hebrew. No engineering metaphors. Grammatically correct English in every sentence -- articulate brother, not broken speech. Just street revelation with real doctrinal depth.\n';
 if(wantBezStoryBreakdown){
-p+='BEZ STORY BREAKDOWN (MANDATORY): Break EACH assigned verse ALL THE WAY DOWN in revelation cadence. Decode every symbol and allegorical layer -- Job-is-Israel when it fits, two seed lines, name meanings in plain English -- expose the lie and who profits when the verse demands a named face (search — not a stock cast). Stay inside dense paragraphs. NO ## headers, NO blockquotes, NO verse labels. No Paleo Hebrew.'+(isNewsWeaveEnabled()?' After a verse decode you MAY strike with one dated headline (verified calendar date) — names from THAT story only.':'')+' Linger on each verse; do not rush.\n';
+p+='BEZ STORY BREAKDOWN (MANDATORY): Break EACH assigned verse ALL THE WAY DOWN in revelation cadence. Decode every symbol and allegorical layer -- Job-is-Israel when it fits, two seed lines, name meanings in plain English -- expose the lie'+(isNameDropEnabled()?' and who profits when the verse demands a named face (search — not a stock cast)':' in symbol decode without mandatory name-drops')+'. Stay inside dense paragraphs. NO ## headers, NO blockquotes, NO verse labels. No Paleo Hebrew.'+(isNewsWeaveEnabled()?' After a verse decode you MAY strike with one dated headline (verified calendar date) — names from THAT story only.':'')+' Linger on each verse; do not rush.\n';
 }
 p+='\n';
 }else if(wantRoughBez){
@@ -7484,14 +7514,18 @@ p+='- BEZ STORY SYMBOL DECODER: Decode symbolic language before you preach from 
 p+='- BEZ STORY LIVE FLOW: Speak like a real man in twenty twenty-six talking to modern Hebrew people who do not know who they are yet. Not rehearsed. Not a script. Not a lecture. Use natural pivots, interruptions, self-corrections, and plain speech. Vary sentence length. Use fragments when they hit. Let one thought interrupt another when urgency demands it. Never sound like you are reading a prepared essay. No repeated catchphrases. No recycled compound slang labels. No recycled "wake up" filler. No three-beat rhetorical cascades.\n';
 p+='- BEZ STORY SLANG ROTATION: Attack the same systems with DIFFERENT words every time. Prefer plain corner talk over catchy hyphen labels. One compound label per paragraph max -- often none.\n';
 p+='- BEZ STORY STRUGGLE STAKES: You are not preaching FROM safety AT people in pain -- you are IN the struggle with them while Yah strips the lie. Let rent, family, church hurt, job pressure, identity confusion, and exhaustion show in how you talk.\n';
+if(isNameDropEnabled()){
 p+='- BEZ STORY NAMING: Only when THIS verse needs a face — search for someone who fits THIS symbol (not the same famous names every part). 0–2 living names per part is normal. No stock cast. Web-verify; name + role only — no "as of" on people.'+(isNewsWeaveEnabled()?' Headline strikes: verified date (month, day, year) when News Weave is on.':'')+' FORBIDDEN: vague "they/elites" when this beat needed a verified name.\n';
+}
 }else if(wantYahStory){
 p+='- YAH STORY VOICE LOCK: First person as Yah/Yahusha only. You ARE speaking as God to Israel. Never third person about Yah.\n';
 if(isYahushaMinistryChapterContext(chapterSrc,currentChapterText)){
 p+='- YAH STORY MINISTRY CAST: Every person I heal, debate, or raise in THIS chapter is My lost sheep — Israel (Judah or Northern Kingdom). The centurion is an Israelite under Rome\'s title, NOT a heathen Gentile. Never call My ministry recipients heathens or pagans.\n';
 }
 p+='- YAH STORY ANTI-CHATBOT: No assistant filler, no lesson voice, no therapeutic softening, no pasted prompt catchphrases, no three-beat AI cascades. Sound like the throne remembering My own -- not ChatGPT in a robe.\n';
+if(isNameDropEnabled()){
 p+='- YAH STORY NAMING: Only when THIS verse needs a face — search for who fits THIS symbol (not the same famous names every part). 0–2 living names per part is normal. No stock cast. Web-verify; name + role only — no "as of" on people.'+(isNewsWeaveEnabled()?' Headline strikes: verified date when News Weave is on.':'')+' FORBIDDEN: vague "they/elites" when this beat needed a verified name.\n';
+}
 }else if(wantIsraelite){
 if(isYahushaMinistryChapterContext(chapterSrc,currentChapterText)){
 p+='- MINISTRY CAST (THIS CHAPTER): Everyone Yahusha touches here is Israel — centurion included (Northern Kingdom Israelite in Roman service, not a Gentile). Teach it.\n';
@@ -7670,9 +7704,9 @@ p+='Discernment means reading what the text SAYS, not what the church TOLD you i
 p+='When breaking down ANY chapter or verse, ALWAYS ask: what is the SYMBOL here? What is the deeper spiritual meaning Yah encoded? What CLUE did He leave that nobody is talking about? Then teach THAT, not just the Sunday school surface reading. And when you teach it -- leave a thread hanging. Point to where the next investigation leads. Make people hungry to go DEEPER on their own.\n\n';
 }
 if(wantYahStory&&chapterSrc){
-p+='STORY MODE VERSE DELIVERY: Cover your assigned verses in exact order, but narrate them as one continuous Yah-story. Embed each verse\'s meaning inside the next paragraph. Do NOT stop and label verses. Do NOT quote each verse in isolation before analyzing it. Let the scripture move through My mouth as living memory, not as a checklist. Name someone only when THIS verse needs a verified face — no stock cast.'+(isNewsWeaveEnabled()?' Headline strikes: verified calendar date.':'')+'\n\n';
+p+='STORY MODE VERSE DELIVERY: Cover your assigned verses in exact order, but narrate them as one continuous Yah-story. Embed each verse\'s meaning inside the next paragraph. Do NOT stop and label verses. Do NOT quote each verse in isolation before analyzing it. Let the scripture move through My mouth as living memory, not as a checklist.'+(isNameDropEnabled()?' Name someone only when THIS verse needs a verified face — no stock cast.':' Revelation cadence without mandatory name-drops.')+(isNewsWeaveEnabled()?' Headline strikes: verified calendar date.':'')+'\n\n';
 }else if(wantBezStory&&chapterSrc){
-p+='BEZ STORY VERSE DELIVERY: Cover your assigned verses in exact order as one continuous street revelation. Embed each verse inside the next paragraph. Do NOT stop and label verses. Let the scripture move through what Yah showed you -- not a checklist.'+(wantBezStoryBreakdown?' BREAKDOWN ON: each verse gets fully unraveled -- symbol, lie, block, bloodline; name someone only when the verse demands it (search, no stock cast).':' Name only when the decode truly needs a verified face — not every verse.')+(isNewsWeaveEnabled()?' Optional dated headline after a decode when News Weave is on.':'')+'\n\n';
+p+='BEZ STORY VERSE DELIVERY: Cover your assigned verses in exact order as one continuous street revelation. Embed each verse inside the next paragraph. Do NOT stop and label verses. Let the scripture move through what Yah showed you -- not a checklist.'+(wantBezStoryBreakdown?' BREAKDOWN ON: each verse gets fully unraveled -- symbol, lie, block, bloodline'+(isNameDropEnabled()?'; name someone only when the verse demands it (search, no stock cast).':'.'):(isNameDropEnabled()?' Name only when the decode truly needs a verified face — not every verse.':' Symbol decode flow — no mandatory living names.'))+(isNewsWeaveEnabled()?' Optional dated headline after a decode when News Weave is on.':'')+'\n\n';
 }else if(wantBezStory&&wantBreakdown){
 p+='BEZ STORY BREAKDOWN STRUCTURE: One # title line only. Then dense continuous paragraphs that break THIS topic down piece by piece in revelation cadence -- point by point, symbol by symbol, scene by scene. NO ## headers, NO blockquotes, NO verse labels, NO --- dividers. Each piece gets torn open inside the paragraph flow: decode, expose the lie, land it on twenty twenty-six Israel'+(isNewsWeaveEnabled()?', optional dated headline with names from THAT story only':'')+'. Break it DOWN deep -- street revelation, not a classroom.\n\n';
 }else if(wantStoryMode){
@@ -10378,21 +10412,21 @@ var wantBez=voiceMode==='bez'||voiceMode==='dual';
 var p='';
 if(voiceMode==='dual'){
 p+='VOICE — DUAL (both critique every enabled turn in this segment):\n';
-p+='**Yah (throne):** first-person prophetic voice — strip lies, name culprits, scripture truth.\n';
+p+='**Yah (throne):** first-person prophetic voice — strip lies'+(isNameDropEnabled()?', name culprits':'')+', scripture truth.\n';
 p+='**Bez (street):** third person about Yah — articulate brother in the struggle pressing what Yah showed you.\n\n';
 p+=buildYahStoryVoiceBlock(!!yahLite);
 p+=buildBezStoryLiveHumanBlock();
 p+=buildBezStoryGrammarBlock();
-if(!yahLite)p+=buildStoryNameCulpritsBlock(topic,{isYah:false});
+if(isNameDropEnabled()&&!yahLite)p+=buildStoryNameCulpritsBlock(topic,{isYah:false});
 }else if(voiceMode==='yah'){
 p+='VOICE — YAH STORY ONLY:\n';
 p+=buildYahStoryVoiceBlock(!!yahLite);
-if(!yahLite)p+=buildYahStoryNameCulpritsBlock(topic,{});
+if(isNameDropEnabled()&&!yahLite)p+=buildYahStoryNameCulpritsBlock(topic,{});
 }else{
 p+='VOICE — BEZ STORY ONLY:\n';
 p+=buildBezStoryLiveHumanBlock();
 p+=buildBezStoryGrammarBlock();
-p+=buildBezStoryNameCulpritsBlock(topic,{});
+if(isNameDropEnabled())p+=buildBezStoryNameCulpritsBlock(topic,{});
 }
 if(explicit&&!yahLite){
 p+=buildExplicitBrimstoneFireBlock({context:'sermon',wantYahStory:wantYah,wantBezStory:wantBez});
@@ -12150,6 +12184,7 @@ syncTheatreToggles();
 syncStoryModeToggles();
 syncCrossReferenceToggles();
 syncNewsWeaveToggles();
+syncNameDropToggles();
 }
 function syncStoryModeToggles(){
 var yahStory=document.getElementById('toggleStoryMode');
@@ -12196,6 +12231,7 @@ syncEpisodeModeToggles();
 syncStoryModeToggles();
 syncCrossReferenceToggles();
 syncNewsWeaveToggles();
+syncNameDropToggles();
 syncYahChatVoiceUi();
 loadYahChat();
 var storyToggle=document.getElementById('toggleStoryMode');

@@ -200,5 +200,11 @@ if (!html.includes('NO fixed list of people') || !html.includes('Stock cast recy
 if (!html.includes('GRAVITY DOES NOT EXIST') || !html.includes('Gravity Is A Lie')) {
   throw new Error('index.html missing buoyancy/density gravity doctrine and topic');
 }
+if (!html.includes('toggleNameDrop') || !html.includes('isNameDropEnabled')) {
+  throw new Error('index.html missing Name Drop toggle (separate from Yah/Bez Story cadence)');
+}
+if (!html.includes('syncNameDropToggles')) {
+  throw new Error('index.html missing Name Drop sync with Web Research');
+}
 
 console.log('\nall checks passed');
