@@ -361,6 +361,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .progress-bar-wrap{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden;}
 .progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold));border-radius:4px;transition:width 0.5s ease;width:0%;}
 .progress-label{font-family:'Fira Code',monospace;font-size:0.72rem;color:var(--text-muted);white-space:nowrap;}
+.lesson-series-title{text-align:center;padding:18px 16px 10px;font-family:'Cinzel Decorative',serif;font-size:1.05rem;color:var(--gold);letter-spacing:0.04em;line-height:1.4;border-bottom:1px solid var(--border);margin-bottom:2px;}
+.lesson-series-title i{margin-right:8px;font-size:0.75rem;color:var(--gold-dim);vertical-align:middle;}
+.lesson-series-title .lesson-series-kicker{display:block;font-size:0.62rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--gold-dim);margin-bottom:6px;font-family:Fira Code,monospace;}
 .part-divider{text-align:center;padding:14px 0;font-family:'Cinzel Decorative',serif;font-size:0.8rem;color:var(--gold-dim);letter-spacing:0.1em;text-transform:uppercase;position:relative;}
 .part-divider::before,.part-divider::after{content:'';position:absolute;top:50%;height:1px;width:calc(50% - 80px);background:var(--border);}
 .part-divider::before{left:0;}
@@ -3182,6 +3185,10 @@ function renderSermonFromParts(){
 var output=document.getElementById('sermonOutput');
 if(!output||!sermonPartsRaw.length)return;
 var html='';
+if(sermonSeriesTitle&&sermonPartsRaw.length>1){
+var kicker=selectedPartCount===1?'Lesson':(isTheatreModeActive()?'Script':'Lesson');
+html+='<div id="lessonSeriesTitleBanner" class="lesson-series-title"><span class="lesson-series-kicker">'+escapeHtml(kicker)+'</span><span>'+escapeHtml(sermonSeriesTitle)+'</span></div>';
+}
 for(var i=0;i<sermonPartsRaw.length;i++){
 html+='<div class="part-divider" id="partDivider'+(i+1)+'"><i class="fas fa-scroll" style="margin-right:6px;font-size:0.65rem;"></i>'+escapeHtml(getForgePartLabel(i+1,true))+'</div>';
 html+='<div class="sermon-body" id="sermonPart'+(i+1)+'">'+marked.parse(sermonPartsRaw[i])+'</div>';
@@ -4174,9 +4181,11 @@ var eli5Enabled=opts.eli5Enabled!=null?!!opts.eli5Enabled:isTheatreELI5Enabled()
 var wantRoughBez=!!opts.wantRoughBez;
 var chapterSrc=currentChapterSource;
 var title=topic?topic.title:'this policy';
+var displayTitle=sermonSeriesTitle||title;
 var desc=topic?topic.desc:'';
 var wordsPerPart=totalParts===1?4000:2200;
 var p='CLOSED-DOOR THEATRE MODE -- MANDATORY:\n';
+p+=buildLessonSeriesTitlePromptBlock(partNum,totalParts);
 if(chapterSrc){
 p+='You are a playwright forging a BEHIND-CLOSED-DOORS BOARDROOM dramatization where elites unpack '+chapterSrc.book+' Chapter '+chapterSrc.chapter+' verse by verse. Prophetic illustration — how Babylon reads, twists, and hides scripture when cameras are off. NOT a sermon. NOT leaked intel.\n\n';
 }else{
@@ -4210,7 +4219,7 @@ p+='- Cast is LOCKED at [PRESENT:] in Act 1. No silent character swaps in later 
 p+='- Do NOT write a second scene, epilogue, B-plot, or exterior street scene. When the meeting ends, write [SCENE END] and STOP.\n\n';
 p+='OUTPUT FORMAT -- PLAY SCRIPT ONLY:\n';
 p+='- Your FIRST line must be exactly: *Dramatization for prophetic illustration -- not a claim of factual record or leaked dialogue.*\n';
-p+='- Second line: # '+title+(totalParts>1?' -- Act '+partNum:'')+'\n';
+p+='- Second line: # '+displayTitle+(totalParts>1?' -- Act '+partNum:'')+'\n';
 p+='- Then stage directions in [brackets] and dialogue as CHARACTER NAME: lines.\n';
 if(isVeilUltraEliteCastRequested()){
 p+='- Cast DYNASTIC ELITE ONLY — generational family power with CURRENT verified titles (see CASTING block).\n';
@@ -5124,6 +5133,8 @@ var SERIES_PARTS=[
 var sermonPartsRaw=[];
 var sermonPartsTitles=[];
 var sermonPartsCombined='';
+var sermonSeriesTitle=null;
+var lessonSeriesTitleReqId=0;
 var localSermonSessionState=null;
 function generateSermon(userInitiated){
 if(!currentTopic||isGenerating)return;
@@ -5143,6 +5154,8 @@ sermonSavedThisSession=false;
 sermonPartsRaw=[];
 sermonPartsTitles=[];
 sermonPartsCombined='';
+sermonSeriesTitle=null;
+lessonSeriesTitleReqId++;
 localSermonSessionState=null;
 sermonNewsAnglePlan=null;
 sermonNewsLedger=[];
@@ -5175,7 +5188,7 @@ box.innerHTML='<div class="vc-title"><i class="fas fa-book-bible" style="margin-
 +(vc>0?'Verses will be walked <strong>line by line in order</strong> across <strong>'+selectedPartCount+' part'+(selectedPartCount!==1?'s':'')+'</strong> (~'+Math.floor(vc/selectedPartCount)+' verses per part).':'Verse pacing will use the pasted text in order.')
 +'</div>'
 +'<div class="vc-actions">'
-+'<button class="vc-btn confirm" onclick="this.closest(\'.verse-confirm-box\').style.opacity=\'0.4\';generatePart(1);"><i class="fas fa-bolt" style="margin-right:4px;"></i>Looks Good -- Forge Line by Line</button>'
++'<button class="vc-btn confirm" onclick="this.closest(\'.verse-confirm-box\').style.opacity=\'0.4\';beginSermonParts();"><i class="fas fa-bolt" style="margin-right:4px;"></i>Looks Good -- Forge Line by Line</button>'
 +'<button class="vc-btn cancel" onclick="cancelSermonGeneration()"><i class="fas fa-times" style="margin-right:4px;"></i>Cancel</button>'
 +'</div>';
 output.appendChild(box);
@@ -5196,7 +5209,7 @@ box.innerHTML='<div class="vc-title"><i class="fas fa-paste" style="margin-right
 +(vc>0?'Verses will be evenly distributed across <strong>'+selectedPartCount+' part'+(selectedPartCount!==1?'s':'')+'</strong> (~'+Math.floor(vc/selectedPartCount)+' verses per part).':'Verse pacing will use the bot\'s own knowledge.')
 +'</div>'
 +'<div class="vc-actions">'
-+'<button class="vc-btn confirm" onclick="this.closest(\'.verse-confirm-box\').style.opacity=\'0.4\';generatePart(1);"><i class="fas fa-bolt" style="margin-right:4px;"></i>Looks Good -- Forge It</button>'
++'<button class="vc-btn confirm" onclick="this.closest(\'.verse-confirm-box\').style.opacity=\'0.4\';beginSermonParts();"><i class="fas fa-bolt" style="margin-right:4px;"></i>Looks Good -- Forge It</button>'
 +'<button class="vc-btn cancel" onclick="cancelSermonGeneration()"><i class="fas fa-times" style="margin-right:4px;"></i>Cancel</button>'
 +'</div>';
 output.appendChild(box);
@@ -5222,7 +5235,7 @@ warn.innerHTML='<div class="vc-title" style="color:var(--gold);"><i class="fas f
 +'<div class="vc-detail">Could not pre-load text: '+escapeHtml(err)+'<br>Bot: <strong>'+escapeHtml(usedModel)+'</strong>. You can retry with a different bot or proceed without pre-loaded text.</div>'
 +'<div class="vc-actions">'
 +'<button class="vc-btn retry" onclick="retryScriptureFetch()"><i class="fas fa-redo" style="margin-right:4px;"></i>Retry</button>'
-+'<button class="vc-btn confirm" onclick="this.closest(\'.verse-confirm-box\').remove();generatePart(1);"><i class="fas fa-bolt" style="margin-right:4px;"></i>Proceed Anyway</button>'
++'<button class="vc-btn confirm" onclick="this.closest(\'.verse-confirm-box\').remove();beginSermonParts();"><i class="fas fa-bolt" style="margin-right:4px;"></i>Proceed Anyway</button>'
 +'<button class="vc-btn cancel" onclick="cancelSermonGeneration()"><i class="fas fa-times" style="margin-right:4px;"></i>Cancel</button>'
 +'</div>';
 output.appendChild(warn);
@@ -5246,7 +5259,7 @@ box.innerHTML='<div class="vc-title"><i class="fas fa-check-circle" style="margi
 +'</div>'
 +truncWarn
 +'<div class="vc-actions">'
-+'<button class="vc-btn confirm" onclick="this.closest(\'.verse-confirm-box\').style.opacity=\'0.4\';generatePart(1);"><i class="fas fa-bolt" style="margin-right:4px;"></i>'+(truncated?'Proceed Anyway':'Looks Good -- Forge It')+'</button>'
++'<button class="vc-btn confirm" onclick="this.closest(\'.verse-confirm-box\').style.opacity=\'0.4\';beginSermonParts();"><i class="fas fa-bolt" style="margin-right:4px;"></i>'+(truncated?'Proceed Anyway':'Looks Good -- Forge It')+'</button>'
 +'<button class="vc-btn retry" onclick="retryScriptureFetch()"><i class="fas fa-redo" style="margin-right:4px;"></i>Retry with Different Bot</button>'
 +'<button class="vc-btn cancel" onclick="cancelSermonGeneration()"><i class="fas fa-times" style="margin-right:4px;"></i>Cancel</button>'
 +'</div>';
@@ -5255,7 +5268,7 @@ output.appendChild(box);
 });
 }
 }else{
-generatePart(1);
+beginSermonParts();
 }
 }
 function retryScriptureFetch(){
@@ -5284,7 +5297,7 @@ warn.innerHTML='<div class="vc-title" style="color:var(--gold);"><i class="fas f
 +'<div class="vc-detail">'+escapeHtml(err)+'<br>Bot: <strong>'+escapeHtml(usedModel)+'</strong>. Try a different bot or proceed without pre-loaded text.</div>'
 +'<div class="vc-actions">'
 +'<button class="vc-btn retry" onclick="retryScriptureFetch()"><i class="fas fa-redo" style="margin-right:4px;"></i>Retry Again</button>'
-+'<button class="vc-btn confirm" onclick="this.closest(\'.verse-confirm-box\').remove();generatePart(1);"><i class="fas fa-bolt" style="margin-right:4px;"></i>Proceed Anyway</button>'
++'<button class="vc-btn confirm" onclick="this.closest(\'.verse-confirm-box\').remove();beginSermonParts();"><i class="fas fa-bolt" style="margin-right:4px;"></i>Proceed Anyway</button>'
 +'<button class="vc-btn cancel" onclick="cancelSermonGeneration()"><i class="fas fa-times" style="margin-right:4px;"></i>Cancel</button>'
 +'</div>';
 output.appendChild(warn);
@@ -5308,7 +5321,7 @@ box.innerHTML='<div class="vc-title"><i class="fas fa-check-circle" style="margi
 +'</div>'
 +truncWarn
 +'<div class="vc-actions">'
-+'<button class="vc-btn confirm" onclick="this.closest(\'.verse-confirm-box\').style.opacity=\'0.4\';generatePart(1);"><i class="fas fa-bolt" style="margin-right:4px;"></i>Looks Good -- Forge It</button>'
++'<button class="vc-btn confirm" onclick="this.closest(\'.verse-confirm-box\').style.opacity=\'0.4\';beginSermonParts();"><i class="fas fa-bolt" style="margin-right:4px;"></i>Looks Good -- Forge It</button>'
 +'<button class="vc-btn retry" onclick="retryScriptureFetch()"><i class="fas fa-redo" style="margin-right:4px;"></i>Retry with Different Bot</button>'
 +'<button class="vc-btn cancel" onclick="cancelSermonGeneration()"><i class="fas fa-times" style="margin-right:4px;"></i>Cancel</button>'
 +'</div>';
@@ -5317,6 +5330,7 @@ output.appendChild(box);
 });
 }
 function cancelSermonGeneration(){
+lessonSeriesTitleReqId++;
 clearSermonWatchdogs();
 sermonGenCtx=null;
 isGenerating=false;
@@ -5475,15 +5489,125 @@ function trimPartContextTail(text,maxChars){
 if(!text||text.length<=maxChars)return text;
 return'...[earlier part content truncated — read the tail only]...\n\n'+text.slice(-maxChars);
 }
-function buildCombinedTextFromParts(rawParts,titles){
+function buildCombinedTextFromParts(rawParts,titles,seriesTitle){
 var cleaned=dedupeMultipartSermonText(rawParts);
 var combined='';
+var series=seriesTitle||sermonSeriesTitle;
+if(series&&cleaned.length>1){
+combined+='# '+series+'\n\n---\n\n';
+}
 for(var i=0;i<cleaned.length;i++){
 var pTitle=(titles&&titles[i])||('Part '+(i+1));
 var body=stripLeadingPartHeading(cleaned[i]);
 combined+=cleaned.length===1?'# '+pTitle+'\n\n'+body+'\n\n---\n\n':'# PART '+(i+1)+' -- '+pTitle+'\n\n'+body+'\n\n---\n\n';
 }
 return combined;
+}
+function buildDefaultLessonSeriesTitle(){
+var topic=currentTopic;
+if(!topic)return 'Untitled Lesson';
+var t=String(topic.title||'').trim();
+if(currentChapterSource&&currentChapterSource.book){
+var ch=currentChapterSource.book+' '+currentChapterSource.chapter;
+if(t.toLowerCase().indexOf(currentChapterSource.book.toLowerCase())===-1)t=t?t+' — '+ch:ch;
+}
+return t||'Untitled Lesson';
+}
+function sanitizeLessonSeriesTitle(raw){
+var t=String(raw||'').trim();
+t=t.replace(/^#+\s*/,'');
+t=t.replace(/^["']|["']$/g,'');
+t=t.replace(/^(?:lesson|series|title)\s*[:\-–—]\s*/i,'');
+t=t.replace(/^(?:Part|PART|Episode|EPISODE|Act|ACT)\s*\d+\s*[:\-–—]\s*/i,'');
+t=t.replace(/\s+/g,' ').trim();
+if(t.length>140)t=t.slice(0,137).replace(/\s+\S*$/,'')+'…';
+return t;
+}
+function ensureLessonSeriesTitleBanner(){
+if(!sermonSeriesTitle)return;
+var output=document.getElementById('sermonOutput');
+if(!output)return;
+var existing=document.getElementById('lessonSeriesTitleBanner');
+var kicker=selectedPartCount===1?'Lesson':(isTheatreModeActive()?'Script':'Lesson');
+var inner='<span class="lesson-series-kicker">'+escapeHtml(kicker)+'</span><span>'+escapeHtml(sermonSeriesTitle)+'</span>';
+if(existing){
+existing.innerHTML=inner;
+return;
+}
+var el=document.createElement('div');
+el.id='lessonSeriesTitleBanner';
+el.className='lesson-series-title';
+el.innerHTML=inner;
+output.appendChild(el);
+}
+function buildLessonSeriesTitlePromptBlock(partNum,totalParts){
+if(totalParts<=1||!sermonSeriesTitle)return '';
+var p='LESSON SERIES TITLE (LOCKED — ENTIRE '+totalParts+'-PART LESSON):\n';
+p+='Series title: "'+sermonSeriesTitle+'"\n';
+if(isTheatreModeActive()){
+p+='Use this exact title in the script # heading (see OUTPUT FORMAT). Act subtitles stay in the -- Act N suffix.\n\n';
+return p;
+}
+p+='The forge shows this title above Part 1. Do NOT paste this exact string as an extra # heading before your part line (no double title stack).\n';
+p+='Your first line for THIS part remains exactly one heading: # Part '+partNum+': [part-specific subtitle] — subtitle complements the series title, does not copy it word-for-word.\n\n';
+return p;
+}
+function fetchLessonSeriesTitle(done){
+var reqId=++lessonSeriesTitleReqId;
+var model=getSelectedModel();
+var topic=currentTopic||{title:'Untitled'};
+var chapterLabel=currentChapterSource?(currentChapterSource.book+' Chapter '+currentChapterSource.chapter):'';
+var prompt='Name a multi-part lesson for Yah First Ministries sermon forge.\n\n';
+prompt+='Topic: "'+(topic.title||'Untitled')+'"\n';
+if(chapterLabel)prompt+='Scripture: '+chapterLabel+'\n';
+if(topic.desc)prompt+='Description: '+String(topic.desc).slice(0,400)+'\n';
+prompt+='This lesson will run '+selectedPartCount+' parts.\n\n';
+prompt+='Return ONLY the series lesson title — 3 to 12 words, punchy and specific to THIS topic. Plain text. No quotes. No markdown. No "Part 1". No subtitle after a colon. One line.';
+var handlerName='lesson-series-title-'+Date.now();
+window.Poe.registerHandler(handlerName,function(result){
+var msg=result.responses[0];
+if(!msg||reqId!==lessonSeriesTitleReqId)return;
+if(msg.status==='error'){
+done(sanitizeLessonSeriesTitle(buildDefaultLessonSeriesTitle())||buildDefaultLessonSeriesTitle());
+return;
+}
+if(msg.status==='complete'){
+var line=stripThinking(msg.content||'').trim().split('\n').map(function(l){return l.trim();}).filter(Boolean)[0]||'';
+var title=sanitizeLessonSeriesTitle(line);
+done(title||buildDefaultLessonSeriesTitle());
+}
+});
+window.Poe.sendUserMessage('@'+model+' '+prompt,{handler:handlerName,stream:false,openChat:false,parameters:{max_tokens:64,temperature:0.65}}).catch(function(){
+if(reqId===lessonSeriesTitleReqId)done(buildDefaultLessonSeriesTitle());
+});
+}
+function beginSermonParts(){
+if(!isGenerating)return;
+var output=document.getElementById('sermonOutput');
+if(output){
+output.querySelectorAll('.verse-confirm-box').forEach(function(b){b.remove();});
+}
+if(selectedPartCount<=1){
+sermonSeriesTitle=null;
+generatePart(1);
+return;
+}
+sermonSeriesTitle=null;
+if(output){
+var loader=document.createElement('div');
+loader.className='loading-state';
+loader.id='lessonTitleLoader';
+loader.innerHTML='<div class="loading-pulse"></div><div class="loading-text"><i class="fas fa-heading" style="margin-right:6px;"></i>Naming this '+selectedPartCount+'-part lesson...</div>';
+output.appendChild(loader);
+}
+fetchLessonSeriesTitle(function(title){
+var ld=document.getElementById('lessonTitleLoader');
+if(ld)ld.remove();
+if(!isGenerating)return;
+sermonSeriesTitle=title||buildDefaultLessonSeriesTitle();
+ensureLessonSeriesTitleBanner();
+generatePart(1);
+});
 }
 function clearSermonWatchdogs(){
 if(!sermonGenCtx)return;
@@ -6118,6 +6242,7 @@ function generatePart(partNum){
 if(partNum>selectedPartCount){seriesComplete();return;}
 ensureSermonNewsPlan();
 var output=document.getElementById('sermonOutput');
+if(partNum===1&&sermonSeriesTitle)ensureLessonSeriesTitleBanner();
 // Add part divider -- starts generic, updates when content arrives
 var divider=document.createElement('div');
 divider.className='part-divider';
@@ -6862,6 +6987,7 @@ p+='\n';
 if(totalParts>1){
 p+='ONE PART ONLY (CRITICAL): You are writing ONLY Part '+partNum+' of '+totalParts+' in THIS response. Do NOT write Part '+(partNum+1)+' or any later part. Do NOT include "# Part '+(partNum+1)+':" or any future part header. Stop when Part '+partNum+' is complete -- the forge requests later parts separately.\n\n';
 }
+p+=buildLessonSeriesTitlePromptBlock(partNum,totalParts);
 p+=buildWebResearchPromptBlock(topic,{partNum:partNum,totalParts:totalParts,wantEpisodeMode:wantEpisodeMode,chapterSrc:chapterSrc,wantStoryMode:wantStoryMode,wantBezStory:wantBezStory,wantYahStory:wantYahStory,wantBezStoryBreakdown:wantBezStoryBreakdown,wantRoughBez:wantRoughBez&&!wantBezStory,currentMode:currentMode});
 p+=buildCrossReferencesPromptBlock(wantCrossRefs,wantApocrypha,apocList);
 var symbolVoice='throne';
@@ -8593,6 +8719,7 @@ mode:mode||'standard',
 model:model||'anthropic/claude-sonnet-4',
 parts:parts.slice(),
 partTitles:(titles||[]).slice(),
+seriesTitle:sermonSeriesTitle||'',
 combined:combinedRaw,
 date:new Date().toISOString(),
 wordCount:combinedRaw.split(/\s+/).length
@@ -8660,6 +8787,9 @@ document.getElementById('libModalTitle').textContent=entry.title;
 var d=new Date(entry.date);
 document.getElementById('libModalMeta').textContent=entry.category.toUpperCase()+' . '+entry.model+' . '+d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+' . ~'+entry.wordCount.toLocaleString()+' words';
 var bodyHtml='';
+if(entry.seriesTitle&&entry.parts.length>1){
+bodyHtml+='<div class="lesson-series-title"><span class="lesson-series-kicker">Lesson</span><span>'+escapeHtml(entry.seriesTitle)+'</span></div>';
+}
 var partLabel=(entry.mode==='destroy')?'Part':'Episode';
 entry.parts.forEach(function(partRaw,i){
 bodyHtml+='<div class="part-divider"><span class="part-num"><i class="fas fa-scroll" style="margin-right:6px;font-size:0.65rem;"></i>'+partLabel+' '+(i+1)+' of '+entry.parts.length+'</span></div>';
@@ -8689,6 +8819,12 @@ if(!sermonPartsTitles.length){
 for(var i=0;i<sermonPartsRaw.length;i++){
 sermonPartsTitles.push(extractPartTitle(sermonPartsRaw[i],i+1)||('Part '+(i+1)));
 }
+}
+sermonSeriesTitle=entry.seriesTitle||null;
+if(!sermonSeriesTitle&&sermonPartsRaw.length>1){
+var comb=entry.combined||'';
+var seriesM=comb.match(/^#\s+(.+?)\n\n---\n\n/s);
+if(seriesM)sermonSeriesTitle=seriesM[1].trim();
 }
 selectedPartCount=sermonPartsRaw.length;
 sermonSavedThisSession=true;

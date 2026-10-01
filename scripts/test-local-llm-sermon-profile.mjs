@@ -206,5 +206,11 @@ if (!html.includes('toggleNameDrop') || !html.includes('isNameDropEnabled')) {
 if (!html.includes('syncNameDropToggles')) {
   throw new Error('index.html missing Name Drop sync with Web Research');
 }
+if (!html.includes('beginSermonParts') || !html.includes('fetchLessonSeriesTitle')) {
+  throw new Error('index.html missing pre–Part 1 lesson series title flow');
+}
+if (!html.includes('lessonSeriesTitleBanner') || !html.includes('buildLessonSeriesTitlePromptBlock')) {
+  throw new Error('index.html missing lesson series title banner/prompt block');
+}
 
 console.log('\nall checks passed');
