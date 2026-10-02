@@ -224,5 +224,8 @@ if (!html.includes('buildElevenLabsAudioTagsBlock') || !html.includes('ELEVEN_TA
 if (!html.includes('v4 CREATIVE CONTROL')) {
   throw new Error('index.html missing Eleven v4 creative tag block');
 }
+if (!html.includes('polishElevenLabsTaggedText') || !html.includes('polishElevenCurrentSermon')) {
+  throw new Error('index.html missing Eleven Polish pass for tagged TTS');
+}
 
 console.log('\nall checks passed');

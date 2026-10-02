@@ -1257,6 +1257,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <button class="sermon-action-btn copy-all" onclick="copyAllSermonPlain()" style="border-color:var(--gold-dim);color:var(--gold-dim);background:transparent;"><i class="fas fa-align-left"></i> Copy Plain</button>
       <button class="sermon-action-btn export-btn" onclick="exportSermon()"><i class="fas fa-download"></i> Export to File</button>
       <button class="sermon-action-btn" id="elevenTagBtn" onclick="elevenTagCurrentSermon()" style="border-color:#7ec8a0;color:#7ec8a0;background:rgba(126,200,160,0.08);" title="Add Eleven v4-style [bracket] tags to existing sermon — no rewrite"><i class="fas fa-waveform-lines"></i> Eleven Tag</button>
+      <button class="sermon-action-btn" id="elevenPolishBtn" onclick="polishElevenCurrentSermon()" style="border-color:#5a9a78;color:#9ed4b8;background:rgba(90,154,120,0.1);" title="Fix tag typos, film directions, and sparse climax paragraphs — no LLM"><i class="fas fa-wand-magic-sparkles"></i> Eleven Polish</button>
       <div class="tts-bar">
         <span class="tts-label"><i class="fas fa-volume-high"></i> Voice:</span>
         <select class="tts-voice-select" id="ttsVoice">
@@ -3046,8 +3047,73 @@ return m?m.length:0;
 }
 function countElevenEmotionTags(text){
 if(!text)return 0;
-var m=String(text).match(/\[(?:shouts?|whispers?|softly|laughs|sighs|gasps|scoffs|booming|sarcastically|sad|angry|excited|tired|upset|sorrowful|awe|happily|worried|surprised|furious|heartbroken|disgusted|passionate|intense|tender|broken|exhausted|desperate|mocking|bitter|solemn|commanding|intimate|grief|wrath|trembling|stunned|cold|heated)\]/gi);
+var m=String(text).match(/\[(?:shouts?|whispering|whispers?|softly|laughs?|sighs|gasps|scoffs|booming|sarcastically|sad|angry|excited|tired|upset|sorrowful|awe|happily|worried|surprised|furious|heartbroken|disgusted|passionate|intense|tender|broken|exhausted|desperate|mocking|bitter|solemn|commanding|intimate|grief|wrath|trembling|stunned|cold|heated|shouting|screaming|breathless|menacing growl|clears throat|drawn out|rushed|emphasized)\]/gi);
 return m?m.length:0;
+}
+function sanitizeElevenLabsTaggedText(text){
+if(!text)return '';
+var t=String(text);
+t=t.replace(/\[(\s*[a-zA-Z][^\]]*?)\s*\n+\s*\]/g,'[$1]');
+t=t.replace(/\[(scouts)\]/gi,'[scoffs]');
+t=t.replace(/\bPEPE THIS\b/gi,'PEEP THIS');
+t=t.replace(/\bHOLOCUUST\b/gi,'HOLOCAUST');
+t=t.replace(/\[pacing aggressively\]/gi,'[rushed]');
+t=t.replace(/\[pacing wildly\]/gi,'[breathless]');
+t=t.replace(/\[slams fist on the podium\]/gi,'[shouting]');
+t=t.replace(/\[screaming\]/gi,'[shouting]');
+t=t.replace(/\[voice dropping to a low, menacing growl\]/gi,'[menacing growl]');
+return t;
+}
+function countEmotionTagsInElevenParagraph(p){
+var m=String(p||'').match(/\[(?:shouts?|whispering|whispers?|softly|laughs?|sighs|gasps|scoffs|booming|sarcastically|sad|angry|excited|tired|upset|sorrowful|awe|happily|worried|surprised|furious|heartbroken|disgusted|passionate|intense|tender|broken|exhausted|desperate|mocking|bitter|solemn|commanding|intimate|grief|wrath|trembling|stunned|cold|heated|shouting|screaming|breathless|menacing growl|clears throat|drawn out|rushed|emphasized)\]/gi);
+return m?m.length:0;
+}
+function isSkippableElevenPolishParagraph(p){
+var s=String(p||'').trim();
+if(s.length<280)return true;
+if(/^PART\s+\d/i.test(s))return true;
+if(/^=+$/.test(s.replace(/\s/g,'')))return true;
+if(/^#+\s/.test(s))return true;
+return false;
+}
+function healSparseElevenTaggedParagraphs(text,rotateOffset){
+var parts=String(text||'').split(/\n\s*\n/);
+var rotate=['[pause]','[furious]','[bitter]','[whispers]','[shouting]','[angry]','[emphasized]','[scoffs]'];
+var ri=rotateOffset||0;
+for(var i=0;i<parts.length;i++){
+var p=parts[i].trim();
+if(isSkippableElevenPolishParagraph(p))continue;
+var em=countEmotionTagsInElevenParagraph(p);
+var need=Math.max(2,Math.floor(p.length/300));
+if(em>=need)continue;
+var sentences=p.split(/(?<=[.!?…])\s+(?=[A-Z\["])/);
+if(sentences.length<3)continue;
+var out=[];
+for(var s=0;s<sentences.length;s++){
+if(s>0&&s%2===0&&em<need){
+out.push(rotate[ri%rotate.length]);
+ri++;
+em++;
+}
+out.push(sentences[s]);
+}
+parts[i]=out.join(' ');
+}
+return parts.join('\n\n');
+}
+function polishElevenLabsTaggedText(text){
+return healSparseElevenTaggedParagraphs(sanitizeElevenLabsTaggedText(text),0);
+}
+function looksLikeParagraphsUnderTaggedEleven(text){
+var paras=getElevenTaggedBodyParagraphs(text);
+for(var i=0;i<paras.length;i++){
+var p=paras[i];
+if(isSkippableElevenPolishParagraph(p))continue;
+var em=countEmotionTagsInElevenParagraph(p);
+var need=Math.max(2,Math.floor(p.length/300));
+if(em<need)return true;
+}
+return false;
 }
 function getElevenTaggedBodyParagraphs(text){
 var body=String(text||'').trim().replace(/^#\s+.+\n+/m,'');
@@ -3058,7 +3124,7 @@ return p.length>=80&&!/^#+\s/.test(p);
 function looksLikeParagraphsMissingElevenEmotion(text){
 var paras=getElevenTaggedBodyParagraphs(text);
 if(paras.length<1)return false;
-var emotionRx=/\[(?:shouts?|whispers?|softly|laughs|sighs|gasps|scoffs|booming|sarcastically|sad|angry|excited|tired|upset|sorrowful|awe|happily|worried|surprised|furious|heartbroken|disgusted|passionate|intense|tender|broken|exhausted|desperate|mocking|bitter|solemn|commanding|intimate|grief|wrath|trembling|stunned|cold|heated|clears throat|drawn out|rushed|emphasized)\]/i;
+var emotionRx=/\[(?:shouts?|whispering|whispers?|softly|laughs?|sighs|gasps|scoffs|booming|sarcastically|sad|angry|excited|tired|upset|sorrowful|awe|happily|worried|surprised|furious|heartbroken|disgusted|passionate|intense|tender|broken|exhausted|desperate|mocking|bitter|solemn|commanding|intimate|grief|wrath|trembling|stunned|cold|heated|shouting|screaming|breathless|menacing growl|clears throat|drawn out|rushed|emphasized)\]/i;
 for(var i=0;i<paras.length;i++){
 if(!emotionRx.test(paras[i]))return true;
 }
@@ -3070,6 +3136,7 @@ if(!text)return false;
 var t=String(text).trim();
 if(t.length<500)return false;
 if(looksLikeParagraphsMissingElevenEmotion(t))return true;
+if(looksLikeParagraphsUnderTaggedEleven(t))return true;
 var tags=countElevenV3PerformanceTags(t);
 var emotion=countElevenEmotionTags(t);
 var pauses=(t.match(/\[pause\]/gi)||[]).length;
@@ -3093,6 +3160,9 @@ p+='- No fixed tag list — short cues work: [nervous], [sarcastic], [whispering
 p+='- Stack tags on pivots: [tired] … [angry] … [pause] … [whispers] — v4 follows sequences better than older models.\n';
 p+='- Optional short free-form direction before a line (under ~12 words): [like you just saw the rent notice].\n';
 p+='- Human reactions encouraged: [laughs], [sighs], [clears throat], [gasps]. Skip action-movie SFX ([gunshot], [explosion]) unless the scene demands it.\n';
+p+='- FORBIDDEN (TTS-blind): [pacing aggressively], [slams fist], physical blocking — use [rushed], [breathless], [menacing growl], [shouting] instead.\n';
+p+='- Climax paragraphs: long closes still need 2+ feeling tags — one tag at the top of a wall of prose FAILS.\n';
+p+='- SPELLING: PEEP THIS (not PEPE), [scoffs] (not [scouts]). Keep every [tag] on one line — no line breaks inside brackets.\n';
 p+='- No SSML. Tags + punctuation + CAPS. IPA only for stubborn names: /ˈtoʊmɑːtoʊ/\n';
 p+='- Do NOT explain tags or list categories in the output.\n\n';
 p+='EMOTION FIRST: At least half your tags must carry FEELING — [angry], [sorrowful], [tired], [whispers], [shouts], [scoffs], [bitter], [passionate], [heartbroken], [furious], [intimate], [wrath], [grief], [mocking], [awe]. [pause] / [drawn out] supplement emotion, never replace it.\n\n';
@@ -3232,6 +3302,7 @@ return;
 }
 if(msg.status==='complete'){
 var out=stripThinking(msg.content||'').trim();
+out=polishElevenLabsTaggedText(out||parts[idx]);
 tagged.push(out||parts[idx]);
 if(onPartDone)onPartDone(partNum,total,'done');
 idx++;
@@ -3248,6 +3319,24 @@ next();
 function resetElevenTagBtn(){
 var btn=document.getElementById('elevenTagBtn');
 if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-waveform-lines"></i> Eleven Tag';}
+}
+function polishElevenCurrentSermon(){
+if(!sermonPartsRaw.length){
+openElevenTagPasteModal();
+showToast('Paste your sermon, then run Eleven Polish from the actions bar after it loads.');
+return;
+}
+var n=0;
+for(var i=0;i<sermonPartsRaw.length;i++){
+var before=sermonPartsRaw[i];
+var after=polishElevenLabsTaggedText(before);
+if(after!==before)n++;
+sermonPartsRaw[i]=after;
+}
+renderSermonFromParts();
+showToast(n?('Eleven Polish applied to '+n+' part(s).'):'Already polished — no changes needed.');
+var tagToggle=document.getElementById('toggleElevenLabsTags');
+if(tagToggle)tagToggle.checked=true;
 }
 function elevenTagCurrentSermon(){
 if(elevenTagRunning){showToast('Eleven Tag already running.');return;}
@@ -3296,7 +3385,7 @@ sermonPartsRaw=[];
 sermonPartsTitles=[];
 for(var i=0;i<parts.length;i++){
 sermonPartsTitles.push(extractPartTitle(parts[i],i+1)||('Part '+(i+1)));
-sermonPartsRaw.push(parts[i]);
+sermonPartsRaw.push(polishElevenLabsTaggedText(parts[i]));
 }
 selectedPartCount=parts.length;
 renderSermonFromParts();
@@ -8933,6 +9022,7 @@ if(!text||!text.trim()){showToast('No text to read.');return;}
 var wrap=document.getElementById(audioWrapId);
 var originalBtn=btn.innerHTML;
 var cleanText=stripMarkdownForTTS(text);
+if(isElevenLabsTagsEnabled()||sermonTextHasElevenPerformanceTags(cleanText))cleanText=polishElevenLabsTaggedText(cleanText);
 var ttsBot=getElevenLabsTtsBotId(cleanText);
 var ttsCharLimit=ttsBot===ELEVEN_TAGGED_TTS_BOT?ELEVEN_TAGGED_TTS_CHAR_LIMIT:40000;
 if(cleanText.length>ttsCharLimit){
