@@ -212,5 +212,11 @@ if (!html.includes('beginSermonParts') || !html.includes('fetchLessonSeriesTitle
 if (!html.includes('lessonSeriesTitleBanner') || !html.includes('buildLessonSeriesTitlePromptBlock')) {
   throw new Error('index.html missing lesson series title banner/prompt block');
 }
+if (!html.includes('buildTechnologyKingdomForgeBlock') || !html.includes('isTechnologyForgeContext')) {
+  throw new Error('index.html missing Yah/Bez technology kingdom forge framing');
+}
+if (!html.includes('KINGDOM UNDER BABYLON') || !html.includes('TECHNOLOGY FORGE')) {
+  throw new Error('index.html missing technology kingdom teaching block text');
+}
 
 console.log('\nall checks passed');

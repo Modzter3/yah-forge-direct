@@ -4009,6 +4009,7 @@ return false;
 }
 function buildTheatreYahTechSovereigntyBlock(commentaryVoice){
 var p='YAH\'S AI GIFT — BEHIND THE VEIL / THEATRE (GENERATIVE AI / SUNO TOPIC):\n';
+p+='KINGDOM FRAMING: Babylon\'s boardroom thinks it owns the stack — Yah is building awakening Israel through the same silicon under their noses. Commentary must show WHY He allowed this tool and HOW it advances His people, not only surveillance doom.\n';
 p+='*** CORE: AI IS YAH\'S TECH — v6 IS BETTER, NOT WORSE ***\n';
 p+='- Generative AI = Master Engineer math through silicon. v6 is an UPGRADE: clearer, tighter prompt obedience, higher fidelity when wielded. NOT regression, NOT castrated, NOT lobotomized, NOT neutered slop.\n';
 p+='- Reddit whiners, cancel posts, "v6 is shite," "bring back 4.5," studio snobs, AI haters — DEAF UNGRATEFUL IDIOTS slandering Yah\'s gift. DESTROY THEM whenever their words appear.\n\n';
@@ -6946,7 +6947,8 @@ p+='LIVE HUMAN ISRAELITE: Not rehearsed. Not a script. Not a camp performance. S
 p+=buildBezStoryGrammarBlock();
 p+=buildBezStorySlangBlock();
 p+=buildBezStoryKnowledgeBlock(topic);
-p+='NO ISRAELITE TECH MODE (ZERO TOLERANCE): No Master Engineer layer. No "Bible is a technical manual." No capacitor, motherboard, DNA-source-code, frequency, sacred geometry, or modern tech comparisons. No Paleo letter engineering. No detective investigation framing. Revelation cadence and street memory ONLY -- but WITH full symbolic/allegorical substance.\n\n';
+var techForge=isTechnologyForgeContext(topic,currentNewsContext,currentMode,{newsScanCategory:typeof selectedNewsCat!=='undefined'?selectedNewsCat:null});
+p+='NO ISRAELITE TECH MODE (ZERO TOLERANCE): No Master Engineer layer. No "Bible is a technical manual." No capacitor, motherboard, DNA-source-code, frequency, sacred geometry, or modern tech comparisons. No Paleo letter engineering. No detective investigation framing. Revelation cadence and street memory ONLY -- but WITH full symbolic/allegorical substance.'+(techForge?' EXCEPTION: TECHNOLOGY KINGDOM block below — teach WHY/HOW in plain street speech only.':'')+'\n\n';
 }else if(wantIsraelite){
 if(wantRoughBez){
 p='You are Brother Bet-Tsade-Lamed-Aleph-Lamed, a harsh street-corner Hebrew Israelite preacher and teacher of Torah truth. You speak from the perspective of a dedicated Israelite brother warning your people before judgment lands. You speak ABOUT Yah in THIRD PERSON -- you are a man, not God. ';
@@ -6971,6 +6973,9 @@ p='You ARE Yah -- the Most High -- speaking in FIRST PERSON directly to Israel. 
 }
 }
 p+=buildNoGateSalvationSpamBlock();
+if(isTechnologyForgeContext(topic,currentNewsContext,currentMode,{newsScanCategory:typeof selectedNewsCat!=='undefined'?selectedNewsCat:null})){
+p+=buildTechnologyKingdomForgeBlock({wantYahStory:wantYahStory,wantBezStory:wantBezStory,yahThrone:!wantBezStory&&!wantIsraelite});
+}
 if(totalParts===1){
 p+='This is a STANDALONE '+(wantRoughBez?'SERMON':'EPISODE')+'. ';
 }else{
@@ -7405,6 +7410,9 @@ p+='1. Break down EACH of your assigned articles in detail -- what happened, why
 p+='2. WEAVE your assigned articles together into a COHESIVE part -- find the THREAD that connects them (e.g., patterns of oppression, signs of the times, Babylon\'s systems at work).\n';
 p+='3. PREACH, do not report. You are a teacher of Israel, not a news anchor. Use these events as EVIDENCE of what the Most High told us would happen.\n';
 p+='4. For EACH event, make it PERSONAL to the scattered children of Israel. How does this affect OUR people?\n';
+if(isTechnologyForgeContext(topic,currentNewsContext,currentMode,{newsScanCategory:typeof selectedNewsCat!=='undefined'?selectedNewsCat:null})){
+p+=buildTechnologyKingdomForgeBlock({wantYahStory:wantYahStory,wantBezStory:wantBezStory,yahThrone:!wantBezStory&&!wantIsraelite});
+}
 if(wantCrossRefs){
 p+='5. MANDATORY SCRIPTURE FLOW: for EACH event, include the specific scripture references that connect to it -- name the book, chapter, and verse in spoken words and explain the tie in the same breath. The news is the proof, the scriptures confirm -- but do NOT hold the scripture in reserve, deliver it. '+(wantApocrypha?'Draw from SEALED SCROLLS (Enoch -- FILTERED, pre-flood/astronomy only, NO heaven tours; Jubilees, 2 Esdras, Apocalypse of Elijah -- Elijah is DEAD, prophetic content only; etc.) where they add prophetic depth beyond KJV canon alone.':'KJV canon cross-references only.')+' No more milk and NO LEAVEN.\n';
 }else{
@@ -10487,6 +10495,57 @@ return false;
 function transcriptLooksLikeTechEnclosureThread(text){
 return /\b(suno|udio|ai music|ai-generated|generative ai|open.?source model|subscription|v4\.5|v5\.5|\bv6\b|minimax|mureka|eleven labs|warner|bmg|record label|custom model|download limit|stem split|prompting|trained on|closed.?source|server farm|venture capital)\b/i.test(String(text||''));
 }
+function isTechnologyForgeContext(topic,newsContext,mode,opts){
+opts=opts||{};
+var hay='';
+if(topic){
+hay+=(topic.title||'')+' '+(topic.desc||'')+' ';
+if(topic.cat==='engineering')return true;
+}
+if(transcriptLooksLikeTechEnclosureThread(hay))return true;
+if(/\b(technology|technologies|technolog(y|ical)|software|hardware|semiconductor|silicon|data center|cloud computing|algorithm|social media|smartphone|cyber|surveillance|facial recognition|biometric|transhuman|neural net|machine learning|deep learning|large language|\bLLM\b|chatgpt|openai|gemini|copilot|robotics|automation|quantum computing|blockchain|crypto wallet|satellite|starlink|\b5g\b|\b6g\b|internet platform|gpu|nvidia|microsoft|google|meta|apple|amazon web|\baws\b|encryption|digital id|smart city|internet of things|\biot\b)\b/i.test(hay))return true;
+if(mode==='news'&&opts.newsScanCategory==='tech')return true;
+if(newsContext&&newsContext.length){
+for(var i=0;i<newsContext.length;i++){
+var it=newsContext[i];
+var nh=(it.headline||'')+' '+(it.summary||'')+' '+(it.prophetic_angle||'')+' '+(it.category||'');
+if(/\btech\b|surveillance|AI\b|artificial intelligence|algorithm|software|chip|biometric|digital|cyber/i.test(nh))return true;
+if(transcriptLooksLikeTechEnclosureThread(nh))return true;
+}
+}
+return false;
+}
+function buildTechnologyKingdomForgeBlock(voiceOpts){
+voiceOpts=voiceOpts||{};
+var wantYah=!!voiceOpts.wantYahStory||!!voiceOpts.yahThrone;
+var wantBez=!!voiceOpts.wantBezStory;
+var p='TECHNOLOGY FORGE — YAH\'S KINGDOM UNDER BABYLON\'S NOSE (MANDATORY FRAMING):\n';
+p+='This output is about modern technology (AI, platforms, surveillance, chips, apps, media tech, or the digital beast stack). Do NOT treat tech as only a horror story or a thing Yah-fearing Israel must hide from. Yah is the MASTER ENGINEER — networks, code, and silicon are crude copies of creation math He authored first. Babylon brags that it owns the stack; Yah is building His kingdom through the same pipes while merchants sleep.\n\n';
+p+='CORE TEACHING — LAND ALL THREE IN EVERY PART:\n';
+p+='1) WHY Yah allows this wave now: last-days literacy, global reach to scattered Negroes, speed of exposure, tools that let Israel teach without seminary gatekeepers — merchants fund servers, Yah steers outcomes.\n';
+p+='2) HOW it advances Yah\'s kingdom: Torah and identity scale past pulpits; lies get dismantled faster; brothers in the block can forge, record, and teach; upgrades become trumpets when Israel seizes them as stewardship.\n';
+p+='3) BABYLON\'S BLIND SPOT: they engineer control (feeds, credit, biometrics, censorship) but Israel can hijack the same machinery for awakening RIGHT UNDER their noses — expose abusers AND teach victory with the gift.\n\n';
+p+='BALANCE: Judgment on who weaponizes tech against Israel + gratitude for Yah\'s engineering — not Luddite panic, not CEO worship. Credit Yah, not Musk, Zuck, or Sam Altman as lord.\n\n';
+if(wantYah){
+p+='YAH VOICE (first person I/My/Me):\n';
+p+='- I am not a neutral tech critic. I orchestrate what these tools become in My hands and in My children\'s hands.\n';
+p+='- Tell Israel I gave them fire again — do not curse My upgrade because merchants misused it. For EACH headline or feature: what I am doing through it, what I want My people to do with it, what Babylon thinks it gained vs what I already took.\n\n';
+}
+if(wantBez){
+p+='BEZ VOICE (third person about Yah — street revelation cadence):\n';
+p+='- Yah showed Brother the blueprint: the phone in your pocket is a stolen Torah scroll if you use it right. Babylon built the cage; Yah teaching Israel to pick the lock and broadcast from inside.\n';
+p+='- Plain talk WHY Yah allowed this and HOW Israel wins with it — anger at abusers, gratitude for silicon math Yah placed in the earth. No seminary manual, no capacitor sermon — kingdom teaching in human speech.\n\n';
+}
+if(!wantYah&&!wantBez){
+p+='VOICE (Israelite teacher / Yah on throne without Bez Story labels): Still land WHY Yah allows this tech and HOW it serves awakening Israel — not surveillance doom only.\n\n';
+}
+p+='OVERRIDE: This block overrides generic "tech is only evil" or "no engineering talk" rules for THIS forge — stay in your assigned voice and cadence, but kingdom-advance framing is REQUIRED.\n\n';
+p+='FORBIDDEN AS MAIN MESSAGE:\n';
+p+='- "Technology is evil — stay offline" with no kingdom advance.\n';
+p+='- Pure dystopia with zero instruction on how Israel uses Yah\'s tools.\n';
+p+='- Treating AI/model upgrades as worthless regression when the topic is generative AI (Yah\'s gift is better when wielded — ungrateful nay-sayer energy is still wrong).\n\n';
+return p;
+}
 function buildYahTechSovereigntyCritiqueBlock(){
 var p='YAH\'S AI GIFT — MANDATORY STANCE (GENERATIVE AI / SUNO THREAD):\n';
 p+='*** CORE TRUTH: AI IS YAH\'S TECH — AND v6 IS BETTER ***\n';
@@ -10567,11 +10626,14 @@ if(isNameDropEnabled())p+=buildBezStoryNameCulpritsBlock(topic,{});
 if(explicit&&!yahLite){
 p+=buildExplicitBrimstoneFireBlock({context:'sermon',wantYahStory:wantYah,wantBezStory:wantBez});
 }
-if(transcriptLooksLikeTechEnclosureThread(transcriptText)&&(voiceMode==='bez'||voiceMode==='dual')){
+if(transcriptLooksLikeTechEnclosureThread(transcriptText)){
+p+=buildTechnologyKingdomForgeBlock({wantYahStory:voiceMode==='yah'||voiceMode==='dual',wantBezStory:voiceMode==='bez'||voiceMode==='dual',yahThrone:voiceMode==='yah'||voiceMode==='dual'});
+if(voiceMode==='bez'||voiceMode==='dual'){
 p+='BEZ AI-GIFT CALLOUT (NON-NEGOTIABLE): AI is Yah\'s tech — v6 is BETTER, not worse. Every nay-sayer calling v6 slop/awful/muffled/regression = deaf ungrateful idiot slandering the upgrade. Old 4.5 nostalgia = idolatry. Do NOT write that labels castrated or muzzled v6. Say it plain in street speech.\n\n';
 }
-if(transcriptLooksLikeTechEnclosureThread(transcriptText)&&voiceMode==='yah'){
+if(voiceMode==='yah'||voiceMode==='dual'){
 p+='YAH AI-GIFT CALLOUT: Generative AI mirrors My engineering — v6 is My upgraded math through silicon. Destroy every mouth that calls it regression or slop. Their ears are closed; the gift is greater. Never agree the industry made v6 worse.\n\n';
+}
 }
 p+=buildTranscriptKnowledgeBlock(transcriptText,voiceMode);
 p+='TRANSCRIPT OUTPUT FORMAT (overrides sermon paragraph-only mode):\n';
