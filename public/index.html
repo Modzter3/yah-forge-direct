@@ -3081,24 +3081,27 @@ if(pauses>Math.max(4,tags*0.35))return true;
 return false;
 }
 function buildElevenLabsV3AudioTagsBlock(persona){
+return buildElevenLabsAudioTagsBlock(persona);
+}
+function buildElevenLabsAudioTagsBlock(persona){
 var isBez=persona==='bez';
-var p='*** ELEVEN v3 AUDIO TAGS — MANDATORY MEDIUM DENSITY + REAL EMOTION ***\n';
-p+='ZERO TOLERANCE: Plain untagged prose is FAILED output. This part is written FOR ElevenLabs Eleven v3 — the listener must FEEL anger, grief, urgency, tenderness, contempt, and fire through the tags. Sparse [pause]-only tagging is UNACCEPTABLE.\n\n';
-p+='EVERY PARAGRAPH RULE (ZERO EXCEPTIONS): EVERY body paragraph must carry emotion — minimum one feeling tag per paragraph, aim for 2-3. Write it like YOU are standing there reading it aloud to one person: your breath catches, your voice drops to a whisper, your chest tightens, you spike on judgment, you sigh when the weight hits. If a paragraph has zero emotion tags, the whole part FAILED.\n\n';
-p+='MEDIUM DENSITY: Tags woven through the whole part — not clustered in one section. Tag every emotional TURN: tone, volume, breath, contempt, grief, urgency, tenderness. Never tag the # title line.\n\n';
-p+='EMOTION FIRST (NOT JUST [pause]): At least half your tags must carry FEELING — [angry], [sorrowful], [tired], [upset], [whispers], [shouts], [scoffs], [sighs], [bitter], [passionate], [heartbroken], [furious], [intimate], [wrath], [grief], [exhausted], [mocking], [awe]. [pause] and [drawn out] are pacing tools — use them WITH emotion tags, not instead of them.\n\n';
-p+='HOW TAGS WORK (Eleven v3):\n';
-p+='- Format: [natural-language cue] inline with speech, e.g. [angry], [whispers], [sighs], [shouts].\n';
-p+='- Tags sit IN the paragraph flow — before, after, or mid-sentence where the feeling turns.\n';
-p+='- Layer tags when the moment demands it: [tired] I watched your mama sign that lease… [angry] and you still call it church.\n';
-p+='- v3 does NOT use SSML. Tags + punctuation shape pacing: ellipsis (…) for trailing pause, CAPS for emphasis, [pause] for a held beat — but EMOTION tags drive the performance.\n';
-p+='- Do NOT explain tags. Do NOT list tag categories in the output.\n\n';
-p+='TAG TOOLKIT — USE EMOTION HEAVY:\n';
-p+='Core emotions: [angry], [sorrowful], [sad], [upset], [tired], [exhausted], [passionate], [furious], [heartbroken], [bitter], [grief], [wrath], [awe], [intimate], [tender], [desperate], [mocking], [disgusted], [excited], [worried], [surprised].\n';
-p+='Delivery & volume: [whispers], [shouts], [softly], [booming], [sarcastically], [rushed], [drawn out], [emphasized], [cold], [heated], [commanding].\n';
-p+='Human reactions: [laughs], [sighs], [clears throat], [gasps], [scoffs], [trembling], [stunned].\n';
-p+='Pacing (supplement only): [pause] — never let [pause] be your only tag in a paragraph.\n';
-p+='Skip accent tags and sound-effect tags ([gunshot], [explosion]).\n\n';
+var p='*** ELEVEN v4 AUDIO TAGS — EXPRESSIVE TTS (v4 API / Poe @ElevenLabs-v3) ***\n';
+p+='ZERO TOLERANCE: Plain untagged prose is FAILED output. Write FOR ElevenLabs expressive TTS. Tags in [brackets] are stage directions — performed, not read aloud. Sparse [pause]-only tagging is UNACCEPTABLE.\n\n';
+p+='EVERY PARAGRAPH RULE: Minimum one performance tag per body paragraph (aim 2–4 on heavy turns). Never tag the # title line.\n\n';
+p+='v4 CREATIVE CONTROL:\n';
+p+='- No fixed tag list — short cues work: [nervous], [sarcastic], [whispering], [shouting], [gruff street preacher, urgent].\n';
+p+='- Stack tags on pivots: [tired] … [angry] … [pause] … [whispers] — v4 follows sequences better than older models.\n';
+p+='- Optional short free-form direction before a line (under ~12 words): [like you just saw the rent notice].\n';
+p+='- Human reactions encouraged: [laughs], [sighs], [clears throat], [gasps]. Skip action-movie SFX ([gunshot], [explosion]) unless the scene demands it.\n';
+p+='- No SSML. Tags + punctuation + CAPS. IPA only for stubborn names: /ˈtoʊmɑːtoʊ/\n';
+p+='- Do NOT explain tags or list categories in the output.\n\n';
+p+='EMOTION FIRST: At least half your tags must carry FEELING — [angry], [sorrowful], [tired], [whispers], [shouts], [scoffs], [bitter], [passionate], [heartbroken], [furious], [intimate], [wrath], [grief], [mocking], [awe]. [pause] / [drawn out] supplement emotion, never replace it.\n\n';
+p+='TAG TOOLKIT (starter — invent more):\n';
+p+='Emotions: [angry], [sorrowful], [sad], [upset], [tired], [exhausted], [passionate], [furious], [heartbroken], [bitter], [grief], [wrath], [awe], [intimate], [tender], [desperate], [mocking], [disgusted], [excited], [worried], [surprised], [nervous], [sarcastic].\n';
+p+='Delivery: [whispers], [whispering], [shouts], [shouting], [softly], [booming], [sarcastically], [rushed], [drawn out], [emphasized], [cold], [heated], [commanding].\n';
+p+='Reactions: [laughs], [laughing], [sighs], [clears throat], [gasps], [scoffs], [trembling], [stunned].\n';
+p+='Scene (v4 — use sparingly, one per turn max): [light rain], [phone buzzing], [door slams], [distant thunder] — atmosphere behind the voice, not a movie trailer.\n';
+p+='Natural-language pivots (v4 strength): [through gritted teeth], [like you just saw the eviction notice], [said slow and dangerous] — keep under ~12 words inside brackets.\n\n';
 p+='LIVE-READ PLACEMENT (ALL VOICES):\n';
 p+='- Read it in your head as you write: would YOU whisper here? shout here? sigh here? tag that moment. Every paragraph gets at least one emotion tag — usually two or three where the feeling spikes.\n';
 p+='- Tag the FEELING before the line lands: [angry] before the accusation, [whispers] before the intimate truth, [scoffs] before exposing the lie, [sighs] before exhaustion breaks through.\n';
@@ -3161,7 +3164,7 @@ var p='ELEVEN v4 AUDIO TAG RETROFIT — EXISTING SERMON (TAGS ONLY):\n';
 p+='Add ElevenLabs inline [bracket] performance tags (v4-style expressive cues) to the sermon below.\n';
 p+='CRITICAL: Do NOT rewrite, shorten, expand, paraphrase, summarize, or delete ANY existing words. ONLY insert [tags].\n';
 p+='Do NOT add preamble, notes, markdown fences, or explanation. Output the tagged sermon text only — begin with the first character of the original.\n\n';
-p+=buildElevenLabsV3AudioTagsBlock(persona);
+p+=buildElevenLabsAudioTagsBlock(persona);
 p+='RETROFIT LOCK:\n';
 p+='- Every original word stays in the same order.\n';
 p+='- Tags are insertions only — [pause], [sighs], [whispers], [shouts], [clears throat], etc.\n';
@@ -8902,8 +8905,10 @@ sel.appendChild(o);
 function sermonTextHasElevenPerformanceTags(text){
 return /\[(?:whispers?|shouts?|angry|sorrowful|pause|laughs?|sighs|scoffs|gasps|bitter|furious|intimate|wrath|grief|mocking|awe|tired|exhausted|passionate|heartbroken|booming|sarcastically|nervous|sarcastic|excited|clears throat|drawn out|emphasized|commanding|softly|heated|cold|stunned|trembling|whispering|shouting)\]/i.test(String(text||''));
 }
+var ELEVEN_TAGGED_TTS_BOT='ElevenLabs-v3';
+var ELEVEN_TAGGED_TTS_CHAR_LIMIT=5000;
 function getElevenLabsTtsBotId(text){
-if(isElevenLabsTagsEnabled()||sermonTextHasElevenPerformanceTags(text))return 'ElevenLabs-v3';
+if(isElevenLabsTagsEnabled()||sermonTextHasElevenPerformanceTags(text))return ELEVEN_TAGGED_TTS_BOT;
 return 'ElevenLabs-v2.5-Turbo';
 }
 function stripMarkdownForTTS(text){
@@ -8929,10 +8934,10 @@ var wrap=document.getElementById(audioWrapId);
 var originalBtn=btn.innerHTML;
 var cleanText=stripMarkdownForTTS(text);
 var ttsBot=getElevenLabsTtsBotId(cleanText);
-var ttsCharLimit=ttsBot==='ElevenLabs-v3'?5000:40000;
+var ttsCharLimit=ttsBot===ELEVEN_TAGGED_TTS_BOT?ELEVEN_TAGGED_TTS_CHAR_LIMIT:40000;
 if(cleanText.length>ttsCharLimit){
 cleanText=cleanText.substring(0,ttsCharLimit);
-showToast('Text trimmed to '+ttsCharLimit.toLocaleString()+' characters for '+ttsBot+' (use one part at a time for tagged v3).');
+showToast('Text trimmed to '+ttsCharLimit.toLocaleString()+' characters for '+ttsBot+' (use one part at a time for tagged expressive TTS).');
 }
 btn.disabled=true;
 btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Generating Audio...';

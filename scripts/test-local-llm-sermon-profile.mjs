@@ -218,5 +218,11 @@ if (!html.includes('buildTechnologyKingdomForgeBlock') || !html.includes('isTech
 if (!html.includes('KINGDOM UNDER BABYLON') || !html.includes('TECHNOLOGY FORGE')) {
   throw new Error('index.html missing technology kingdom teaching block text');
 }
+if (!html.includes('buildElevenLabsAudioTagsBlock') || !html.includes('ELEVEN_TAGGED_TTS_BOT')) {
+  throw new Error('index.html missing Eleven v4 tag guidance and tagged TTS routing');
+}
+if (!html.includes('v4 CREATIVE CONTROL')) {
+  throw new Error('index.html missing Eleven v4 creative tag block');
+}
 
 console.log('\nall checks passed');
