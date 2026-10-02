@@ -1170,7 +1170,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch"><input type="checkbox" id="toggleRoughBez"><span class="toggle-track rough-track"></span><span><i class="fas fa-bullhorn" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Rough Bezaleel</span></label>
       <label class="toggle-switch" id="toggleStoryModeWrap" title="Yah first-person revelation cadence — anti-chatbot live voice (no automatic news weave or name drops)"><input type="checkbox" id="toggleStoryMode"><span class="toggle-track story-track"></span><span><i class="fas fa-book-open" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Yah Story</span></label>
       <label class="toggle-switch" id="toggleBezStoryModeWrap" title="Bez revelation cadence — street fire, grammatically sound English, revelation flow without mandatory name drops"><input type="checkbox" id="toggleBezStoryMode"><span class="toggle-track bez-story-track"></span><span><i class="fas fa-book-open" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Bez Story</span></label>
-      <label class="toggle-switch" id="toggleElevenLabsTagsWrap" title="Eleven v3 medium-density emotional tags — [angry], [whispers], [shouts], etc. woven through every paragraph for TTS"><input type="checkbox" id="toggleElevenLabsTags"><span class="toggle-track" style="background:linear-gradient(135deg,#1a3a2a,#2a6a4a);"></span><span><i class="fas fa-waveform-lines" style="color:#7ec8a0;margin-right:3px;font-size:0.7rem;"></i>Eleven Tags</span></label>
+      <label class="toggle-switch" id="toggleElevenLabsTagsWrap" title="Eleven v4/v3 inline audio tags — emotions, pacing, short stage directions, and light SFX in [brackets] for expressive TTS"><input type="checkbox" id="toggleElevenLabsTags"><span class="toggle-track" style="background:linear-gradient(135deg,#1a3a2a,#2a6a4a);"></span><span><i class="fas fa-waveform-lines" style="color:#7ec8a0;margin-right:3px;font-size:0.7rem;"></i>Eleven Tags</span></label>
       <label class="toggle-switch" id="toggleSermonEpisodeModeWrap" title="TV season episode-by-episode breakdown across parts"><input type="checkbox" id="toggleSermonEpisodeMode"><span class="toggle-track"></span><span><i class="fas fa-tv" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Episode Mode</span></label>
       <label class="toggle-switch" title="Live web search: verify facts, roles, and topic context (silent — no URLs in output). Does not weave headlines unless News Weave is also on."><input type="checkbox" id="toggleWebResearch" checked onchange="syncNewsWeaveToggles();syncNameDropToggles()"><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
       <label class="toggle-switch" id="toggleNewsWeaveWrap" title="Weave verified current headlines into the sermon — separate from Yah/Bez Story voice. Requires Web Research."><input type="checkbox" id="toggleNewsWeave" onchange="syncNewsWeaveToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#1a3a5c,#2a6496);"></span><span><i class="fas fa-newspaper" style="color:#7ec8e3;margin-right:3px;font-size:0.7rem;"></i>News Weave</span></label>
@@ -1256,7 +1256,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <button class="sermon-action-btn copy-all" onclick="copyAllSermon()"><i class="fas fa-copy"></i> Copy All</button>
       <button class="sermon-action-btn copy-all" onclick="copyAllSermonPlain()" style="border-color:var(--gold-dim);color:var(--gold-dim);background:transparent;"><i class="fas fa-align-left"></i> Copy Plain</button>
       <button class="sermon-action-btn export-btn" onclick="exportSermon()"><i class="fas fa-download"></i> Export to File</button>
-      <button class="sermon-action-btn" id="elevenTagBtn" onclick="elevenTagCurrentSermon()" style="border-color:#7ec8a0;color:#7ec8a0;background:rgba(126,200,160,0.08);" title="Add Eleven v3 [bracket] tags to existing sermon — no rewrite"><i class="fas fa-waveform-lines"></i> Eleven Tag</button>
+      <button class="sermon-action-btn" id="elevenTagBtn" onclick="elevenTagCurrentSermon()" style="border-color:#7ec8a0;color:#7ec8a0;background:rgba(126,200,160,0.08);" title="Add Eleven v4-style [bracket] tags to existing sermon — no rewrite"><i class="fas fa-waveform-lines"></i> Eleven Tag</button>
       <div class="tts-bar">
         <span class="tts-label"><i class="fas fa-volume-high"></i> Voice:</span>
         <select class="tts-voice-select" id="ttsVoice">
@@ -3131,11 +3131,11 @@ p+='- [sighs] / [grief]: When My patience strains over Israel\'s sleep — divin
 p+='- [gasps] / [surprised] / [wrath]: When exposing a lie they thought was sacred.\n';
 p+='Yah tags alternate thunder and whisper — [booming] decree into [intimate] remembrance into [furious] judgment. Medium density throughout; never flat.\n\n';
 }
-p+='OUTPUT LOCK: Write the full sermon WITH EMOTIONAL TAGS in every paragraph — medium density, not sparse. The listener must HEAR feeling in Eleven v3. If your tags are mostly [pause] with no [angry]/[whispers]/[shouts]/[sorrowful]/[tired]/[scoffs], you failed. If any body paragraph has zero tags, you failed.\n\n';
+p+='OUTPUT LOCK: Full sermon WITH expressive tags in every paragraph — medium density, creative where it serves the moment. If tags are mostly [pause] with no feeling, or any body paragraph has zero tags, you failed.\n\n';
 return p;
 }
 function buildElevenTagsDriftCorrectionPrompt(partNum,badReply){
-var p='ELEVEN v3 TAG CHECK FAILED — FULL REWRITE REQUIRED (Part '+partNum+' ONLY):\n';
+var p='ELEVEN v4 TAG CHECK FAILED — FULL REWRITE REQUIRED (Part '+partNum+' ONLY):\n';
 p+='Eleven Tags toggle is ON. Your previous output was too SPARSE, too FLAT, or [pause]-heavy with no EMOTION. Plain prose or robotic pacing is UNACCEPTABLE.\n\n';
 p+='FORBIDDEN: ANY body paragraph with zero emotion tags, sparse tagging, or mostly [pause] with no feeling.\n';
 p+='REQUIRED — EVERY PARAGRAPH EMOTION: Minimum one feeling tag in EVERY body paragraph (aim 2-3). Lead with [angry], [sorrowful], [whispers], [shouts], [tired], [bitter], [passionate], [scoffs], [sighs], [furious], [heartbroken], [intimate], [wrath], [grief]. Write like you are reading it aloud yourself — breath, grit, whisper, fire.\n\n';
@@ -3157,8 +3157,8 @@ if(/\byah showed me\b|\bclock in tomorrow\b|\bisraelite brother\b/i.test(sample)
 return bezSignals>=yahSignals?'bez':'yah';
 }
 function buildElevenLabsRetrofitPrompt(persona,text,partNum,totalParts){
-var p='ELEVEN v3 AUDIO TAG RETROFIT — EXISTING SERMON (TAGS ONLY):\n';
-p+='Add ElevenLabs Eleven v3 inline [bracket] performance tags to the sermon below.\n';
+var p='ELEVEN v4 AUDIO TAG RETROFIT — EXISTING SERMON (TAGS ONLY):\n';
+p+='Add ElevenLabs inline [bracket] performance tags (v4-style expressive cues) to the sermon below.\n';
 p+='CRITICAL: Do NOT rewrite, shorten, expand, paraphrase, summarize, or delete ANY existing words. ONLY insert [tags].\n';
 p+='Do NOT add preamble, notes, markdown fences, or explanation. Output the tagged sermon text only — begin with the first character of the original.\n\n';
 p+=buildElevenLabsV3AudioTagsBlock(persona);
@@ -3170,7 +3170,7 @@ p+='- Do NOT tag markdown # title lines unless they are clearly spoken openers.\
 p+='- If the text contains meta-errors or assistant refusals, tag them too — do not remove them.\n\n';
 if(totalParts>1)p+='SCOPE: Part '+partNum+' of '+totalParts+' — output this part only, fully tagged.\n\n';
 p+='ORIGINAL TEXT:\n'+text+'\n\n';
-p+='Return the full original with strategic Eleven v3 tags embedded. Begin immediately:';
+p+='Return the full original with strategic expressive tags embedded. Begin immediately:';
 return p;
 }
 function splitPastedSermonIntoParts(text){
@@ -7915,8 +7915,8 @@ var tagPersona=(wantBezStory||wantRoughBez||wantIsraelite)?'bez':'yah';
 if(wantYahStory)tagPersona='yah';
 p+='\n';
 p+=buildElevenLabsV3AudioTagsBlock(tagPersona);
-p+='*** FINAL LOCK — ELEVEN v3 TAGS (LAST INSTRUCTION BEFORE OUTPUT) ***\n';
-p+='Eleven Tags is ON — EVERY PARAGRAPH EMOTION. Your VERY NEXT tokens: # title, then body paragraphs where EVERY paragraph has feeling tags — like you are standing there reading it yourself. Minimum one emotion tag per paragraph (aim 2-3). [angry], [whispers], [shouts], [sorrowful], [tired], [scoffs], [passionate], [sighs], [furious]. Self-check paragraph by paragraph: zero emotion tags in ANY paragraph = REWRITE.\n\n';
+p+='*** FINAL LOCK — ELEVEN v4 TAGS (LAST INSTRUCTION BEFORE OUTPUT) ***\n';
+p+='Eleven Tags is ON — EVERY PARAGRAPH PERFORMANCE. Your VERY NEXT tokens: # title, then body paragraphs with feeling tags and creative [stage directions] v4 can follow. Minimum one tag per paragraph (aim 2–4 on turns). Self-check: zero tags in ANY paragraph = REWRITE.\n\n';
 }
 if(wantExplicit){
 p+=buildExplicitBrimstoneFireBlock({finalLock:true,wantRoughBez:wantRoughBez,wantBezStory:wantBezStory,wantYahStory:wantYahStory,wantIsraelite:wantIsraelite});
@@ -8899,6 +8899,13 @@ o.textContent=partWord+' '+i;
 sel.appendChild(o);
 }
 }
+function sermonTextHasElevenPerformanceTags(text){
+return /\[(?:whispers?|shouts?|angry|sorrowful|pause|laughs?|sighs|scoffs|gasps|bitter|furious|intimate|wrath|grief|mocking|awe|tired|exhausted|passionate|heartbroken|booming|sarcastically|nervous|sarcastic|excited|clears throat|drawn out|emphasized|commanding|softly|heated|cold|stunned|trembling|whispering|shouting)\]/i.test(String(text||''));
+}
+function getElevenLabsTtsBotId(text){
+if(isElevenLabsTagsEnabled()||sermonTextHasElevenPerformanceTags(text))return 'ElevenLabs-v3';
+return 'ElevenLabs-v2.5-Turbo';
+}
 function stripMarkdownForTTS(text){
 if(!text)return '';
 text=text.replace(/^#{1,6}\s+/gm,'');
@@ -8921,14 +8928,16 @@ if(!text||!text.trim()){showToast('No text to read.');return;}
 var wrap=document.getElementById(audioWrapId);
 var originalBtn=btn.innerHTML;
 var cleanText=stripMarkdownForTTS(text);
-if(cleanText.length>40000){
-cleanText=cleanText.substring(0,40000);
-showToast('Text trimmed to 40,000 characters for TTS.');
+var ttsBot=getElevenLabsTtsBotId(cleanText);
+var ttsCharLimit=ttsBot==='ElevenLabs-v3'?5000:40000;
+if(cleanText.length>ttsCharLimit){
+cleanText=cleanText.substring(0,ttsCharLimit);
+showToast('Text trimmed to '+ttsCharLimit.toLocaleString()+' characters for '+ttsBot+' (use one part at a time for tagged v3).');
 }
 btn.disabled=true;
 btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Generating Audio...';
 wrap.style.display='block';
-wrap.innerHTML='<div class="tts-status"><i class="fas fa-waveform-lines fa-beat-fade"></i> Sending to ElevenLabs... this may take a minute for long sermons.</div>';
+wrap.innerHTML='<div class="tts-status"><i class="fas fa-waveform-lines fa-beat-fade"></i> Sending to '+escapeHtml(ttsBot)+'... this may take a minute for long sermons.</div>';
 var handlerName='tts-'+Date.now();
 window.Poe.registerHandler(handlerName,function(result){
 var msg=result.responses[0];
@@ -8949,7 +8958,7 @@ btn.disabled=false;
 btn.innerHTML=originalBtn;
 }
 });
-window.Poe.sendUserMessage('@ElevenLabs-v2.5-Turbo '+cleanText,{
+window.Poe.sendUserMessage('@'+ttsBot+' '+cleanText,{
 handler:handlerName,
 stream:false,
 openChat:false,
