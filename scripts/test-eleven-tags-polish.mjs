@@ -2,6 +2,11 @@ import {
   polishElevenLabsTaggedText,
   sanitizeElevenLabsTaggedText,
   looksLikeParagraphsUnderTaggedEleven,
+  getElevenBracketTags,
+  countElevenDescriptiveTags,
+  countElevenEmotionTags,
+  looksLikeElevenTagsOneWordHeavy,
+  isElevenLoudTag,
 } from './eleven-tags-polish.mjs';
 
 const sample = `[furious] Open line.
@@ -17,8 +22,11 @@ const sanitized = sanitizeElevenLabsTaggedText(sample);
 if (sanitized.includes('[scouts]') || sanitized.includes('PEPE THIS') || sanitized.includes('[pacing aggressively]')) {
   throw new Error('sanitizeElevenLabsTaggedText missed typo or film-tag replacements');
 }
-if (!sanitized.includes('[scoffs]') || !sanitized.includes('PEEP THIS') || !sanitized.includes('[rushed]')) {
+if (!sanitized.includes('[scoffs]') || !sanitized.includes('PEEP THIS')) {
   throw new Error('sanitizeElevenLabsTaggedText missing expected replacements');
+}
+if (!sanitized.includes('[fast, pushing hard, no room to breathe]')) {
+  throw new Error('film direction should become a described voice direction');
 }
 if (/\[sorrowful\s*\n/i.test(sanitized)) {
   throw new Error('sanitize should merge broken bracket tags');
@@ -27,6 +35,33 @@ if (/\[sorrowful\s*\n/i.test(sanitized)) {
 const polished = polishElevenLabsTaggedText(sample);
 if (looksLikeParagraphsUnderTaggedEleven(polished)) {
   throw new Error('polish should heal under-tagged long paragraphs');
+}
+
+const described = `[low and tight, holding the anger back so it does not spill yet] You sat in that pew every Sunday… [pause] [quieter, almost gentle, which is worse] while they sold your name. [leaning in close, barely audible, speaking to one person only] I know what you signed.`;
+const tags = getElevenBracketTags(described);
+if (tags.length !== 4) throw new Error('descriptive tags must be detected, got ' + tags.length);
+if (countElevenEmotionTags(described) !== 3) throw new Error('[pause] must not count as a feeling tag');
+if (countElevenDescriptiveTags(described) !== 3) throw new Error('all three direction tags are descriptive');
+
+const oneWords = Array.from({ length: 12 }, (_, i) => `[${['angry', 'bitter', 'scoffs', 'furious'][i % 4]}] line ${i}.`).join(' ');
+if (!looksLikeElevenTagsOneWordHeavy(oneWords)) {
+  throw new Error('a wall of one-word tags must be flagged');
+}
+const richWords = Array.from({ length: 12 }, (_, i) => `[dry and worn out, take ${i} of the same explanation] line ${i}.`).join(' ');
+if (looksLikeElevenTagsOneWordHeavy(richWords)) {
+  throw new Error('descriptive tags must not be flagged as one-word heavy');
+}
+
+if (!isElevenLoudTag('voice finally breaking open, loud but cracking') && !isElevenLoudTag('shouting, voice cracking')) {
+  throw new Error('loud descriptive tags should be detected');
+}
+if (isElevenLoudTag('low and tight, holding the anger back')) {
+  throw new Error('quiet descriptive tags must not count as loud');
+}
+
+const theatreMarker = '[PAUSE -- YAH COMMENTARY] and verse [1] stay out of tag counts';
+if (getElevenBracketTags(theatreMarker).length !== 0) {
+  throw new Error('theatre markers and bare numbers must not count as voice tags');
 }
 
 console.log('eleven-tags-polish tests passed');

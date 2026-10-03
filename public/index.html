@@ -1170,7 +1170,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch"><input type="checkbox" id="toggleRoughBez"><span class="toggle-track rough-track"></span><span><i class="fas fa-bullhorn" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Rough Bezaleel</span></label>
       <label class="toggle-switch" id="toggleStoryModeWrap" title="Yah first-person revelation cadence — anti-chatbot live voice (no automatic news weave or name drops)"><input type="checkbox" id="toggleStoryMode"><span class="toggle-track story-track"></span><span><i class="fas fa-book-open" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Yah Story</span></label>
       <label class="toggle-switch" id="toggleBezStoryModeWrap" title="Bez revelation cadence — street fire, grammatically sound English, revelation flow without mandatory name drops"><input type="checkbox" id="toggleBezStoryMode"><span class="toggle-track bez-story-track"></span><span><i class="fas fa-book-open" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Bez Story</span></label>
-      <label class="toggle-switch" id="toggleElevenLabsTagsWrap" title="Eleven v4/v3 inline audio tags — varied delivery (not all shouting); with Explicit, profanity stays in words, loud tags only on spikes"><input type="checkbox" id="toggleElevenLabsTags"><span class="toggle-track" style="background:linear-gradient(135deg,#1a3a2a,#2a6a4a);"></span><span><i class="fas fa-waveform-lines" style="color:#7ec8a0;margin-right:3px;font-size:0.7rem;"></i>Eleven Tags</span></label>
+      <label class="toggle-switch" id="toggleElevenLabsTagsWrap" title="Eleven v4 voice direction — descriptive [bracket] tags that say HOW the voice sounds (pace, breath, texture), not one-word moods; with Explicit, profanity stays in words, loud direction only on spikes"><input type="checkbox" id="toggleElevenLabsTags"><span class="toggle-track" style="background:linear-gradient(135deg,#1a3a2a,#2a6a4a);"></span><span><i class="fas fa-waveform-lines" style="color:#7ec8a0;margin-right:3px;font-size:0.7rem;"></i>Eleven Tags</span></label>
       <label class="toggle-switch" id="toggleSermonEpisodeModeWrap" title="TV season episode-by-episode breakdown across parts"><input type="checkbox" id="toggleSermonEpisodeMode"><span class="toggle-track"></span><span><i class="fas fa-tv" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Episode Mode</span></label>
       <label class="toggle-switch" title="Live web search: verify facts, roles, and topic context (silent — no URLs in output). Does not weave headlines unless News Weave is also on."><input type="checkbox" id="toggleWebResearch" checked onchange="syncNewsWeaveToggles();syncNameDropToggles()"><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
       <label class="toggle-switch" id="toggleNewsWeaveWrap" title="Weave verified current headlines into the sermon — separate from Yah/Bez Story voice. Requires Web Research."><input type="checkbox" id="toggleNewsWeave" onchange="syncNewsWeaveToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#1a3a5c,#2a6496);"></span><span><i class="fas fa-newspaper" style="color:#7ec8e3;margin-right:3px;font-size:0.7rem;"></i>News Weave</span></label>
@@ -3041,15 +3041,38 @@ function isElevenLabsTagsEnabled(){
 var el=document.getElementById('toggleElevenLabsTags');
 return el&&el.checked;
 }
+function getElevenBracketTags(text){
+var out=[];
+var re=/\[([^\[\]\n]{2,100})\]/g;
+var s=String(text||'');
+var m;
+while((m=re.exec(s))){
+var t=m[1].trim();
+if(!/[a-z]/i.test(t))continue;
+if(/^[A-Z0-9 \-—–:'.,]+$/.test(t))continue;
+if(/^\d/.test(t))continue;
+out.push(t);
+}
+return out;
+}
+function isElevenPacingOnlyTag(tag){
+return /^(?:pause|beat|drawn out|long pause|short pause|silence)$/i.test(String(tag||'').trim());
+}
+function isElevenDescriptiveTag(tag){
+var t=String(tag||'').trim();
+return t.split(/\s+/).length>=3||/,/.test(t);
+}
+function isElevenLoudTag(tag){
+return /\b(?:shout\w*|yell\w*|scream\w*|roar\w*|bellow\w*|boom\w*|furious|fury|wrath\w*|heated|thunder\w*)\b/i.test(String(tag||''));
+}
 function countElevenV3PerformanceTags(text){
-if(!text)return 0;
-var m=String(text).match(/\[(?:pause|shouts?|whispers?|softly|laughs|sighs|clears throat|gasps|scoffs|booming|emphasized|drawn out|rushed|sarcastically|sad|angry|excited|tired|upset|sorrowful|awe|happily|worried|surprised|beginning to speak|coughing|furious|heartbroken|disgusted|passionate|intense|tender|broken|exhausted|desperate|mocking|bitter|solemn|commanding|intimate|grief|wrath|trembling|stunned|cold|heated)\]/gi);
-return m?m.length:0;
+return getElevenBracketTags(text).length;
 }
 function countElevenEmotionTags(text){
-if(!text)return 0;
-var m=String(text).match(/\[(?:shouts?|whispering|whispers?|softly|laughs?|sighs|gasps|scoffs|booming|sarcastically|sad|angry|excited|tired|upset|sorrowful|awe|happily|worried|surprised|furious|heartbroken|disgusted|passionate|intense|tender|broken|exhausted|desperate|mocking|bitter|solemn|commanding|intimate|grief|wrath|trembling|stunned|cold|heated|shouting|screaming|breathless|menacing growl|clears throat|drawn out|rushed|emphasized)\]/gi);
-return m?m.length:0;
+return getElevenBracketTags(text).filter(function(t){return !isElevenPacingOnlyTag(t);}).length;
+}
+function countElevenDescriptiveTags(text){
+return getElevenBracketTags(text).filter(function(t){return !isElevenPacingOnlyTag(t)&&isElevenDescriptiveTag(t);}).length;
 }
 function sanitizeElevenLabsTaggedText(text){
 if(!text)return '';
@@ -3058,16 +3081,13 @@ t=t.replace(/\[(\s*[a-zA-Z][^\]]*?)\s*\n+\s*\]/g,'[$1]');
 t=t.replace(/\[(scouts)\]/gi,'[scoffs]');
 t=t.replace(/\bPEPE THIS\b/gi,'PEEP THIS');
 t=t.replace(/\bHOLOCUUST\b/gi,'HOLOCAUST');
-t=t.replace(/\[pacing aggressively\]/gi,'[rushed]');
-t=t.replace(/\[pacing wildly\]/gi,'[breathless]');
-t=t.replace(/\[slams fist on the podium\]/gi,'[shouting]');
-t=t.replace(/\[screaming\]/gi,'[shouting]');
-t=t.replace(/\[voice dropping to a low, menacing growl\]/gi,'[menacing growl]');
+t=t.replace(/\[pacing (?:aggressively|wildly)\]/gi,'[fast, pushing hard, no room to breathe]');
+t=t.replace(/\[slams fist on the podium\]/gi,'[hitting every word hard, slow and heavy]');
+t=t.replace(/\[screaming\]/gi,'[shouting, voice cracking]');
 return t;
 }
 function countEmotionTagsInElevenParagraph(p){
-var m=String(p||'').match(/\[(?:shouts?|whispering|whispers?|softly|laughs?|sighs|gasps|scoffs|booming|sarcastically|sad|angry|excited|tired|upset|sorrowful|awe|happily|worried|surprised|furious|heartbroken|disgusted|passionate|intense|tender|broken|exhausted|desperate|mocking|bitter|solemn|commanding|intimate|grief|wrath|trembling|stunned|cold|heated|shouting|screaming|breathless|menacing growl|clears throat|drawn out|rushed|emphasized)\]/gi);
-return m?m.length:0;
+return countElevenEmotionTags(p);
 }
 function isSkippableElevenPolishParagraph(p){
 var s=String(p||'').trim();
@@ -3079,7 +3099,7 @@ return false;
 }
 function healSparseElevenTaggedParagraphs(text,rotateOffset){
 var parts=String(text||'').split(/\n\s*\n/);
-var rotate=['[pause]','[bitter]','[scoffs]','[tired]','[whispers]','[sarcastically]','[drawn out]','[angry]','[emphasized]'];
+var rotate=['[pause]','[bitter and flat, like reading a bill you already know you cannot pay]','[low and slow, holding back anger]','[tired, almost whispering, talking to one person]','[dry, mocking, one eyebrow up]','[quiet and steady, every word placed on purpose]','[sharp and clipped, losing patience]','[heavy, like carrying it]'];
 var ri=rotateOffset||0;
 for(var i=0;i<parts.length;i++){
 var p=parts[i].trim();
@@ -3125,11 +3145,16 @@ return p.length>=80&&!/^#+\s/.test(p);
 function looksLikeParagraphsMissingElevenEmotion(text){
 var paras=getElevenTaggedBodyParagraphs(text);
 if(paras.length<1)return false;
-var emotionRx=/\[(?:shouts?|whispering|whispers?|softly|laughs?|sighs|gasps|scoffs|booming|sarcastically|sad|angry|excited|tired|upset|sorrowful|awe|happily|worried|surprised|furious|heartbroken|disgusted|passionate|intense|tender|broken|exhausted|desperate|mocking|bitter|solemn|commanding|intimate|grief|wrath|trembling|stunned|cold|heated|shouting|screaming|breathless|menacing growl|clears throat|drawn out|rushed|emphasized)\]/i;
 for(var i=0;i<paras.length;i++){
-if(!emotionRx.test(paras[i]))return true;
+if(countElevenEmotionTags(paras[i])<1)return true;
 }
 return false;
+}
+function looksLikeElevenTagsOneWordHeavy(text){
+if(!text||!isElevenLabsTagsEnabled()||isTheatreModeActive())return false;
+var emotion=countElevenEmotionTags(text);
+if(emotion<10)return false;
+return countElevenDescriptiveTags(text)<Math.ceil(emotion*0.55);
 }
 function looksLikeMissingElevenTags(text){
 if(!isElevenLabsTagsEnabled()||isTheatreModeActive())return false;
@@ -3140,7 +3165,7 @@ if(looksLikeParagraphsMissingElevenEmotion(t))return true;
 if(looksLikeParagraphsUnderTaggedEleven(t))return true;
 var tags=countElevenV3PerformanceTags(t);
 var emotion=countElevenEmotionTags(t);
-var pauses=(t.match(/\[pause\]/gi)||[]).length;
+var pauses=getElevenBracketTags(t).filter(function(x){return isElevenPacingOnlyTag(x);}).length;
 var minTags=Math.max(14,Math.floor(t.length/450));
 var minEmotion=Math.max(10,Math.floor(minTags*0.55));
 if(tags<minTags)return true;
@@ -3153,15 +3178,13 @@ return buildElevenLabsAudioTagsBlock(persona,opts);
 }
 function buildElevenExplicitTagPerformanceBlock(){
 var p='*** EXPLICIT + ELEVEN TAGS — SEPARATE LAYERS ***\n';
-p+='Explicit ON means VULGAR WORDS in the prose — profanity, raw judgment, graphic wrath. It does NOT mean [shouting], [furious], [booming], or [wrath] on every paragraph.\n';
-p+='DELIVERY RULE: Most paragraphs stay conversational intensity — [tired], [bitter], [scoffs], [sarcastically], [cold], [drawn out], [pause], [sighs], [intimate], [sorrowful], [commanding], [emphasized]. Reserve [shouts], [shouting], [furious], [booming], [wrath], [heated] for real pivots only (verse hammer lands, naming a culprit, final warning spike) — roughly ONE loud tag per several paragraphs, not the default.\n';
-p+='FORBIDDEN: Shout-tag spam because the text has cuss words. FORBIDDEN: [furious] or [shouting] on calm decode or setup lines. The profanity carries the heat; the tag carries the BREATH and VOLUME change.\n\n';
+p+='Explicit ON means VULGAR WORDS in the prose — profanity, raw judgment, graphic wrath. It does NOT mean a loud, shouting direction on every paragraph.\n';
+p+='DELIVERY RULE: Most paragraphs stay at conversational intensity. Direct them with descriptive phrases like [dry and worn out, explaining it for the hundredth time], [low and tight, holding the anger back], [mocking their excuse in their own voice], [quiet and steady, every word placed]. Reserve loud directions (shouting, furious, booming, voice breaking open) for real pivots only — verse hammer lands, naming a culprit, final warning spike — roughly ONE loud direction per several paragraphs.\n';
+p+='FORBIDDEN: Loud-direction spam because the text has cuss words. FORBIDDEN: a shouting direction on calm decode or setup lines. The profanity carries the heat; the direction carries the BREATH, PACE, and VOLUME change.\n\n';
 return p;
 }
 function countElevenLoudPerformanceTags(text){
-if(!text)return 0;
-var m=String(text).match(/\[(?:shouts?|shouting|furious|booming|wrath|heated|screaming)\]/gi);
-return m?m.length:0;
+return getElevenBracketTags(text).filter(function(t){return isElevenLoudTag(t);}).length;
 }
 function looksLikeElevenTagsShoutHeavy(text){
 if(!text||!isExplicitModeActive())return false;
@@ -3176,68 +3199,87 @@ var wantExplicit=!!opts.wantExplicit||isExplicitModeActive();
 var isBez=persona==='bez';
 var p='*** ELEVEN v4 AUDIO TAGS — EXPRESSIVE TTS (v4 API / Poe @ElevenLabs-v3) ***\n';
 if(wantExplicit)p+=buildElevenExplicitTagPerformanceBlock();
-p+='ZERO TOLERANCE: Plain untagged prose is FAILED output. Write FOR ElevenLabs expressive TTS. Tags in [brackets] are stage directions — performed, not read aloud. Sparse [pause]-only tagging is UNACCEPTABLE.\n\n';
-p+='EVERY PARAGRAPH RULE: Minimum one performance tag per body paragraph (aim 2–4 on heavy turns). Never tag the # title line.\n\n';
-p+='v4 CREATIVE CONTROL:\n';
-p+='- No fixed tag list — short cues work: [nervous], [sarcastic], [whispering], [shouting], [gruff street preacher, urgent].\n';
-p+='- Stack tags on pivots: [tired] … [angry] … [pause] … [whispers] — v4 follows sequences better than older models.\n';
-p+='- Optional short free-form direction before a line (under ~12 words): [like you just saw the rent notice].\n';
-p+='- Human reactions encouraged: [laughs], [sighs], [clears throat], [gasps]. Skip action-movie SFX ([gunshot], [explosion]) unless the scene demands it.\n';
-p+='- FORBIDDEN (TTS-blind): [pacing aggressively], [slams fist], physical blocking — use [rushed], [breathless], [menacing growl], [shouting] instead.\n';
-p+='- Climax paragraphs: long closes still need 2+ feeling tags — one tag at the top of a wall of prose FAILS.\n';
-p+='- SPELLING: PEEP THIS (not PEPE), [scoffs] (not [scouts]). Keep every [tag] on one line — no line breaks inside brackets.\n';
-p+='- No SSML. Tags + punctuation + CAPS. IPA only for stubborn names: /ˈtoʊmɑːtoʊ/\n';
-p+='- Do NOT explain tags or list categories in the output.\n\n';
-p+='EMOTION FIRST: At least half your tags must carry FEELING — [angry], [sorrowful], [tired], [whispers], [shouts], [scoffs], [bitter], [passionate], [heartbroken], [furious], [intimate], [wrath], [grief], [mocking], [awe]. [pause] / [drawn out] supplement emotion, never replace it.\n\n';
-p+='TAG TOOLKIT (starter — invent more):\n';
-p+='Emotions: [angry], [sorrowful], [sad], [upset], [tired], [exhausted], [passionate], [furious], [heartbroken], [bitter], [grief], [wrath], [awe], [intimate], [tender], [desperate], [mocking], [disgusted], [excited], [worried], [surprised], [nervous], [sarcastic].\n';
-p+='Delivery: [whispers], [whispering], [shouts], [shouting], [softly], [booming], [sarcastically], [rushed], [drawn out], [emphasized], [cold], [heated], [commanding].\n';
-p+='Reactions: [laughs], [laughing], [sighs], [clears throat], [gasps], [scoffs], [trembling], [stunned].\n';
-p+='Scene (v4 — use sparingly, one per turn max): [light rain], [phone buzzing], [door slams], [distant thunder] — atmosphere behind the voice, not a movie trailer.\n';
-p+='Natural-language pivots (v4 strength): [through gritted teeth], [like you just saw the eviction notice], [said slow and dangerous] — keep under ~12 words inside brackets.\n\n';
+p+='ZERO TOLERANCE: Plain untagged prose is FAILED output. Write FOR ElevenLabs v4 expressive TTS. Tags in [brackets] are VOICE DIRECTION — performed, never read aloud.\n\n';
+p+='*** DESCRIBE THE VOICE — v4 TAKES FULL DIRECTION, NOT JUST ONE-WORD MOODS ***\n';
+p+='Eleven v4 understands natural-language direction. A tag is a short note to a voice actor: HOW to say the next stretch — pace, volume, breath, pitch, texture, who they are talking to, and what is under the words. Write tags like a director, not like a mood label.\n';
+p+='- MOST tags (at least two out of three) MUST be a descriptive phrase of roughly 3–14 words. Not [angry]. Instead: [low and tight, holding the anger back so it does not spill yet].\n';
+p+='- One-word tags ([sighs], [pause], [laughs], [clears throat]) are ALLOWED as seasoning — a few per part, never the main diet. If you catch yourself writing [angry] [bitter] [scoffs] [furious] again and again, STOP and describe the voice instead.\n';
+p+='- Say what the voice is DOING: pace (slow, clipped, rushed, trailing off), volume (barely above a whisper, rising), body (breath catching, jaw tight, voice cracking, throat raw), target (to one person across the table, to a room, to the pew), subtext (tired of repeating this, afraid they will not hear it, enjoying the exposure).\n';
+p+='- Every descriptive tag must be DIFFERENT. Never reuse the same description twice in a part. Never reuse the same sentence frame ("[X, like Y]") more than twice in a row.\n';
+p+='- Place the tag where the delivery CHANGES — start of a paragraph, before a verse lands, mid-paragraph on the turn. A tag governs the lines after it until the next tag.\n';
+p+='- Stack two directions on a pivot when the voice moves: [flat and tired] … [then slowly rising, each word harder than the last].\n';
+p+='- Layer on the reaction when it fits: [exhales through the nose, almost a laugh, not amused] — still a voice event, not stage blocking.\n\n';
+p+='EVERY PARAGRAPH RULE: Minimum one DESCRIPTIVE direction per body paragraph (aim 2–3 on heavy turns). Never tag the # title line. Long climax paragraphs need 2+ directions — one tag on top of a wall of prose FAILS.\n\n';
+p+='BAD vs GOOD (study the difference):\n';
+p+='  BAD:  [angry] You sat in that pew while they sold your name.\n';
+p+='  GOOD: [slow, controlled, like each word is a nail being set] You sat in that pew every Sunday… [pause] [quieter, almost gentle, which is worse] while they sold your name.\n';
+p+='  BAD:  [whispers] I know what you signed.\n';
+p+='  GOOD: [leaning in close, barely audible, speaking to one person only] I know what you signed.\n';
+p+='  BAD:  [shouting] THE ECONOMY IS CRASHING!\n';
+p+='  GOOD: [voice finally breaking open after holding it in, loud but cracking] THE ECONOMY IS CRASHING!\n';
+p+='  BAD:  [bitter] [scoffs] [tired] (three one-word tags piled up)\n';
+p+='  GOOD: [dry and worn out, the voice of a man who has explained this a hundred times]\n\n';
+p+='DIRECTION VOCABULARY (build your own — do not copy these verbatim every time):\n';
+p+='Pace: [slow, deliberate, letting each word land] [fast and clipped, no room to argue] [trailing off, losing the thread on purpose] [rushing, afraid the door is closing]\n';
+p+='Volume: [barely above a whisper] [conversational, almost casual] [rising with every clause] [loud but controlled, not yelling] [dropping suddenly to nearly nothing]\n';
+p+='Texture: [dry and cracked] [warm underneath the anger] [gravelly, worn from decades of this] [flat, emptied out] [thick with held-back tears]\n';
+p+='Intent: [talking to one person across a kitchen table] [teaching a child something dangerous] [mocking their excuse in their own voice] [grieving out loud] [daring them to disagree]\n';
+p+='Reactions (short ones are fine): [exhales slowly] [short humorless laugh] [clears throat] [swallows] [breath catches]\n';
+p+='Scene (v4 — rare, one per turn max, behind the voice): [light rain] [phone buzzing] [distant thunder]\n\n';
+p+='RULES:\n';
+p+='- No action-movie SFX and no physical blocking ([gunshot], [slams fist], [pacing]). Describe how the VOICE sounds, not what the body does on a stage.\n';
+p+='- SPELLING: PEEP THIS (not PEPE). Keep every [tag] on ONE line — no line breaks inside brackets.\n';
+p+='- No SSML. Tags + punctuation + CAPS for emphasis. IPA only for stubborn names: /ˈtoʊmɑːtoʊ/\n';
+p+='- Do NOT explain tags or list categories in the output.\n';
+p+='- Pauses: use [pause] or an ellipsis sparingly — pacing words belong INSIDE descriptive directions, not as a pile of [pause] tags.\n\n';
 p+='LIVE-READ PLACEMENT (ALL VOICES):\n';
-p+='- Read it in your head as you write: would YOU whisper here? shout here? sigh here? tag that moment. Every paragraph gets at least one emotion tag — usually two or three where the feeling spikes.\n';
-p+='- Tag the FEELING before the line lands: [angry] before the accusation, [whispers] before the intimate truth, [scoffs] before exposing the lie, [sighs] before exhaustion breaks through.\n';
-p+='- Vary tags — never stack five [pause] tags in a row. Rotate [angry], [whispers], [sorrowful], [tired], [bitter], [passionate], [scoffs], [drawn out] — use [shouts]/[furious] only where volume actually jumps.\n';
-p+='- Combine with punctuation: [furious] You sat in that pew… [pause] …while they sold your name.\n';
-p+='- Never tag the title line. Tags begin in body paragraphs.\n\n';
+p+='- Read it in your head as you write: how would YOU say this line to ONE person you love who is about to make a mistake? Write down exactly that voice.\n';
+p+='- Direct the voice BEFORE the line lands: how the accusation sounds, how the intimate truth sounds, how the exposed lie sounds, how exhaustion leaks in.\n';
+p+='- Vary intensity. A shout lands only because the lines before it were quiet, tight, or tired. Do not direct every paragraph at the same volume.\n';
+p+='- Combine with punctuation: [slow, quiet, each word placed] You sat in that pew… [pause] …while they sold your name.\n\n';
 if(isBez){
-p+='BEZ PERSONA -- WHERE AND WHEN TO TAG:\n';
-p+='You are Brother Bet in the struggle -- live, human, mid-rebuke, not a teleprompter. Tags should sound like a real man whose chest is tight and who might clock in tomorrow.\n';
-p+='- [sighs] / [tired]: After naming rent, court, church hurt, or when fatigue leaks through before you keep pressing.\n';
-p+='- [clears throat]: Right before a hard accusation or naming a culprit by full name.\n';
-p+='- [whispers] / [softly]: Intimate truth to ONE person -- identity, fear, love for their kids, shame they hide.\n';
-p+='- [shouts] / [rushed]: Street-corner spike when judgment is at the curb or a symbol just decoded and you cannot stay calm.\n';
-p+='- [sarcastically] / [scoffs]: When exposing pastor lies, system absurdity, or "Christian" theater -- never cartoonish, always lived contempt.\n';
-p+='- [laughs]: Bitter, tired laugh at how obvious the trap is -- once in a while, not a comedy bit.\n';
-p+='- [upset] / [angry]: When Yah\'s word collides with what they saw on their block or in their pew.\n';
-p+='- [drawn out]: Stretching a name or a date so it sticks in their ear.\n';
-p+='- [pause]: Before a verse lands, before "peep this," before the turn that changes everything.\n';
-p+='Bez tags feel RAW and uneven -- self-correction moments get [pause] or [sighs], not polished broadcast cadence.\n\n';
+p+='BEZ PERSONA -- DIRECT HIM LIKE A REAL MAN IN THE STRUGGLE:\n';
+p+='You are Brother Bet — live, human, mid-rebuke, not a teleprompter. Directions should sound like a tired man whose chest is tight and who might clock in tomorrow.\n';
+p+='- Fatigue leaking in: [tired, flat, like he just got off a double shift and is still pressing] after naming rent, court, or church hurt.\n';
+p+='- Before a hard accusation or a culprit\'s full name: [low and steady, deliberately slowing down so the name cannot be missed].\n';
+p+='- Intimate truth: [quiet, close, talking to one person about their kids or their shame].\n';
+p+='- Street-corner spike (rare): [louder and faster, cannot stay calm, voice cracking on the last words] — only when a symbol just decoded or judgment is at the curb.\n';
+p+='- Exposing lies: [dry, almost amused, letting the lie sound as absurd as it is] — lived contempt, never cartoonish.\n';
+p+='- Bitter laugh at the trap: [short tired laugh, not funny, shaking his head] — once in a while.\n';
+p+='- Stretching a name or date: [drawing the words out so they stick in the ear].\n';
+p+='Bez directions feel RAW and uneven — self-corrections get [catches himself, softer] or [exhales], not polished broadcast cadence.\n\n';
 }else{
-p+='YAH PERSONA -- WHERE AND WHEN TO TAG:\n';
-p+='You are Yah on the throne -- first person I/My/Me -- commanding, intimate, prophetic weight. Tags should feel like the Almighty shifting from thunder to whisper in one room with one child of Israel.\n';
-p+='- [booming] / [shouts] / [emphasized]: Decrees, covenant warnings, naming nations and institutions -- throne fire, not performance yelling.\n';
-p+='- [whispers] / [softly]: When I draw them close -- "I know your name," remembrance, grief over My scattered people.\n';
-p+='- [pause] / [drawn out]: Before a judgment lands, before a prophetic NAME is spoken, before a symbol unlocks -- let the weight breathe.\n';
-p+='- [sorrowful] / [sad]: Lament over Israel\'s sleep, betrayal, lost identity -- not weakness, divine grief.\n';
-p+='- [angry]: Righteous fire at merchants, harlots, false shepherds -- controlled, not chaotic.\n';
-p+='- [awe]: When creation, covenant, or remembrance opens something too big for casual speech.\n';
-p+='- [sighs] / [grief]: When My patience strains over Israel\'s sleep — divine grief, not weakness.\n';
-p+='- [gasps] / [surprised] / [wrath]: When exposing a lie they thought was sacred.\n';
-p+='Yah tags alternate thunder and whisper — [intimate] remembrance, [sorrowful] grief, [emphasized] decree; [booming] or [furious] only on judgment spikes, not every line. Medium density throughout; never flat.\n\n';
+p+='YAH PERSONA -- DIRECT THE THRONE, NOT A SHOUTING MATCH:\n';
+p+='You are Yah on the throne — first person I/My/Me — commanding, intimate, prophetic weight. Directions should move between thunder and tenderness in one room with one child of Israel.\n';
+p+='- Decrees: [slow and enormous, calm because nothing can resist it] — weight, not volume.\n';
+p+='- Drawing them close: [soft and near, speaking their name like a parent in the dark].\n';
+p+='- Before judgment lands: [a long held stillness, then quiet and exact].\n';
+p+='- Lament over Israel\'s sleep: [heavy with grief, patient, not weak] — divine sorrow.\n';
+p+='- Righteous fire at false shepherds and merchants: [controlled and cold, every consonant sharp] — fire that is contained, not chaotic.\n';
+p+='- Awe at creation or covenant: [hushed, slowed, too large for casual speech].\n';
+p+='- Exposing a sacred lie: [sudden and flat, the quiet before a verdict].\n';
+p+='Yah directions alternate thunder and whisper — a loud decree only on true judgment spikes; most paragraphs are held, intimate, or grieving. Medium density throughout; never flat.\n\n';
 }
 if(wantExplicit){
-p+='EXPLICIT MODE TAG BALANCE: Profanity stays in the WORDS. Tags stay MIXED — mostly [tired], [bitter], [scoffs], [sarcastically], [whispers], [pause], [drawn out], [cold]. Loud tags are RARE seasoning.\n\n';
+p+='EXPLICIT MODE TAG BALANCE: Profanity stays in the WORDS. The direction describes breath, pace, and subtext — mostly tired, dry, tight, low, mocking, steady. Loud directions are RARE seasoning.\n\n';
 }
-p+='OUTPUT LOCK: Full sermon WITH expressive tags in every paragraph — medium density, creative where it serves the moment. If tags are mostly [pause] with no feeling, or any body paragraph has zero tags, you failed.\n\n';
+p+='OUTPUT LOCK: Full sermon WITH voice direction in every paragraph — medium density. At least two out of three tags are DESCRIPTIVE phrases (3+ words) that say how the voice sounds. A part built from [angry] [bitter] [scoffs] [furious] one-word tags FAILED. Any body paragraph with zero tags also FAILED.\n\n';
 return p;
 }
 function buildElevenTagsShoutDriftCorrectionPrompt(partNum,badReply){
 var p='ELEVEN v4 TAG CHECK FAILED — SHOUT-TAG SPAM (Part '+partNum+' ONLY):\n';
 p+='Too many [shouts], [shouting], [furious], [booming], [wrath], or [heated] tags — sounds like one volume the whole read. Explicit profanity in the WORDS is correct; delivery tags must VARY.\n\n';
-p+='FIX: Keep vulgar prose. REPLACE most loud tags with [tired], [bitter], [scoffs], [sarcastically], [whispers], [pause], [drawn out], [cold], [intimate], [sorrowful], [emphasized]. Loud tags only on true spikes.\n\n';
+p+='FIX: Keep vulgar prose. REPLACE most loud tags with DESCRIPTIVE quiet or held directions — [dry and worn out, explaining it again], [low and tight, holding it back], [mocking, in their own voice], [quiet and steady, every word placed]. Loud directions only on true spikes.\n\n';
 p+='BAD OUTPUT (too shouty):\n"'+String(badReply||'').slice(0,700).replace(/"/g,"'")+'..."\n\n';
+if(isExplicitModeActive())p+=buildElevenExplicitTagPerformanceBlock();
+p+=buildPartPrompt(partNum);
+return p;
+}
+function buildElevenTagsOneWordDriftCorrectionPrompt(partNum,badReply){
+var p='ELEVEN v4 TAG CHECK FAILED — ONE-WORD TAGS (Part '+partNum+' ONLY):\n';
+p+='Your tags were almost all single-word moods ([angry], [bitter], [scoffs], [furious]). Eleven v4 takes natural-language direction — DESCRIBE THE VOICE.\n\n';
+p+='FIX: At least two out of three tags must be a descriptive phrase of 3–14 words saying pace, volume, breath, texture, who it is aimed at, and the subtext. Example: instead of [angry] write [low and tight, holding the anger back so it does not spill yet]. Instead of [whispers] write [leaning in close, barely audible, speaking to one person only]. Keep one-word tags ([sighs], [pause], [laughs]) to a few per part. Never repeat the same description twice.\n\n';
+p+='BAD OUTPUT (one-word tags):\n"'+String(badReply||'').slice(0,700).replace(/"/g,"'")+'..."\n\n';
 if(isExplicitModeActive())p+=buildElevenExplicitTagPerformanceBlock();
 p+=buildPartPrompt(partNum);
 return p;
@@ -3246,7 +3288,7 @@ function buildElevenTagsDriftCorrectionPrompt(partNum,badReply){
 var p='ELEVEN v4 TAG CHECK FAILED — FULL REWRITE REQUIRED (Part '+partNum+' ONLY):\n';
 p+='Eleven Tags toggle is ON. Your previous output was too SPARSE, too FLAT, or [pause]-heavy with no EMOTION. Plain prose or robotic pacing is UNACCEPTABLE.\n\n';
 p+='FORBIDDEN: ANY body paragraph with zero emotion tags, sparse tagging, or mostly [pause] with no feeling.\n';
-p+='REQUIRED — EVERY PARAGRAPH EMOTION: Minimum one feeling tag in EVERY body paragraph (aim 2-3). Prefer [tired], [bitter], [scoffs], [sarcastically], [whispers], [sorrowful], [intimate], [pause], [drawn out], [angry], [emphasized] — save [shouts], [shouting], [furious], [booming], [wrath] for spikes only.\n\n';
+p+='REQUIRED — EVERY PARAGRAPH DIRECTED: Minimum one DESCRIPTIVE voice direction (3+ words: pace, volume, breath, texture, who it is aimed at) in EVERY body paragraph (aim 2-3). Example: [slow and tired, like reading the same bill again]. Save loud directions for spikes only.\n\n';
 if(isExplicitModeActive())p+=buildElevenExplicitTagPerformanceBlock();
 p+='BAD OUTPUT (too few tags):\n"'+String(badReply||'').slice(0,700).replace(/"/g,"'")+'..."\n\n';
 p+=buildPartPrompt(partNum);
@@ -3273,7 +3315,7 @@ p+='Do NOT add preamble, notes, markdown fences, or explanation. Output the tagg
 p+=buildElevenLabsAudioTagsBlock(persona,{wantExplicit:isExplicitModeActive()});
 p+='RETROFIT LOCK:\n';
 p+='- Every original word stays in the same order.\n';
-p+='- Tags are insertions only — [pause], [sighs], [whispers], [shouts], [clears throat], etc.\n';
+p+='- Tags are insertions only. Each one should DESCRIBE the voice for the next stretch (pace, volume, breath, texture, who it is aimed at) in 3–14 words — not a bare one-word mood. A few short ones ([sighs], [pause]) are fine as seasoning.\n';
 p+='- Preserve ALL headers, PART titles, divider lines (===), and formatting exactly.\n';
 p+='- Do NOT tag markdown # title lines unless they are clearly spoken openers.\n';
 p+='- If the text contains meta-errors or assistant refusals, tag them too — do not remove them.\n\n';
@@ -6159,6 +6201,8 @@ prompt=buildTheatreAgreementCorrectionPrompt(partNum,streamOpts.badSample||'');
 prompt=buildYahStoryVoiceCorrectionPrompt(partNum,streamOpts.badSample||'');
 }else if(streamOpts.driftCorrection){
 prompt=buildSermonFlashDriftCorrectionPrompt(partNum,streamOpts.badSample||'');
+}else if(streamOpts.elevenTagsOneWordCorrection){
+prompt=buildElevenTagsOneWordDriftCorrectionPrompt(partNum,streamOpts.badSample||'');
 }else if(streamOpts.elevenTagsShoutCorrection){
 prompt=buildElevenTagsShoutDriftCorrectionPrompt(partNum,streamOpts.badSample||'');
 }else if(streamOpts.elevenTagsCorrection){
@@ -6315,6 +6359,15 @@ ctx.partContentBeforeContinue='';
 ctx.continuationCount=0;
 showToast('Eleven tags too shouty — redoing '+getForgePartLabel(partNum,false)+'...');
 startSermonPartStream(partNum,false,{elevenTagsShoutCorrection:true,badSample:finalized});
+return;
+}
+if(isElevenLabsTagsEnabled()&&ctx.elevenTagsRetryCount<SERMON_MAX_ELEVEN_TAGS_RETRIES&&looksLikeElevenTagsOneWordHeavy(finalized)){
+ctx.elevenTagsRetryCount++;
+ctx.partContent='';
+ctx.partContentBeforeContinue='';
+ctx.continuationCount=0;
+showToast('Eleven tags are one-word moods — redoing '+getForgePartLabel(partNum,false)+' with described voice...');
+startSermonPartStream(partNum,false,{elevenTagsOneWordCorrection:true,badSample:finalized});
 return;
 }
 if(isElevenLabsTagsEnabled()&&ctx.elevenTagsRetryCount<SERMON_MAX_ELEVEN_TAGS_RETRIES&&looksLikeMissingElevenTags(finalized)){
@@ -8061,7 +8114,7 @@ if(wantExplicit){
 p+='- EXPLICIT BRIMSTONE (toggle ON): SUSTAINED wake-them-up fire in EVERY paragraph — profanity, graphic wrath, direct YOU-facing rebuke. NO hot open then neutral middle/close. Read it like you are preaching brimstone aloud yourself.\n';
 }
 if(isElevenLabsTagsEnabled()){
-p+='- ELEVEN v3 TAGS — EVERY PARAGRAPH EMOTION (toggle ON): EVERY body paragraph must have at least one feeling tag (aim 2-3) — mix [tired], [bitter], [scoffs], [whispers], [sorrowful], [intimate], [pause], [drawn out], [angry], [emphasized]; loud tags [shouts], [furious], [booming] only on real volume spikes. NOT just [pause]. Any untagged paragraph = FAILED output.\n';
+p+='- ELEVEN v4 TAGS — EVERY PARAGRAPH DIRECTED (toggle ON): EVERY body paragraph must have at least one DESCRIPTIVE voice direction (3-14 words describing pace, volume, breath, texture, who it is aimed at — e.g. [low and tight, holding the anger back]) — aim 2-3. At least two out of three tags must be descriptive phrases, NOT one-word moods like [angry] or [bitter]. Loud directions only on real volume spikes. NOT just [pause]. Any untagged paragraph = FAILED output.\n';
 if(wantExplicit)p+=buildElevenExplicitTagPerformanceBlock();
 }else{
 p+='- ABSOLUTELY NO BRACKET TAGS OF ANY KIND. No [pause], [angry], [laughs], [whispers], [scoffs], [sighs], [booming], [dramatic tone], or ANY text inside square brackets that acts as a stage direction, emotion cue, or sound effect. Square brackets are ONLY permitted for actual content like [citation] references. If you include even ONE bracket stage direction tag, the ENTIRE output is ruined. This is a written document, not a voice script.\n';
@@ -8076,8 +8129,8 @@ if(wantYahStory)tagPersona='yah';
 p+='\n';
 p+=buildElevenLabsV3AudioTagsBlock(tagPersona,{wantExplicit:wantExplicit});
 p+='*** FINAL LOCK — ELEVEN v4 TAGS (LAST INSTRUCTION BEFORE OUTPUT) ***\n';
-p+='Eleven Tags is ON — EVERY PARAGRAPH PERFORMANCE. Your VERY NEXT tokens: # title, then body paragraphs with feeling tags and creative [stage directions] v4 can follow. Minimum one tag per paragraph (aim 2–4 on turns). Self-check: zero tags in ANY paragraph = REWRITE.';
-if(wantExplicit)p+=' Explicit ON does NOT mean [shouting] every paragraph — vulgar WORDS, varied delivery tags.';
+p+='Eleven Tags is ON — EVERY PARAGRAPH DIRECTED. Your VERY NEXT tokens: # title, then body paragraphs with DESCRIPTIVE voice directions (3-14 words saying how the voice sounds), not one-word moods. Minimum one direction per paragraph (aim 2–3 on turns). Self-check: zero tags in ANY paragraph, or mostly one-word tags = REWRITE.';
+if(wantExplicit)p+=' Explicit ON does NOT mean a shouting direction every paragraph — vulgar WORDS, varied described delivery.';
 p+='\n\n';
 }
 if(wantExplicit){
@@ -9062,7 +9115,7 @@ sel.appendChild(o);
 }
 }
 function sermonTextHasElevenPerformanceTags(text){
-return /\[(?:whispers?|shouts?|angry|sorrowful|pause|laughs?|sighs|scoffs|gasps|bitter|furious|intimate|wrath|grief|mocking|awe|tired|exhausted|passionate|heartbroken|booming|sarcastically|nervous|sarcastic|excited|clears throat|drawn out|emphasized|commanding|softly|heated|cold|stunned|trembling|whispering|shouting)\]/i.test(String(text||''));
+return getElevenBracketTags(text).length>0;
 }
 var ELEVEN_TAGGED_TTS_BOT='ElevenLabs-v3';
 var ELEVEN_TAGGED_TTS_CHAR_LIMIT=5000;

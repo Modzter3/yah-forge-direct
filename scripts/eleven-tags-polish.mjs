@@ -1,31 +1,66 @@
 /**
  * ElevenLabs bracket-tag cleanup for forge TTS (shared with tests).
  * Typos, film directions, broken tags, sparse paragraph healing.
+ * Tag detection is generic: v4 accepts descriptive natural-language direction,
+ * so any [bracket phrase] counts, not a fixed one-word list.
  */
 
 import { fileURLToPath } from 'node:url';
 
-const ELEVEN_EMOTION_TAG_RX =
-  /\[(?:shouts?|whispering|whispers?|softly|laughs?|sighs|gasps|scoffs|booming|sarcastically|sad|angry|excited|tired|upset|sorrowful|awe|happily|worried|surprised|furious|heartbroken|disgusted|passionate|intense|tender|broken|exhausted|desperate|mocking|bitter|solemn|commanding|intimate|grief|wrath|trembling|stunned|cold|heated|clears throat|drawn out|rushed|emphasized|shouting|screaming|breathless|menacing growl)\]/gi;
-
-const FILM_TAG_REPLACEMENTS = [
-  [/\[pacing aggressively\]/gi, '[rushed]'],
-  [/\[pacing wildly\]/gi, '[breathless]'],
-  [/\[slams fist on the podium\]/gi, '[shouting]'],
-  [/\[screaming\]/gi, '[shouting]'],
-];
-
-const TAG_ROTATE = [
+const HEAL_ROTATE = [
   '[pause]',
-  '[bitter]',
-  '[scoffs]',
-  '[tired]',
-  '[whispers]',
-  '[sarcastically]',
-  '[drawn out]',
-  '[angry]',
-  '[emphasized]',
+  '[bitter and flat, like reading a bill you already know you cannot pay]',
+  '[low and slow, holding back anger]',
+  '[tired, almost whispering, talking to one person]',
+  '[dry, mocking, one eyebrow up]',
+  '[quiet and steady, every word placed on purpose]',
+  '[sharp and clipped, losing patience]',
+  '[heavy, like carrying it]',
 ];
+
+export function getElevenBracketTags(text) {
+  const out = [];
+  const re = /\[([^\[\]\n]{2,100})\]/g;
+  const s = String(text || '');
+  let m;
+  while ((m = re.exec(s))) {
+    const t = m[1].trim();
+    if (!/[a-z]/i.test(t)) continue;
+    if (/^[A-Z0-9 \-—–:'.,]+$/.test(t)) continue;
+    if (/^\d/.test(t)) continue;
+    out.push(t);
+  }
+  return out;
+}
+
+export function isElevenPacingOnlyTag(tag) {
+  return /^(?:pause|beat|drawn out|long pause|short pause|silence)$/i.test(String(tag || '').trim());
+}
+
+export function isElevenDescriptiveTag(tag) {
+  const t = String(tag || '').trim();
+  return t.split(/\s+/).length >= 3 || /,/.test(t);
+}
+
+export function isElevenLoudTag(tag) {
+  return /\b(?:shout\w*|yell\w*|scream\w*|roar\w*|bellow\w*|boom\w*|furious|fury|wrath\w*|heated|thunder\w*)\b/i.test(
+    String(tag || '')
+  );
+}
+
+export function countElevenEmotionTags(text) {
+  return getElevenBracketTags(text).filter((t) => !isElevenPacingOnlyTag(t)).length;
+}
+
+export function countElevenDescriptiveTags(text) {
+  return getElevenBracketTags(text).filter((t) => !isElevenPacingOnlyTag(t) && isElevenDescriptiveTag(t)).length;
+}
+
+export function looksLikeElevenTagsOneWordHeavy(text) {
+  const emotion = countElevenEmotionTags(text);
+  if (emotion < 10) return false;
+  return countElevenDescriptiveTags(text) < Math.ceil(emotion * 0.55);
+}
 
 export function sanitizeElevenLabsTaggedText(text) {
   if (!text) return '';
@@ -34,14 +69,10 @@ export function sanitizeElevenLabsTaggedText(text) {
   t = t.replace(/\[(scouts)\]/gi, '[scoffs]');
   t = t.replace(/\bPEPE THIS\b/gi, 'PEEP THIS');
   t = t.replace(/\bHOLOCUUST\b/gi, 'HOLOCAUST');
-  for (const [re, rep] of FILM_TAG_REPLACEMENTS) t = t.replace(re, rep);
-  t = t.replace(/\[(voice dropping to a low, menacing growl)\]/gi, '[menacing growl]');
+  t = t.replace(/\[pacing (?:aggressively|wildly)\]/gi, '[fast, pushing hard, no room to breathe]');
+  t = t.replace(/\[slams fist on the podium\]/gi, '[hitting every word hard, slow and heavy]');
+  t = t.replace(/\[screaming\]/gi, '[shouting, voice cracking]');
   return t;
-}
-
-function countEmotionTagsInParagraph(p) {
-  const m = p.match(ELEVEN_EMOTION_TAG_RX);
-  return m ? m.length : 0;
 }
 
 function isSkippableParagraph(p) {
@@ -58,10 +89,9 @@ export function healSparseElevenTaggedParagraphs(text, rotateOffset = 0) {
   const parts = String(text).split(/\n\s*\n/);
   let ri = rotateOffset;
   for (let i = 0; i < parts.length; i++) {
-    const raw = parts[i];
-    const p = raw.trim();
+    const p = parts[i].trim();
     if (isSkippableParagraph(p)) continue;
-    let em = countEmotionTagsInParagraph(p);
+    let em = countElevenEmotionTags(p);
     const need = Math.max(2, Math.floor(p.length / 300));
     if (em >= need) continue;
     const sentences = p.split(/(?<=[.!?…])\s+(?=[A-Z\["])/);
@@ -69,7 +99,7 @@ export function healSparseElevenTaggedParagraphs(text, rotateOffset = 0) {
     const out = [];
     for (let s = 0; s < sentences.length; s++) {
       if (s > 0 && s % 2 === 0 && em < need) {
-        out.push(TAG_ROTATE[ri % TAG_ROTATE.length]);
+        out.push(HEAL_ROTATE[ri % HEAL_ROTATE.length]);
         ri++;
         em++;
       }
@@ -94,9 +124,8 @@ export function looksLikeParagraphsUnderTaggedEleven(text) {
     .filter((p) => p.length >= 80 && !/^#+\s/.test(p));
   for (const p of paras) {
     if (isSkippableParagraph(p)) continue;
-    const em = countEmotionTagsInParagraph(p);
     const need = Math.max(2, Math.floor(p.length / 300));
-    if (em < need) return true;
+    if (countElevenEmotionTags(p) < need) return true;
   }
   return false;
 }

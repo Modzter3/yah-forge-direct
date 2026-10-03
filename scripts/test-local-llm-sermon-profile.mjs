@@ -221,8 +221,14 @@ if (!html.includes('KINGDOM UNDER BABYLON') || !html.includes('TECHNOLOGY FORGE'
 if (!html.includes('buildElevenLabsAudioTagsBlock') || !html.includes('ELEVEN_TAGGED_TTS_BOT')) {
   throw new Error('index.html missing Eleven v4 tag guidance and tagged TTS routing');
 }
-if (!html.includes('v4 CREATIVE CONTROL')) {
-  throw new Error('index.html missing Eleven v4 creative tag block');
+if (!html.includes('DESCRIBE THE VOICE')) {
+  throw new Error('index.html missing Eleven v4 descriptive voice direction block');
+}
+if (!html.includes('looksLikeElevenTagsOneWordHeavy') || !html.includes('buildElevenTagsOneWordDriftCorrectionPrompt')) {
+  throw new Error('index.html missing one-word tag detection and correction');
+}
+if (html.includes('No fixed tag list — short cues work')) {
+  throw new Error('index.html still steers Eleven tags toward short one-word cues');
 }
 if (!html.includes('polishElevenLabsTaggedText') || !html.includes('polishElevenCurrentSermon')) {
   throw new Error('index.html missing Eleven Polish pass for tagged TTS');
