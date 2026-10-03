@@ -7,6 +7,10 @@ import {
   countElevenEmotionTags,
   looksLikeElevenTagsOneWordHeavy,
   isElevenLoudTag,
+  shortenLongElevenTags,
+  addElevenParagraphPauses,
+  countElevenTooLongTags,
+  countElevenMidParagraphPauses,
 } from './eleven-tags-polish.mjs';
 
 const sample = `[furious] Open line.
@@ -25,7 +29,7 @@ if (sanitized.includes('[scouts]') || sanitized.includes('PEPE THIS') || sanitiz
 if (!sanitized.includes('[scoffs]') || !sanitized.includes('PEEP THIS')) {
   throw new Error('sanitizeElevenLabsTaggedText missing expected replacements');
 }
-if (!sanitized.includes('[fast, pushing hard, no room to breathe]')) {
+if (!sanitized.includes('[fast, pushing hard]')) {
   throw new Error('film direction should become a described voice direction');
 }
 if (/\[sorrowful\s*\n/i.test(sanitized)) {
@@ -37,7 +41,7 @@ if (looksLikeParagraphsUnderTaggedEleven(polished)) {
   throw new Error('polish should heal under-tagged long paragraphs');
 }
 
-const described = `[low and tight, holding the anger back so it does not spill yet] You sat in that pew every Sunday… [pause] [quieter, almost gentle, which is worse] while they sold your name. [leaning in close, barely audible, speaking to one person only] I know what you signed.`;
+const described = `[low, tight] You sat in that pew every Sunday… [pause] [quieter, almost gentle] while they sold your name. [leaning in, barely audible] I know what you signed.`;
 const tags = getElevenBracketTags(described);
 if (tags.length !== 4) throw new Error('descriptive tags must be detected, got ' + tags.length);
 if (countElevenEmotionTags(described) !== 3) throw new Error('[pause] must not count as a feeling tag');
@@ -47,15 +51,15 @@ const oneWords = Array.from({ length: 12 }, (_, i) => `[${['angry', 'bitter', 's
 if (!looksLikeElevenTagsOneWordHeavy(oneWords)) {
   throw new Error('a wall of one-word tags must be flagged');
 }
-const richWords = Array.from({ length: 12 }, (_, i) => `[dry and worn out, take ${i} of the same explanation] line ${i}.`).join(' ');
+const richWords = Array.from({ length: 12 }, (_, i) => `[dry, worn out] line ${i}.`).join(' ');
 if (looksLikeElevenTagsOneWordHeavy(richWords)) {
   throw new Error('descriptive tags must not be flagged as one-word heavy');
 }
 
-if (!isElevenLoudTag('voice finally breaking open, loud but cracking') && !isElevenLoudTag('shouting, voice cracking')) {
+if (!isElevenLoudTag('shouting, cracking')) {
   throw new Error('loud descriptive tags should be detected');
 }
-if (isElevenLoudTag('low and tight, holding the anger back')) {
+if (isElevenLoudTag('low, holding back')) {
   throw new Error('quiet descriptive tags must not count as loud');
 }
 
@@ -63,5 +67,41 @@ const theatreMarker = '[PAUSE -- YAH COMMENTARY] and verse [1] stay out of tag c
 if (getElevenBracketTags(theatreMarker).length !== 0) {
   throw new Error('theatre markers and bare numbers must not count as voice tags');
 }
+
+const longTagged = `[low and tight, holding the anger back so it does not spill yet] Verse [1] and [John 3:16] and [a link](http://x.y) stay. [bitter and flat, like reading a bill you already know you cannot pay] Done.`;
+const shortened = shortenLongElevenTags(longTagged);
+if (shortened.includes('holding the anger back so it') || shortened.includes('like reading a bill')) {
+  throw new Error('long tags must be shortened: ' + shortened);
+}
+if (!shortened.includes('[low and tight]') || !shortened.includes('[bitter and flat]')) {
+  throw new Error('shortened tags should keep the leading phrase: ' + shortened);
+}
+if (!shortened.includes('[1]') || !shortened.includes('[John 3:16]') || !shortened.includes('[a link](http://x.y)')) {
+  throw new Error('verse refs and links must be untouched');
+}
+if (countElevenTooLongTags(shortened) !== 0) throw new Error('no tag should remain too long');
+const noComma = shortenLongElevenTags('[one two three four five six seven eight]');
+if (noComma.split(/\s+/).length > 5) throw new Error('comma-less long tag must be word-capped: ' + noComma);
+
+const paras = `# Title
+
+PART 1 of 3
+
+First paragraph here. [angry] It ends.
+
+Second paragraph ends already. [pause]
+
+===
+
+Third paragraph.`;
+const paused = addElevenParagraphPauses(paras);
+if (!paused.includes('It ends. [pause]\n\n')) throw new Error('paragraph should end with [pause]');
+if (paused.includes('[pause] [pause]')) throw new Error('existing pause must not double');
+if (/# Title \[pause\]/.test(paused) || /PART 1 of 3 \[pause\]/.test(paused) || /=== \[pause\]/.test(paused)) {
+  throw new Error('headings, PART lines and dividers must not get pauses');
+}
+if (!paused.trimEnd().endsWith('Third paragraph. [pause]')) throw new Error('last paragraph needs a pause');
+if (addElevenParagraphPauses(paused) !== paused) throw new Error('paragraph pauses must be idempotent');
+if (countElevenMidParagraphPauses(paused) !== 0) throw new Error('closing pauses are not mid-paragraph pauses');
 
 console.log('eleven-tags-polish tests passed');

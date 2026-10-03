@@ -8,19 +8,22 @@
 import { fileURLToPath } from 'node:url';
 
 const HEAL_ROTATE = [
-  '[pause]',
-  '[bitter and flat, like reading a bill you already know you cannot pay]',
-  '[low and slow, holding back anger]',
-  '[tired, almost whispering, talking to one person]',
-  '[dry, mocking, one eyebrow up]',
-  '[quiet and steady, every word placed on purpose]',
-  '[sharp and clipped, losing patience]',
-  '[heavy, like carrying it]',
+  '[bitter, flat]',
+  '[low, holding back]',
+  '[tired, almost whispering]',
+  '[dry, mocking]',
+  '[quiet, steady]',
+  '[sharp, clipped]',
+  '[heavy, slow]',
+  '[leaning in]',
 ];
+
+export const ELEVEN_TAG_MAX_WORDS = 5;
+export const ELEVEN_TAG_MAX_CHARS = 36;
 
 export function getElevenBracketTags(text) {
   const out = [];
-  const re = /\[([^\[\]\n]{2,100})\]/g;
+  const re = /\[([^\[\]\n]{2,160})\]/g;
   const s = String(text || '');
   let m;
   while ((m = re.exec(s))) {
@@ -39,7 +42,68 @@ export function isElevenPacingOnlyTag(tag) {
 
 export function isElevenDescriptiveTag(tag) {
   const t = String(tag || '').trim();
-  return t.split(/\s+/).length >= 3 || /,/.test(t);
+  return t.split(/\s+/).length >= 2;
+}
+
+export function isElevenTagTooLong(tag) {
+  const t = String(tag || '').trim();
+  return t.split(/\s+/).length > ELEVEN_TAG_MAX_WORDS || t.length > ELEVEN_TAG_MAX_CHARS;
+}
+
+export function shortenElevenTag(inner) {
+  const t = String(inner || '').trim();
+  if (!isElevenTagTooLong(t)) return t;
+  const segs = t.split(/\s*,\s*/);
+  let out = segs[0];
+  if (isElevenTagTooLong(out)) {
+    const words = out.split(/\s+/).slice(0, ELEVEN_TAG_MAX_WORDS);
+    while (words.length > 1 && words.join(' ').length > ELEVEN_TAG_MAX_CHARS) words.pop();
+    return words.join(' ').replace(/[,;:\s]+$/, '');
+  }
+  for (let i = 1; i < segs.length; i++) {
+    const next = out + ', ' + segs[i];
+    if (isElevenTagTooLong(next)) break;
+    out = next;
+  }
+  return out;
+}
+
+export function shortenLongElevenTags(text) {
+  const s = String(text || '');
+  return s.replace(/\[([^\[\]\n]{2,160})\]/g, (m, inner, offset) => {
+    if (s.charAt(offset + m.length) === '(') return m;
+    if (!/[a-z]/i.test(inner)) return m;
+    if (/^[A-Z0-9 \-—–:'.,]+$/.test(inner.trim())) return m;
+    if (/^\d/.test(inner.trim()) || /\d+:\d+/.test(inner)) return m;
+    const short = shortenElevenTag(inner);
+    return short === inner.trim() ? m : '[' + short + ']';
+  });
+}
+
+export function addElevenParagraphPauses(text) {
+  const parts = String(text || '').split(/(\n[ \t]*\n)/);
+  for (let i = 0; i < parts.length; i += 2) {
+    const raw = parts[i];
+    const p = raw.replace(/\s+$/, '');
+    if (!p.trim()) continue;
+    const trimmed = p.trim();
+    if (/^#{1,6}\s/.test(trimmed)) continue;
+    if (/^PART\s+\d/i.test(trimmed)) continue;
+    if (/(^|\n)\s*(?:={3,}|-{3,}|\*{3,})\s*(\n|$)/.test(p)) continue;
+    if (/\[pause\]\s*$/i.test(p)) continue;
+    parts[i] = p + ' [pause]' + raw.slice(p.length);
+  }
+  return parts.join('');
+}
+
+export function countElevenMidParagraphPauses(text) {
+  const all = getElevenBracketTags(text).filter((x) => /^pause$/i.test(x)).length;
+  const closing = (String(text || '').match(/\[pause\][ \t]*(?:\n[ \t]*\n|\s*$)/gi) || []).length;
+  return Math.max(0, all - closing);
+}
+
+export function countElevenTooLongTags(text) {
+  return getElevenBracketTags(text).filter((t) => isElevenTagTooLong(t)).length;
 }
 
 export function isElevenLoudTag(tag) {
@@ -69,9 +133,10 @@ export function sanitizeElevenLabsTaggedText(text) {
   t = t.replace(/\[(scouts)\]/gi, '[scoffs]');
   t = t.replace(/\bPEPE THIS\b/gi, 'PEEP THIS');
   t = t.replace(/\bHOLOCUUST\b/gi, 'HOLOCAUST');
-  t = t.replace(/\[pacing (?:aggressively|wildly)\]/gi, '[fast, pushing hard, no room to breathe]');
-  t = t.replace(/\[slams fist on the podium\]/gi, '[hitting every word hard, slow and heavy]');
-  t = t.replace(/\[screaming\]/gi, '[shouting, voice cracking]');
+  t = t.replace(/\[pacing (?:aggressively|wildly)\]/gi, '[fast, pushing hard]');
+  t = t.replace(/\[slams fist on the podium\]/gi, '[slow, heavy]');
+  t = t.replace(/\[screaming\]/gi, '[shouting, cracking]');
+  t = shortenLongElevenTags(t);
   return t;
 }
 
@@ -111,7 +176,7 @@ export function healSparseElevenTaggedParagraphs(text, rotateOffset = 0) {
 }
 
 export function polishElevenLabsTaggedText(text) {
-  return healSparseElevenTaggedParagraphs(sanitizeElevenLabsTaggedText(text));
+  return addElevenParagraphPauses(healSparseElevenTaggedParagraphs(sanitizeElevenLabsTaggedText(text)));
 }
 
 export function looksLikeParagraphsUnderTaggedEleven(text) {

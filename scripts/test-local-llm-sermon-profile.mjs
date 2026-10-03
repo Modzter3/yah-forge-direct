@@ -221,8 +221,11 @@ if (!html.includes('KINGDOM UNDER BABYLON') || !html.includes('TECHNOLOGY FORGE'
 if (!html.includes('buildElevenLabsAudioTagsBlock') || !html.includes('ELEVEN_TAGGED_TTS_BOT')) {
   throw new Error('index.html missing Eleven v4 tag guidance and tagged TTS routing');
 }
-if (!html.includes('DESCRIBE THE VOICE')) {
-  throw new Error('index.html missing Eleven v4 descriptive voice direction block');
+if (!html.includes('SHORT DESCRIBED TAGS') || !html.includes('PAUSE AFTER EVERY PARAGRAPH')) {
+  throw new Error('index.html missing short described tag and paragraph pause guidance');
+}
+if (!html.includes('shortenLongElevenTags') || !html.includes('addElevenParagraphPauses')) {
+  throw new Error('index.html missing Eleven tag shortening and paragraph pause helpers');
 }
 if (!html.includes('looksLikeElevenTagsOneWordHeavy') || !html.includes('buildElevenTagsOneWordDriftCorrectionPrompt')) {
   throw new Error('index.html missing one-word tag detection and correction');
