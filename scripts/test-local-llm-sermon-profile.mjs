@@ -227,5 +227,11 @@ if (!html.includes('v4 CREATIVE CONTROL')) {
 if (!html.includes('polishElevenLabsTaggedText') || !html.includes('polishElevenCurrentSermon')) {
   throw new Error('index.html missing Eleven Polish pass for tagged TTS');
 }
+if (!html.includes('Genesis 3 Curse — Israel Only') || !html.includes('GENESIS CHAPTER THREE CURSE -- ISRAEL')) {
+  throw new Error('index.html missing Genesis 3 Israel-only curse doctrine and topic');
+}
+if (!html.includes('buildGenesis3CurseIsraelTopicLockBlock')) {
+  throw new Error('index.html missing Genesis 3 curse topic lock block');
+}
 
 console.log('\nall checks passed');
