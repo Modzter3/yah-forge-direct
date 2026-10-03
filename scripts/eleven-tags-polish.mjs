@@ -17,13 +17,14 @@ const FILM_TAG_REPLACEMENTS = [
 
 const TAG_ROTATE = [
   '[pause]',
-  '[furious]',
   '[bitter]',
+  '[scoffs]',
+  '[tired]',
   '[whispers]',
-  '[shouting]',
+  '[sarcastically]',
+  '[drawn out]',
   '[angry]',
   '[emphasized]',
-  '[scoffs]',
 ];
 
 export function sanitizeElevenLabsTaggedText(text) {

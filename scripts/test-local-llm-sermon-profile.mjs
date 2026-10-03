@@ -233,5 +233,8 @@ if (!html.includes('Genesis 3 Curse — Israel Only') || !html.includes('GENESIS
 if (!html.includes('buildGenesis3CurseIsraelTopicLockBlock')) {
   throw new Error('index.html missing Genesis 3 curse topic lock block');
 }
+if (!html.includes('buildElevenExplicitTagPerformanceBlock') || !html.includes('EXPLICIT + ELEVEN TAGS')) {
+  throw new Error('index.html missing Explicit/Eleven tag delivery balance');
+}
 
 console.log('\nall checks passed');
