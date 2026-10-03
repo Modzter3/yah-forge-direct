@@ -5,7 +5,6 @@ import {
   getElevenBracketTags,
   countElevenDescriptiveTags,
   countElevenEmotionTags,
-  looksLikeElevenTagsOneWordHeavy,
   isElevenLoudTag,
   shortenLongElevenTags,
   addElevenParagraphPauses,
@@ -46,15 +45,6 @@ const tags = getElevenBracketTags(described);
 if (tags.length !== 4) throw new Error('descriptive tags must be detected, got ' + tags.length);
 if (countElevenEmotionTags(described) !== 3) throw new Error('[pause] must not count as a feeling tag');
 if (countElevenDescriptiveTags(described) !== 3) throw new Error('all three direction tags are descriptive');
-
-const oneWords = Array.from({ length: 12 }, (_, i) => `[${['angry', 'bitter', 'scoffs', 'furious'][i % 4]}] line ${i}.`).join(' ');
-if (!looksLikeElevenTagsOneWordHeavy(oneWords)) {
-  throw new Error('a wall of one-word tags must be flagged');
-}
-const richWords = Array.from({ length: 12 }, (_, i) => `[dry, worn out] line ${i}.`).join(' ');
-if (looksLikeElevenTagsOneWordHeavy(richWords)) {
-  throw new Error('descriptive tags must not be flagged as one-word heavy');
-}
 
 if (!isElevenLoudTag('shouting, cracking')) {
   throw new Error('loud descriptive tags should be detected');

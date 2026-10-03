@@ -120,12 +120,6 @@ export function countElevenDescriptiveTags(text) {
   return getElevenBracketTags(text).filter((t) => !isElevenPacingOnlyTag(t) && isElevenDescriptiveTag(t)).length;
 }
 
-export function looksLikeElevenTagsOneWordHeavy(text) {
-  const emotion = countElevenEmotionTags(text);
-  if (emotion < 10) return false;
-  return countElevenDescriptiveTags(text) < Math.ceil(emotion * 0.55);
-}
-
 export function sanitizeElevenLabsTaggedText(text) {
   if (!text) return '';
   let t = String(text);

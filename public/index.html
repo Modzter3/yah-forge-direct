@@ -3110,14 +3110,6 @@ parts[i]=p+' [pause]'+raw.slice(p.length);
 }
 return parts.join('');
 }
-function countElevenMidParagraphPauses(text){
-var all=getElevenBracketTags(text).filter(function(x){return /^pause$/i.test(x);}).length;
-var closing=(String(text||'').match(/\[pause\][ \t]*(?:\n[ \t]*\n|\s*$)/gi)||[]).length;
-return Math.max(0,all-closing);
-}
-function countElevenTooLongTags(text){
-return getElevenBracketTags(text).filter(function(t){return isElevenTagTooLong(t);}).length;
-}
 function isElevenLoudTag(tag){
 return /\b(?:shout\w*|yell\w*|scream\w*|roar\w*|bellow\w*|boom\w*|furious|fury|wrath\w*|heated|thunder\w*)\b/i.test(String(tag||''));
 }
@@ -3182,54 +3174,6 @@ return parts.join('\n\n');
 function polishElevenLabsTaggedText(text){
 return addElevenParagraphPauses(healSparseElevenTaggedParagraphs(sanitizeElevenLabsTaggedText(text),0));
 }
-function looksLikeParagraphsUnderTaggedEleven(text){
-var paras=getElevenTaggedBodyParagraphs(text);
-for(var i=0;i<paras.length;i++){
-var p=paras[i];
-if(isSkippableElevenPolishParagraph(p))continue;
-var em=countEmotionTagsInElevenParagraph(p);
-var need=Math.max(2,Math.floor(p.length/300));
-if(em<need)return true;
-}
-return false;
-}
-function getElevenTaggedBodyParagraphs(text){
-var body=String(text||'').trim().replace(/^#\s+.+\n+/m,'');
-return body.split(/\n\s*\n/).map(function(p){return p.trim();}).filter(function(p){
-return p.length>=80&&!/^#+\s/.test(p);
-});
-}
-function looksLikeParagraphsMissingElevenEmotion(text){
-var paras=getElevenTaggedBodyParagraphs(text);
-if(paras.length<1)return false;
-for(var i=0;i<paras.length;i++){
-if(countElevenEmotionTags(paras[i])<1)return true;
-}
-return false;
-}
-function looksLikeElevenTagsOneWordHeavy(text){
-if(!text||!isElevenLabsTagsEnabled()||isTheatreModeActive())return false;
-var emotion=countElevenEmotionTags(text);
-if(emotion<10)return false;
-return countElevenDescriptiveTags(text)<Math.ceil(emotion*0.55);
-}
-function looksLikeMissingElevenTags(text){
-if(!isElevenLabsTagsEnabled()||isTheatreModeActive())return false;
-if(!text)return false;
-var t=String(text).trim();
-if(t.length<500)return false;
-if(looksLikeParagraphsMissingElevenEmotion(t))return true;
-if(looksLikeParagraphsUnderTaggedEleven(t))return true;
-var tags=countElevenV3PerformanceTags(t);
-var emotion=countElevenEmotionTags(t);
-var pauses=countElevenMidParagraphPauses(t);
-var minTags=Math.max(14,Math.floor(t.length/450));
-var minEmotion=Math.max(10,Math.floor(minTags*0.55));
-if(tags<minTags)return true;
-if(emotion<minEmotion)return true;
-if(pauses>Math.max(4,tags*0.35))return true;
-return false;
-}
 function buildElevenLabsV3AudioTagsBlock(persona,opts){
 return buildElevenLabsAudioTagsBlock(persona,opts);
 }
@@ -3239,16 +3183,6 @@ p+='Explicit ON means VULGAR WORDS in the prose — profanity, raw judgment, gra
 p+='DELIVERY RULE: Most paragraphs stay at conversational intensity. Direct them with SHORT phrases like [dry, worn out], [low, tight], [mocking, flat], [quiet, steady]. Reserve loud directions (shouting, furious, booming, voice breaking open) for real pivots only — verse hammer lands, naming a culprit, final warning spike — roughly ONE loud direction per several paragraphs.\n';
 p+='FORBIDDEN: Loud-direction spam because the text has cuss words. FORBIDDEN: a shouting direction on calm decode or setup lines. The profanity carries the heat; the direction carries the BREATH, PACE, and VOLUME change.\n\n';
 return p;
-}
-function countElevenLoudPerformanceTags(text){
-return getElevenBracketTags(text).filter(function(t){return isElevenLoudTag(t);}).length;
-}
-function looksLikeElevenTagsShoutHeavy(text){
-if(!text||!isExplicitModeActive())return false;
-var emotion=countElevenEmotionTags(text);
-if(emotion<10)return false;
-var loud=countElevenLoudPerformanceTags(text);
-return loud>=Math.max(6,Math.ceil(emotion*0.38));
 }
 function buildElevenLabsAudioTagsBlock(persona,opts){
 opts=opts||{};
@@ -3319,34 +3253,6 @@ if(wantExplicit){
 p+='EXPLICIT MODE TAG BALANCE: Profanity stays in the WORDS. The direction describes breath, pace, and subtext — mostly tired, dry, tight, low, mocking, steady. Loud directions are RARE seasoning.\n\n';
 }
 p+='OUTPUT LOCK: Full sermon WITH voice direction in every paragraph — medium density. Every tag is 5 words or fewer (long tags glitch TTS). At least two out of three tags are SHORT DESCRIBED phrases (2–5 words) that say how the voice sounds. A part built from [angry] [bitter] [scoffs] [furious] one-word tags FAILED. Any body paragraph with zero voice tags or no closing [pause] also FAILED.\n\n';
-return p;
-}
-function buildElevenTagsShoutDriftCorrectionPrompt(partNum,badReply){
-var p='ELEVEN v4 TAG CHECK FAILED — SHOUT-TAG SPAM (Part '+partNum+' ONLY):\n';
-p+='Too many [shouts], [shouting], [furious], [booming], [wrath], or [heated] tags — sounds like one volume the whole read. Explicit profanity in the WORDS is correct; delivery tags must VARY.\n\n';
-p+='FIX: Keep vulgar prose. REPLACE most loud tags with SHORT quiet or held directions — [dry, worn out], [low, tight], [mocking, flat], [quiet, steady]. Loud directions only on true spikes.\n\n';
-p+='BAD OUTPUT (too shouty):\n"'+String(badReply||'').slice(0,700).replace(/"/g,"'")+'..."\n\n';
-if(isExplicitModeActive())p+=buildElevenExplicitTagPerformanceBlock();
-p+=buildPartPrompt(partNum);
-return p;
-}
-function buildElevenTagsOneWordDriftCorrectionPrompt(partNum,badReply){
-var p='ELEVEN v4 TAG CHECK FAILED — ONE-WORD TAGS (Part '+partNum+' ONLY):\n';
-p+='Your tags were almost all single-word moods ([angry], [bitter], [scoffs], [furious]). Eleven v4 takes natural-language direction — DESCRIBE THE VOICE, but SHORT (2–5 words).\n\n';
-p+='FIX: At least two out of three tags must be a SHORT described phrase of 2–5 words saying pace, volume, breath, texture, or who it is aimed at. Example: instead of [angry] write [low, tight]. Instead of [whispers] write [leaning in, barely audible]. NEVER longer than 5 words — long tags glitch the TTS. Keep one-word tags ([sighs], [laughs]) to a few per part. Never repeat the same description twice. End every paragraph with [pause].\n\n';
-p+='BAD OUTPUT (one-word tags):\n"'+String(badReply||'').slice(0,700).replace(/"/g,"'")+'..."\n\n';
-if(isExplicitModeActive())p+=buildElevenExplicitTagPerformanceBlock();
-p+=buildPartPrompt(partNum);
-return p;
-}
-function buildElevenTagsDriftCorrectionPrompt(partNum,badReply){
-var p='ELEVEN v4 TAG CHECK FAILED — FULL REWRITE REQUIRED (Part '+partNum+' ONLY):\n';
-p+='Eleven Tags toggle is ON. Your previous output was too SPARSE, too FLAT, or [pause]-heavy with no EMOTION. Plain prose or robotic pacing is UNACCEPTABLE.\n\n';
-p+='FORBIDDEN: ANY body paragraph with zero emotion tags, sparse tagging, or mostly [pause] with no feeling.\n';
-p+='REQUIRED — EVERY PARAGRAPH DIRECTED: Minimum one SHORT described voice tag (2–5 words: pace, volume, breath, texture) in EVERY body paragraph (aim 2-3), and end EVERY paragraph with [pause]. Example: [slow, tired]. Never longer than 5 words. Save loud directions for spikes only.\n\n';
-if(isExplicitModeActive())p+=buildElevenExplicitTagPerformanceBlock();
-p+='BAD OUTPUT (too few tags):\n"'+String(badReply||'').slice(0,700).replace(/"/g,"'")+'..."\n\n';
-p+=buildPartPrompt(partNum);
 return p;
 }
 function detectElevenTagPersona(text){
@@ -5602,7 +5508,6 @@ return out.replace(/^\s*\n+/,'');
 }
 var SERMON_MAX_CONTINUATIONS=6;
 var SERMON_MAX_DRIFT_RETRIES=0;
-var SERMON_MAX_ELEVEN_TAGS_RETRIES=1;
 var SERMON_MAX_EXPLICIT_RETRIES=0;
 var SERMON_MAX_YAH_VOICE_RETRIES=0;
 var TRANSCRIPT_MAX_AGREEMENT_RETRIES=0;
@@ -6258,12 +6163,6 @@ prompt=buildTheatreAgreementCorrectionPrompt(partNum,streamOpts.badSample||'');
 prompt=buildYahStoryVoiceCorrectionPrompt(partNum,streamOpts.badSample||'');
 }else if(streamOpts.driftCorrection){
 prompt=buildSermonFlashDriftCorrectionPrompt(partNum,streamOpts.badSample||'');
-}else if(streamOpts.elevenTagsOneWordCorrection){
-prompt=buildElevenTagsOneWordDriftCorrectionPrompt(partNum,streamOpts.badSample||'');
-}else if(streamOpts.elevenTagsShoutCorrection){
-prompt=buildElevenTagsShoutDriftCorrectionPrompt(partNum,streamOpts.badSample||'');
-}else if(streamOpts.elevenTagsCorrection){
-prompt=buildElevenTagsDriftCorrectionPrompt(partNum,streamOpts.badSample||'');
 }else if(streamOpts.explicitBrimstoneCorrection){
 prompt=buildExplicitBrimstoneDriftCorrectionPrompt(partNum,streamOpts.badSample||'');
 }else if(streamOpts.localVerseRetry&&ctx.localSermonState&&ForgeLocalSermonProfile){
@@ -6289,7 +6188,7 @@ ForgeLocalSermonProfile.applyGenerationParams(params,partNum,ctx.localSermonStat
 ForgeLocalSermonProfile.applyLocalBudgetParams(params,{promptCharLength:prompt.length});
 }
 }
-ctx.handlerName='sermon-part-'+partNum+'-'+Date.now()+'-'+(isContinuation?ctx.continuationCount:0)+'-'+(streamOpts.yahVoiceCorrection?'yahvoice':streamOpts.driftCorrection?'drift':streamOpts.elevenTagsCorrection?'eleventags':streamOpts.explicitBrimstoneCorrection?'explicit':'');
+ctx.handlerName='sermon-part-'+partNum+'-'+Date.now()+'-'+(isContinuation?ctx.continuationCount:0)+'-'+(streamOpts.yahVoiceCorrection?'yahvoice':streamOpts.driftCorrection?'drift':streamOpts.explicitBrimstoneCorrection?'explicit':'');
 var activeHandler=ctx.handlerName;
 if(isLocalLlmChapterSermonActive()&&ForgeLocalSermonProfile){
 ctx.localAbortController=new AbortController();
@@ -6409,33 +6308,6 @@ showToast('Explicit brimstone cooled — redoing '+getForgePartLabel(partNum,fal
 startSermonPartStream(partNum,false,{explicitBrimstoneCorrection:true,badSample:finalized});
 return;
 }
-if(isElevenLabsTagsEnabled()&&ctx.elevenTagsRetryCount<SERMON_MAX_ELEVEN_TAGS_RETRIES&&looksLikeElevenTagsShoutHeavy(finalized)){
-ctx.elevenTagsRetryCount++;
-ctx.partContent='';
-ctx.partContentBeforeContinue='';
-ctx.continuationCount=0;
-showToast('Eleven tags too shouty — redoing '+getForgePartLabel(partNum,false)+'...');
-startSermonPartStream(partNum,false,{elevenTagsShoutCorrection:true,badSample:finalized});
-return;
-}
-if(isElevenLabsTagsEnabled()&&ctx.elevenTagsRetryCount<SERMON_MAX_ELEVEN_TAGS_RETRIES&&looksLikeElevenTagsOneWordHeavy(finalized)){
-ctx.elevenTagsRetryCount++;
-ctx.partContent='';
-ctx.partContentBeforeContinue='';
-ctx.continuationCount=0;
-showToast('Eleven tags are one-word moods — redoing '+getForgePartLabel(partNum,false)+' with described voice...');
-startSermonPartStream(partNum,false,{elevenTagsOneWordCorrection:true,badSample:finalized});
-return;
-}
-if(isElevenLabsTagsEnabled()&&ctx.elevenTagsRetryCount<SERMON_MAX_ELEVEN_TAGS_RETRIES&&looksLikeMissingElevenTags(finalized)){
-ctx.elevenTagsRetryCount++;
-ctx.partContent='';
-ctx.partContentBeforeContinue='';
-ctx.continuationCount=0;
-showToast('Eleven tags too sparse/flat — redoing '+getForgePartLabel(partNum,false)+'...');
-startSermonPartStream(partNum,false,{elevenTagsCorrection:true,badSample:finalized});
-return;
-}
 if(isTheatreModeActive()&&theatreLooksLikeTechEnclosureThread(currentTopic,currentNewsContext)&&ctx.theatreAgreementRetryCount<SERMON_MAX_YAH_VOICE_RETRIES&&looksLikeTheatreAgreementSlop(finalized)){
 ctx.theatreAgreementRetryCount++;
 ctx.partContent='';
@@ -6526,7 +6398,6 @@ localAbortController:null,
 localStreamAborted:false,
 localStreamHandled:false,
 driftRetryCount:0,
-elevenTagsRetryCount:0,
 explicitRetryCount:0,
 yahVoiceRetryCount:0,
 theatreAgreementRetryCount:0,

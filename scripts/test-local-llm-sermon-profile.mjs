@@ -227,8 +227,8 @@ if (!html.includes('SHORT DESCRIBED TAGS') || !html.includes('PAUSE AFTER EVERY 
 if (!html.includes('shortenLongElevenTags') || !html.includes('addElevenParagraphPauses')) {
   throw new Error('index.html missing Eleven tag shortening and paragraph pause helpers');
 }
-if (!html.includes('looksLikeElevenTagsOneWordHeavy') || !html.includes('buildElevenTagsOneWordDriftCorrectionPrompt')) {
-  throw new Error('index.html missing one-word tag detection and correction');
+for (const gone of ['elevenTagsRetryCount', 'looksLikeMissingElevenTags', 'looksLikeElevenTagsShoutHeavy', 'looksLikeElevenTagsOneWordHeavy', 'buildElevenTagsDriftCorrectionPrompt']) {
+  if (html.includes(gone)) throw new Error('Eleven tag redo/retry logic must stay removed: ' + gone);
 }
 if (html.includes('No fixed tag list — short cues work')) {
   throw new Error('index.html still steers Eleven tags toward short one-word cues');
