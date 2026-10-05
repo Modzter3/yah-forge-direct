@@ -224,8 +224,8 @@ if (!html.includes('buildElevenLabsAudioTagsBlock') || !html.includes('ELEVEN_TA
 if (!html.includes('SHORT DESCRIBED TAGS') || !html.includes('PAUSE AFTER EVERY PARAGRAPH')) {
   throw new Error('index.html missing short described tag and paragraph pause guidance');
 }
-if (!html.includes('buildBezStoryVoiceLockBlock') || !html.includes('BEZ STORY PERSON LOCK -- NO FIRST PERSON')) {
-  throw new Error('index.html missing Bez Story first-person lock');
+if (!html.includes('buildBezStoryVoiceLockBlock') || !html.includes('BEZ STORY PERSON LOCK -- HE TALKS ABOUT HIMSELF, NEVER AS YAH')) {
+  throw new Error('index.html missing Bez Story never-as-Yah lock');
 }
 if (!html.includes('NO MADE-UP SLANG') || html.includes('CHURCH / RELIGION ANGLES') || html.includes('FINANCE / DEBT / WORK ANGLES')) {
   throw new Error('index.html Bez Story slang block must be plain English with no slogan pools');
