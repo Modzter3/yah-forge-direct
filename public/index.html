@@ -1897,17 +1897,83 @@ return {text:src.slice(start,end).slice(0,cap),sliced:true};
 }
 return {text:src,sliced:false};
 }
+function joinContinuationText(before,chunk){
+var b=String(before||'').replace(/\s+$/,'');
+var c=String(chunk||'').replace(/^\s+/,'');
+if(!b)return c;
+if(!c)return b;
+if(/[.!?"\u201d\u2019)\]*_:;\u2014\u2026]$/.test(b)||/^#/.test(c))return b+'\n\n'+c;
+return b+' '+c;
+}
+function normalizeSceneScriptText(raw){
+return String(raw||'').replace(/\r/g,'').replace(/^[ \t]+/gm,'').replace(/[ \t]{2,}/g,' ').replace(/\n{3,}/g,'\n\n').trim();
+}
+function snapScriptExcerpt(text,fromEnd,len){
+var t=String(text||'');
+var piece=fromEnd?t.slice(Math.max(0,t.length-len)):t.slice(0,len);
+piece=piece.replace(/\s+/g,' ').trim();
+if(fromEnd){var i=piece.search(/[.!?]\s/);if(i>=0&&i<piece.length-60)piece=piece.slice(i+2);}
+else{var j=piece.lastIndexOf('. ');if(j>len*0.5)piece=piece.slice(0,j+1);}
+return piece;
+}
+function getSceneDismantlePlotAnchors(topic,partNum,totalParts){
+var src=String((topic&&topic.sourceText)||'');
+var m=src.match(/(?:^|\n)PLOT[^\n]*:\n([\s\S]*?)(?:\n\n[A-Z][A-Z /&()-]{4,}:|\n== |\nSOURCE: |$)/);
+if(!m)return null;
+var sents=m[1].replace(/\s+/g,' ').trim().split(/(?<=[.!?])\s+(?=[A-Z"])/).filter(function(x){return x.length>20;});
+if(sents.length<totalParts*2)return null;
+var total=sents.reduce(function(n,x){return n+x.length;},0);
+var from=Math.round(total*(partNum-1)/totalParts),to=Math.round(total*partNum/totalParts);
+var acc=0,first=-1,last=-1;
+for(var i=0;i<sents.length;i++){
+var mid=acc+sents[i].length/2;
+if(mid>=from&&mid<to){if(first<0)first=i;last=i;}
+acc+=sents[i].length;
+}
+if(first<0)return null;
+return {startAnchor:sents[first].slice(0,260),endAnchor:sents[last].slice(0,260),isFirst:partNum===1,isLast:partNum===totalParts,slice:sents.slice(first,last+1).join(' ')};
+}
+function buildScenePartBoundaryText(topic,partNum,totalParts,pctEnd){
+if(totalParts<2)return '';
+var a=getSceneDismantlePlotAnchors(topic,partNum,totalParts);
+var t='\nPART BOUNDARIES (HARD LIMITS -- these come from the released film\'s plot synopsis): ';
+if(a){
+t+='The film is split into '+totalParts+' parts. YOUR part covers this stretch of the plot: "'+a.slice+'" ';
+t+=(a.isFirst?'It begins at the very first image of the film. ':'It begins at: "'+a.startAnchor+'" -- everything before that was covered in earlier parts. ');
+t+=(a.isLast?'It runs to the very end of the film. ':'It ENDS at: "'+a.endAnchor+'" -- stop right after that moment. ');
+}else{
+t+='Stay inside your slice of the film (about '+(Math.round(100*(partNum-1)/totalParts))+'% to '+pctEnd+'%). ';
+}
+t+='Even if the research brief, fan wiki, or script describe later events, DO NOT write them -- they belong to the next part. Never start a scene that an earlier part already told. Do not write a teaser or preview of the next part ("in Part 3 we will see...").\n';
+return t;
+}
 function getSceneDismantleScriptSlice(topic,partNum,totalParts){
-var script=String((topic&&topic.scriptText)||'').trim();
+if(!topic||!topic.scriptText)return null;
+if(!topic.scriptNorm)topic.scriptNorm=normalizeSceneScriptText(topic.scriptText);
+var script=topic.scriptNorm;
 if(!script)return null;
-var cap=24000;
+var headCap=26000,tailCap=14000;
 var size=script.length/totalParts;
-var start=Math.max(0,Math.floor(size*(partNum-1)-size*0.03));
-var end=Math.min(script.length,Math.ceil(size*partNum+size*0.03));
+var nomStart=Math.floor(size*(partNum-1));
+var nomEnd=Math.ceil(size*partNum);
+var start=Math.max(0,Math.floor(nomStart-size*0.02));
+var end=Math.min(script.length,Math.ceil(nomEnd+size*0.02));
 var slice=script.slice(start,end);
-var truncated=slice.length>cap;
-if(truncated)slice=slice.slice(0,cap);
-return {text:slice,fromPct:Math.round(start/script.length*100),toPct:Math.round((start+slice.length)/script.length*100),truncated:truncated};
+var omitted=false;
+if(slice.length>headCap+tailCap){
+slice=slice.slice(0,headCap)+'\n\n[... middle of this stretch omitted for length; the SOURCE material above covers it ...]\n\n'+slice.slice(slice.length-tailCap);
+omitted=true;
+}
+return {
+text:slice,
+fromPct:Math.round(nomStart/script.length*100),
+toPct:Math.round(nomEnd/script.length*100),
+omitted:omitted,
+startAnchor:snapScriptExcerpt(script.slice(nomStart,nomStart+600),false,260),
+endAnchor:snapScriptExcerpt(script.slice(Math.max(0,nomEnd-600),nomEnd),true,260),
+isFirst:partNum===1,
+isLast:partNum===totalParts
+};
 }
 function getSceneDismantleFilmName(topic){
 var m=String((topic&&topic.sourceText)||'').match(/^SOURCE: (?:Wikipedia|Web research) -- (.+?)(?: \(https?:|$)/m);
@@ -1950,9 +2016,10 @@ out+='\nNO SOURCE TEXT WAS PASTED: If you have live web search, use it INTERNALL
 }
 var scr=getSceneDismantleScriptSlice(topic,partNum,totalParts);
 if(scr){
-out+='\nSCRIPT / TRANSCRIPT EXCERPT (the real dialogue and action lines for roughly the '+scr.fromPct+'% to '+scr.toPct+'% span of the script'+(scr.truncated?' -- the part of your slice that did not fit is cut off, so the SOURCE material above covers the rest':'')+'. Scripts can be early drafts, so a few lines may differ from the final cut -- use it for WHO says WHAT and for scene order; when it conflicts with the plot synopsis on order, trust the synopsis):\n';
+out+='\nSCRIPT / TRANSCRIPT EXCERPT (the real dialogue and action lines for roughly the '+scr.fromPct+'% to '+scr.toPct+'% span of the script'+(scr.omitted?' -- the middle of the stretch is omitted for length, so rely on the SOURCE material above for it':'')+'. WARNING: scripts found online are often EARLY DRAFTS with different names, scenes, or order than the released film. Use it only for WHO says WHAT in scenes that really are in the released film; when it conflicts with the plot synopsis or what you know of the released film, the synopsis wins -- silently ignore draft-only characters, scenes, or lines):\n';
 out+='<<<SCRIPT\n'+scr.text+'\nSCRIPT>>>\n';
 }
+out+=buildScenePartBoundaryText(topic,partNum,totalParts,pctEnd);
 out+='\n';
 return out;
 }
@@ -6680,7 +6747,7 @@ ctx.gotFirstToken=true;
 if(ctx.firstTokenTimer){clearTimeout(ctx.firstTokenTimer);ctx.firstTokenTimer=null;}
 }
 armSermonWatchdogs(function(){finishCurrentSermonPart('stall');});
-if(isContinuation)ctx.partContent=(ctx.partContentBeforeContinue||'')+'\n\n'+chunk;
+if(isContinuation)ctx.partContent=joinContinuationText(ctx.partContentBeforeContinue||'',chunk);
 else ctx.partContent=chunk;
 if(isLocalLlmChapterSermonActive()&&ForgeLocalSermonProfile){
 var liveDeg=ForgeLocalSermonProfile.maxRetries()>0?ForgeLocalSermonProfile.detectDegeneration(ctx.partContent,{streaming:true,partNum:partNum,priorPartsText:(sermonPartsRaw||[]).slice(0,partNum-1).join('\n\n')}):null;
@@ -12762,7 +12829,7 @@ transcriptIsGenerating=false;
 transcriptGenCtx=null;
 }else if(msg.status==='incomplete'||msg.status==='complete'){
 var chunk=msg.content||'';
-if(isContinuation)ctx.partContent=(ctx.partContentBeforeContinue||'')+'\n\n'+chunk;
+if(isContinuation)ctx.partContent=joinContinuationText(ctx.partContentBeforeContinue||'',chunk);
 else ctx.partContent=chunk;
 var display=stripSermonPreamble(ctx.partContent);
 ctx.partContainer.innerHTML=marked.parse(display);

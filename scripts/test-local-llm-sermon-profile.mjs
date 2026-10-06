@@ -268,7 +268,7 @@ for (const needle of [
   'buildSceneDismantleBlock', 'buildSceneDismantlePartFocus', 'startDismantleSermonLayout', 'setDismantleParts',
   'setDismantleChars', 'dismantleLayout', 'selectedPartChars', 'setPartCharCount', 'getForgePartCharTarget',
   'PART LENGTH LOCK', 'SCENE COVERAGE', 'sceneDismantle',
-  'fetchFilmResearch', 'runFilmDeepResearch', 'runFilmServerResearch', 'getSceneDismantleScriptSlice', 'dismantleDeepResearch', '/api/film-research',
+  'fetchFilmResearch', 'runFilmDeepResearch', 'runFilmServerResearch', 'getSceneDismantleScriptSlice', 'getSceneDismantlePlotAnchors', 'buildScenePartBoundaryText', 'joinContinuationText', 'PART BOUNDARIES (HARD LIMITS', 'dismantleDeepResearch', '/api/film-research',
   'dismantleSceneStyle', 'dedupeRepeatedParagraphs', 'fetchFilmQuotesFromWikiquote', 'THIS FILM ONLY', 'NO FILLER',
   'toggleSceneDismantle', 'probeTopicIsFilm', 'fetchFilmSourceFromWikipedia', 'lookupFilmIntoDismantleInput', 'dismantleAutoLookup', 'composeDismantleSourceInput',
 ]) {
