@@ -328,6 +328,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .pc-words{font-size:0.62rem;color:var(--text-dim);font-family:'Fira Code',monospace;margin-left:4px;white-space:normal;line-height:1.35;flex:1 1 100%;}
 .standalone-word-wrap{display:none;flex:1 1 100%;align-items:center;gap:8px;margin-top:2px;flex-wrap:wrap;width:100%;min-width:0;}
 .standalone-word-wrap .part-count-btn{min-width:42px;font-size:0.72rem;padding:0 6px;}
+.standalone-custom-len{display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;color:var(--text-muted);}
+.standalone-custom-len input{width:104px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text);font-family:'Fira Code',monospace;font-size:0.78rem;padding:0 8px;}
+.standalone-custom-len input.active{border-color:var(--accent,#ff6b35);}
 
 .gen-btn{margin-left:auto;padding:10px 20px;background:linear-gradient(135deg,var(--crimson),var(--crimson-glow));border:none;border-radius:8px;color:#fff;font-family:'Cinzel Decorative',serif;font-size:0.82rem;font-weight:700;cursor:pointer;transition:all 0.25s;letter-spacing:0.04em;flex:0 1 auto;max-width:100%;}
 .gen-btn:hover{transform:scale(1.03);box-shadow:0 4px 20px rgba(196,30,58,0.3);}
@@ -1241,6 +1244,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           <button type="button" class="part-count-btn" data-words="8000" onclick="setStandaloneWordCount(8000)">8k</button>
           <button type="button" class="part-count-btn" data-words="10000" onclick="setStandaloneWordCount(10000)">10k</button>
         </div>
+        <label class="standalone-custom-len" title="Exact target in characters (about 6 characters per word). Overrides the buttons. The forge keeps continuing the same episode until it reaches this length.">
+          <input type="number" id="standaloneCharInput" min="4000" max="360000" step="1000" placeholder="custom chars" onchange="setStandaloneCharCount(this.value)" onkeydown="if(event.key==='Enter'){setStandaloneCharCount(this.value);}">
+          <span>chars</span>
+        </label>
         <span class="pc-words" title="Shorter 1-part runs reduce model refusal drift — use 1.5k–2k for tight Yah/Bez story beats. 7k–10k needs Pro/Opus-tier models for full output. Split into multiple parts for very long chapters.">~4,000 words total</span>
       </div>
       <button class="gen-btn" id="generateBtn" onclick="generateSermon(true)"><i class="fas fa-fire"></i> Generate Series</button>
@@ -1634,6 +1641,8 @@ var isGenerating=false;
 var clipboardStore={};
 var selectedPartCount=5;
 var selectedStandaloneWords=4000;
+var selectedStandaloneChars=0;
+var FORGE_CHARS_PER_WORD=6;
 var currentChapterText=null;
 var currentChapterVerseCount=0;
 var currentNewsContext=null;
@@ -1832,7 +1841,7 @@ out+='GAME PACING: Cover narrative, mechanics, and world-building where they ser
 if(kind==='book'){
 out+='BOOK PACING: Follow the book\'s structure -- major parts, arcs, and turning points in reading order. Exegete chapters and themes the way you would a long scroll.\n';
 }
-out+='VERBOSITY LOCK: Match the usual sermon density: approximately '+((totalParts===1)?'four thousand':'two thousand')+' words for THIS part, full modern-tech / Master Engineer weaving where it fits, provocations and rabbit holes, and SPECIFIC references to named characters, places, set-pieces, and plot beats (no vague "the movie" talk).\n';
+out+='VERBOSITY LOCK: Match the usual sermon density: approximately '+getForgeWordsPerPart(totalParts).toLocaleString()+' words for THIS part, full modern-tech / Master Engineer weaving where it fits, provocations and rabbit holes, and SPECIFIC references to named characters, places, set-pieces, and plot beats (no vague "the movie" talk).\n';
 out+='ANTI-HALLUCINATION: If you are not sure of a detail (exact quote, minor character name, scene order), say you are speaking from general memory and keep claims bounded -- do NOT invent precise quotes, episodes, or chapter numbers.\n\n';
 return out;
 }
@@ -1917,11 +1926,32 @@ if(isNaN(n))n=4000;
 if(n<800)n=800;
 if(n>12000)n=12000;
 selectedStandaloneWords=n;
+selectedStandaloneChars=0;
+var charIn=document.getElementById('standaloneCharInput');
+if(charIn){charIn.value='';charIn.classList.remove('active');}
 var btns=document.querySelectorAll('#standaloneWordBtns .part-count-btn');
 for(var i=0;i<btns.length;i++){
 var w=parseInt(btns[i].getAttribute('data-words'),10);
 btns[i].classList.toggle('active',w===n);
 }
+updatePartWordEstDisplay();
+}
+function setStandaloneCharCount(v){
+var n=parseInt(String(v).replace(/[,\s]/g,''),10);
+var charIn=document.getElementById('standaloneCharInput');
+if(isNaN(n)||n<=0){
+if(charIn){charIn.value='';charIn.classList.remove('active');}
+selectedStandaloneChars=0;
+setStandaloneWordCount(selectedStandaloneWords);
+return;
+}
+if(n<4000)n=4000;
+if(n>360000)n=360000;
+selectedStandaloneChars=n;
+selectedStandaloneWords=Math.round(n/FORGE_CHARS_PER_WORD);
+if(charIn){charIn.value=n;charIn.classList.add('active');}
+var btns=document.querySelectorAll('#standaloneWordBtns .part-count-btn');
+for(var i=0;i<btns.length;i++)btns[i].classList.remove('active');
 updatePartWordEstDisplay();
 }
 function updatePartWordEstDisplay(){
@@ -1932,7 +1962,7 @@ var subEl=wrap?wrap.querySelector('.pc-words'):null;
 if(wrap)wrap.style.display=n===1?'flex':'none';
 if(n===1){
 if(estEl)estEl.textContent='1 part';
-if(subEl)subEl.textContent='Target: ~'+selectedStandaloneWords.toLocaleString()+' words';
+if(subEl)subEl.textContent='Target: ~'+getStandaloneCharTarget().toLocaleString()+' chars (~'+selectedStandaloneWords.toLocaleString()+' words)';
 }else{
 if(estEl)estEl.textContent='~'+(n*2000).toLocaleString()+' words (~2,000/part)';
 }
@@ -3031,7 +3061,7 @@ p+='- Real questions only -- the kind that come from confusion or pain, not stag
 p+='LIVED STRUGGLE DETAILS (weave naturally -- rotate, never quota):\n';
 p+='Rent, overtime, gig apps, child support, probation, court dates, CPS, funeral costs, medicine you cannot afford, church hurt, camp division, identity you just found and family who are not ready, a job that disrespects you, a pastor who lied, a child asking who they are, sleep you are not getting because the truth will not let you rest.\n\n';
 p+='LENGTH (live tone does NOT mean short):\n';
-p+='- Sound human AND fill the full part length the forge assigned. Multi-part forge = roughly TWO THOUSAND words per part. Standalone = roughly FOUR THOUSAND words.\n';
+p+='- Sound human AND fill the full part length the forge assigned. Multi-part forge = roughly TWO THOUSAND words per part. Standalone = whatever length target the forge assigned (it can be very long) -- never stop short of it.\n';
 p+='- If you stop early you failed. Expand with more scripture decode, more lived pressure, more memory -- not padding, not repetition, not catchphrase loops.\n\n';
 return p;
 }
@@ -5515,11 +5545,40 @@ var SERMON_MIN_WORD_RATIO=0.75;
 function getForgeWordsPerPart(totalParts){
 return totalParts===1?selectedStandaloneWords:2000;
 }
+function getStandaloneCharTarget(){
+return selectedStandaloneChars>0?selectedStandaloneChars:selectedStandaloneWords*FORGE_CHARS_PER_WORD;
+}
+var SERMON_STANDALONE_MIN_RATIO=0.93;
+function getForgeMaxContinuations(model,totalParts){
+var words=getForgeWordsPerPart(totalParts||selectedPartCount||1);
+var perResponse=Math.max(1200,Math.floor((getModelMaxOutputTokens(model)-512)/1.45*0.35));
+return Math.min(60,Math.max(SERMON_MAX_CONTINUATIONS,Math.ceil(words/perResponse)+4));
+}
+function looksLikeForgeClosingParagraph(p){
+var t=String(p||'').trim();
+if(!t||t.length>1500)return false;
+return /\b(amen|shalom|selah|in the name of|until next time|thank you for|share this|subscribe|tune in|keep the commandments|come out of her|the door (?:is )?clos|last warning|final warning|this is your warning)\b/i.test(t);
+}
+function stripPrematureForgeClosing(text){
+var paras=String(text||'').replace(/\s+$/,'').split(/\n\s*\n/);
+if(paras.length<4)return text;
+var removed=0;
+while(removed<2&&paras.length>3&&looksLikeForgeClosingParagraph(paras[paras.length-1])){
+paras.pop();
+removed++;
+}
+return removed?paras.join('\n\n'):text;
+}
 function countForgeWords(text){
 return String(text||'').trim().split(/\s+/).filter(Boolean).length;
 }
 function isForgePartUnderWordTarget(text,totalParts){
-var target=getForgeWordsPerPart(totalParts||selectedPartCount);
+var tp=totalParts||selectedPartCount;
+if(tp===1){
+if(selectedStandaloneChars>0)return String(text||'').trim().length<Math.floor(selectedStandaloneChars*SERMON_STANDALONE_MIN_RATIO);
+return countForgeWords(text)<Math.floor(getForgeWordsPerPart(1)*SERMON_STANDALONE_MIN_RATIO);
+}
+var target=getForgeWordsPerPart(tp);
 return countForgeWords(text)<Math.floor(target*SERMON_MIN_WORD_RATIO);
 }
 var sermonGenCtx=null;
@@ -6006,19 +6065,44 @@ else p+='Do NOT write [SCENE END] -- Act '+(partNum+1)+' continues this meeting.
 p+='LAST FOUR HUNDRED CHARACTERS:\n"...'+String(existing||'').slice(-400)+'"\n\nCONTINUE IMMEDIATELY:\n';
 return p;
 }
-var p='CONTINUATION -- SAME PART '+partNum+' ONLY (CRITICAL):\n';
+var oneShot=selectedPartCount===1;
+var base='';
+if(!isLocalLlmChapterSermonActive()){
+try{base=buildPartPrompt(partNum);}catch(e){base='';}
+}
+var p='';
+if(base){
+p+='===== ORIGINAL ASSIGNMENT (CONTEXT ONLY -- you already started this; do NOT restart, do NOT write a new title or opening) =====\n'+base+'\n===== END ORIGINAL ASSIGNMENT =====\n\n';
+}
+p+='CONTINUATION -- SAME '+(oneShot?'EPISODE':'PART '+partNum)+' ONLY (CRITICAL):\n';
+var text=String(existing||'');
 if(opts.underWordCount){
 var target=getForgeWordsPerPart(selectedPartCount);
-var current=countForgeWords(existing);
-p+='TOO SHORT: You only wrote about '+current.toLocaleString()+' words. Part '+partNum+' MUST reach at least '+target.toLocaleString()+' words before stopping.\n';
-p+='Continue the SAME part -- more depth on your assigned verses/scenes, more lived struggle, more decode. EXPAND, do not repeat the same points.\n';
+var current=countForgeWords(text);
+var remaining=Math.max(300,target-current);
+if(oneShot&&selectedStandaloneChars>0){
+p+='TOO SHORT: You wrote about '+text.length.toLocaleString()+' characters. This episode MUST reach about '+selectedStandaloneChars.toLocaleString()+' characters (~'+target.toLocaleString()+' words) before it ends. You still owe roughly '+Math.max(1800,selectedStandaloneChars-text.length).toLocaleString()+' characters (~'+remaining.toLocaleString()+' words).\n';
 }else{
-p+='Your previous output was cut off mid-sentence or mid-thought.\n';
+p+='TOO SHORT: You only wrote about '+current.toLocaleString()+' words. This '+(oneShot?'episode':'part')+' MUST reach about '+target.toLocaleString()+' words before it ends. You still owe roughly '+remaining.toLocaleString()+' words.\n';
 }
-p+='Do NOT add a new "# Part" heading. Do NOT restart the title. Pick up EXACTLY where you stopped and keep writing ONLY Part '+partNum+'.\n';
+p+='The draft ended too early. If its last lines read like a conclusion, sign-off, final warning, or altar call, that ending is VOID -- treat it as deleted and never refer to it. Do NOT wrap up, summarize, or conclude in this continuation. Save the closing for the very end, after you have written the remaining length.\n';
+p+='Find the LAST assigned verse/scene/point your draft actually reached and continue with the NEXT one. If the assigned material is already covered, go DEEPER on it -- a new symbol layer, another scripture witness, a different lived pressure, a new verified named face -- never repetition, never filler, never a generic monologue.\n';
+}else{
+p+='Your previous output was cut off mid-sentence or mid-thought. Finish the thought and keep going on the SAME subject.\n';
+}
+p+='SUBJECT + FIRE LOCK: Stay on the exact subject and text of the original assignment. Same voice, same persona, same heat as the opening of your draft -- do not cool into a general reflection, teaching tone, or a loose monologue. Every paragraph must still be tied to the assigned text/topic.\n';
+p+='Do NOT add a new "# Part" heading. Do NOT restart the title. Pick up EXACTLY where you stopped and keep writing ONLY this '+(oneShot?'episode':'part')+'.\n';
 p+='Do NOT add diagrams, flowcharts, ASCII art, tables, matrices, box-drawing characters, or arrow-chain visuals -- prose paragraphs only.\n\n';
 if(isExplicitModeActive())p+='EXPLICIT MODE STILL ON: Continue with SUSTAINED brimstone fire -- do NOT cool into neutral teaching or essay voice in the continuation.\n\n';
-p+='LAST FOUR HUNDRED CHARACTERS OF YOUR DRAFT:\n"...'+String(existing||'').slice(-400)+'"\n\nCONTINUE IMMEDIATELY:';
+var paras=text.split(/\n\s*\n/).map(function(x){return x.trim();}).filter(function(x){return x&&!/^#/.test(x);});
+if(paras.length>3){
+var digest=paras.slice(-60).map(function(x){return '- '+x.replace(/\s+/g,' ').slice(0,110);}).join('\n');
+p+='ALREADY COVERED (do NOT repeat these points -- advance past them):\n'+digest+'\n\n';
+}
+if(text.length>1800){
+p+='OPENING OF YOUR DRAFT (match this voice and fire):\n"'+text.replace(/^#.+\n+/,'').slice(0,600)+'..."\n\n';
+}
+p+='LAST FIFTEEN HUNDRED CHARACTERS OF YOUR DRAFT:\n"...'+text.slice(-1500)+'"\n\nCONTINUE IMMEDIATELY (mid-flow, no preamble):';
 return p;
 }
 function isLocalLlmChapterSermonActive(){
@@ -6270,7 +6354,7 @@ var finalized=finalizeSermonPartText(ctx.partContent,partNum);
 if(isLocalLlmChapterSermonActive()&&!finalizeLocalLlmPartIfValid(ctx,partNum,streamOpts,finalized))return;
 var truncated=detectTruncation(finalized);
 var underWords=isLocalLlmChapterSermonActive()?false:isForgePartUnderWordTarget(finalized,selectedPartCount);
-var maxCont=isLocalLlmChapterSermonActive()&&ForgeLocalSermonProfile?ForgeLocalSermonProfile.maxTruncationContinuations():SERMON_MAX_CONTINUATIONS;
+var maxCont=isLocalLlmChapterSermonActive()&&ForgeLocalSermonProfile?ForgeLocalSermonProfile.maxTruncationContinuations():getForgeMaxContinuations(model,selectedPartCount);
 var actDone=theatreActComplete(finalized,partNum,selectedPartCount);
 if(isYahStoryModeActive()&&!ctx.bezFallbackActive&&looksLikeYahStoryGuardrailRefusal(finalized)){
 if(forgeHandleYahStoryGuardrailRefusal(ctx,partNum,streamOpts,startSermonPartStream))return;
@@ -6318,6 +6402,7 @@ return;
 if((truncated||underWords)&&!looksLikeYahStoryGuardrailRefusal(finalized)&&!actDone&&ctx.continuationCount<maxCont){
 if(isLocalLlmChapterSermonActive()&&!truncated)return;
 ctx.continuationCount++;
+if(underWords&&!truncated&&!isTheatreModeActive())ctx.partContent=stripPrematureForgeClosing(ctx.partContent);
 ctx.partContentBeforeContinue=ctx.partContent;
 ctx.continuationOpts={underWordCount:underWords&&!truncated};
 startSermonPartStream(partNum,true);
@@ -7123,6 +7208,14 @@ p+='The listener has already heard Parts 1 through '+(partNum-1)+'. This is a CO
 }
 }
 p+='You MUST write approximately '+wordsPerPart.toLocaleString()+' words for this '+(totalParts===1?(wantRoughBez?'sermon':'episode'):'part')+' (the full '+(totalParts===1?(wantRoughBez?'sermon':'episode'):(wantRoughBez?'sermon across all parts':'episode across all parts'))+' targets ~'+totalWords.toLocaleString()+' words total). Do NOT cut short. Fill the full '+wordsPerPart.toLocaleString()+' words.\n';
+if(totalParts===1){
+var lockChars=getStandaloneCharTarget();
+p+='ONE-PART LENGTH LOCK (ZERO TOLERANCE): The target is about '+lockChars.toLocaleString()+' characters (~'+wordsPerPart.toLocaleString()+' words). That is a MINIMUM, not a suggestion -- ending early is the failure.\n';
+p+='- Plan before you write: split the assigned text/topic into beats and give each beat a share of the length. Spend the full share on every beat.\n';
+p+='- Do NOT write a closing, final warning, altar call, or sign-off until the LAST assigned verse/point is fully covered AND you have written at least 90% of the target.\n';
+p+='- If you run low on material, go DEEPER, not wider: another symbol layer, another scripture witness, the lived pressure, a verified named face. Never filler, never repetition, never a loose general monologue.\n';
+p+='- The last third must carry the SAME subject and the SAME fire as the opening. If your energy drifts into generic reflection, snap back to the next verse/symbol.\n\n';
+}
 if(wantBezStory&&totalParts>1){
 p+='BEZ STORY LENGTH LOCK: '+totalParts+' parts = ~'+totalWords.toLocaleString()+' words total (~'+wordsPerPart.toLocaleString()+' per part). Live human tone is NOT permission to stop early. Linger on each verse/scene until this part hits the target.\n';
 }

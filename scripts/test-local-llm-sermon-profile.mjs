@@ -230,6 +230,12 @@ if (!html.includes('buildBezStoryVoiceLockBlock') || !html.includes('BEZ STORY P
 if (!html.includes('NO MADE-UP SLANG') || html.includes('CHURCH / RELIGION ANGLES') || html.includes('FINANCE / DEBT / WORK ANGLES')) {
   throw new Error('index.html Bez Story slang block must be plain English with no slogan pools');
 }
+if (!html.includes('setStandaloneCharCount') || !html.includes('standaloneCharInput') || !html.includes('ONE-PART LENGTH LOCK')) {
+  throw new Error('index.html missing custom character length for 1-part episodes');
+}
+if (!html.includes('SUBJECT + FIRE LOCK') || !html.includes('stripPrematureForgeClosing') || !html.includes('getForgeMaxContinuations')) {
+  throw new Error('index.html missing subject-locked continuation for short 1-part output');
+}
 if (!html.includes('shortenLongElevenTags') || !html.includes('addElevenParagraphPauses')) {
   throw new Error('index.html missing Eleven tag shortening and paragraph pause helpers');
 }
