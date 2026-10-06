@@ -735,6 +735,12 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       </div>
       <label class="toggle-switch" id="dismantleLookupWrap" title="When a movie title has no pasted synopsis, fetch the plot, cast, and production notes from Wikipedia first and use them as the source of truth for scene order."><input type="checkbox" id="dismantleAutoLookup" checked><span class="toggle-track"></span><span><i class="fas fa-magnifying-glass" style="color:#38bdb0;margin-right:3px;font-size:0.65rem;"></i>Look up plot</span></label>
       <button type="button" class="custom-forge-btn" id="dismantleLookupBtn" onclick="lookupFilmIntoDismantleInput()" title="Fetch the plot synopsis, cast, and production notes for the film named on the first line, and paste them into the box so you can review or edit before dismantling."><i class="fas fa-film"></i> Fetch synopsis</button>
+      <div style="min-width:170px;" id="dismantleStyleWrap">
+        <select class="model-select" id="dismantleSceneStyle" style="width:100%;" title="Scene detail: every scene covers who is in it, what they do, and the dialogue, with a short decode. Sermon heavy: more preaching per scene.">
+          <option value="recap" selected>Style: Scene detail (characters + dialogue)</option>
+          <option value="sermon">Style: Sermon heavy</option>
+        </select>
+      </div>
       <div style="min-width:130px;" id="dismantleVoiceWrap">
         <select class="model-select" id="dismantleSceneVoice" style="width:100%;" title="Voice for the scene-by-scene sermon">
           <option value="yah" selected>Voice: Yah Story</option>
@@ -1892,30 +1898,41 @@ return {text:slice,sliced:true};
 }
 return {text:src.slice(0,cap),sliced:false};
 }
+function getSceneDismantleFilmName(topic){
+var m=String((topic&&topic.sourceText)||'').match(/^SOURCE: Wikipedia -- (.+?)(?: \(https?:|$)/m);
+return m?m[1].trim():String((topic&&topic.title)||'').trim();
+}
 function buildSceneDismantleBlock(topic,partNum,totalParts){
 var chars=getForgePartCharTarget(totalParts);
 var scenes=Math.min(40,Math.max(3,Math.round(chars/2600)));
 var pctStart=Math.round((partNum-1)/totalParts*100);
 var pctEnd=Math.round(partNum/totalParts*100);
+var style=topic.sceneStyle==='sermon'?'sermon':'recap';
+var filmName=getSceneDismantleFilmName(topic);
 var out='*** SCENE-BY-SCENE FILM DISMANTLE -- THIS IS THE ASSIGNMENT ***\n';
-out+='WORK TO DISMANTLE: '+topic.title+'\n';
-out+='FORMAT: This is NOT a review, NOT a plot recap, NOT a lesson, and NOT a list. It is the sermon itself -- the same revelation voice, the same cadence, the same dense paragraphs -- aimed at the film, one scene at a time, in the order the film plays.\n';
+out+='WORK TO DISMANTLE: '+topic.title+(filmName&&filmName!==topic.title?' (this is the film "'+filmName+'")':'')+'\n';
+out+='THIS FILM ONLY: Cover ONLY the events of this exact film. Do NOT pull scenes, characters, or lines from the other films, sequels, prequels, shorts, games, or the TV series of the same franchise. If you catch yourself describing a scene you cannot place inside THIS film, delete it. Wrong-film scenes are the worst failure here.\n';
+if(style==='recap'){
+out+='FORMAT: SCENE CONTENT FIRST. The listener must come away knowing exactly what happens in each scene -- WHO is in it (by character name and actor when helpful), WHAT each one does, WHAT each one SAYS, and how the scene ends. The sermon voice and cadence carry it, but at least three quarters of every scene is the scene itself (people, action, dialogue). The decode is short -- one to three sentences per scene, never a separate rant.\n';
+}else{
+out+='FORMAT: This is NOT a review, NOT a plot recap, NOT a lesson, and NOT a list. It is the sermon itself -- the same revelation voice, the same cadence, the same dense paragraphs -- aimed at the film, one scene at a time, in the order the film plays. Still, every scene must carry its real content (who, what happens, what is said) before the decode.\n';
+}
 if(totalParts>1){
 out+='YOUR SLICE: Part '+partNum+' of '+totalParts+' covers roughly the '+pctStart+'% to '+pctEnd+'% mark of the film'+(partNum===1?' -- start at the very first image (studio logos, opening shot, title sequence)':'')+(partNum===totalParts?' -- run through the final scene, the last image, and anything after the credits':'')+'. Cover ONLY the scenes that fall inside this slice, in film order. Do NOT preview later scenes. Do NOT re-cover earlier parts.\n';
 }else{
 out+='YOUR SLICE: The entire film, first image to last image, in film order. Do not skip the middle.\n';
 }
-out+='SCENE COUNT: Aim for roughly '+scenes+' scenes in this '+(totalParts>1?'part':'episode')+' (about '+Math.round(chars/scenes).toLocaleString()+' characters each). If the film has fewer distinct scenes in this slice, split big scenes into their beats. If it has more, group the quick ones -- but never skip a scene that matters to the story.\n';
-out+='FOR EVERY SCENE, cover in flowing paragraphs (not as a checklist): (1) WHERE and WHEN -- the location, time of day, weather, light, color palette, set dressing, and costume details; (2) WHO is in frame, what each person wants, and what they are hiding; (3) WHAT HAPPENS -- the action beat by beat, and the dialogue (quote a line only if you are certain of it, otherwise paraphrase it plainly); (4) HOW IT IS SHOT -- camera movement, framing, sound, score, silence, cuts; (5) THE DECODE -- what the symbol, name, number, object, or gesture means and which scripture it exposes; (6) WHERE IT LANDS -- what this scene is doing to the people watching it and to Israel now.\n';
+out+='SCENE COUNT: Aim for roughly '+scenes+' scenes in this '+(totalParts>1?'part':'episode')+' (about '+Math.round(chars/scenes).toLocaleString()+' characters each). If the film has fewer distinct scenes in this slice, split big scenes into their beats and give the conversations room. If it has more, group the quick ones -- but never skip a scene that matters to the story.\n';
+out+='FOR EVERY SCENE, in this order, inside flowing paragraphs (not a checklist): (1) WHERE and WHEN -- location, time of day, who is present; (2) THE PEOPLE -- every named character in the scene, what each one wants, and what each one does, beat by beat; (3) THE DIALOGUE -- the actual exchange, line by line, in the order it is spoken, saying who says each line ("Morpheus tells him ... Neo answers ..."); use exact wording only when it is in the QUOTES/SOURCE below or you are certain of it, otherwise paraphrase it plainly and say "says something like"; (4) THE ACTION -- what physically happens and how the scene ends; (5) THE DECODE -- one to three sentences on what the symbol, name, number, object, or gesture means and which scripture it exposes.\n';
 out+='MARK EACH SCENE INSIDE THE PROSE: Start each new scene with a plain sentence that names it (for example "Now the film cuts to the kitchen, morning light, the father already holding the knife.") so the listener always knows which scene they are in. NO "Scene 1:" labels, NO headers, NO bullet lists, NO blockquotes, NO bold scene tags -- only paragraphs.\n';
 if(totalParts>1&&partNum>1){
 out+='CONTINUITY: The previous part stopped at a specific scene. Open with one short sentence that carries the listener into the NEXT scene, then keep going. Do NOT recap what you already covered.\n';
 }
-out+='DETAIL RULE: Concrete beats over abstractions. Name props, places, gestures, lines, sounds, and camera moves. A paragraph with no specific thing from the film in it is a failed paragraph.\n';
-out+='CHARACTER BUDGET: Every part has a character budget stated in this prompt. Spend it on scene detail and decode -- not on repeating the thesis or the same insult in new words.\n';
+out+='NO FILLER: Do not pad with personal stories ("I have seen this on my block", "I sat in a courtroom") -- at most ONE short personal line in this entire '+(totalParts>1?'part':'episode')+'. Do not repeat a paragraph, a point, or a phrase you already wrote. Do not circle back to an earlier scene. Every paragraph must contain specific things from the film: a named character, an action, a line of dialogue, a place, an object.\n';
+out+='IF YOU RUN SHORT: When your slice of the film is fully covered and you are under the character target, go DEEPER inside those same scenes -- more of the dialogue exchange line by line, more of what each character does and wants, more of the decode -- never loop back, never repeat, never invent new scenes.\n';
 var src=getSceneDismantleSourceSlice(topic,partNum,totalParts);
 if(src.text){
-out+='\nSOURCE MATERIAL PASTED BY THE USER (plot summary, script, transcript, or notes -- treat it as the ground truth for scene order and facts; if it is only a short synopsis, use it for ORDER and FACTS, split it into scenes using what you reliably know about the film, and never invent scenes, lines, or details that contradict it'+(src.sliced?'; this is the portion that matches YOUR slice of the film, with a small overlap at each edge -- skip anything that belongs to the neighboring part':'')+'):\n';
+out+='\nSOURCE MATERIAL (plot synopsis, cast, notes, real quotes, script, or transcript -- the ground truth for scene order and facts; if it is only a short synopsis, use it for ORDER and FACTS, split it into scenes using what you reliably know about THIS film, and never invent scenes, lines, or details that contradict it'+(src.sliced?'; this is the portion that matches YOUR slice of the film, with a small overlap at each edge -- skip anything that belongs to the neighboring part':'')+'):\n';
 out+='<<<SOURCE\n'+src.text+'\nSOURCE>>>\n';
 }else{
 out+='\nNO SOURCE TEXT WAS PASTED: If you have live web search, use it INTERNALLY first to pull the film\'s detailed synopsis and scene order (do not paste URLs or citations). Otherwise work from what you reliably know of this film. If you are unsure of a scene\'s exact order or a line of dialogue, say so in one clause and keep the claim bounded. Never invent scenes, quotes, or names to fill length -- spend the length on the scenes you DO know in more depth.\n';
@@ -1925,7 +1942,7 @@ return out;
 }
 function buildSceneDismantlePartFocus(topic,partNum,totalParts,voiceLabel){
 var tag=voiceLabel+' SCENE-BY-SCENE DISMANTLE';
-if(totalParts===1)return tag+': Walk the whole film scene by scene in film order, in the sermon revelation cadence -- dense paragraphs, specific on-screen detail, decode and scripture woven in. Not a recap, not a review.';
+if(totalParts===1)return tag+': Walk the whole film scene by scene in film order, in the sermon revelation cadence -- who is in each scene, what they do, what they say, then a short decode. This film only.';
 if(partNum===1)return tag+' part one: Start at the first image and walk the opening scenes in order. Revelation cadence, dense paragraphs, specific on-screen detail. No welcome, no thesis speech.';
 if(partNum===totalParts)return tag+' final part: Pick up at the next scene and walk to the last image and beyond the credits. Same cadence, same detail. Land it in the final scene, not in a sign-off.';
 return tag+' part '+partNum+': One sentence carries over from the last scene, then keep walking the next scenes in order -- same cadence, same on-screen detail, same decode.';
@@ -2189,6 +2206,7 @@ show('dismantleRoundsWrap',mode!=='movie');
 show('dismantlePartsWrap',mode!=='classic');
 show('dismantleCharsWrap',mode!=='classic');
 show('dismantleVoiceWrap',mode!=='classic');
+show('dismantleStyleWrap',mode!=='classic');
 show('dismantleLookupWrap',mode!=='classic');
 show('dismantleLookupBtn',mode!=='classic');
 updateDismantleLengthEst();
@@ -5933,6 +5951,53 @@ out.push(L);
 }
 return out.join('\n');
 }
+var paraShingleCache={};
+var paraShingleCacheSize=0;
+function getParaShingles(para){
+var hit=paraShingleCache[para];
+if(hit)return hit;
+var words=String(para).toLowerCase().replace(/[^a-z0-9\s]+/g,' ').split(/\s+/).filter(Boolean);
+var set={};
+var n=0;
+for(var i=0;i+4<words.length;i++){var k=words.slice(i,i+5).join(' ');if(!set[k]){set[k]=1;n++;}}
+var rec={set:set,n:n};
+if(paraShingleCacheSize>4000){paraShingleCache={};paraShingleCacheSize=0;}
+paraShingleCache[para]=rec;
+paraShingleCacheSize++;
+return rec;
+}
+function isRepeatedParagraph(para,seen){
+var a=getParaShingles(para);
+if(a.n<8)return false;
+for(var i=0;i<seen.length;i++){
+var b=seen[i];
+if(b.n<8)continue;
+var small=a.n<b.n?a:b,big=a.n<b.n?b:a;
+var shared=0;
+for(var k in small.set){if(big.set[k])shared++;}
+if(shared/small.n>=0.6)return true;
+}
+return false;
+}
+function dedupeRepeatedParagraphs(text,priorTexts){
+var paras=String(text||'').split(/\n\s*\n/);
+if(paras.length<2&&!(priorTexts&&priorTexts.length))return text;
+var seen=[];
+(priorTexts||[]).forEach(function(t){
+String(t||'').split(/\n\s*\n/).forEach(function(pp){if(pp.length>=200&&!/^#/.test(pp.trim()))seen.push(getParaShingles(pp));});
+});
+var out=[];
+for(var i=0;i<paras.length;i++){
+var pp=paras[i];
+var trimmed=pp.trim();
+if(trimmed.length>=200&&!/^#/.test(trimmed)){
+if(isRepeatedParagraph(pp,seen))continue;
+seen.push(getParaShingles(pp));
+}
+out.push(pp);
+}
+return out.join('\n\n');
+}
 function finalizeSermonPartText(text,partNum){
 var out=stripSermonPreamble(text||'');
 out=stripSermonDiagrams(out);
@@ -5942,6 +6007,8 @@ out=truncateAtTheatreBoundary(out,partNum,selectedPartCount);
 out=truncateAtNextPartBoundary(out,partNum);
 }
 out=dedupePartHeaders(out);
+var priorForDedupe=(currentTopic&&currentTopic.sceneDismantle&&partNum>1)?(sermonPartsRaw||[]).slice(0,partNum-1):[];
+out=dedupeRepeatedParagraphs(out,priorForDedupe);
 var webEl=document.getElementById('toggleWebResearch');
 if(webEl&&webEl.checked)out=stripMediaSources(out);
 return out;
@@ -12091,9 +12158,9 @@ if(wiki){try{return {title:decodeURIComponent(wiki[1]).replace(/_/g,' '),exact:t
 var q=first.replace(/\b(dismantle|break\s*down|breakdown|scene[\s-]*by[\s-]*scene|the\s+movie|the\s+film|movie|film)\b/gi,' ').replace(/[\u2014\u2013:|]+/g,' ').replace(/\s+/g,' ').trim();
 return {title:q||first,exact:false};
 }
-function wikiApiGet(params){
+function wikiApiGet(params,host){
 var qs=Object.keys(params).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(params[k]);}).join('&');
-return fetch('https://en.wikipedia.org/w/api.php?'+qs+'&format=json&origin=*').then(function(r){
+return fetch('https://'+(host||'en.wikipedia.org')+'/w/api.php?'+qs+'&format=json&origin=*').then(function(r){
 if(!r.ok)throw new Error('Wikipedia lookup failed ('+r.status+')');
 return r.json();
 });
@@ -12130,6 +12197,23 @@ if(keys[j].toLowerCase()===names[i]&&sections[keys[j]])return {name:keys[j],text
 }
 }
 return null;
+}
+function fetchFilmQuotesFromWikiquote(pageTitle){
+var base=String(pageTitle||'').replace(/\s*\((?:\d{4}\s+)?film\)\s*$/i,'').trim();
+var titles=[pageTitle];
+if(base&&base!==pageTitle)titles.push(base);
+var tryTitle=function(i){
+if(i>=titles.length)return Promise.resolve('');
+return wikiApiGet({action:'query',prop:'extracts',explaintext:'1',exsectionformat:'wiki',redirects:'1',titles:titles[i]},'en.wikiquote.org').then(function(data){
+var pages=(data&&data.query&&data.query.pages)||{};
+var page=pages[Object.keys(pages)[0]];
+var ex=page&&page.missing===undefined?String(page.extract||''):'';
+if(ex.length<600)return tryTitle(i+1);
+ex=ex.replace(/\[\[(?:File|Image):[^\n]*?\|(?:thumb|right|left|center)[^|\n]*\|/gi,'').replace(/^={2,6}\s*(?:External links|Sourcing|Quotes about|See also)[\s\S]*$/im,'').trim();
+return ex.slice(0,14000);
+}).catch(function(){return tryTitle(i+1);});
+};
+return tryTitle(0);
 }
 function fetchFilmSourceFromWikipedia(rawInput){
 var q=cleanFilmQueryFromInput(rawInput);
@@ -12174,7 +12258,10 @@ var text='SOURCE: Wikipedia -- '+page.title+(page.fullurl?' ('+page.fullurl+')':
 if(cast)text+='\n\nCAST / CHARACTERS:\n'+cast.text.slice(0,3000);
 if(prod)text+='\n\nPRODUCTION NOTES (locations, design, shooting):\n'+prod.text.slice(0,3500);
 if(themes)text+='\n\n'+themes.name.toUpperCase()+':\n'+themes.text.slice(0,3500);
+return fetchFilmQuotesFromWikiquote(page.title).then(function(quotes){
+if(quotes)text+='\n\nREAL DIALOGUE / QUOTES (Wikiquote -- actual lines from the film; use these word for word and credit them to the right speaker; do not put them in the wrong scene):\n'+quotes;
 return {title:page.title,url:page.fullurl||'',text:text};
+});
 });
 };
 return tryNext(0);
@@ -12240,6 +12327,7 @@ cat:'doctrine',
 title:title,
 desc:'Scene-by-scene film dismantle in sermon voice'+(urlOnly?' (film page: '+raw+')':''),
 sceneDismantle:true,
+sceneStyle:((document.getElementById('dismantleSceneStyle')||{}).value)||'recap',
 sourceLookupDone:true,
 sourceText:sourceText
 };
