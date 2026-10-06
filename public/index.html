@@ -733,8 +733,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           <option value="classic">Layout: Classic breakdown</option>
         </select>
       </div>
+      <label class="toggle-switch" id="dismantleDeepWrap" title="Also run a live web search (fan wikis, scripts, transcripts, spoiler recaps from people who watched the whole film) with a browse-capable model and add the scene-by-scene findings to the source. Needs a Gemini, Claude, or OpenAI model with web search."><input type="checkbox" id="dismantleDeepResearch" checked><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.65rem;"></i>Web research</span></label>
       <label class="toggle-switch" id="dismantleLookupWrap" title="When a movie title has no pasted synopsis, fetch the plot, cast, and production notes from Wikipedia first and use them as the source of truth for scene order."><input type="checkbox" id="dismantleAutoLookup" checked><span class="toggle-track"></span><span><i class="fas fa-magnifying-glass" style="color:#38bdb0;margin-right:3px;font-size:0.65rem;"></i>Look up plot</span></label>
-      <button type="button" class="custom-forge-btn" id="dismantleLookupBtn" onclick="lookupFilmIntoDismantleInput()" title="Fetch the plot synopsis, cast, and production notes for the film named on the first line, and paste them into the box so you can review or edit before dismantling."><i class="fas fa-film"></i> Fetch synopsis</button>
+      <button type="button" class="custom-forge-btn" id="dismantleLookupBtn" onclick="lookupFilmIntoDismantleInput()" title="Research the film named on the first line (Wikipedia plot, Wikiquote dialogue, fan wiki, script, spoiler recaps, live web research) and paste the findings into the box so you can review or edit before dismantling."><i class="fas fa-film"></i> Research film</button>
       <div style="min-width:170px;" id="dismantleStyleWrap">
         <select class="model-select" id="dismantleSceneStyle" style="width:100%;" title="Scene detail: every scene covers who is in it, what they do, and the dialogue, with a short decode. Sermon heavy: more preaching per scene.">
           <option value="recap" selected>Style: Scene detail (characters + dialogue)</option>
@@ -1887,19 +1888,29 @@ return {kind:best,label:label,score:bestScore};
 function getSceneDismantleSourceSlice(topic,partNum,totalParts){
 var src=String((topic&&topic.sourceText)||'').trim();
 if(!src)return {text:'',sliced:false};
-var cap=60000;
-if(totalParts>1&&src.length>cap/2){
+var cap=70000;
+if(src.length>cap){
 var size=src.length/totalParts;
 var start=Math.max(0,Math.floor(size*(partNum-1)-size*0.04));
 var end=Math.min(src.length,Math.ceil(size*partNum+size*0.04));
-var slice=src.slice(start,end);
-if(slice.length>cap)slice=slice.slice(0,cap);
-return {text:slice,sliced:true};
+return {text:src.slice(start,end).slice(0,cap),sliced:true};
 }
-return {text:src.slice(0,cap),sliced:false};
+return {text:src,sliced:false};
+}
+function getSceneDismantleScriptSlice(topic,partNum,totalParts){
+var script=String((topic&&topic.scriptText)||'').trim();
+if(!script)return null;
+var cap=24000;
+var size=script.length/totalParts;
+var start=Math.max(0,Math.floor(size*(partNum-1)-size*0.03));
+var end=Math.min(script.length,Math.ceil(size*partNum+size*0.03));
+var slice=script.slice(start,end);
+var truncated=slice.length>cap;
+if(truncated)slice=slice.slice(0,cap);
+return {text:slice,fromPct:Math.round(start/script.length*100),toPct:Math.round((start+slice.length)/script.length*100),truncated:truncated};
 }
 function getSceneDismantleFilmName(topic){
-var m=String((topic&&topic.sourceText)||'').match(/^SOURCE: Wikipedia -- (.+?)(?: \(https?:|$)/m);
+var m=String((topic&&topic.sourceText)||'').match(/^SOURCE: (?:Wikipedia|Web research) -- (.+?)(?: \(https?:|$)/m);
 return m?m[1].trim():String((topic&&topic.title)||'').trim();
 }
 function buildSceneDismantleBlock(topic,partNum,totalParts){
@@ -1936,6 +1947,11 @@ out+='\nSOURCE MATERIAL (plot synopsis, cast, notes, real quotes, script, or tra
 out+='<<<SOURCE\n'+src.text+'\nSOURCE>>>\n';
 }else{
 out+='\nNO SOURCE TEXT WAS PASTED: If you have live web search, use it INTERNALLY first to pull the film\'s detailed synopsis and scene order (do not paste URLs or citations). Otherwise work from what you reliably know of this film. If you are unsure of a scene\'s exact order or a line of dialogue, say so in one clause and keep the claim bounded. Never invent scenes, quotes, or names to fill length -- spend the length on the scenes you DO know in more depth.\n';
+}
+var scr=getSceneDismantleScriptSlice(topic,partNum,totalParts);
+if(scr){
+out+='\nSCRIPT / TRANSCRIPT EXCERPT (the real dialogue and action lines for roughly the '+scr.fromPct+'% to '+scr.toPct+'% span of the script'+(scr.truncated?' -- the part of your slice that did not fit is cut off, so the SOURCE material above covers the rest':'')+'. Scripts can be early drafts, so a few lines may differ from the final cut -- use it for WHO says WHAT and for scene order; when it conflicts with the plot synopsis on order, trust the synopsis):\n';
+out+='<<<SCRIPT\n'+scr.text+'\nSCRIPT>>>\n';
 }
 out+='\n';
 return out;
@@ -2208,6 +2224,7 @@ show('dismantleCharsWrap',mode!=='classic');
 show('dismantleVoiceWrap',mode!=='classic');
 show('dismantleStyleWrap',mode!=='classic');
 show('dismantleLookupWrap',mode!=='classic');
+show('dismantleDeepWrap',mode!=='classic');
 show('dismantleLookupBtn',mode!=='classic');
 updateDismantleLengthEst();
 }
@@ -5580,11 +5597,12 @@ var lookupOn=!lookupEl||lookupEl.checked;
 if(currentTopic.sceneDismantle&&lookupOn&&!currentTopic.sourceText&&!currentTopic.sourceLookupDone){
 currentTopic.sourceLookupDone=true;
 var lookupBtn=document.getElementById('generateBtn');
-if(lookupBtn){lookupBtn.disabled=true;lookupBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Looking up plot...';}
+if(lookupBtn){lookupBtn.disabled=true;lookupBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Researching film...';}
 var lookupTopic=currentTopic;
-fetchFilmSourceFromWikipedia(lookupTopic.title).then(function(found){
+fetchFilmResearch(lookupTopic.title).then(function(found){
 lookupTopic.sourceText=found.text;
-showToast('Using Wikipedia plot: '+found.title);
+lookupTopic.scriptText=found.scriptText||'';
+showToast('Researched '+found.title+': '+found.sources.join(', '));
 }).catch(function(err){
 showToast('Plot lookup failed ('+String(err&&err.message?err.message:err)+') -- continuing from the model\'s memory. Paste a synopsis in the Dismantle tab for accuracy.');
 }).then(function(){
@@ -12260,7 +12278,7 @@ if(prod)text+='\n\nPRODUCTION NOTES (locations, design, shooting):\n'+prod.text.
 if(themes)text+='\n\n'+themes.name.toUpperCase()+':\n'+themes.text.slice(0,3500);
 return fetchFilmQuotesFromWikiquote(page.title).then(function(quotes){
 if(quotes)text+='\n\nREAL DIALOGUE / QUOTES (Wikiquote -- actual lines from the film; use these word for word and credit them to the right speaker; do not put them in the wrong scene):\n'+quotes;
-return {title:page.title,url:page.fullurl||'',text:text};
+return {title:page.title,url:page.fullurl||'',text:text,lead:(sec._lead||'').slice(0,900),hasQuotes:!!quotes};
 });
 });
 };
@@ -12287,12 +12305,90 @@ if(ht===bt&&/\bis an? (?:\d{4}\s+)?[^.]{0,80}\bfilm\b/i.test(snip))return h.titl
 return null;
 }).catch(function(){return null;});
 }
+var lastFilmResearch=null;
+function runFilmServerResearch(title,year,lead){
+return fetch('/api/film-research',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:title,year:year,hints:lead})}).then(function(res){
+if(!res.ok)throw new Error('HTTP '+res.status);
+return res.json();
+}).catch(function(){return null;});
+}
+function runFilmDeepResearch(title,year){
+var cb=document.getElementById('dismantleDeepResearch');
+if(cb&&!cb.checked)return Promise.resolve('');
+if(!window.Poe||!window.Poe.sendUserMessage)return Promise.resolve('');
+var model=getDismantleModel();
+if(!forgeSupportsWebBrowse(model)){
+var alt=getSelectedModel();
+if(forgeSupportsWebBrowse(alt))model=alt;
+else if(typeof getForgeDefaultTextModel==='function'&&forgeSupportsWebBrowse(getForgeDefaultTextModel()))model=getForgeDefaultTextModel();
+else return Promise.resolve('');
+}
+var label=title+(year?' ('+year+')':'');
+var prompt='You have a live web search tool. USE IT -- do not answer from memory.\n';
+prompt+='Research the film "'+label+'" (THIS exact film only, not other films in the franchise).\n';
+prompt+='Find and read: (1) the franchise fan wiki pages for this film (Fandom / wikia scene-by-scene or plot pages); (2) a full script or transcript (IMSDb, Scripts.com, Springfield! Springfield!, Subslikescript); (3) detailed spoiler recaps and walkthroughs written by people who watched the whole film (recap sites, blogs, rewatch threads).\n';
+prompt+='Then output a RESEARCH BRIEF: a numbered scene-by-scene outline of the whole film in exact film order. For each scene give: the location and time; every named character in it; what happens, beat by beat; and the key lines of dialogue WORD FOR WORD where your sources show them, with who says each line. If sources disagree or you are unsure of a detail, say "unclear" for that detail rather than guessing. Never include scenes from other films.\n';
+prompt+='Output ONLY the brief -- no URLs, no citations, no introduction, no closing remarks. Be thorough: about 14,000 characters.';
+return new Promise(function(resolve){
+var done=false;
+var timer=setTimeout(function(){if(!done){done=true;resolve('');}},170000);
+var handlerName='film-research-'+Date.now();
+window.Poe.registerHandler(handlerName,function(result){
+var msg=result.responses[0];
+if(!msg||done)return;
+if(msg.status==='complete'){done=true;clearTimeout(timer);resolve(String(msg.content||'').trim());}
+else if(msg.status==='error'){done=true;clearTimeout(timer);resolve('');}
+});
+window.Poe.sendUserMessage('@'+model+' '+prompt,{handler:handlerName,stream:false,openChat:false,parameters:{web_search:true,max_tokens:Math.min(16000,getModelMaxOutputTokens(model))}}).catch(function(){
+if(!done){done=true;clearTimeout(timer);resolve('');}
+});
+});
+}
+function fetchFilmResearch(rawInput){
+var sources=[];
+var qt=cleanFilmQueryFromInput(rawInput).title;
+return fetchFilmSourceFromWikipedia(rawInput).catch(function(){return null;}).then(function(wiki){
+var title=wiki?wiki.title:qt;
+var cleanTitle=String(title).replace(/\s*\((?:\d{4}\s+)?film\)\s*$/i,'').trim();
+var lead=wiki?wiki.lead:'';
+var yearM=(lead.match(/\b(?:19|20)\d{2}\b/)||String(rawInput).match(/\b(?:19|20)\d{2}\b/)||[''])[0];
+if(wiki){sources.push('Wikipedia');if(wiki.hasQuotes)sources.push('Wikiquote dialogue');}
+return Promise.all([runFilmServerResearch(cleanTitle,yearM,lead),runFilmDeepResearch(cleanTitle,yearM)]).then(function(r){
+var server=r[0]||{};
+var brief=r[1]||'';
+var text=wiki?wiki.text:'SOURCE: Web research -- '+title;
+if(server.fandom&&server.fandom.text){
+text+='\n\nFAN WIKI ('+server.fandom.source+' / '+server.fandom.title+') -- detailed scene-level synopsis written by fans:\n'+server.fandom.text.slice(0,12000);
+sources.push('fan wiki ('+server.fandom.source.replace('.fandom.com','')+')');
+}
+var recaps=(server.recaps||[]).slice(0,2);
+recaps.forEach(function(rc){
+text+='\n\nSPOILER RECAP ('+rc.source+') -- written by someone who watched the whole film:\n'+rc.text.slice(0,6000);
+sources.push('recap ('+rc.source+')');
+});
+if(brief){
+text+='\n\nWEB RESEARCH BRIEF (scene-by-scene outline compiled by live web search from fan wikis, scripts, and spoiler recaps):\n'+brief.slice(0,16000);
+sources.push('web research');
+}
+var scriptText='';
+if(server.script&&server.script.text){
+scriptText=server.script.text;
+sources.push(server.script.source+' script');
+}
+if(!wiki&&!server.fandom&&!recaps.length&&!brief&&!scriptText)throw new Error('Nothing found for "'+qt+'". Check the title, or paste a synopsis or script.');
+var found={title:title,text:text,scriptText:scriptText,sources:sources};
+lastFilmResearch={key:norm2(title),scriptText:scriptText,sources:sources};
+return found;
+});
+});
+}
+function norm2(t){return String(t||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();}
 function composeDismantleSourceInput(rawInput,found){
 var raw=String(rawInput||'').trim();
 var lines=raw.split(/\n+/).map(function(l){return l.trim();}).filter(Boolean);
 var extra=lines.slice(1).join('\n');
 var out=found.title+'\n\n'+found.text;
-if(extra&&!/^SOURCE: Wikipedia/m.test(raw))out+='\n\nUSER NOTES (also treat as source):\n'+extra;
+if(extra&&!/^SOURCE: /m.test(raw))out+='\n\nUSER NOTES (also treat as source):\n'+extra;
 return out;
 }
 function lookupFilmIntoDismantleInput(cb){
@@ -12300,17 +12396,17 @@ var ta=document.getElementById('dismantleInput');
 var btn=document.getElementById('dismantleLookupBtn');
 var raw=(ta.value||'').trim();
 if(!raw){showToast('Type the film title in the box first, then fetch.');return Promise.resolve(null);}
-if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Looking up...';}
-return fetchFilmSourceFromWikipedia(raw).then(function(found){
+if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Researching...';}
+return fetchFilmResearch(raw).then(function(found){
 ta.value=composeDismantleSourceInput(raw,found);
 ta.dispatchEvent(new Event('input',{bubbles:true}));
-showToast('Loaded plot and notes from Wikipedia: '+found.title+'. Review or edit, then hit Dismantle.');
+showToast('Loaded '+found.title+' from: '+found.sources.join(', ')+'. Review or edit, then hit Dismantle.');
 return found;
 }).catch(function(err){
 showToast(String(err&&err.message?err.message:err));
 return null;
 }).then(function(found){
-if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-film"></i> Fetch synopsis';}
+if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-film"></i> Research film';}
 return found;
 });
 }
@@ -12329,7 +12425,8 @@ desc:'Scene-by-scene film dismantle in sermon voice'+(urlOnly?' (film page: '+ra
 sceneDismantle:true,
 sceneStyle:((document.getElementById('dismantleSceneStyle')||{}).value)||'recap',
 sourceLookupDone:true,
-sourceText:sourceText
+sourceText:sourceText,
+scriptText:(lastFilmResearch&&lastFilmResearch.scriptText&&norm2(title)===lastFilmResearch.key)?lastFilmResearch.scriptText:''
 };
 }
 function setForgeToggleChecked(id,val){
@@ -12345,12 +12442,12 @@ var probe=buildSceneDismantleTopic(input);
 var needsLookup=auto&&auto.checked&&(!probe.sourceText||probe.sourceText.length<1500)&&(!isUrl(input)||/wikipedia\.org\/wiki\//i.test(input));
 if(!needsLookup){launchDismantleSermonLayout(input);return;}
 var btn=document.getElementById('dismantleBtn');
-if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Looking up plot...';}
-fetchFilmSourceFromWikipedia(input).then(function(found){
+if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Researching film...';}
+fetchFilmResearch(input).then(function(found){
 var composed=composeDismantleSourceInput(input,found);
 var ta=document.getElementById('dismantleInput');
 if(ta){ta.value=composed;ta.dispatchEvent(new Event('input',{bubbles:true}));}
-showToast('Using Wikipedia plot: '+found.title);
+showToast('Researched '+found.title+': '+found.sources.join(', '));
 return composed;
 }).catch(function(err){
 showToast('Plot lookup failed ('+String(err&&err.message?err.message:err)+') -- continuing from the model\'s own memory. Paste a synopsis for accuracy.');
@@ -12417,6 +12514,23 @@ if(layoutMode==='movie'||(layoutMode==='auto'&&looksLikeMovieDismantleInput(inpu
 startDismantleSermonLayout(input);
 return;
 }
+if(layoutMode==='auto'&&input.length<=90&&input.indexOf('\n')===-1&&!isUrl(input)){
+var probeBtn=document.getElementById('dismantleBtn');
+if(probeBtn){probeBtn.disabled=true;probeBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Checking title...';}
+probeTopicIsFilm(input).then(function(filmTitle){
+if(probeBtn){probeBtn.disabled=false;probeBtn.innerHTML='<i class="fas fa-hammer"></i> Dismantle';}
+if(filmTitle){
+showToast('Detected film: '+filmTitle+'. Using the movie scene-by-scene layout.');
+startDismantleSermonLayout(input);
+}else{
+runClassicDismantle(rawInput,input);
+}
+});
+return;
+}
+runClassicDismantle(rawInput,input);
+}
+function runClassicDismantle(rawInput,input){
 var model=getDismantleModel();
 var explicit=document.getElementById('dismantleExplicit').checked;
 var israelite=document.getElementById('dismantleIsraelite').checked;
