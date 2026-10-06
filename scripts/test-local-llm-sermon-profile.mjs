@@ -236,6 +236,12 @@ if (!html.includes('setStandaloneCharCount') || !html.includes('standaloneCharIn
 if (!html.includes('SUBJECT + FIRE LOCK') || !html.includes('stripPrematureForgeClosing') || !html.includes('getForgeMaxContinuations')) {
   throw new Error('index.html missing subject-locked continuation for short 1-part output');
 }
+if (!html.includes('buildOpeningVarietyBlock') || !html.includes('BANNED OPENERS')) {
+  throw new Error('index.html missing dynamic opening variety block');
+}
+if (html.includes('You dumb-ass Negroes still sitting') || html.includes('Example tone: "')) {
+  throw new Error('index.html must not ship paste-ready example insult openers');
+}
 if (!html.includes('shortenLongElevenTags') || !html.includes('addElevenParagraphPauses')) {
   throw new Error('index.html missing Eleven tag shortening and paragraph pause helpers');
 }
