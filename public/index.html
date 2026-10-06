@@ -1982,7 +1982,7 @@ if(a){
 t+='The film is split into '+totalParts+' parts. YOUR part covers exactly this stretch of the plot:\n'+a.slice+'\n';
 if(a.sections.length)t+='You MUST cover every one of these sections, in this order, and skip none: '+a.sections.join(' -> ')+'. Fill in each section\'s scenes with what really happens in the released film (include the well-known set pieces inside each section, e.g. every major fight, chase, and conversation).\n';
 t+=(a.isFirst?'Your part begins at the very first image of the film. ':'Your part begins at: "'+a.startAnchor+'" -- everything before that was covered in earlier parts. ');
-t+=(a.isLast?'Your part runs to the very end of the film. ':'Your part ENDS right before the next part begins, and the next part begins with: "'+a.nextAnchor+'" -- that event and everything after it is NOT yours; do not narrate it, summarize it, or hint at it. ');
+t+=(a.isLast?'Your part runs to the very end of the film. ':'Your part ENDS right before the next part begins, and the next part begins with: "'+a.nextAnchor+'" -- that event and everything after it is NOT yours; do not narrate it, summarize it, or hint at it. If your last section ends by someone arriving or something starting (a character appears, a fight is about to begin), stop at the moment of arrival and let the next part pick it up. ');
 }else{
 t+='Stay inside your slice of the film (about '+(Math.round(100*(partNum-1)/totalParts))+'% to '+pctEnd+'%). ';
 }
@@ -12476,6 +12476,27 @@ if(!done){done=true;clearTimeout(timer);resolve('');}
 });
 });
 }
+function validateFilmScript(scriptText,backboneText,year){
+var script=String(scriptText||'');
+if(!script)return {ok:false,reason:'empty'};
+var yr=parseInt(year,10);
+var head=script.slice(0,1500);
+var dates=(head.match(/\b(?:19|20)\d{2}\b/g)||[]).map(Number).filter(function(n){return n>=1900&&n<=2100;});
+if(yr&&dates.length&&Math.max.apply(null,dates)<yr-1)return {ok:false,reason:'dated '+Math.max.apply(null,dates)+', film released '+yr+' (early draft)'};
+if(/\b(?:first|second|third|early|shooting|revised)\s+draft\b/i.test(head))return {ok:false,reason:'marked as a draft'};
+var stop={captain:1,commander:1,councillor:1,president:1,general:1,doctor:1,sentinel:1,sentinels:1,hovercraft:1,ship:1,fleet:1,zion:0,wikipedia:1,matrix:1,film:1,films:1,movie:1,sequel:1,series:1,released:1,after:1,before:1,while:1,there:1,their:1,which:1,where:1,with:1,from:1,into:1,that:1,this:1,these:1,those:1,when:1,then:1,they:1,have:1,also:1,been:1,about:1,only:1,Source:1,agent:1,agents:1};
+var plot=getSceneDismantlePlotUnits({sourceText:backboneText}).map(function(u){return u.text;}).join(' ');
+if(!plot)return {ok:true,reason:'no backbone to check'};
+var seen={},names=[];
+var nameRe=/[a-z,;:)] ([A-Z][a-z]{3,})\b/g,nm;
+while((nm=nameRe.exec(plot))){var k=nm[1].toLowerCase();if(!seen[k]&&!stop[k]){seen[k]=1;names.push(k);}}
+if(names.length<6)return {ok:true,reason:'too few names to check'};
+var low=script.toLowerCase();
+var missing=names.filter(function(k){return low.indexOf(k)<0;});
+var cov=1-missing.length/names.length;
+if(cov<0.65)return {ok:false,reason:'script is missing '+missing.slice(0,6).join(', ')+' from the released plot ('+Math.round(cov*100)+'% match)'};
+return {ok:true,reason:Math.round(cov*100)+'% match'};
+}
 function fetchFilmResearch(rawInput){
 var sources=[];
 var qt=cleanFilmQueryFromInput(rawInput).title;
@@ -12504,8 +12525,14 @@ sources.push('web research');
 }
 var scriptText='';
 if(server.script&&server.script.text){
+var scriptCheck=validateFilmScript(server.script.text,text,yearM);
+if(scriptCheck.ok){
 scriptText=server.script.text;
 sources.push(server.script.source+' script');
+}else{
+console.warn('Film script rejected: '+scriptCheck.reason);
+sources.push(server.script.source+' script REJECTED ('+scriptCheck.reason+')');
+}
 }
 if(!wiki&&!server.fandom&&!recaps.length&&!brief&&!scriptText)throw new Error('Nothing found for "'+qt+'". Check the title, or paste a synopsis or script.');
 var found={title:title,text:text,scriptText:scriptText,sources:sources};
