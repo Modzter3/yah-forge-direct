@@ -1217,6 +1217,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch" id="toggleBezStoryModeWrap" title="Bez revelation cadence — street fire, grammatically sound English, revelation flow without mandatory name drops"><input type="checkbox" id="toggleBezStoryMode"><span class="toggle-track bez-story-track"></span><span><i class="fas fa-book-open" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Bez Story</span></label>
       <label class="toggle-switch" id="toggleElevenLabsTagsWrap" title="Eleven v4 voice direction — descriptive [bracket] tags that say HOW the voice sounds (pace, breath, texture), not one-word moods; with Explicit, profanity stays in words, loud direction only on spikes"><input type="checkbox" id="toggleElevenLabsTags"><span class="toggle-track" style="background:linear-gradient(135deg,#1a3a2a,#2a6a4a);"></span><span><i class="fas fa-waveform-lines" style="color:#7ec8a0;margin-right:3px;font-size:0.7rem;"></i>Eleven Tags</span></label>
       <label class="toggle-switch" id="toggleSermonEpisodeModeWrap" title="TV season episode-by-episode breakdown across parts"><input type="checkbox" id="toggleSermonEpisodeMode"><span class="toggle-track"></span><span><i class="fas fa-tv" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Episode Mode</span></label>
+      <label class="toggle-switch" id="toggleSceneDismantleWrap" title="Movie dismantle: walk the film scene by scene in sermon voice and cadence. Looks up the plot synopsis (Wikipedia) first so scene order is accurate. Uses the Chars / Part setting."><input type="checkbox" id="toggleSceneDismantle"><span class="toggle-track"></span><span><i class="fas fa-film" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Movie Scene-by-Scene</span></label>
       <label class="toggle-switch" title="Live web search: verify facts, roles, and topic context (silent — no URLs in output). Does not weave headlines unless News Weave is also on."><input type="checkbox" id="toggleWebResearch" checked onchange="syncNewsWeaveToggles();syncNameDropToggles()"><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
       <label class="toggle-switch" id="toggleNewsWeaveWrap" title="Weave verified current headlines into the sermon — separate from Yah/Bez Story voice. Requires Web Research."><input type="checkbox" id="toggleNewsWeave" onchange="syncNewsWeaveToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#1a3a5c,#2a6496);"></span><span><i class="fas fa-newspaper" style="color:#7ec8e3;margin-right:3px;font-size:0.7rem;"></i>News Weave</span></label>
       <label class="toggle-switch" id="toggleNameDropWrap" title="Verse-gated living names in Yah/Bez Story (web-verified culprits — separate from story cadence). Requires Web Research."><input type="checkbox" id="toggleNameDrop" onchange="syncNameDropToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#3a2a18,#6a4a28);"></span><span><i class="fas fa-user-tag" style="color:#e8c080;margin-right:3px;font-size:0.7rem;"></i>Name Drop</span></label>
@@ -5192,7 +5193,23 @@ if(!opts.skipPartRec)updatePartRecommendation();
 else updatePartWordEstDisplay();
 var epToggle=document.getElementById('toggleSermonEpisodeMode');
 if(epToggle&&looksLikeTvSeason(currentTopic))epToggle.checked=true;
+var sceneToggle=document.getElementById('toggleSceneDismantle');
+if(sceneToggle){
+var sceneEligible=currentMode==='standard'&&!currentChapterSource&&currentTopic.id!==-2;
+var sceneMedia=sceneEligible&&!currentTopic.briefingText?detectMediaWorkFromTopic(currentTopic):null;
+sceneToggle.checked=!!(currentTopic.sceneDismantle||(sceneMedia&&sceneMedia.kind==='movie'&&!(epToggle&&epToggle.checked)));
+}
 syncEpisodeModeToggles();
+if(sceneToggle&&!sceneToggle.checked&&currentMode==='standard'&&!currentChapterSource&&!currentTopic.briefingText&&!currentTopic.filmProbeDone&&!isDirectQuestionTopic(currentTopic)){
+var probeTopic=currentTopic;
+probeTopic.filmProbeDone=true;
+probeTopicIsFilm(probeTopic.title).then(function(filmTitle){
+if(filmTitle&&currentTopic===probeTopic&&!isGenerating&&sceneToggle&&!sceneToggle.checked){
+sceneToggle.checked=true;
+showToast('Detected film: '+filmTitle+'. Movie Scene-by-Scene is on (uncheck it for a regular sermon).');
+}
+});
+}
 document.getElementById('sermonModal').classList.add('open');
 document.body.style.overflow='hidden';
 }
@@ -5534,6 +5551,29 @@ if(currentNewsVeilFromUrl){
 if(!userInitiated)return;
 if(Date.now()<veilForgeEarliestAt){
 showToast('Pick your model, then hit Generate.');
+return;
+}
+}
+if(currentTopic&&currentMode==='standard'&&!currentChapterSource&&!currentTopic.briefingText){
+var sceneEl=document.getElementById('toggleSceneDismantle');
+if(sceneEl)currentTopic.sceneDismantle=!!sceneEl.checked;
+var lookupEl=document.getElementById('dismantleAutoLookup');
+var lookupOn=!lookupEl||lookupEl.checked;
+if(currentTopic.sceneDismantle&&lookupOn&&!currentTopic.sourceText&&!currentTopic.sourceLookupDone){
+currentTopic.sourceLookupDone=true;
+var lookupBtn=document.getElementById('generateBtn');
+if(lookupBtn){lookupBtn.disabled=true;lookupBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Looking up plot...';}
+var lookupTopic=currentTopic;
+fetchFilmSourceFromWikipedia(lookupTopic.title).then(function(found){
+lookupTopic.sourceText=found.text;
+showToast('Using Wikipedia plot: '+found.title);
+}).catch(function(err){
+showToast('Plot lookup failed ('+String(err&&err.message?err.message:err)+') -- continuing from the model\'s memory. Paste a synopsis in the Dismantle tab for accuracy.');
+}).then(function(){
+if(lookupBtn)lookupBtn.innerHTML='<i class="fas fa-fire"></i> Generate Series';
+if(currentTopic===lookupTopic)generateSermon(userInitiated);
+else if(lookupBtn)lookupBtn.disabled=false;
+});
 return;
 }
 }
@@ -12096,7 +12136,7 @@ var q=cleanFilmQueryFromInput(rawInput);
 if(!q.title)return Promise.reject(new Error('Put the film title on the first line.'));
 var yearMatch=q.title.match(/\b(?:19|20)\d{2}\b/);
 var bareTitle=q.exact?q.title:q.title.replace(/\(?\b(?:19|20)\d{2}\b\)?/g,' ').replace(/\s+/g,' ').trim();
-var normT=function(t){return String(t||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();};
+var normT=function(t){return String(t||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').replace(/^(the|a|an) /,'').trim();};
 var findCandidates=q.exact?Promise.resolve([q.title]):wikiApiGet({action:'query',list:'search',srsearch:bareTitle+' film'+(yearMatch?' '+yearMatch[0]:''),srlimit:'8'}).then(function(data){
 var hits=(data&&data.query&&data.query.search)||[];
 var scored=hits.map(function(h,idx){
@@ -12140,6 +12180,26 @@ return {title:page.title,url:page.fullurl||'',text:text};
 return tryNext(0);
 });
 }
+function probeTopicIsFilm(title){
+var q=cleanFilmQueryFromInput(title);
+var yearMatch=q.title.match(/\b(?:19|20)\d{2}\b/);
+var bare=q.title.replace(/\(?\b(?:19|20)\d{2}\b\)?/g,' ').replace(/\s+/g,' ').trim();
+if(!bare||bare.split(/\s+/).length>7)return Promise.resolve(null);
+var normT=function(t){return String(t||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').replace(/^(the|a|an) /,'').trim();};
+return wikiApiGet({action:'query',list:'search',srsearch:bare+' film',srlimit:'3'}).then(function(data){
+var hits=(data&&data.query&&data.query.search)||[];
+var bt=normT(bare);
+for(var i=0;i<hits.length;i++){
+var h=hits[i];
+var suffixed=/\((?:\d{4}\s+)?film\)\s*$/i.test(h.title);
+if(suffixed&&!yearMatch)continue;
+var ht=normT(h.title.replace(/\s*\((?:\d{4}\s+)?film\)\s*$/i,''));
+var snip=String(h.snippet||'').replace(/<[^>]+>/g,'');
+if(ht===bt&&/\bis an? (?:\d{4}\s+)?[^.]{0,80}\bfilm\b/i.test(snip))return h.title;
+}
+return null;
+}).catch(function(){return null;});
+}
 function composeDismantleSourceInput(rawInput,found){
 var raw=String(rawInput||'').trim();
 var lines=raw.split(/\n+/).map(function(l){return l.trim();}).filter(Boolean);
@@ -12180,6 +12240,7 @@ cat:'doctrine',
 title:title,
 desc:'Scene-by-scene film dismantle in sermon voice'+(urlOnly?' (film page: '+raw+')':''),
 sceneDismantle:true,
+sourceLookupDone:true,
 sourceText:sourceText
 };
 }
