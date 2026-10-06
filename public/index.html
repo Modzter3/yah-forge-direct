@@ -1916,35 +1916,77 @@ if(fromEnd){var i=piece.search(/[.!?]\s/);if(i>=0&&i<piece.length-60)piece=piece
 else{var j=piece.lastIndexOf('. ');if(j>len*0.5)piece=piece.slice(0,j+1);}
 return piece;
 }
-function getSceneDismantlePlotAnchors(topic,partNum,totalParts){
+function getSceneDismantlePlotUnits(topic){
 var src=String((topic&&topic.sourceText)||'');
-var m=src.match(/(?:^|\n)PLOT[^\n]*:\n([\s\S]*?)(?:\n\n[A-Z][A-Z /&()-]{4,}:|\n== |\nSOURCE: |$)/);
-if(!m)return null;
-var sents=m[1].replace(/\s+/g,' ').trim().split(/(?<=[.!?])\s+(?=[A-Z"])/).filter(function(x){return x.length>20;});
-if(sents.length<totalParts*2)return null;
-var total=sents.reduce(function(n,x){return n+x.length;},0);
-var from=Math.round(total*(partNum-1)/totalParts),to=Math.round(total*partNum/totalParts);
-var acc=0,first=-1,last=-1;
-for(var i=0;i<sents.length;i++){
-var mid=acc+sents[i].length/2;
-if(mid>=from&&mid<to){if(first<0)first=i;last=i;}
-acc+=sents[i].length;
+var units=[];
+var fi=src.indexOf('FAN WIKI (');
+if(fi>=0){
+var fan=src.slice(fi).split('\n');
+var stop=/^(PRODUCTION|CAST|RELEASE|RECEPTION|TRIVIA|SOUNDTRACK|SOUND DESIGN|QUOTES|SCENE INDEX|MISTAKES|GALLERY|PROMOTIONAL|REFERENCES|SEE ALSO|EXTERNAL ?LINKS|BACKGROUND|DEVELOPMENT|CAST AND CHARACTERS|CHARACTERS)\b/i;
+var inSyn=false,cur=null;
+for(var i=1;i<fan.length;i++){
+var L=fan[i].trim();
+if(!L)continue;
+var hm=L.match(/^(.+?) \[ ?\]:$/);
+if(hm){
+var h=hm[1].trim();
+if(/^(SYNOPSIS|PLOT|SUMMARY|STORY|PLOT SUMMARY)$/i.test(h)){inSyn=true;continue;}
+if(stop.test(h)){if(inSyn)break;continue;}
+if(inSyn){cur={heading:h,text:''};units.push(cur);}
+continue;
 }
-if(first<0)return null;
-return {startAnchor:sents[first].slice(0,260),endAnchor:sents[last].slice(0,260),isFirst:partNum===1,isLast:partNum===totalParts,slice:sents.slice(first,last+1).join(' ')};
+if(/^(SPOILER RECAP|WEB RESEARCH BRIEF)/.test(L))break;
+if(inSyn&&cur)cur.text+=(cur.text?' ':'')+L;
+}
+units=units.filter(function(u){return u.text.length>60;});
+}
+if(units.length>=3)return units;
+var m=src.match(/(?:^|\n)PLOT[^\n]*:\n([\s\S]*?)(?:\n\n[A-Z][A-Z /&()-]{4,}:|\n== |\nSOURCE: |\nFAN WIKI|$)/);
+if(!m)return [];
+return m[1].split(/\n+/).map(function(t){return {heading:'',text:t.trim()};}).filter(function(u){return u.text.length>60;});
+}
+function getSceneDismantlePlotAnchors(topic,partNum,totalParts){
+var units=getSceneDismantlePlotUnits(topic);
+if(units.length<totalParts)return null;
+var total=units.reduce(function(n,u){return n+u.text.length;},0);
+var assign=[],acc=0,counts={};
+for(var i=0;i<units.length;i++){
+var mid=acc+units[i].text.length/2;
+var pn=Math.min(totalParts,Math.floor(mid/total*totalParts)+1);
+assign.push(pn);counts[pn]=(counts[pn]||0)+1;
+acc+=units[i].text.length;
+}
+for(var k=1;k<=totalParts;k++){
+if(!counts[k]){assign=units.map(function(u,idx){return Math.floor(idx*totalParts/units.length)+1;});break;}
+}
+var mine=[],nextFirst=null;
+for(var j=0;j<units.length;j++){
+if(assign[j]===partNum)mine.push(units[j]);
+else if(assign[j]===partNum+1&&!nextFirst)nextFirst=units[j];
+}
+if(!mine.length)return null;
+function firstSentence(t){var m=t.match(/^.{20,260}?[.!?](?=\s|$)/);return (m?m[0]:t.slice(0,220)).trim();}
+return {
+sections:mine.map(function(u){return u.heading;}).filter(Boolean),
+slice:mine.map(function(u){return (u.heading?'['+u.heading+'] ':'')+u.text;}).join('\n'),
+startAnchor:firstSentence(mine[0].text),
+nextAnchor:nextFirst?firstSentence(nextFirst.text):'',
+isFirst:partNum===1,isLast:partNum===totalParts
+};
 }
 function buildScenePartBoundaryText(topic,partNum,totalParts,pctEnd){
 if(totalParts<2)return '';
 var a=getSceneDismantlePlotAnchors(topic,partNum,totalParts);
-var t='\nPART BOUNDARIES (HARD LIMITS -- these come from the released film\'s plot synopsis): ';
+var t='\nPART BOUNDARIES (HARD LIMITS -- from the released film\'s plot synopsis): ';
 if(a){
-t+='The film is split into '+totalParts+' parts. YOUR part covers this stretch of the plot: "'+a.slice+'" ';
-t+=(a.isFirst?'It begins at the very first image of the film. ':'It begins at: "'+a.startAnchor+'" -- everything before that was covered in earlier parts. ');
-t+=(a.isLast?'It runs to the very end of the film. ':'It ENDS at: "'+a.endAnchor+'" -- stop right after that moment. ');
+t+='The film is split into '+totalParts+' parts. YOUR part covers exactly this stretch of the plot:\n'+a.slice+'\n';
+if(a.sections.length)t+='You MUST cover every one of these sections, in this order, and skip none: '+a.sections.join(' -> ')+'. Fill in each section\'s scenes with what really happens in the released film (include the well-known set pieces inside each section, e.g. every major fight, chase, and conversation).\n';
+t+=(a.isFirst?'Your part begins at the very first image of the film. ':'Your part begins at: "'+a.startAnchor+'" -- everything before that was covered in earlier parts. ');
+t+=(a.isLast?'Your part runs to the very end of the film. ':'Your part ENDS right before the next part begins, and the next part begins with: "'+a.nextAnchor+'" -- that event and everything after it is NOT yours; do not narrate it, summarize it, or hint at it. ');
 }else{
 t+='Stay inside your slice of the film (about '+(Math.round(100*(partNum-1)/totalParts))+'% to '+pctEnd+'%). ';
 }
-t+='Even if the research brief, fan wiki, or script describe later events, DO NOT write them -- they belong to the next part. Never start a scene that an earlier part already told. Do not write a teaser or preview of the next part ("in Part 3 we will see...").\n';
+t+='Never start a scene that an earlier part already told. Do not write a teaser or preview of the next part and never mention part numbers ("in Part 3 we will see...") -- end on the last beat of your own slice.\n';
 return t;
 }
 function getSceneDismantleScriptSlice(topic,partNum,totalParts){
@@ -1999,6 +2041,7 @@ out+='YOUR SLICE: Part '+partNum+' of '+totalParts+' covers roughly the '+pctSta
 }else{
 out+='YOUR SLICE: The entire film, first image to last image, in film order. Do not skip the middle.\n';
 }
+out+='FIRST SENTENCE: '+(partNum===1?'The very first sentence must describe the first thing on screen. ':'')+'No opening address to the audience, no thesis statement, no "this word is for..." call-out, no general rant about the system before the film content begins'+(totalParts>1&&partNum<totalParts?', and no closing sermon or wrap-up at the end of the part -- just stop after the last scene of your slice with its decode':'')+'.\n';
 out+='SCENE COUNT: Aim for roughly '+scenes+' scenes in this '+(totalParts>1?'part':'episode')+' (about '+Math.round(chars/scenes).toLocaleString()+' characters each). If the film has fewer distinct scenes in this slice, split big scenes into their beats and give the conversations room. If it has more, group the quick ones -- but never skip a scene that matters to the story.\n';
 out+='FOR EVERY SCENE, in this order, inside flowing paragraphs (not a checklist): (1) WHERE and WHEN -- location, time of day, who is present; (2) THE PEOPLE -- every named character in the scene, what each one wants, and what each one does, beat by beat; (3) THE DIALOGUE -- the actual exchange, line by line, in the order it is spoken, saying who says each line ("Morpheus tells him ... Neo answers ..."); use exact wording only when it is in the QUOTES/SOURCE below or you are certain of it, otherwise paraphrase it plainly and say "says something like"; (4) THE ACTION -- what physically happens and how the scene ends; (5) THE DECODE -- one to three sentences on what the symbol, name, number, object, or gesture means and which scripture it exposes.\n';
 out+='MARK EACH SCENE INSIDE THE PROSE: Start each new scene with a plain sentence that names it (for example "Now the film cuts to the kitchen, morning light, the father already holding the knife.") so the listener always knows which scene they are in. NO "Scene 1:" labels, NO headers, NO bullet lists, NO blockquotes, NO bold scene tags -- only paragraphs.\n';
@@ -6083,6 +6126,27 @@ out.push(pp);
 }
 return out.join('\n\n');
 }
+function stripNextPartTeasers(text,partNum){
+if(!text)return text;
+var words={two:2,three:3,four:4,five:5,six:6,seven:7,eight:8};
+function isFuture(sentence){
+var re=/\bpart\s+(\d+|two|three|four|five|six|seven|eight)\b/gi,m;
+while((m=re.exec(sentence))){
+var n=parseInt(m[1],10);if(isNaN(n))n=words[m[1].toLowerCase()];
+if(n>partNum)return true;
+}
+return false;
+}
+var paras=text.split(/\n{2,}/);
+for(var i=paras.length-1;i>=0&&i>=paras.length-3;i--){
+var sentences=paras[i].split(/(?<=[.!?])\s+/);
+var kept=sentences.filter(function(x){return !isFuture(x);});
+if(kept.length!==sentences.length){
+if(kept.length)paras[i]=kept.join(' ');else paras.splice(i,1);
+}
+}
+return paras.join('\n\n');
+}
 function finalizeSermonPartText(text,partNum){
 var out=stripSermonPreamble(text||'');
 out=stripSermonDiagrams(out);
@@ -6092,6 +6156,7 @@ out=truncateAtTheatreBoundary(out,partNum,selectedPartCount);
 out=truncateAtNextPartBoundary(out,partNum);
 }
 out=dedupePartHeaders(out);
+if(currentTopic&&currentTopic.sceneDismantle&&selectedPartCount>1)out=stripNextPartTeasers(out,partNum);
 var priorForDedupe=(currentTopic&&currentTopic.sceneDismantle&&partNum>1)?(sermonPartsRaw||[]).slice(0,partNum-1):[];
 out=dedupeRepeatedParagraphs(out,priorForDedupe);
 var webEl=document.getElementById('toggleWebResearch');
