@@ -733,6 +733,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           <option value="classic">Layout: Classic breakdown</option>
         </select>
       </div>
+      <label class="toggle-switch" id="dismantleLookupWrap" title="When a movie title has no pasted synopsis, fetch the plot, cast, and production notes from Wikipedia first and use them as the source of truth for scene order."><input type="checkbox" id="dismantleAutoLookup" checked><span class="toggle-track"></span><span><i class="fas fa-magnifying-glass" style="color:#38bdb0;margin-right:3px;font-size:0.65rem;"></i>Look up plot</span></label>
+      <button type="button" class="custom-forge-btn" id="dismantleLookupBtn" onclick="lookupFilmIntoDismantleInput()" title="Fetch the plot synopsis, cast, and production notes for the film named on the first line, and paste them into the box so you can review or edit before dismantling."><i class="fas fa-film"></i> Fetch synopsis</button>
       <div style="min-width:130px;" id="dismantleVoiceWrap">
         <select class="model-select" id="dismantleSceneVoice" style="width:100%;" title="Voice for the scene-by-scene sermon">
           <option value="yah" selected>Voice: Yah Story</option>
@@ -1912,10 +1914,10 @@ out+='DETAIL RULE: Concrete beats over abstractions. Name props, places, gesture
 out+='CHARACTER BUDGET: Every part has a character budget stated in this prompt. Spend it on scene detail and decode -- not on repeating the thesis or the same insult in new words.\n';
 var src=getSceneDismantleSourceSlice(topic,partNum,totalParts);
 if(src.text){
-out+='\nSOURCE MATERIAL PASTED BY THE USER (plot summary, script, transcript, or notes -- treat it as the ground truth for scene order and details; do NOT invent scenes that contradict it'+(src.sliced?'; this is the portion that matches YOUR slice of the film, with a small overlap at each edge -- skip anything that belongs to the neighboring part':'')+'):\n';
+out+='\nSOURCE MATERIAL PASTED BY THE USER (plot summary, script, transcript, or notes -- treat it as the ground truth for scene order and facts; if it is only a short synopsis, use it for ORDER and FACTS, split it into scenes using what you reliably know about the film, and never invent scenes, lines, or details that contradict it'+(src.sliced?'; this is the portion that matches YOUR slice of the film, with a small overlap at each edge -- skip anything that belongs to the neighboring part':'')+'):\n';
 out+='<<<SOURCE\n'+src.text+'\nSOURCE>>>\n';
 }else{
-out+='\nNO SOURCE TEXT WAS PASTED: Work from what you reliably know of this film. If you are unsure of a scene\'s exact order or a line of dialogue, say so in one clause and keep the claim bounded. Never invent scenes, quotes, or names to fill length -- spend the length on the scenes you DO know in more depth.\n';
+out+='\nNO SOURCE TEXT WAS PASTED: If you have live web search, use it INTERNALLY first to pull the film\'s detailed synopsis and scene order (do not paste URLs or citations). Otherwise work from what you reliably know of this film. If you are unsure of a scene\'s exact order or a line of dialogue, say so in one clause and keep the claim bounded. Never invent scenes, quotes, or names to fill length -- spend the length on the scenes you DO know in more depth.\n';
 }
 out+='\n';
 return out;
@@ -2186,6 +2188,8 @@ show('dismantleRoundsWrap',mode!=='movie');
 show('dismantlePartsWrap',mode!=='classic');
 show('dismantleCharsWrap',mode!=='classic');
 show('dismantleVoiceWrap',mode!=='classic');
+show('dismantleLookupWrap',mode!=='classic');
+show('dismantleLookupBtn',mode!=='classic');
 updateDismantleLengthEst();
 }
 function looksLikeMovieDismantleInput(input){
@@ -12039,6 +12043,130 @@ rawCopy(lines.join('\n\n'),document.getElementById('yahChatCopyBtn'));
 showToast('Chat copied.');
 }
 var dismantleContinueCount=0;
+function cleanFilmQueryFromInput(input){
+var raw=String(input||'').trim();
+var first=raw.split(/\n/)[0].trim();
+var wiki=first.match(/^https?:\/\/[a-z.]*wikipedia\.org\/wiki\/([^?#\s]+)/i);
+if(wiki){try{return {title:decodeURIComponent(wiki[1]).replace(/_/g,' '),exact:true};}catch(e){return {title:wiki[1].replace(/_/g,' '),exact:true};}}
+var q=first.replace(/\b(dismantle|break\s*down|breakdown|scene[\s-]*by[\s-]*scene|the\s+movie|the\s+film|movie|film)\b/gi,' ').replace(/[\u2014\u2013:|]+/g,' ').replace(/\s+/g,' ').trim();
+return {title:q||first,exact:false};
+}
+function wikiApiGet(params){
+var qs=Object.keys(params).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(params[k]);}).join('&');
+return fetch('https://en.wikipedia.org/w/api.php?'+qs+'&format=json&origin=*').then(function(r){
+if(!r.ok)throw new Error('Wikipedia lookup failed ('+r.status+')');
+return r.json();
+});
+}
+function parseWikiSections(extract){
+var lines=String(extract||'').split(/\r?\n/);
+var sections={};
+var order=[];
+var cur='_lead';
+sections[cur]=[];
+order.push(cur);
+for(var i=0;i<lines.length;i++){
+var m=lines[i].match(/^(={2,6})\s*(.+?)\s*\1\s*$/);
+if(m){
+if(m[1].length===2){
+cur=m[2].trim();
+if(!sections[cur]){sections[cur]=[];order.push(cur);}
+}else if(sections[cur]){
+sections[cur].push(m[2].trim()+':');
+}
+continue;
+}
+if(sections[cur])sections[cur].push(lines[i]);
+}
+var out={};
+order.forEach(function(k){out[k]=sections[k].join('\n').replace(/\n{3,}/g,'\n\n').trim();});
+return out;
+}
+function pickFilmSection(sections,names){
+for(var i=0;i<names.length;i++){
+var keys=Object.keys(sections);
+for(var j=0;j<keys.length;j++){
+if(keys[j].toLowerCase()===names[i]&&sections[keys[j]])return {name:keys[j],text:sections[keys[j]]};
+}
+}
+return null;
+}
+function fetchFilmSourceFromWikipedia(rawInput){
+var q=cleanFilmQueryFromInput(rawInput);
+if(!q.title)return Promise.reject(new Error('Put the film title on the first line.'));
+var yearMatch=q.title.match(/\b(?:19|20)\d{2}\b/);
+var bareTitle=q.exact?q.title:q.title.replace(/\(?\b(?:19|20)\d{2}\b\)?/g,' ').replace(/\s+/g,' ').trim();
+var normT=function(t){return String(t||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();};
+var findCandidates=q.exact?Promise.resolve([q.title]):wikiApiGet({action:'query',list:'search',srsearch:bareTitle+' film'+(yearMatch?' '+yearMatch[0]:''),srlimit:'8'}).then(function(data){
+var hits=(data&&data.query&&data.query.search)||[];
+var scored=hits.map(function(h,idx){
+var sc=-idx;
+if(/\((?:\d{4}\s+)?film\)/i.test(h.title))sc+=6;
+if(/\bfilm\b|\bmovie\b/i.test(h.snippet||''))sc+=2;
+if(yearMatch&&h.title.indexOf(yearMatch[0])!==-1)sc+=3;
+if(/list of|soundtrack|\(franchise\)|\(series\)|\(video game\)|\(novel\)|\(book\)/i.test(h.title))sc-=8;
+var ht=normT(h.title),bt=normT(bareTitle);
+if(ht===bt)sc+=14;
+else if(ht.indexOf(bt+' ')===0&&/film|movie/.test(ht))sc+=12;
+else if(bt&&ht.indexOf(bt)!==-1)sc+=3;
+if(yearMatch&&(h.snippet||'').indexOf(yearMatch[0])!==-1)sc+=3;
+return {title:h.title,score:sc};
+});
+scored.sort(function(a,b){return b.score-a.score;});
+return scored.slice(0,5).map(function(h){return h.title;});
+});
+return findCandidates.then(function(cands){
+if(!cands.length)throw new Error('No Wikipedia page found for "'+q.title+'".');
+var tryNext=function(i){
+if(i>=cands.length)throw new Error('Found pages for "'+q.title+'" but none had a plot section.');
+return wikiApiGet({action:'query',prop:'extracts|info',explaintext:'1',exsectionformat:'wiki',redirects:'1',inprop:'url',titles:cands[i]}).then(function(data){
+var pages=(data&&data.query&&data.query.pages)||{};
+var page=pages[Object.keys(pages)[0]];
+if(!page||page.missing!==undefined||!page.extract)return tryNext(i+1);
+var sec=parseWikiSections(page.extract);
+if(!/\b(film|movie)\b/i.test((sec._lead||'').slice(0,700)))return tryNext(i+1);
+var plot=pickFilmSection(sec,['plot','synopsis','premise','story','plot summary']);
+if(!plot||plot.text.length<400)return tryNext(i+1);
+var cast=pickFilmSection(sec,['cast','cast and characters','characters','voice cast']);
+var prod=pickFilmSection(sec,['production','development','filming']);
+var themes=pickFilmSection(sec,['themes','analysis','themes and analysis','interpretation','themes and interpretations','style','music','soundtrack']);
+var text='SOURCE: Wikipedia -- '+page.title+(page.fullurl?' ('+page.fullurl+')':'')+'\n\nLEAD:\n'+(sec._lead||'').slice(0,1500)+'\n\nPLOT (story order -- treat as the backbone for scene sequence):\n'+plot.text.slice(0,14000);
+if(cast)text+='\n\nCAST / CHARACTERS:\n'+cast.text.slice(0,3000);
+if(prod)text+='\n\nPRODUCTION NOTES (locations, design, shooting):\n'+prod.text.slice(0,3500);
+if(themes)text+='\n\n'+themes.name.toUpperCase()+':\n'+themes.text.slice(0,3500);
+return {title:page.title,url:page.fullurl||'',text:text};
+});
+};
+return tryNext(0);
+});
+}
+function composeDismantleSourceInput(rawInput,found){
+var raw=String(rawInput||'').trim();
+var lines=raw.split(/\n+/).map(function(l){return l.trim();}).filter(Boolean);
+var extra=lines.slice(1).join('\n');
+var out=found.title+'\n\n'+found.text;
+if(extra&&!/^SOURCE: Wikipedia/m.test(raw))out+='\n\nUSER NOTES (also treat as source):\n'+extra;
+return out;
+}
+function lookupFilmIntoDismantleInput(cb){
+var ta=document.getElementById('dismantleInput');
+var btn=document.getElementById('dismantleLookupBtn');
+var raw=(ta.value||'').trim();
+if(!raw){showToast('Type the film title in the box first, then fetch.');return Promise.resolve(null);}
+if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Looking up...';}
+return fetchFilmSourceFromWikipedia(raw).then(function(found){
+ta.value=composeDismantleSourceInput(raw,found);
+ta.dispatchEvent(new Event('input',{bubbles:true}));
+showToast('Loaded plot and notes from Wikipedia: '+found.title+'. Review or edit, then hit Dismantle.');
+return found;
+}).catch(function(err){
+showToast(String(err&&err.message?err.message:err));
+return null;
+}).then(function(found){
+if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-film"></i> Fetch synopsis';}
+return found;
+});
+}
 function buildSceneDismantleTopic(input){
 var raw=String(input||'').trim();
 var lines=raw.split(/\n+/).map(function(l){return l.trim();}).filter(Boolean);
@@ -12062,6 +12190,28 @@ el.checked=!!val;
 el.dispatchEvent(new Event('change',{bubbles:true}));
 }
 function startDismantleSermonLayout(input){
+if(isGenerating){showToast('The forge is already generating -- wait for it to finish.');return;}
+var auto=document.getElementById('dismantleAutoLookup');
+var probe=buildSceneDismantleTopic(input);
+var needsLookup=auto&&auto.checked&&(!probe.sourceText||probe.sourceText.length<1500)&&(!isUrl(input)||/wikipedia\.org\/wiki\//i.test(input));
+if(!needsLookup){launchDismantleSermonLayout(input);return;}
+var btn=document.getElementById('dismantleBtn');
+if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Looking up plot...';}
+fetchFilmSourceFromWikipedia(input).then(function(found){
+var composed=composeDismantleSourceInput(input,found);
+var ta=document.getElementById('dismantleInput');
+if(ta){ta.value=composed;ta.dispatchEvent(new Event('input',{bubbles:true}));}
+showToast('Using Wikipedia plot: '+found.title);
+return composed;
+}).catch(function(err){
+showToast('Plot lookup failed ('+String(err&&err.message?err.message:err)+') -- continuing from the model\'s own memory. Paste a synopsis for accuracy.');
+return input;
+}).then(function(finalInput){
+if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-hammer"></i> Dismantle';}
+launchDismantleSermonLayout(finalInput);
+});
+}
+function launchDismantleSermonLayout(input){
 if(isGenerating){showToast('The forge is already generating -- wait for it to finish.');return;}
 var voice=(document.getElementById('dismantleSceneVoice')||{}).value||'yah';
 var parts=selectedDismantleParts;
@@ -12088,8 +12238,8 @@ setForgeToggleChecked('toggleStoryMode',true);
 }
 syncStoryModeToggles();
 syncEpisodeModeToggles();
-if(isUrl(input)){setForgeToggleChecked('toggleWebResearch',true);}
 var model=getDismantleModel();
+if(isUrl(input)||(typeof forgeSupportsWebBrowse==='function'&&forgeSupportsWebBrowse(model))){setForgeToggleChecked('toggleWebResearch',true);}
 var sel=document.getElementById('modelSelect');
 var cust=document.getElementById('customModelInput');
 var inList=false;

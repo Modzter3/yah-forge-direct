@@ -268,6 +268,7 @@ for (const needle of [
   'buildSceneDismantleBlock', 'buildSceneDismantlePartFocus', 'startDismantleSermonLayout', 'setDismantleParts',
   'setDismantleChars', 'dismantleLayout', 'selectedPartChars', 'setPartCharCount', 'getForgePartCharTarget',
   'PART LENGTH LOCK', 'SCENE COVERAGE', 'sceneDismantle',
+  'fetchFilmSourceFromWikipedia', 'lookupFilmIntoDismantleInput', 'dismantleAutoLookup', 'composeDismantleSourceInput',
 ]) {
   if (!html.includes(needle)) throw new Error('index.html missing movie scene dismantle feature: ' + needle);
 }
