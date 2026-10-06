@@ -757,6 +757,15 @@ def forge_filename(name: str) -> str:
 
 
 def build_book(forge_name: str) -> dict | None:
+    if forge_name == "1 Enoch (Ethiopian Enoch)":
+        # Complete Charles 1917 verse numbering lives in scripts/build-enoch-corpus.py;
+        # the scrollmapper source drops/merges verses (chapter 10 loses 7, 14, 16).
+        for corpus_dir in (SEALED_DIR, APOC_DIR):
+            existing = corpus_dir / forge_filename(forge_name)
+            if existing.is_file():
+                data = json.loads(existing.read_text(encoding="utf-8"))
+                if "Charles 1917" in str(data.get("source", "")):
+                    return data
     if forge_name == "Book of Natasrym (Natsarim)":
         if not NATASRYM_SRC.is_file():
             print(f"  skip {forge_name}: missing {NATASRYM_SRC}")

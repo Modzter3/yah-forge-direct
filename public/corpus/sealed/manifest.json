@@ -9,7 +9,7 @@
     {
       "book": "1 Enoch (Ethiopian Enoch)",
       "file": "1 Enoch (Ethiopian Enoch).json",
-      "chapters": 107
+      "chapters": 108
     },
     {
       "book": "2 Enoch (Slavonic Secrets of Enoch)",
@@ -178,6 +178,6 @@
     }
   ],
   "totalBooks": 35,
-  "totalChapters": 888,
+  "totalChapters": 889,
   "source": "scripts/build-apoc-sealed-corpus.py"
 }

@@ -47,4 +47,18 @@ if (Object.keys(natData.chapters).length !== 21) {
   throw new Error('Natasrym apoc copy should have 21 chapters');
 }
 
+for (const dir of [sealedDir, apocDir]) {
+  const enoch = JSON.parse(fs.readFileSync(path.join(dir, '1 Enoch (Ethiopian Enoch).json'), 'utf8'));
+  const keys = Object.keys(enoch.chapters);
+  if (keys.length !== 108) throw new Error('1 Enoch must have 108 chapters, got ' + keys.length);
+  for (const key of keys) {
+    const nums = [...String(enoch.chapters[key]).matchAll(/^(\d+)\.\s/gm)].map((m) => Number(m[1]));
+    nums.forEach((n, i) => {
+      if (n !== i + 1) throw new Error(`1 Enoch ${key}: verse numbering not contiguous at line ${i + 1} (got ${n})`);
+    });
+  }
+  const ch10 = [...String(enoch.chapters['10']).matchAll(/^(\d+)\.\s/gm)].length;
+  if (ch10 !== 22) throw new Error('1 Enoch 10 should have 22 verses, got ' + ch10);
+}
+
 console.log('test-apoc-local-corpus: all checks passed');
