@@ -264,4 +264,12 @@ if (!html.includes('buildElevenExplicitTagPerformanceBlock') || !html.includes('
   throw new Error('index.html missing Explicit/Eleven tag delivery balance');
 }
 
+for (const needle of [
+  'buildSceneDismantleBlock', 'buildSceneDismantlePartFocus', 'startDismantleSermonLayout', 'setDismantleParts',
+  'setDismantleChars', 'dismantleLayout', 'selectedPartChars', 'setPartCharCount', 'getForgePartCharTarget',
+  'PART LENGTH LOCK', 'SCENE COVERAGE', 'sceneDismantle',
+]) {
+  if (!html.includes(needle)) throw new Error('index.html missing movie scene dismantle feature: ' + needle);
+}
+
 console.log('\nall checks passed');

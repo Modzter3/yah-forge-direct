@@ -726,7 +726,47 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           <input type="text" class="custom-model-input" id="customDismantleModel" placeholder="e.g. mistralai/mistral-large-2512" oninput="onCustomModel(this,'dismantleModel')" onfocus="this.select()">
         </div>
       </div>
-      <div class="part-count-wrap">
+      <div style="min-width:170px;">
+        <select class="model-select" id="dismantleLayout" style="width:100%;" onchange="syncDismantleLayoutUi()" title="Movie dismantles run through the sermon forge: scene by scene, in sermon voice and cadence, with parts and a character length per part.">
+          <option value="auto" selected>Layout: Auto (movie = sermon layout)</option>
+          <option value="movie">Layout: Movie scene-by-scene</option>
+          <option value="classic">Layout: Classic breakdown</option>
+        </select>
+      </div>
+      <div style="min-width:130px;" id="dismantleVoiceWrap">
+        <select class="model-select" id="dismantleSceneVoice" style="width:100%;" title="Voice for the scene-by-scene sermon">
+          <option value="yah" selected>Voice: Yah Story</option>
+          <option value="bez">Voice: Bez Story</option>
+        </select>
+      </div>
+      <div class="part-count-wrap" id="dismantlePartsWrap">
+        <span class="pc-label"><i class="fas fa-film"></i> Parts:</span>
+        <div class="part-count-btns" id="dismantlePartBtns">
+          <button class="part-count-btn" data-count="1" onclick="setDismantleParts(1)">1</button>
+          <button class="part-count-btn" data-count="2" onclick="setDismantleParts(2)">2</button>
+          <button class="part-count-btn active" data-count="3" onclick="setDismantleParts(3)">3</button>
+          <button class="part-count-btn" data-count="4" onclick="setDismantleParts(4)">4</button>
+          <button class="part-count-btn" data-count="5" onclick="setDismantleParts(5)">5</button>
+          <button class="part-count-btn" data-count="6" onclick="setDismantleParts(6)">6</button>
+          <button class="part-count-btn" data-count="7" onclick="setDismantleParts(7)">7</button>
+        </div>
+        <span class="pc-words" id="dismantlePartEst"></span>
+      </div>
+      <div class="part-count-wrap" id="dismantleCharsWrap">
+        <span class="pc-label"><i class="fas fa-text-width"></i> Chars / Part:</span>
+        <div class="part-count-btns" id="dismantleCharBtns">
+          <button class="part-count-btn" data-chars="8000" onclick="setDismantleChars(8000)">8k</button>
+          <button class="part-count-btn active" data-chars="12000" onclick="setDismantleChars(12000)">12k</button>
+          <button class="part-count-btn" data-chars="16000" onclick="setDismantleChars(16000)">16k</button>
+          <button class="part-count-btn" data-chars="24000" onclick="setDismantleChars(24000)">24k</button>
+          <button class="part-count-btn" data-chars="36000" onclick="setDismantleChars(36000)">36k</button>
+        </div>
+        <label class="standalone-custom-len" title="Exact characters per part (about 6 per word). Overrides the buttons.">
+          <input type="number" id="dismantleCharInput" min="3000" max="360000" step="1000" placeholder="custom chars" onchange="setDismantleChars(this.value)" onkeydown="if(event.key==='Enter'){setDismantleChars(this.value);}">
+          <span>chars</span>
+        </label>
+      </div>
+      <div class="part-count-wrap" id="dismantleRoundsWrap">
         <span class="pc-label"><i class="fas fa-layer-group"></i> Rounds:</span>
         <div class="part-count-btns" id="dismantleRoundBtns">
           <button class="part-count-btn" data-count="1" onclick="setDismantleRounds(1)">1</button>
@@ -1230,6 +1270,21 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           <label><input type="checkbox" id="toggleAlways7" onchange="handleAlways7()"> Always 7</label>
         </div>
       </div>
+      <div class="part-count-wrap standalone-word-wrap" id="partCharWrap" style="display:none;">
+        <span class="pc-label"><i class="fas fa-text-width"></i> Chars / Part:</span>
+        <div class="part-count-btns" id="partCharBtns">
+          <button type="button" class="part-count-btn" data-chars="8000" onclick="setPartCharCount(8000)">8k</button>
+          <button type="button" class="part-count-btn" data-chars="12000" onclick="setPartCharCount(12000)">12k</button>
+          <button type="button" class="part-count-btn" data-chars="16000" onclick="setPartCharCount(16000)">16k</button>
+          <button type="button" class="part-count-btn" data-chars="24000" onclick="setPartCharCount(24000)">24k</button>
+          <button type="button" class="part-count-btn" data-chars="36000" onclick="setPartCharCount(36000)">36k</button>
+        </div>
+        <label class="standalone-custom-len" title="Exact target in characters for EACH part (about 6 characters per word). Leave empty for the default ~2,000 words (12,000 chars) per part.">
+          <input type="number" id="partCharInput" min="3000" max="360000" step="1000" placeholder="custom chars" onchange="setPartCharCount(this.value)" onkeydown="if(event.key==='Enter'){setPartCharCount(this.value);}">
+          <span>chars</span>
+        </label>
+        <span class="pc-words" id="partCharEst"></span>
+      </div>
       <div class="part-count-wrap standalone-word-wrap" id="standaloneWordWrap">
         <span class="pc-label"><i class="fas fa-text-width"></i> 1-Part Length:</span>
         <div class="part-count-btns" id="standaloneWordBtns">
@@ -1642,6 +1697,7 @@ var clipboardStore={};
 var selectedPartCount=5;
 var selectedStandaloneWords=4000;
 var selectedStandaloneChars=0;
+var selectedPartChars=0;
 var FORGE_CHARS_PER_WORD=6;
 var currentChapterText=null;
 var currentChapterVerseCount=0;
@@ -1792,6 +1848,7 @@ sermonNewsAnglePlan=buildSermonNewsAnglePlan(selectedPartCount,currentTopic);
 }
 function detectMediaWorkFromTopic(topic){
 if(!topic)return null;
+if(topic.sceneDismantle)return {kind:'movie',label:'a film or cinematic work',score:99};
 var raw=((''+(topic.title||''))+'\n'+(''+(topic.desc||''))).toLowerCase();
 if(!/\S/.test(raw))return null;
 var scores={tv:0,movie:0,game:0,book:0};
@@ -1818,8 +1875,61 @@ if(!best||bestScore<2)return null;
 var label={tv:'a television series or streaming show',movie:'a film or cinematic work',game:'a video game or interactive work',book:'a book, novel, or literary work'}[best];
 return {kind:best,label:label,score:bestScore};
 }
+function getSceneDismantleSourceSlice(topic,partNum,totalParts){
+var src=String((topic&&topic.sourceText)||'').trim();
+if(!src)return {text:'',sliced:false};
+var cap=60000;
+if(totalParts>1&&src.length>cap/2){
+var size=src.length/totalParts;
+var start=Math.max(0,Math.floor(size*(partNum-1)-size*0.04));
+var end=Math.min(src.length,Math.ceil(size*partNum+size*0.04));
+var slice=src.slice(start,end);
+if(slice.length>cap)slice=slice.slice(0,cap);
+return {text:slice,sliced:true};
+}
+return {text:src.slice(0,cap),sliced:false};
+}
+function buildSceneDismantleBlock(topic,partNum,totalParts){
+var chars=getForgePartCharTarget(totalParts);
+var scenes=Math.min(40,Math.max(3,Math.round(chars/2600)));
+var pctStart=Math.round((partNum-1)/totalParts*100);
+var pctEnd=Math.round(partNum/totalParts*100);
+var out='*** SCENE-BY-SCENE FILM DISMANTLE -- THIS IS THE ASSIGNMENT ***\n';
+out+='WORK TO DISMANTLE: '+topic.title+'\n';
+out+='FORMAT: This is NOT a review, NOT a plot recap, NOT a lesson, and NOT a list. It is the sermon itself -- the same revelation voice, the same cadence, the same dense paragraphs -- aimed at the film, one scene at a time, in the order the film plays.\n';
+if(totalParts>1){
+out+='YOUR SLICE: Part '+partNum+' of '+totalParts+' covers roughly the '+pctStart+'% to '+pctEnd+'% mark of the film'+(partNum===1?' -- start at the very first image (studio logos, opening shot, title sequence)':'')+(partNum===totalParts?' -- run through the final scene, the last image, and anything after the credits':'')+'. Cover ONLY the scenes that fall inside this slice, in film order. Do NOT preview later scenes. Do NOT re-cover earlier parts.\n';
+}else{
+out+='YOUR SLICE: The entire film, first image to last image, in film order. Do not skip the middle.\n';
+}
+out+='SCENE COUNT: Aim for roughly '+scenes+' scenes in this '+(totalParts>1?'part':'episode')+' (about '+Math.round(chars/scenes).toLocaleString()+' characters each). If the film has fewer distinct scenes in this slice, split big scenes into their beats. If it has more, group the quick ones -- but never skip a scene that matters to the story.\n';
+out+='FOR EVERY SCENE, cover in flowing paragraphs (not as a checklist): (1) WHERE and WHEN -- the location, time of day, weather, light, color palette, set dressing, and costume details; (2) WHO is in frame, what each person wants, and what they are hiding; (3) WHAT HAPPENS -- the action beat by beat, and the dialogue (quote a line only if you are certain of it, otherwise paraphrase it plainly); (4) HOW IT IS SHOT -- camera movement, framing, sound, score, silence, cuts; (5) THE DECODE -- what the symbol, name, number, object, or gesture means and which scripture it exposes; (6) WHERE IT LANDS -- what this scene is doing to the people watching it and to Israel now.\n';
+out+='MARK EACH SCENE INSIDE THE PROSE: Start each new scene with a plain sentence that names it (for example "Now the film cuts to the kitchen, morning light, the father already holding the knife.") so the listener always knows which scene they are in. NO "Scene 1:" labels, NO headers, NO bullet lists, NO blockquotes, NO bold scene tags -- only paragraphs.\n';
+if(totalParts>1&&partNum>1){
+out+='CONTINUITY: The previous part stopped at a specific scene. Open with one short sentence that carries the listener into the NEXT scene, then keep going. Do NOT recap what you already covered.\n';
+}
+out+='DETAIL RULE: Concrete beats over abstractions. Name props, places, gestures, lines, sounds, and camera moves. A paragraph with no specific thing from the film in it is a failed paragraph.\n';
+out+='CHARACTER BUDGET: Every part has a character budget stated in this prompt. Spend it on scene detail and decode -- not on repeating the thesis or the same insult in new words.\n';
+var src=getSceneDismantleSourceSlice(topic,partNum,totalParts);
+if(src.text){
+out+='\nSOURCE MATERIAL PASTED BY THE USER (plot summary, script, transcript, or notes -- treat it as the ground truth for scene order and details; do NOT invent scenes that contradict it'+(src.sliced?'; this is the portion that matches YOUR slice of the film, with a small overlap at each edge -- skip anything that belongs to the neighboring part':'')+'):\n';
+out+='<<<SOURCE\n'+src.text+'\nSOURCE>>>\n';
+}else{
+out+='\nNO SOURCE TEXT WAS PASTED: Work from what you reliably know of this film. If you are unsure of a scene\'s exact order or a line of dialogue, say so in one clause and keep the claim bounded. Never invent scenes, quotes, or names to fill length -- spend the length on the scenes you DO know in more depth.\n';
+}
+out+='\n';
+return out;
+}
+function buildSceneDismantlePartFocus(topic,partNum,totalParts,voiceLabel){
+var tag=voiceLabel+' SCENE-BY-SCENE DISMANTLE';
+if(totalParts===1)return tag+': Walk the whole film scene by scene in film order, in the sermon revelation cadence -- dense paragraphs, specific on-screen detail, decode and scripture woven in. Not a recap, not a review.';
+if(partNum===1)return tag+' part one: Start at the first image and walk the opening scenes in order. Revelation cadence, dense paragraphs, specific on-screen detail. No welcome, no thesis speech.';
+if(partNum===totalParts)return tag+' final part: Pick up at the next scene and walk to the last image and beyond the credits. Same cadence, same detail. Land it in the final scene, not in a sign-off.';
+return tag+' part '+partNum+': One sentence carries over from the last scene, then keep walking the next scenes in order -- same cadence, same on-screen detail, same decode.';
+}
 function buildMediaWorkPromptExtension(topic,media,partNum,totalParts){
 if(!topic||!media)return '';
+if(topic.sceneDismantle)return buildSceneDismantleBlock(topic,partNum,totalParts);
 var kind=media.kind;
 var isTv=kind==='tv';
 var out='';
@@ -1964,8 +2074,34 @@ if(n===1){
 if(estEl)estEl.textContent='1 part';
 if(subEl)subEl.textContent='Target: ~'+getStandaloneCharTarget().toLocaleString()+' chars (~'+selectedStandaloneWords.toLocaleString()+' words)';
 }else{
-if(estEl)estEl.textContent='~'+(n*2000).toLocaleString()+' words (~2,000/part)';
+var perPartWords=getForgeWordsPerPart(n);
+if(estEl)estEl.textContent='~'+(n*perPartWords).toLocaleString()+' words (~'+perPartWords.toLocaleString()+'/part)';
 }
+var charWrap=document.getElementById('partCharWrap');
+if(charWrap)charWrap.style.display=n>1?'flex':'none';
+var charEst=document.getElementById('partCharEst');
+if(charEst){
+var perPartChars=getForgePartCharTarget(n);
+charEst.textContent=n>1?('~'+perPartChars.toLocaleString()+' chars/part · ~'+(perPartChars*n).toLocaleString()+' chars total'):'';
+}
+}
+function setPartCharCount(v){
+var n=parseInt(String(v).replace(/[,\s]/g,''),10);
+var charIn=document.getElementById('partCharInput');
+if(isNaN(n)||n<=0){
+selectedPartChars=0;
+if(charIn){charIn.value='';charIn.classList.remove('active');}
+}else{
+if(n<3000)n=3000;
+if(n>360000)n=360000;
+selectedPartChars=n;
+if(charIn){charIn.value=n;charIn.classList.add('active');}
+}
+var btns=document.querySelectorAll('#partCharBtns .part-count-btn');
+for(var i=0;i<btns.length;i++){
+btns[i].classList.toggle('active',selectedPartChars>0&&parseInt(btns[i].getAttribute('data-chars'),10)===selectedPartChars);
+}
+updatePartWordEstDisplay();
 }
 function setPartCount(n){
 selectedPartCount=n;
@@ -2006,6 +2142,59 @@ var btns=document.querySelectorAll('#dismantleRoundBtns .part-count-btn');
 for(var i=0;i<btns.length;i++){
 btns[i].classList.toggle('active',parseInt(btns[i].getAttribute('data-count'))===n);
 }
+}
+var selectedDismantleParts=3;
+var selectedDismantleChars=12000;
+function setDismantleParts(n){
+selectedDismantleParts=n;
+var btns=document.querySelectorAll('#dismantlePartBtns .part-count-btn');
+for(var i=0;i<btns.length;i++){
+btns[i].classList.toggle('active',parseInt(btns[i].getAttribute('data-count'),10)===n);
+}
+updateDismantleLengthEst();
+}
+function setDismantleChars(v){
+var n=parseInt(String(v).replace(/[,\s]/g,''),10);
+var charIn=document.getElementById('dismantleCharInput');
+if(isNaN(n)||n<=0)n=12000;
+if(n<3000)n=3000;
+if(n>360000)n=360000;
+selectedDismantleChars=n;
+var preset=false;
+var btns=document.querySelectorAll('#dismantleCharBtns .part-count-btn');
+for(var i=0;i<btns.length;i++){
+var on=parseInt(btns[i].getAttribute('data-chars'),10)===n;
+if(on)preset=true;
+btns[i].classList.toggle('active',on);
+}
+if(charIn){
+if(preset){charIn.value='';charIn.classList.remove('active');}
+else{charIn.value=n;charIn.classList.add('active');}
+}
+updateDismantleLengthEst();
+}
+function updateDismantleLengthEst(){
+var el=document.getElementById('dismantlePartEst');
+if(!el)return;
+var total=selectedDismantleParts*selectedDismantleChars;
+el.textContent='~'+total.toLocaleString()+' chars total (~'+Math.round(total/FORGE_CHARS_PER_WORD).toLocaleString()+' words)';
+}
+function syncDismantleLayoutUi(){
+var mode=(document.getElementById('dismantleLayout')||{}).value||'auto';
+var show=function(id,on){var el=document.getElementById(id);if(el)el.style.display=on?'':'none';};
+show('dismantleRoundsWrap',mode!=='movie');
+show('dismantlePartsWrap',mode!=='classic');
+show('dismantleCharsWrap',mode!=='classic');
+show('dismantleVoiceWrap',mode!=='classic');
+updateDismantleLengthEst();
+}
+function looksLikeMovieDismantleInput(input){
+var raw=String(input||'').trim();
+if(!raw)return false;
+if(/^https?:\/\/(?:www\.)?(?:imdb\.com\/title|rottentomatoes\.com\/m\/|letterboxd\.com\/film)/i.test(raw))return true;
+var firstLine=raw.split(/\n/)[0].slice(0,200);
+var mw=detectMediaWorkFromTopic({title:firstLine,desc:raw.slice(0,4000)});
+return !!(mw&&mw.kind==='movie');
 }
 function updatePartRecommendation(){
 var rec=recommendPartCount(currentTopic,currentMode);
@@ -5577,12 +5766,19 @@ var SERMON_FIRST_TOKEN_MS=5*60*1000;
 var SERMON_CHUNK_STALL_MS=2*60*1000;
 var SERMON_MIN_WORD_RATIO=0.75;
 function getForgeWordsPerPart(totalParts){
-return totalParts===1?selectedStandaloneWords:2000;
+if(totalParts===1)return selectedStandaloneWords;
+return selectedPartChars>0?Math.round(selectedPartChars/FORGE_CHARS_PER_WORD):2000;
+}
+function getForgePartCharTarget(totalParts){
+var tp=totalParts||selectedPartCount||1;
+if(tp===1)return getStandaloneCharTarget();
+return selectedPartChars>0?selectedPartChars:getForgeWordsPerPart(tp)*FORGE_CHARS_PER_WORD;
 }
 function getStandaloneCharTarget(){
 return selectedStandaloneChars>0?selectedStandaloneChars:selectedStandaloneWords*FORGE_CHARS_PER_WORD;
 }
 var SERMON_STANDALONE_MIN_RATIO=0.93;
+var SERMON_PART_CHARS_MIN_RATIO=0.9;
 function getForgeMaxContinuations(model,totalParts){
 var words=getForgeWordsPerPart(totalParts||selectedPartCount||1);
 var perResponse=Math.max(1200,Math.floor((getModelMaxOutputTokens(model)-512)/1.45*0.35));
@@ -5612,6 +5808,7 @@ if(tp===1){
 if(selectedStandaloneChars>0)return String(text||'').trim().length<Math.floor(selectedStandaloneChars*SERMON_STANDALONE_MIN_RATIO);
 return countForgeWords(text)<Math.floor(getForgeWordsPerPart(1)*SERMON_STANDALONE_MIN_RATIO);
 }
+if(selectedPartChars>0)return String(text||'').trim().length<Math.floor(selectedPartChars*SERMON_PART_CHARS_MIN_RATIO);
 var target=getForgeWordsPerPart(tp);
 return countForgeWords(text)<Math.floor(target*SERMON_MIN_WORD_RATIO);
 }
@@ -6114,8 +6311,9 @@ if(opts.underWordCount){
 var target=getForgeWordsPerPart(selectedPartCount);
 var current=countForgeWords(text);
 var remaining=Math.max(300,target-current);
-if(oneShot&&selectedStandaloneChars>0){
-p+='TOO SHORT: You wrote about '+text.length.toLocaleString()+' characters. This episode MUST reach about '+selectedStandaloneChars.toLocaleString()+' characters (~'+target.toLocaleString()+' words) before it ends. You still owe roughly '+Math.max(1800,selectedStandaloneChars-text.length).toLocaleString()+' characters (~'+remaining.toLocaleString()+' words).\n';
+if((oneShot&&selectedStandaloneChars>0)||(!oneShot&&selectedPartChars>0)){
+var charGoal=oneShot?selectedStandaloneChars:selectedPartChars;
+p+='TOO SHORT: You wrote about '+text.length.toLocaleString()+' characters. This '+(oneShot?'episode':'part')+' MUST reach about '+charGoal.toLocaleString()+' characters (~'+target.toLocaleString()+' words) before it ends. You still owe roughly '+Math.max(1800,charGoal-text.length).toLocaleString()+' characters (~'+remaining.toLocaleString()+' words).\n';
 }else{
 p+='TOO SHORT: You only wrote about '+current.toLocaleString()+' words. This '+(oneShot?'episode':'part')+' MUST reach about '+target.toLocaleString()+' words before it ends. You still owe roughly '+remaining.toLocaleString()+' words.\n';
 }
@@ -6910,7 +7108,7 @@ return /^(what|which|how|when|where|why|who|can|should|could|would|do|does|did|i
 }
 function isDirectQuestionTopic(topic){
 if(!topic)return false;
-if(topic.isBriefing||topic.briefingText)return false;
+if(topic.isBriefing||topic.briefingText||topic.sceneDismantle)return false;
 var hay=((topic.title||'')+' '+(topic.desc||'')).replace(/^Direct question — answer precisely:\s*/i,'').replace(/^Custom sermon topic:\s*/i,'').replace(/^Closed-door dramatization hook[^.]*\.\s*/i,'').trim();
 if(!hay)return false;
 if(looksLikePastedBriefingOrArticle(hay))return false;
@@ -7193,6 +7391,7 @@ partFocus='YAH STORY: One unbroken river of first-person revelation through this
 }else if(wantRoughBez&&!wantBezStory){
 partFocus=getRoughBezPartFocus(partNum,totalParts,topic,chapterSrc);
 }
+if(topic&&topic.sceneDismantle)partFocus=buildSceneDismantlePartFocus(topic,partNum,totalParts,wantBezStory?'BEZ STORY':(wantYahStory?'YAH STORY':'SERMON'));
 var wordsPerPart=getForgeWordsPerPart(totalParts);
 var totalWords=totalParts*wordsPerPart;
 var p;
@@ -7249,6 +7448,9 @@ p+='- Plan before you write: split the assigned text/topic into beats and give e
 p+='- Do NOT write a closing, final warning, altar call, or sign-off until the LAST assigned verse/point is fully covered AND you have written at least 90% of the target.\n';
 p+='- If you run low on material, go DEEPER, not wider: another symbol layer, another scripture witness, the lived pressure, a verified named face. Never filler, never repetition, never a loose general monologue.\n';
 p+='- The last third must carry the SAME subject and the SAME fire as the opening. If your energy drifts into generic reflection, snap back to the next verse/symbol.\n\n';
+}
+if(totalParts>1&&selectedPartChars>0){
+p+='PART LENGTH LOCK (ZERO TOLERANCE): THIS part must reach about '+selectedPartChars.toLocaleString()+' characters (~'+wordsPerPart.toLocaleString()+' words). That is a MINIMUM per part, not a suggestion. Do NOT close, sign off, or wrap up before your slice of the text is fully covered AND you have written at least 90% of the target. If you run low on material, go DEEPER on the scenes/verses in your slice (another symbol layer, another scripture witness, another on-screen detail) -- never filler, never repetition, never a generic monologue.\n\n';
 }
 if(wantBezStory&&totalParts>1){
 p+='BEZ STORY LENGTH LOCK: '+totalParts+' parts = ~'+totalWords.toLocaleString()+' words total (~'+wordsPerPart.toLocaleString()+' per part). Live human tone is NOT permission to stop early. Linger on each verse/scene until this part hits the target.\n';
@@ -7356,6 +7558,8 @@ if(wantYahStory){
 p+=buildStoryRevelationStyleBlock(false,topic,chapterSrc,{partNum:partNum});
 if(wantEpisodeMode){
 p+='EPISODE COVERAGE: Walk your assigned TV episodes in broadcast order. Scene by scene in continuous revelation paragraphs -- Me speaking straight to their bones, not a recap blog, not a lesson.\n\n';
+}else if(topic&&topic.sceneDismantle){
+p+='SCENE COVERAGE: Walk every scene of your slice in film order. Miss nothing. Each scene is a beat in MY voice exposing what was put on the screen -- not a recap, not a lesson point.\n\n';
 }else{
 p+='VERSE COVERAGE: Walk every assigned verse in exact order. Miss nothing. Each verse is a beat in MY voice remembering them -- not a lesson point.\n\n';
 }
@@ -7363,6 +7567,8 @@ p+='VERSE COVERAGE: Walk every assigned verse in exact order. Miss nothing. Each
 p+=buildStoryRevelationStyleBlock(true,topic,chapterSrc,{partNum:partNum});
 if(wantEpisodeMode){
 p+='EPISODE COVERAGE: Walk your assigned TV episodes in broadcast order. Scene by scene in continuous revelation paragraphs -- not a recap blog, not a lesson.\n\n';
+}else if(topic&&topic.sceneDismantle){
+p+='SCENE COVERAGE: Walk every scene of your slice in film order. Miss nothing. Each scene is a beat in what Yah showed you about what was put on the screen -- not a recap, not a lesson point.\n\n';
 }else{
 p+='VERSE COVERAGE: Walk every assigned verse in exact order. Miss nothing. Each verse is a beat in what Yah showed you -- not a lesson point.\n\n';
 }
@@ -11833,11 +12039,85 @@ rawCopy(lines.join('\n\n'),document.getElementById('yahChatCopyBtn'));
 showToast('Chat copied.');
 }
 var dismantleContinueCount=0;
+function buildSceneDismantleTopic(input){
+var raw=String(input||'').trim();
+var lines=raw.split(/\n+/).map(function(l){return l.trim();}).filter(Boolean);
+var first=lines.length?lines[0]:raw;
+var title=first.length<=140?first:first.slice(0,100).replace(/\s+\S*$/,'')+'...';
+var urlOnly=isUrl(raw);
+var sourceText=(!urlOnly&&(lines.length>1||raw.length>200))?raw:'';
+return {
+id:-1,
+cat:'doctrine',
+title:title,
+desc:'Scene-by-scene film dismantle in sermon voice'+(urlOnly?' (film page: '+raw+')':''),
+sceneDismantle:true,
+sourceText:sourceText
+};
+}
+function setForgeToggleChecked(id,val){
+var el=document.getElementById(id);
+if(!el)return;
+el.checked=!!val;
+el.dispatchEvent(new Event('change',{bubbles:true}));
+}
+function startDismantleSermonLayout(input){
+if(isGenerating){showToast('The forge is already generating -- wait for it to finish.');return;}
+var voice=(document.getElementById('dismantleSceneVoice')||{}).value||'yah';
+var parts=selectedDismantleParts;
+var chars=selectedDismantleChars;
+currentTopic=buildSceneDismantleTopic(input);
+currentMode='standard';
+currentChapterSource=null;
+currentChapterText=null;
+currentChapterVerseCount=0;
+currentNewsVeilFromUrl=false;
+setForgeToggleChecked('toggleBehindTheVeil',false);
+setForgeToggleChecked('togglePureTheatre',false);
+setForgeToggleChecked('toggleSermonEpisodeMode',false);
+setForgeToggleChecked('toggleExplicit',document.getElementById('dismantleExplicit').checked);
+setForgeToggleChecked('toggleIsraelite',false);
+if(voice==='bez'){
+setForgeToggleChecked('toggleRoughBez',true);
+setForgeToggleChecked('toggleBezStoryMode',true);
+setForgeToggleChecked('toggleStoryMode',false);
+}else{
+setForgeToggleChecked('toggleRoughBez',false);
+setForgeToggleChecked('toggleBezStoryMode',false);
+setForgeToggleChecked('toggleStoryMode',true);
+}
+syncStoryModeToggles();
+syncEpisodeModeToggles();
+if(isUrl(input)){setForgeToggleChecked('toggleWebResearch',true);}
+var model=getDismantleModel();
+var sel=document.getElementById('modelSelect');
+var cust=document.getElementById('customModelInput');
+var inList=false;
+for(var i=0;sel&&i<sel.options.length;i++){if(sel.options[i].value===model){inList=true;break;}}
+if(inList){
+sel.value=model;
+if(cust){cust.value='';cust.classList.remove('active-override');}
+sel.style.opacity='1';
+}else if(cust){
+cust.value=model;
+onCustomModel(cust,'modelSelect');
+}
+setPartCount(parts);
+if(parts===1)setStandaloneCharCount(chars);
+else setPartCharCount(chars);
+openModal({skipPartRec:true});
+generateSermon(true);
+}
 function startDismantle(){
 var rawInput=document.getElementById('dismantleInput').value.trim();
 var input=normalizeRedditSpeakerTags(rawInput);
 if(input!==rawInput){document.getElementById('dismantleInput').value=input;}
 if(!input){showToast('Paste something to dismantle first.');return;}
+var layoutMode=(document.getElementById('dismantleLayout')||{}).value||'auto';
+if(layoutMode==='movie'||(layoutMode==='auto'&&looksLikeMovieDismantleInput(input))){
+startDismantleSermonLayout(input);
+return;
+}
 var model=getDismantleModel();
 var explicit=document.getElementById('dismantleExplicit').checked;
 var israelite=document.getElementById('dismantleIsraelite').checked;
@@ -12704,6 +12984,7 @@ if(breakdownToggle)breakdownToggle.checked=false;
 }
 document.addEventListener('DOMContentLoaded',function(){
 updatePartWordEstDisplay();
+syncDismantleLayoutUi();
 syncEpisodeModeToggles();
 syncStoryModeToggles();
 syncCrossReferenceToggles();
