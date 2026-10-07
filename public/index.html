@@ -978,9 +978,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <button class="news-cat-btn" onclick="setNewsCat('church',this)">Church &amp; Religion</button>
       <button class="news-cat-btn" onclick="setNewsCat('land',this)">Land &amp; Resources</button>
       <button class="news-cat-btn" onclick="setNewsCat('military',this)">Military &amp; Alliances</button>
-      <div class="news-cat-divider"><i class="fas fa-film" style="margin-right:4px;"></i>Entertainment &amp; Gaming</div>
+      <div class="news-cat-divider"><i class="fas fa-film" style="margin-right:4px;"></i>Entertainment, Gaming &amp; Gear</div>
       <button class="news-cat-btn" onclick="setNewsCat('entertainment',this)">Entertainment</button>
       <button class="news-cat-btn" onclick="setNewsCat('gaming',this)">Gaming</button>
+      <button class="news-cat-btn" onclick="setNewsCat('electronics',this)">Consumer Electronics</button>
       <div class="news-cat-divider"><i class="fas fa-globe-americas" style="margin-right:4px;"></i>Regional</div>
       <button class="news-cat-btn regional" onclick="setNewsCat('caribbean',this)">Caribbean</button>
       <button class="news-cat-btn regional" onclick="setNewsCat('latam',this)">Central &amp; South America</button>
@@ -9839,7 +9840,7 @@ return el?parseInt(el.value)||10:10;
 function buildNewsScanPrompt(category,customQuery){
 var catMap={
 // --- ALL ---
-all:'ANY category -- wars, famine, plague, earthquakes, persecution of the Negro worldwide, government surveillance, economic collapse, religious deception, social upheaval, natural disasters, astronomical events, police brutality, new legislation targeting freedoms, health scandals, education battles, land grabs, military buildups, whistleblower leaks, food contamination, cultural warfare, Hollywood and streaming entertainment, video games and esports industry',
+all:'ANY category -- wars, famine, plague, earthquakes, persecution of the Negro worldwide, government surveillance, economic collapse, religious deception, social upheaval, natural disasters, astronomical events, police brutality, new legislation targeting freedoms, health scandals, education battles, land grabs, military buildups, whistleblower leaks, food contamination, cultural warfare, Hollywood and streaming entertainment, video games and esports industry, consumer electronics and gadget industry',
 // --- TOPICAL ---
 wars:'wars, military conflicts, rumors of wars, nations rising against nations, civil unrest, coups, invasions, proxy wars, ceasefire violations',
 famine:'famine, food shortages, drought, crop failures, pestilence, new diseases, pandemics, water crises, agricultural disasters',
@@ -9858,6 +9859,7 @@ land:'gentrification displacing Black communities, eminent domain abuse, corpora
 military:'NATO expansion, new military alliances forming, arms deals between nations, military buildups near conflict zones, nuclear threats or tests, proxy war escalations, defense spending increases, military technology developments, troop deployments',
 entertainment:'Hollywood film and TV industry news, streaming platforms (Netflix, Disney+, Max, Amazon Prime), music industry and award shows, celebrity and studio scandals with prophetic or cultural weight, box office and ratings shifts, writers and actors strikes, censorship and content moderation battles, occult or ritual symbolism in mainstream entertainment, Black representation and erasure in media, propaganda or agenda pushes in movies and series',
 gaming:'video game industry news, major game releases and controversies, esports and live-service games, game studio layoffs mergers and acquisitions, censorship or age-rating battles, in-game monetization and gambling mechanics (loot boxes), DEI or culture-war fights in gaming, propaganda or psychological programming in popular titles, platform policy (Steam, PlayStation, Xbox, Nintendo), AI in game development, youth addiction and screen-time debates tied to games',
+electronics:'consumer electronics industry news, smartphone and tablet launches (Apple, Samsung, Google, etc.), laptop and PC hardware, TVs and home audio, smart home devices and voice assistants, wearables and health trackers, product recalls and safety failures, right-to-repair and planned obsolescence fights, chip and supply-chain shocks affecting gadgets, privacy scandals tied to devices, e-waste and mining for rare earths, Black Friday and retail pricing wars, tariffs on imported electronics',
 // --- REGIONAL ---
 caribbean:'news from Jamaica, Haiti, Trinidad and Tobago, Barbados, Bahamas, Guyana, Bermuda, US and British Virgin Islands, Antigua, St. Lucia, Grenada, Dominica, St. Kitts, Belize, Suriname -- political unrest, natural disasters, crime waves, poverty, economic struggles, tourism exploitation, colonial legacy issues, violence, corruption, diaspora conditions. Focus on how the descendants of slaves in these islands are affected.',
 latam:'news from Brazil (especially Afro-Brazilians in favelas), Colombia, Panama, Honduras, Dominican Republic, Cuba, Puerto Rico, Venezuela, Peru, Ecuador, Mexico -- anti-Black violence, favela conditions, political corruption, drug war casualties, Afro-Latino erasure and discrimination, police violence against dark-skinned people, economic exploitation, immigration crises. Focus on the forgotten Negro diaspora suffering across Latin America.',
@@ -9922,8 +9924,8 @@ p+='1. MAJOR global events -- wars breaking out, natural disasters, significant 
 p+='2. HIGH-IMPACT stories affecting Israel (the scattered Negro worldwide) -- policy changes, acts of injustice, significant cultural events\n';
 p+='3. PROPHETICALLY SIGNIFICANT developments -- events that clearly echo or fulfill biblical prophecy\n';
 p+='4. Stories that MULTIPLE major outlets covered -- if only one obscure outlet reported it, it is NOT a top headline\n';
-if(category==='entertainment'||category==='gaming'){
-p+='INCLUDE: major entertainment or gaming industry stories that dominated trade and mainstream coverage this period -- studio/platform moves, censorship fights, layoffs, blockbuster releases, industry-wide scandals. Filter OUT: tabloid dating gossip and minor influencer drama with no prophetic or cultural weight.\n\n';
+if(category==='entertainment'||category==='gaming'||category==='electronics'){
+p+='INCLUDE: major entertainment, gaming, or consumer-electronics industry stories that dominated trade and mainstream coverage this period -- product launches, recalls, platform moves, censorship fights, layoffs, blockbuster releases, supply-chain shocks, industry-wide scandals. Filter OUT: tabloid dating gossip, minor influencer drama, and routine unboxing hype with no prophetic or cultural weight.\n\n';
 }else{
 p+='Filter OUT: minor local stories, routine political chatter, celebrity gossip, sports, entertainment fluff. Only the stories that MATTER on a prophetic scale.\n\n';
 }
