@@ -227,6 +227,9 @@ if (!html.includes('SHORT DESCRIBED TAGS') || !html.includes('PAUSE AFTER EVERY 
 if (!html.includes('buildBezStoryVoiceLockBlock') || !html.includes('BEZ STORY PERSON LOCK -- HE TALKS ABOUT HIMSELF, NEVER AS YAH')) {
   throw new Error('index.html missing Bez Story never-as-Yah lock');
 }
+if (!html.includes('buildBezStoryBioBlock') || !html.includes('BEZ CANONICAL BIO') || !html.includes('April twenty twenty')) {
+  throw new Error('index.html missing Bez Story canonical bio');
+}
 if (!html.includes('NO MADE-UP SLANG') || html.includes('CHURCH / RELIGION ANGLES') || html.includes('FINANCE / DEBT / WORK ANGLES')) {
   throw new Error('index.html Bez Story slang block must be plain English with no slogan pools');
 }
