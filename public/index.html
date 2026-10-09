@@ -6006,13 +6006,24 @@ return /\b(amen|shalom|selah|in the name of|until next time|thank you for|share 
 }
 function stripPrematureForgeClosing(text){
 var paras=String(text||'').replace(/\s+$/,'').split(/\n\s*\n/);
-if(paras.length<4)return text;
-var removed=0;
-while(removed<2&&paras.length>3&&looksLikeForgeClosingParagraph(paras[paras.length-1])){
-paras.pop();
-removed++;
+// Only inspect the tail: scripture teaching earlier in the body must survive.
+var start=Math.max(1,paras.length-8);
+var signoff=/\b(this (?:has been|is) Brother|peace,? Israel|Yah First,? last,? and always|the message is (?:finished|out)|until next time|thank you for (?:listening|tuning)|thanks for (?:listening|tuning))\b/i;
+for(var i=start;i<paras.length;i++){
+if(signoff.test(paras[i]))return paras.slice(0,i).join('\n\n');
 }
-return removed?paras.join('\n\n'):text;
+while(paras.length>1&&looksLikeForgeClosingParagraph(paras[paras.length-1]))paras.pop();
+return paras.join('\n\n');
+}
+function shouldStageForgeClosing(){
+return selectedPartCount===1&&!isTheatreModeActive()&&!isLocalLlmChapterSermonActive();
+}
+function buildSermonClosingPrompt(partNum,existing){
+var assignment=buildPartPrompt(partNum,{allowClosing:true});
+var start=assignment.indexOf('RULE 6 -- CLOSING');
+var end=assignment.indexOf('VOICE & STYLE RULES:',start);
+var closing=start>=0?assignment.slice(start,end>=0?end:undefined):'End with one brief topic-specific closing.';
+return 'FINAL CLOSING ONLY: The sermon body is complete. Write ONLY one short closing (one or two paragraphs), then STOP. No new teaching, title, recap of the whole sermon, invented audience comments, or reopening after goodbye. Match the exact speaker, perspective, and voice tags of the draft. Ignore all length minimums; those apply to the completed body.\n\n'+closing+'\n\nEND OF COMPLETED BODY:\n'+String(existing||'').slice(-2400);
 }
 function countForgeWords(text){
 return String(text||'').trim().split(/\s+/).filter(Boolean).length;
@@ -6620,6 +6631,7 @@ p+='ALREADY COVERED (do NOT repeat these points -- advance past them):\n'+digest
 if(text.length>1800){
 p+='OPENING OF YOUR DRAFT (match this voice and fire):\n"'+text.replace(/^#.+\n+/,'').slice(0,600)+'..."\n\n';
 }
+if(shouldStageForgeClosing())p+='BODY CONTINUATION ONLY: Do NOT close, sign off, or deliver a final warning in this turn, even if you reach the target. A separate final closing turn follows. Never refer to a removed goodbye or invent audience comments.\n\n';
 p+='LAST FIFTEEN HUNDRED CHARACTERS OF YOUR DRAFT:\n"...'+text.slice(-1500)+'"\n\nCONTINUE IMMEDIATELY (mid-flow, no preamble):';
 return p;
 }
@@ -6757,7 +6769,9 @@ else ctx.promptMode='normal';
 }
 var model=getForgeStreamModel(ctx);
 var prompt;
-if(streamOpts.theatreAgreementCorrection){
+if(streamOpts.closingOnly){
+prompt=buildSermonClosingPrompt(partNum,ctx.partContent);
+}else if(streamOpts.theatreAgreementCorrection){
 prompt=buildTheatreAgreementCorrectionPrompt(partNum,streamOpts.badSample||'');
 }else if(streamOpts.yahVoiceCorrection){
 prompt=buildYahStoryVoiceCorrectionPrompt(partNum,streamOpts.badSample||'');
@@ -6779,6 +6793,7 @@ prompt=ForgeLocalSermonProfile.augmentPartPrompt(prompt,partNum,ctx.localSermonS
 prompt=wrapPromptForGrokIfNeeded(prompt,model,isYahStoryModeActive()&&!ctx.bezFallbackActive);
 if(savedChapterTextForLocal!==null)currentChapterText=savedChapterTextForLocal;
 var params=getSermonWebSearchParams(model,selectedPartCount);
+if(streamOpts.closingOnly)params.max_tokens=Math.min(800,getModelMaxOutputTokens(model));
 var yahApiActive=isYahStoryModeActive()&&!ctx.bezFallbackActive;
 appendYahStoryApiParams(params,yahApiActive,{skipSystem:!!streamOpts.yahLiteRetry});
 if(typeof getForgeLlmProvider==='function'&&getForgeLlmProvider()==='local'&&ForgeLocalSermonProfile){
@@ -6869,6 +6884,12 @@ if(msg.status==='complete'){
 ForgeLocalSermonProfile&&ForgeLocalSermonProfile.clearStreamAbort(activeHandler);
 clearSermonWatchdogs();
 var finalized=finalizeSermonPartText(ctx.partContent,partNum);
+if(streamOpts.closingOnly){
+commitSermonPart(partNum,ctx.partContent);
+sermonGenCtx=null;
+generatePart(partNum+1);
+return;
+}
 if(isLocalLlmChapterSermonActive()&&!finalizeLocalLlmPartIfValid(ctx,partNum,streamOpts,finalized))return;
 var truncated=detectTruncation(finalized);
 var underWords=isLocalLlmChapterSermonActive()?false:isForgePartUnderWordTarget(finalized,selectedPartCount);
@@ -6920,10 +6941,16 @@ return;
 if((truncated||underWords)&&!looksLikeYahStoryGuardrailRefusal(finalized)&&!actDone&&ctx.continuationCount<maxCont){
 if(isLocalLlmChapterSermonActive()&&!truncated)return;
 ctx.continuationCount++;
-if(underWords&&!truncated&&!isTheatreModeActive())ctx.partContent=stripPrematureForgeClosing(ctx.partContent);
+if(!isTheatreModeActive()&&(underWords||shouldStageForgeClosing()))ctx.partContent=stripPrematureForgeClosing(ctx.partContent);
 ctx.partContentBeforeContinue=ctx.partContent;
 ctx.continuationOpts={underWordCount:underWords&&!truncated};
 startSermonPartStream(partNum,true);
+return;
+}
+if(shouldStageForgeClosing()){
+ctx.partContent=stripPrematureForgeClosing(ctx.partContent);
+ctx.partContentBeforeContinue=ctx.partContent;
+startSermonPartStream(partNum,true,{closingOnly:true});
 return;
 }
 commitSermonPart(partNum,ctx.partContent);
@@ -7633,7 +7660,9 @@ p+=buildForgeIdentityFrameworkLine();
 p+='END OF FRAMEWORK. Everything above is background knowledge ONLY.\n\n';
 return p;
 }
-function buildPartPrompt(partNum){
+function buildPartPrompt(partNum,opts){
+opts=opts||{};
+var deferClosing=shouldStageForgeClosing()&&!opts.allowClosing;
 var topic=currentTopic;
 var wantBehindTheVeil=document.getElementById('toggleBehindTheVeil')&&document.getElementById('toggleBehindTheVeil').checked;
 var wantPureTheatre=document.getElementById('togglePureTheatre')&&document.getElementById('togglePureTheatre').checked;
@@ -7741,7 +7770,7 @@ if(totalParts===1){
 var lockChars=getStandaloneCharTarget();
 p+='ONE-PART LENGTH LOCK (ZERO TOLERANCE): The target is about '+lockChars.toLocaleString()+' characters (~'+wordsPerPart.toLocaleString()+' words). That is a MINIMUM, not a suggestion -- ending early is the failure.\n';
 p+='- Plan before you write: split the assigned text/topic into beats and give each beat a share of the length. Spend the full share on every beat.\n';
-p+='- Do NOT write a closing, final warning, altar call, or sign-off until the LAST assigned verse/point is fully covered AND you have written at least 90% of the target.\n';
+p+='- For body-only generation, NEVER write a closing, final warning, altar call, or sign-off. The separate final closing turn owns it. Otherwise close only after the LAST assigned verse/point is fully covered AND you have written at least 90% of the target.\n';
 p+='- If you run low on material, go DEEPER, not wider: another symbol layer, another scripture witness, the lived pressure, a verified named face. Never filler, never repetition, never a loose general monologue.\n';
 p+='- The last third must carry the SAME subject and the SAME fire as the opening. If your energy drifts into generic reflection, snap back to the next verse/symbol.\n\n';
 }
@@ -8376,7 +8405,9 @@ p+='RULE 4 -- QUESTIONS THROUGHOUT. Scatter provocative questions across the ENT
 p+='RULE 5 -- BRANCH-OFF THREADS. Every part must introduce 1-2 threads the listener could chase on their own -- connections to other scriptures, Hebrew word studies, historical parallels that you HINT at but do not fully unpack. Dangle the thread. Let them pull it. Create thinkers, not passengers.\n\n';
 }
 p+='RULE 6 -- CLOSING IS TOPIC-SPECIFIC AND DEPENDS ON WHETHER THIS IS THE LAST PART.\n';
-if(totalParts===1||partNum===totalParts){
+if(deferClosing){
+p+='BODY ONLY: A separate final turn owns the closing. Do NOT write a final warning, altar call, farewell, sign-off, or conclusion in this response, even when the length target is reached. End on substantive teaching; never announce that you are stopping.\n\n';
+}else if(totalParts===1||partNum===totalParts){
 // Last part or standalone -- full closing
 if(directQuestion){
 p+=(totalParts===1?'This is a standalone direct answer.':'This is the LAST PART of the answer.')+' Close with a one- or two-sentence command tied ONLY to what they asked — not a generic altar call, not end-times prophecy, not marriage supper. Recap the answer if needed, then stop.\n\n';
