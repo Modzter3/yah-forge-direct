@@ -3520,7 +3520,7 @@ return short===inner.trim()?m:'['+short+']';
 });
 }
 function addElevenParagraphPauses(text){
-var parts=String(text||'').split(/(\n[ \t]*\n)/);
+var parts=String(text||'').split(/(\r?\n[ \t]*\r?\n)/);
 for(var i=0;i<parts.length;i+=2){
 var raw=parts[i];
 var p=raw.replace(/\s+$/,'');
@@ -3545,6 +3545,50 @@ return getElevenBracketTags(text).filter(function(t){return !isElevenPacingOnlyT
 }
 function countElevenDescriptiveTags(text){
 return getElevenBracketTags(text).filter(function(t){return !isElevenPacingOnlyTag(t)&&isElevenDescriptiveTag(t);}).length;
+}
+function isElevenDirectionTagToken(token){
+var tags=getElevenBracketTags(token);
+return tags.length===1&&!isElevenPacingOnlyTag(tags[0])&&!/\d+:\d+/.test(tags[0]);
+}
+function countElevenMisplacedDirectionTags(text){
+var total=0;
+String(text||'').split(/\n\s*\n/).forEach(function(p){
+if(/^\s*(?:#{1,6}\s|PART\s+\d)/i.test(p))return;
+var tail=p.match(/(?:\s*\[[^\[\]\n]{2,160}\])+\s*$/);
+if(!tail)return;
+var tokens=tail[0].match(/\[[^\[\]\n]{2,160}\]/g)||[];
+tokens.forEach(function(token){if(isElevenDirectionTagToken(token))total++;});
+});
+return total;
+}
+function normalizeElevenTagPlacement(text){
+var parts=String(text||'').split(/(\r?\n[ \t]*\r?\n)/);
+for(var i=0;i<parts.length;i+=2){
+var raw=parts[i];
+if(/^\s*(?:#{1,6}\s|PART\s+\d)/i.test(raw))continue;
+var tail=raw.match(/(?:\s*\[[^\[\]\n]{2,160}\])+\s*$/);
+if(!tail)continue;
+var tokens=tail[0].match(/\[[^\[\]\n]{2,160}\]/g)||[];
+var directions=tokens.filter(isElevenDirectionTagToken);
+if(!directions.length)continue;
+var body=raw.slice(0,tail.index).trimEnd();
+if(!body.trim())continue;
+// A paragraph's sole delivery note belongs before the whole paragraph. If it
+// already starts with a direction, the trailing change belongs before its last sentence.
+var leading=body.trimStart().match(/^\[[^\[\]\n]{2,160}\]/);
+var insertAt=body.length-body.trimStart().length;
+if(leading&&isElevenDirectionTagToken(leading[0])){
+var boundary=/[.!?…]["'”’)]*\s+(?=\S)/g;
+var m;
+while((m=boundary.exec(body)))insertAt=m.index+m[0].length;
+if(insertAt===body.length-body.trimStart().length)directions=[];
+}
+parts[i]=body.slice(0,insertAt)+(directions.length?directions.join(' ')+' ':'')+body.slice(insertAt);
+var remaining=tokens.filter(function(token){return !isElevenDirectionTagToken(token);});
+if(remaining.length)parts[i]+=' '+remaining.join(' ');
+parts[i]+=raw.slice(raw.trimEnd().length);
+}
+return parts.join('');
 }
 function sanitizeElevenLabsTaggedText(text){
 if(!text)return '';
@@ -3596,7 +3640,7 @@ parts[i]=out.join(' ');
 return parts.join('\n\n');
 }
 function polishElevenLabsTaggedText(text){
-return addElevenParagraphPauses(healSparseElevenTaggedParagraphs(sanitizeElevenLabsTaggedText(text),0));
+return addElevenParagraphPauses(normalizeElevenTagPlacement(healSparseElevenTaggedParagraphs(normalizeElevenTagPlacement(sanitizeElevenLabsTaggedText(text)),0)));
 }
 function buildElevenLabsV3AudioTagsBlock(persona,opts){
 return buildElevenLabsAudioTagsBlock(persona,opts);
@@ -3622,7 +3666,7 @@ p+='- MOST tags (at least two out of three) should be a short DESCRIBED phrase o
 p+='- One-word tags ([sighs], [laughs], [clears throat]) are fine as seasoning, a few per part. If you catch yourself writing [angry] [bitter] [scoffs] [furious] again and again, switch to short described phrases.\n';
 p+='- Say what the voice is DOING in a few words: pace, volume, breath, texture, who it is aimed at. [slow, each word placed] [barely a whisper] [dry, worn out] [voice cracking] [rising, harder] [to one person].\n';
 p+='- Every tag in a part must be DIFFERENT. Never reuse the same phrase twice. Never put two tags back to back — one tag, then words, then the next tag.\n';
-p+='- Place the tag where the delivery CHANGES — start of a paragraph, before a verse lands, mid-paragraph on the turn. A tag governs the lines after it until the next tag.\n\n';
+p+='- Start EVERY body paragraph with a voice direction BEFORE the first spoken word. Place later direction tags BEFORE the words whose delivery changes. NEVER put a voice direction after the final sentence or before a closing [pause] with no speech after it. A direction controls ONLY the words AFTER it; it cannot direct words already spoken.\n\n';
 p+='*** PAUSE AFTER EVERY PARAGRAPH ***\n';
 p+='End EVERY body paragraph with [pause] as its LAST token, after the final punctuation. That is the breath between paragraphs. Do NOT scatter extra [pause] tags through the middle of paragraphs — one at the end of each paragraph is the rule. Never tag the # title line or section headers.\n\n';
 p+='EVERY PARAGRAPH RULE: Minimum one short described voice tag per body paragraph (aim 2–3 on heavy turns), PLUS the closing [pause]. Long climax paragraphs need 2+ voice tags — one tag on top of a wall of prose FAILS.\n\n';
@@ -6040,7 +6084,7 @@ var assignment=buildPartPrompt(partNum,{allowClosing:true});
 var start=assignment.indexOf('RULE 6 -- CLOSING');
 var end=assignment.indexOf('VOICE & STYLE RULES:',start);
 var closing=start>=0?assignment.slice(start,end>=0?end:undefined):'End with one brief topic-specific closing.';
-return 'FINAL CLOSING ONLY: The sermon body is complete. Write ONLY one short closing (one or two paragraphs), then STOP. No new teaching, title, recap of the whole sermon, invented audience comments, or reopening after goodbye. Match the exact speaker, perspective, and voice tags of the draft. Ignore all length minimums; those apply to the completed body.\n\n'+closing+'\n\nEND OF COMPLETED BODY:\n'+String(existing||'').slice(-2400);
+return 'FINAL CLOSING ONLY: The sermon body is complete. Write ONLY one short closing (one or two paragraphs), then STOP. No new teaching, title, recap of the whole sermon, invented audience comments, or reopening after goodbye. Match the exact speaker, perspective, and voice tags of the draft. If the draft uses voice tags, START each closing paragraph with its delivery tag BEFORE the speech and END it with [pause]. No trailing direction tags. Ignore all length minimums; those apply to the completed body.\n\n'+closing+'\n\nEND OF COMPLETED BODY:\n'+String(existing||'').slice(-2400);
 }
 function countForgeWords(text){
 return String(text||'').trim().split(/\s+/).filter(Boolean).length;
@@ -8791,7 +8835,7 @@ if(wantYahStory)tagPersona='yah';
 p+='\n';
 p+=buildElevenLabsV3AudioTagsBlock(tagPersona,{wantExplicit:wantExplicit});
 p+='*** FINAL LOCK — ELEVEN v4 TAGS (LAST INSTRUCTION BEFORE OUTPUT) ***\n';
-p+='Eleven Tags is ON — EVERY PARAGRAPH DIRECTED. Your VERY NEXT tokens: # title, then body paragraphs with SHORT described voice tags (2–5 words, never longer), not one-word moods and not long sentences. Minimum one voice tag per paragraph (aim 2–3 on turns) and EVERY paragraph ends with [pause]. Self-check: zero tags in ANY paragraph, a tag over 5 words, or a missing closing [pause] = REWRITE.';
+p+='Eleven Tags is ON — EVERY PARAGRAPH DIRECTED. Your VERY NEXT tokens: # title, then body paragraphs STARTING with SHORT described voice tags (2–5 words, never longer), not one-word moods and not long sentences. Start every paragraph with a voice direction; put changes BEFORE the speech they control, never after its final sentence. Minimum one voice tag per paragraph (aim 2–3 on turns) and EVERY paragraph ends with [pause]. Self-check: zero tags in ANY paragraph, a tag over 5 words, or a missing closing [pause] = REWRITE.';
 if(wantExplicit)p+=' Explicit ON does NOT mean a shouting direction every paragraph — vulgar WORDS, varied described delivery.';
 p+='\n\n';
 }

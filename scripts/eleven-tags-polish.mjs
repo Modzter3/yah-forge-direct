@@ -81,7 +81,7 @@ export function shortenLongElevenTags(text) {
 }
 
 export function addElevenParagraphPauses(text) {
-  const parts = String(text || '').split(/(\n[ \t]*\n)/);
+  const parts = String(text || '').split(/(\r?\n[ \t]*\r?\n)/);
   for (let i = 0; i < parts.length; i += 2) {
     const raw = parts[i];
     const p = raw.replace(/\s+$/, '');
@@ -118,6 +118,51 @@ export function countElevenEmotionTags(text) {
 
 export function countElevenDescriptiveTags(text) {
   return getElevenBracketTags(text).filter((t) => !isElevenPacingOnlyTag(t) && isElevenDescriptiveTag(t)).length;
+}
+
+function isElevenDirectionTagToken(token){
+var tags=getElevenBracketTags(token);
+return tags.length===1&&!isElevenPacingOnlyTag(tags[0])&&!/\d+:\d+/.test(tags[0]);
+}
+export function countElevenMisplacedDirectionTags(text){
+var total=0;
+String(text||'').split(/\n\s*\n/).forEach(function(p){
+if(/^\s*(?:#{1,6}\s|PART\s+\d)/i.test(p))return;
+var tail=p.match(/(?:\s*\[[^\[\]\n]{2,160}\])+\s*$/);
+if(!tail)return;
+var tokens=tail[0].match(/\[[^\[\]\n]{2,160}\]/g)||[];
+tokens.forEach(function(token){if(isElevenDirectionTagToken(token))total++;});
+});
+return total;
+}
+export function normalizeElevenTagPlacement(text){
+var parts=String(text||'').split(/(\r?\n[ \t]*\r?\n)/);
+for(var i=0;i<parts.length;i+=2){
+var raw=parts[i];
+if(/^\s*(?:#{1,6}\s|PART\s+\d)/i.test(raw))continue;
+var tail=raw.match(/(?:\s*\[[^\[\]\n]{2,160}\])+\s*$/);
+if(!tail)continue;
+var tokens=tail[0].match(/\[[^\[\]\n]{2,160}\]/g)||[];
+var directions=tokens.filter(isElevenDirectionTagToken);
+if(!directions.length)continue;
+var body=raw.slice(0,tail.index).trimEnd();
+if(!body.trim())continue;
+// A paragraph's sole delivery note belongs before the whole paragraph. If it
+// already starts with a direction, the trailing change belongs before its last sentence.
+var leading=body.trimStart().match(/^\[[^\[\]\n]{2,160}\]/);
+var insertAt=body.length-body.trimStart().length;
+if(leading&&isElevenDirectionTagToken(leading[0])){
+var boundary=/[.!?…]["'”’)]*\s+(?=\S)/g;
+var m;
+while((m=boundary.exec(body)))insertAt=m.index+m[0].length;
+if(insertAt===body.length-body.trimStart().length)directions=[];
+}
+parts[i]=body.slice(0,insertAt)+(directions.length?directions.join(' ')+' ':'')+body.slice(insertAt);
+var remaining=tokens.filter(function(token){return !isElevenDirectionTagToken(token);});
+if(remaining.length)parts[i]+=' '+remaining.join(' ');
+parts[i]+=raw.slice(raw.trimEnd().length);
+}
+return parts.join('');
 }
 
 export function sanitizeElevenLabsTaggedText(text) {
@@ -170,10 +215,11 @@ export function healSparseElevenTaggedParagraphs(text, rotateOffset = 0) {
 }
 
 export function polishElevenLabsTaggedText(text) {
-  return addElevenParagraphPauses(healSparseElevenTaggedParagraphs(sanitizeElevenLabsTaggedText(text)));
+  return addElevenParagraphPauses(normalizeElevenTagPlacement(healSparseElevenTaggedParagraphs(normalizeElevenTagPlacement(sanitizeElevenLabsTaggedText(text)))));
 }
 
 export function looksLikeParagraphsUnderTaggedEleven(text) {
+  if (countElevenMisplacedDirectionTags(text) > 0) return true;
   const body = String(text || '')
     .trim()
     .replace(/^#\s+.+\n+/m, '');

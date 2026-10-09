@@ -10,6 +10,8 @@ import {
   addElevenParagraphPauses,
   countElevenTooLongTags,
   countElevenMidParagraphPauses,
+  countElevenMisplacedDirectionTags,
+  normalizeElevenTagPlacement,
 } from './eleven-tags-polish.mjs';
 
 const sample = `[furious] Open line.
@@ -95,3 +97,34 @@ if (addElevenParagraphPauses(paused) !== paused) throw new Error('paragraph paus
 if (countElevenMidParagraphPauses(paused) !== 0) throw new Error('closing pauses are not mid-paragraph pauses');
 
 console.log('eleven-tags-polish tests passed');
+
+const trailingOnly='You need to hear this entire paragraph. [dry, worn out] [pause]';
+if(normalizeElevenTagPlacement(trailingOnly)!=='[dry, worn out] You need to hear this entire paragraph. [pause]')throw new Error('sole trailing direction should lead the paragraph');
+const change='[quiet, steady] Here is the first sentence. Now listen to the final warning. [rising, harder] [pause]';
+if(normalizeElevenTagPlacement(change)!=='[quiet, steady] Here is the first sentence. [rising, harder] Now listen to the final warning. [pause]')throw new Error('trailing change should precede the final sentence');
+const short='[quiet, steady] One complete sentence. [dry, worn out] [pause]';
+if(normalizeElevenTagPlacement(short)!=='[quiet, steady] One complete sentence. [pause]')throw new Error('discard orphan direction rather than stack contradictory cues');
+const sparseEnding='[quiet, steady] '+('This sentence contains enough spoken words to make this a long paragraph that needs additional delivery directions from the automatic density repair. '.repeat(8))+'[pause]';
+const fixtures=[trailingOnly,change,short,sparseEnding,'A sentence. [pause] [low, tight]','[quiet, steady] Already correct. [pause]','# Title\n\nPART 1 of 2\n\nA paragraph. [low, tight] [pause]','A paragraph. [low, tight] [pause]\r\n\r\nAnother paragraph. [quiet, steady] [pause]','A markdown [link](https://example.com). [pause]','Read the passage. [John 3:16] [pause]'];
+for(const input of fixtures){
+ const output=normalizeElevenTagPlacement(input);
+ if(countElevenMisplacedDirectionTags(output)!==0)throw new Error('misplaced tag survived: '+output);
+ if(normalizeElevenTagPlacement(output)!==output)throw new Error('placement cleanup must be idempotent');
+ const speech=t=>t.replace(/\[[^\]]*\]/g,'').replace(/\s+/g,' ').trim();
+ if(speech(input)!==speech(output))throw new Error('placement changed spoken words');
+}
+if(!looksLikeParagraphsUnderTaggedEleven(trailingOnly))throw new Error('validator must reject misplaced tags even in short paragraphs');
+if(countElevenMisplacedDirectionTags(polishElevenLabsTaggedText(change)))throw new Error('full polish must include placement cleanup');
+// Compare shipped browser functions against the standalone helper so tests cover production.
+const {readFileSync}=await import('node:fs');const vm=await import('node:vm');
+const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
+const sandbox={ELEVEN_TAG_MAX_WORDS:5,ELEVEN_TAG_MAX_CHARS:36};vm.createContext(sandbox);
+for(const name of ['getElevenBracketTags','isElevenPacingOnlyTag','isElevenDirectionTagToken','countElevenMisplacedDirectionTags','normalizeElevenTagPlacement','isElevenTagTooLong','shortenElevenTag','shortenLongElevenTags','sanitizeElevenLabsTaggedText','countElevenEmotionTags','countEmotionTagsInElevenParagraph','isSkippableElevenPolishParagraph','healSparseElevenTaggedParagraphs','addElevenParagraphPauses','polishElevenLabsTaggedText']){
+ const start=html.indexOf('function '+name+'(');const end=html.indexOf('\nfunction ',start+1);
+ vm.runInContext(html.slice(start,end),sandbox);
+}
+for(const input of fixtures){
+ if(countElevenMisplacedDirectionTags(polishElevenLabsTaggedText(input)))throw new Error('density repair inserted a trailing direction');
+ if(sandbox.polishElevenLabsTaggedText(input)!==polishElevenLabsTaggedText(input))throw new Error('browser and helper polish differ');
+}
+console.log('direction placement: trailing cues, delivery changes, short paragraphs, CRLF, word preservation, idempotence, and browser parity passed');
