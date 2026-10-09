@@ -1903,7 +1903,7 @@ return {text:src,sliced:false};
 }
 function joinContinuationText(before,chunk){
 var b=String(before||'').replace(/\s+$/,'');
-var c=String(chunk||'').replace(/^\s+/,'');
+var c=stripLeadingContinuationFluff(chunk);
 if(!b)return c;
 if(!c)return b;
 if(/[.!?"\u201d\u2019)\]*_:;\u2014\u2026]$/.test(b)||/^#/.test(c))return b+'\n\n'+c;
@@ -6001,18 +6001,81 @@ return Math.min(60,Math.max(SERMON_MAX_CONTINUATIONS,Math.ceil(words/perResponse
 }
 function looksLikeForgeClosingParagraph(p){
 var t=String(p||'').trim();
-if(!t||t.length>1500)return false;
-return /\b(amen|shalom|selah|in the name of|until next time|thank you for|share this|subscribe|tune in|keep the commandments|come out of her|the door (?:is )?clos|last warning|final warning|this is your warning)\b/i.test(t);
+if(!t||t.length>1800)return false;
+return /\b(amen|shalom|selah|in the name of|until next time|thank you for tuning|thank you for listening|share this|share the (?:message|episode)|subscribe|tune in|keep the commandments|come out of her|the door (?:is )?clos|last warning|final warning|this is your warning|peace,?\s*(?:family|israel)|yah first,?\s*last|this has been brother|the message is (?:out|delivered|finished|complete)|wake up the brothers.*wake up the sisters|i'?ve (?:given you|laid) the (?:blueprint|meat)|the seal is set|what you do with it determines)\b/i.test(t);
 }
-function stripPrematureForgeClosing(text){
+function looksLikeFakeEndingRestartParagraph(p){
+var t=String(p||'').trim();
+if(!t||t.length>1200)return false;
+return /\bYou think (?:I(?:'m| am)|we(?:'re| are)|that (?:was|is)|because I said|because I'?m about to)\b/i.test(t)
+||/\b(?:Hell no[!]?|Not yet[!]?)[\s—-]*(?:We (?:aren't|are not) done|I'?m not (?:done|finished|letting you)|you (?:thought|think) (?:I was|we were|that was))\b/i.test(t)
+||/\bYou think (?:because )?I said ["']?peace\b/i.test(t)
+||/\b(?:close this broadcast|sign off this broadcast|walk away from the table)\b/i.test(t);
+}
+function stripPrematureForgeClosing(text,aggressive){
 var paras=String(text||'').replace(/\s+$/,'').split(/\n\s*\n/);
 if(paras.length<4)return text;
 var removed=0;
-while(removed<2&&paras.length>3&&looksLikeForgeClosingParagraph(paras[paras.length-1])){
+var maxPop=aggressive?12:3;
+while(removed<maxPop&&paras.length>3){
+var last=paras[paras.length-1];
+if(looksLikeForgeClosingParagraph(last)||looksLikeFakeEndingRestartParagraph(last)){
 paras.pop();
 removed++;
+continue;
+}
+break;
 }
 return removed?paras.join('\n\n'):text;
+}
+function stripLeadingContinuationFluff(chunk){
+var text=String(chunk||'').replace(/^\s+/,'');
+var guard=0;
+while(guard++<6){
+var m=text.match(/^([\s\S]+?\n\n)([\s\S]+)$/);
+if(!m)break;
+var first=m[1].trim();
+if(!first||first.length>1400)break;
+if(looksLikeFakeEndingRestartParagraph(first)||looksLikeForgeClosingParagraph(first)){
+text=m[2].replace(/^\s+/,'');
+continue;
+}
+break;
+}
+return text;
+}
+function stripFakeEndingCycles(text,partNum,totalParts){
+if(!text)return text;
+var tp=totalParts||selectedPartCount||1;
+if(tp>1&&partNum<tp)return stripPrematureForgeClosing(text,true);
+if(tp>1&&partNum===tp){
+return stripFakeEndingCyclesFromParas(String(text).replace(/\s+$/,'').split(/\n\s*\n/),true);
+}
+return stripFakeEndingCyclesFromParas(String(text).replace(/\s+$/,'').split(/\n\s*\n/),false);
+}
+function stripFakeEndingCyclesFromParas(paras,finalPartOnly){
+if(!paras||paras.length<5)return paras.join('\n\n');
+function isMarker(p){return looksLikeForgeClosingParagraph(p)||looksLikeFakeEndingRestartParagraph(p);}
+var changed=true;
+while(changed){
+changed=false;
+for(var i=0;i<paras.length-2;i++){
+if(!isMarker(paras[i]))continue;
+var j=i+1;
+if(j<paras.length&&looksLikeFakeEndingRestartParagraph(paras[j]))j++;
+if(j>=paras.length)break;
+var teachLen=0;
+var k=j;
+while(k<paras.length&&!isMarker(paras[k])){teachLen+=paras[k].length;k++;}
+if(k>=paras.length&&finalPartOnly)break;
+if(teachLen>=120){
+paras.splice(i,j-i);
+changed=true;
+break;
+}
+}
+}
+return paras.join('\n\n');
 }
 function countForgeWords(text){
 return String(text||'').trim().split(/\s+/).filter(Boolean).length;
@@ -6184,6 +6247,7 @@ out=dedupePartHeaders(out);
 if(currentTopic&&currentTopic.sceneDismantle&&selectedPartCount>1)out=stripNextPartTeasers(out,partNum);
 var priorForDedupe=(currentTopic&&currentTopic.sceneDismantle&&partNum>1)?(sermonPartsRaw||[]).slice(0,partNum-1):[];
 out=dedupeRepeatedParagraphs(out,priorForDedupe);
+out=stripFakeEndingCycles(out,partNum,selectedPartCount);
 var webEl=document.getElementById('toggleWebResearch');
 if(webEl&&webEl.checked)out=stripMediaSources(out);
 return out;
@@ -6604,6 +6668,7 @@ p+='TOO SHORT: You wrote about '+text.length.toLocaleString()+' characters. This
 p+='TOO SHORT: You only wrote about '+current.toLocaleString()+' words. This '+(oneShot?'episode':'part')+' MUST reach about '+target.toLocaleString()+' words before it ends. You still owe roughly '+remaining.toLocaleString()+' words.\n';
 }
 p+='The draft ended too early. If its last lines read like a conclusion, sign-off, final warning, or altar call, that ending is VOID -- treat it as deleted and never refer to it. Do NOT wrap up, summarize, or conclude in this continuation. Save the closing for the very end, after you have written the remaining length.\n';
+p+='FORBIDDEN CONTINUATION THEATER: Do NOT open with "You think I\'m finished?", "You think because I said peace...", "Hell no we\'re not done", a second "Peace, family" welcome, or any fake "I almost signed off but I\'m back" bit. Those lines get stripped. Continue the SAME teaching thread mid-flow -- next verse, next symbol, next warning -- as if you never wrote a goodbye.\n';
 p+='Find the LAST assigned verse/scene/point your draft actually reached and continue with the NEXT one. If the assigned material is already covered, go DEEPER on it -- a new symbol layer, another scripture witness, a different lived pressure, a new verified named face -- never repetition, never filler, never a generic monologue.\n';
 }else{
 p+='Your previous output was cut off mid-sentence or mid-thought. Finish the thought and keep going on the SAME subject.\n';
@@ -6920,7 +6985,7 @@ return;
 if((truncated||underWords)&&!looksLikeYahStoryGuardrailRefusal(finalized)&&!actDone&&ctx.continuationCount<maxCont){
 if(isLocalLlmChapterSermonActive()&&!truncated)return;
 ctx.continuationCount++;
-if(underWords&&!truncated&&!isTheatreModeActive())ctx.partContent=stripPrematureForgeClosing(ctx.partContent);
+if(underWords&&!truncated&&!isTheatreModeActive())ctx.partContent=stripPrematureForgeClosing(ctx.partContent,true);
 ctx.partContentBeforeContinue=ctx.partContent;
 ctx.continuationOpts={underWordCount:underWords&&!truncated};
 startSermonPartStream(partNum,true);
@@ -7742,6 +7807,7 @@ var lockChars=getStandaloneCharTarget();
 p+='ONE-PART LENGTH LOCK (ZERO TOLERANCE): The target is about '+lockChars.toLocaleString()+' characters (~'+wordsPerPart.toLocaleString()+' words). That is a MINIMUM, not a suggestion -- ending early is the failure.\n';
 p+='- Plan before you write: split the assigned text/topic into beats and give each beat a share of the length. Spend the full share on every beat.\n';
 p+='- Do NOT write a closing, final warning, altar call, or sign-off until the LAST assigned verse/point is fully covered AND you have written at least 90% of the target.\n';
+p+='- ONE goodbye only: until you hit the word target, NEVER write "Peace, family," "Yah First last and always," "this has been Brother Bet," share/subscribe lines, or fake "You think I\'m done?" restarts. Mid-sermon sign-offs are deleted and the forge will continue you — that loop wastes output and sounds broken.\n';
 p+='- If you run low on material, go DEEPER, not wider: another symbol layer, another scripture witness, the lived pressure, a verified named face. Never filler, never repetition, never a loose general monologue.\n';
 p+='- The last third must carry the SAME subject and the SAME fire as the opening. If your energy drifts into generic reflection, snap back to the next verse/symbol.\n\n';
 }
@@ -8382,6 +8448,9 @@ if(directQuestion){
 p+=(totalParts===1?'This is a standalone direct answer.':'This is the LAST PART of the answer.')+' Close with a one- or two-sentence command tied ONLY to what they asked — not a generic altar call, not end-times prophecy, not marriage supper. Recap the answer if needed, then stop.\n\n';
 }else{
 p+=(totalParts===1?'This is a standalone single-part episode.':'This is the LAST PART of the episode.')+' End with a TOPIC-SPECIFIC call to action and altar call. If the episode was about the Sabbath, the call is about Sabbath obedience specifically. If it was about the serpent seed, the call is about what ignoring bloodline truth costs you specifically. Do NOT close with generic "repent and keep the commandments." ';
+if(totalParts===1){
+p+='Standalone: exactly ONE ministry goodbye at the very end — never earlier. No fake endings followed by "You think I\'m finished?" and no second goodbye.\n';
+}
 if(wantBezStory){
 p+='Then close like Brother Bet ending a street revelation -- not a lesson moral, not three points, not a sign-off. One final symbol decoded from THIS text, one final warning about who they really are, one command to move before the door closes. No "share and subscribe." Leave them shook, not instructed.';
 }else if(wantRoughBez){
