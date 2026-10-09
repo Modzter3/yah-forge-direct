@@ -11,13 +11,14 @@
   const API_ROUTE = '/api/ai';
   const handlers  = {};
 
-  function wrap(status, content, attachments, statusText) {
+  function wrap(status, content, attachments, statusText, finishReason) {
     return {
       responses: [{
         status,
         content:     content     || '',
         attachments: attachments || [],
         statusText:  statusText  || '',
+        finishReason: finishReason || null,
         messageId:   'forge-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9),
       }],
     };
@@ -37,24 +38,28 @@
   }
 
   async function* readSse(stream) {
-    const reader  = stream.getReader();
+    const reader = stream.getReader();
     const decoder = new TextDecoder();
     let buf = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, { stream: true });
-      const lines = buf.split('\n');
-      buf = lines.pop();
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed.startsWith('data:')) {
-          yield trimmed.slice(5).trim();
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop();
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('data:')) yield trimmed.slice(5).trim();
         }
       }
+      buf += decoder.decode();
+      if (buf.trim().startsWith('data:')) yield buf.trim().slice(5).trim();
+    } finally {
+      // Breaking on a finish reason or DONE must release the HTTP stream too.
+      try { await reader.cancel(); } catch (_) {}
+      reader.releaseLock();
     }
-    if (buf.trim().startsWith('data:')) yield buf.trim().slice(5).trim();
   }
 
   function normalizeOutboundImages(attachments) {
@@ -157,6 +162,7 @@
   async function callPoe(bot, prompt, parameters, images) {
     const res = await openStream(bot, prompt, parameters, images);
     let text = '';
+    let finishReason = null;
 
     for await (const raw of readSse(res.body)) {
       if (raw === '[DONE]') break;
@@ -164,19 +170,22 @@
       try { parsed = JSON.parse(raw); } catch { continue; }
       if (parsed.error) throw new Error(parsed.error.message || parsed.error);
       text += deltaText(parsed);
+      if (isFinished(parsed)) finishReason = parsed.choices[0].finish_reason;
     }
 
     const out = extractAttachments(text);
-    return { status: 'complete', content: out.text, attachments: out.attachments };
+    return { status: 'complete', content: out.text, attachments: out.attachments, finishReason };
   }
 
   async function callPoeStreaming(bot, prompt, parameters, handlerFn, images) {
     const res = await openStream(bot, prompt, parameters, images);
     let text = '';
+    let finishReason = null;
+    let sawDone = false;
 
     try {
       for await (const raw of readSse(res.body)) {
-        if (raw === '[DONE]') break;
+        if (raw === '[DONE]') { sawDone = true; break; }
         let parsed;
         try { parsed = JSON.parse(raw); } catch { continue; }
         if (parsed.error) throw new Error(parsed.error.message || parsed.error);
@@ -185,7 +194,7 @@
           text += delta;
           if (handlerFn) handlerFn(wrap('incomplete', text, []));
         }
-        if (isFinished(parsed)) break;
+        if (isFinished(parsed)) { finishReason = parsed.choices[0].finish_reason; break; }
       }
     } catch (err) {
       const aborted = err && (err.name === 'AbortError' || /aborted/i.test(String(err.message || '')));
@@ -195,7 +204,7 @@
       }
       if (handlerFn && text) {
         const out = extractAttachments(text);
-        handlerFn(wrap('complete', out.text, out.attachments));
+        handlerFn(wrap('error', out.text, out.attachments, err.message || 'Stream interrupted'));
         return;
       }
       if (handlerFn) handlerFn(wrap('error', text || '', [], err.message));
@@ -203,7 +212,11 @@
     }
 
     const out = extractAttachments(text);
-    if (handlerFn) handlerFn(wrap('complete', out.text, out.attachments));
+    if (!finishReason && !sawDone) {
+      if (handlerFn) handlerFn(wrap('error', out.text, out.attachments, 'Stream ended without a completion signal'));
+      return;
+    }
+    if (handlerFn) handlerFn(wrap('complete', out.text, out.attachments, '', finishReason));
   }
 
   const apiCompat = {
@@ -234,7 +247,7 @@
           Promise.allSettled(tasks).then((results) => {
             for (const r of results) {
               if (r.status === 'fulfilled') {
-                if (handlerFn) handlerFn(wrap('complete', r.value.content, r.value.attachments));
+                if (handlerFn) handlerFn(wrap('complete', r.value.content, r.value.attachments, '', r.value.finishReason));
               } else {
                 if (handlerFn) handlerFn(wrap('error', '', [], r.reason?.message || 'Unknown error'));
               }

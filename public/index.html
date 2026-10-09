@@ -4974,7 +4974,9 @@ return params;
 function detectTruncation(text){
 // Check if the text appears to be cut off mid-verse
 if(!text||text.length<50)return false;
-var trimmed=text.trim();
+// Voice directions are presentation, not sentence punctuation.
+var trimmed=String(text).replace(/(?:\s*\[[^\]\n]{1,120}\])+\s*$/g,'').trim();
+if(!trimmed)return false;
 // If it ends mid-sentence (no period, no verse-ending punctuation)
 var lastChar=trimmed.charAt(trimmed.length-1);
 if(lastChar!=='.'&&lastChar!=='?'&&lastChar!=='!'&&lastChar!=='"'&&lastChar!=='\''&&lastChar!==')'){
@@ -5931,6 +5933,8 @@ output.appendChild(box);
 function cancelSermonGeneration(){
 lessonSeriesTitleReqId++;
 clearSermonWatchdogs();
+if(sermonGenCtx&&sermonGenCtx.localAbortController)sermonGenCtx.localAbortController.abort();
+if(sermonGenCtx&&window.__forgeStreamAbortRegistry)delete window.__forgeStreamAbortRegistry[sermonGenCtx.handlerName];
 sermonGenCtx=null;
 isGenerating=false;
 isFetchingVeilArticle=false;
@@ -5996,9 +6000,22 @@ var SERMON_STANDALONE_MIN_RATIO=0.93;
 var SERMON_PART_CHARS_MIN_RATIO=0.9;
 function getForgeMaxContinuations(model,totalParts){
 var words=getForgeWordsPerPart(totalParts||selectedPartCount||1);
-var perResponse=Math.max(1200,Math.floor((getModelMaxOutputTokens(model)-512)/1.45*0.35));
-return Math.min(60,Math.max(SERMON_MAX_CONTINUATIONS,Math.ceil(words/perResponse)+4));
+var perResponse=Math.max(800,Math.floor((getModelMaxOutputTokens(model)-512)/1.8));
+// Ordinary parts get at most two body continuations; larger explicit targets scale.
+return Math.min(12,Math.max(2,Math.ceil(words/perResponse)));
 }
+function getForgeRemainingTokens(model,text,totalParts){
+var tp=totalParts||selectedPartCount;
+var charGoal=tp===1?selectedStandaloneChars:selectedPartChars;
+var remaining=charGoal>0?Math.ceil(Math.max(0,charGoal-String(text||'').length)/FORGE_CHARS_PER_WORD):Math.max(0,getForgeWordsPerPart(tp)-countForgeWords(text));
+return Math.min(getModelMaxOutputTokens(model),Math.max(256,Math.ceil(remaining*1.8)+256));
+}
+function isSermonResponseTruncated(msg,text){
+if(msg.finishReason==='length'||msg.finishReason==='max_tokens')return true;
+if(msg.finishReason==='stop'||msg.finishReason==='end_turn')return false;
+return detectTruncation(text);
+}
+
 function looksLikeForgeClosingParagraph(p){
 var t=String(p||'').trim();
 if(!t||t.length>1500)return false;
@@ -6016,7 +6033,7 @@ while(paras.length>1&&looksLikeForgeClosingParagraph(paras[paras.length-1]))para
 return paras.join('\n\n');
 }
 function shouldStageForgeClosing(){
-return selectedPartCount===1&&!isTheatreModeActive()&&!isLocalLlmChapterSermonActive();
+return !isTheatreModeActive()&&!isLocalLlmChapterSermonActive();
 }
 function buildSermonClosingPrompt(partNum,existing){
 var assignment=buildPartPrompt(partNum,{allowClosing:true});
@@ -6594,6 +6611,7 @@ p+='LAST FOUR HUNDRED CHARACTERS:\n"...'+String(existing||'').slice(-400)+'"\n\n
 return p;
 }
 var oneShot=selectedPartCount===1;
+if(opts.finishThoughtOnly)return 'Finish ONLY the unfinished sentence or paragraph below in the same voice, then STOP. Maximum 100 words. No new points, heading, summary, farewell, or closing.\n\n'+String(existing||'').slice(-1500);
 var base='';
 if(!isLocalLlmChapterSermonActive()){
 try{base=buildPartPrompt(partNum);}catch(e){base='';}
@@ -6729,6 +6747,29 @@ var ldr=document.getElementById('loader'+partNum);
 if(ldr)ldr.remove();
 updateProgress(partNum);
 }
+function pauseSermonPart(ctx,partNum,message){
+clearSermonWatchdogs();
+ctx.paused=true;
+if(ctx.localAbortController)ctx.localAbortController.abort();
+if(window.__forgeStreamAbortRegistry)delete window.__forgeStreamAbortRegistry[ctx.handlerName];
+var ldr=document.getElementById('loader'+partNum);if(ldr)ldr.remove();
+ctx.partContainer.innerHTML=marked.parse(finalizeSermonPartText(ctx.partContent||'',partNum))+'<div class="error-msg">'+escapeHtml(message)+' <button type="button" class="vc-btn retry" onclick="resumePausedSermonPart()">Resume this part</button></div>';
+isGenerating=false;
+document.getElementById('generateBtn').disabled=false;
+}
+function resumePausedSermonPart(){
+var ctx=sermonGenCtx;
+if(!ctx||!ctx.paused)return;
+ctx.paused=false;
+isGenerating=true;
+document.getElementById('generateBtn').disabled=true;
+ctx.partContentBeforeContinue=ctx.partContent||'';
+ctx.continuationCount=0;
+ctx.continuationOpts={underWordCount:isForgePartUnderWordTarget(ctx.partContent,selectedPartCount)};
+var opts=Object.assign({},ctx.pausedStreamOpts||{});
+if(opts.closingOnly)opts.closingResume=true;
+startSermonPartStream(ctx.partNum,true,opts);
+}
 function finishCurrentSermonPart(reason){
 if(!sermonGenCtx||sermonGenCtx.finishing)return;
 sermonGenCtx.finishing=true;
@@ -6736,11 +6777,17 @@ clearSermonWatchdogs();
 var ctx=sermonGenCtx;
 var partNum=ctx.partNum;
 var partContent=ctx.partContent||'';
+if(reason==='stall'){
+ctx.finishing=false;
+pauseSermonPart(ctx,partNum,'The stream stalled. Your draft is preserved; the next part has not started.');
+return;
+}
 if(partContent.trim()){
 commitSermonPart(partNum,partContent);
-if(reason==='stall')showToast('Stream stalled — saved Part '+partNum+' and continuing.');
-else if(reason==='force')showToast('Forced advance to next part.');
+if(reason==='force')showToast('Forced advance to next part.');
 }
+if(ctx.localAbortController)ctx.localAbortController.abort();
+if(window.__forgeStreamAbortRegistry)delete window.__forgeStreamAbortRegistry[ctx.handlerName];
 ctx.finishing=false;
 sermonGenCtx=null;
 generatePart(partNum+1);
@@ -6770,7 +6817,7 @@ else ctx.promptMode='normal';
 var model=getForgeStreamModel(ctx);
 var prompt;
 if(streamOpts.closingOnly){
-prompt=buildSermonClosingPrompt(partNum,ctx.partContent);
+prompt=streamOpts.closingResume?buildSermonContinuationPrompt(partNum,ctx.partContent,{finishThoughtOnly:true}):buildSermonClosingPrompt(partNum,ctx.partContent);
 }else if(streamOpts.theatreAgreementCorrection){
 prompt=buildTheatreAgreementCorrectionPrompt(partNum,streamOpts.badSample||'');
 }else if(streamOpts.yahVoiceCorrection){
@@ -6793,7 +6840,9 @@ prompt=ForgeLocalSermonProfile.augmentPartPrompt(prompt,partNum,ctx.localSermonS
 prompt=wrapPromptForGrokIfNeeded(prompt,model,isYahStoryModeActive()&&!ctx.bezFallbackActive);
 if(savedChapterTextForLocal!==null)currentChapterText=savedChapterTextForLocal;
 var params=getSermonWebSearchParams(model,selectedPartCount);
-if(streamOpts.closingOnly)params.max_tokens=Math.min(800,getModelMaxOutputTokens(model));
+if(isContinuation&&!isLocalLlmChapterSermonActive())params.max_tokens=getForgeRemainingTokens(model,ctx.partContent,selectedPartCount);
+if(ctx.continuationOpts&&ctx.continuationOpts.finishThoughtOnly)params.max_tokens=Math.min(256,getModelMaxOutputTokens(model));
+if(streamOpts.closingOnly)params.max_tokens=Math.min(streamOpts.closingResume?256:800,getModelMaxOutputTokens(model));
 var yahApiActive=isYahStoryModeActive()&&!ctx.bezFallbackActive;
 appendYahStoryApiParams(params,yahApiActive,{skipSystem:!!streamOpts.yahLiteRetry});
 if(typeof getForgeLlmProvider==='function'&&getForgeLlmProvider()==='local'&&ForgeLocalSermonProfile){
@@ -6803,21 +6852,34 @@ ForgeLocalSermonProfile.applyGenerationParams(params,partNum,ctx.localSermonStat
 ForgeLocalSermonProfile.applyLocalBudgetParams(params,{promptCharLength:prompt.length});
 }
 }
-ctx.handlerName='sermon-part-'+partNum+'-'+Date.now()+'-'+(isContinuation?ctx.continuationCount:0)+'-'+(streamOpts.yahVoiceCorrection?'yahvoice':streamOpts.driftCorrection?'drift':streamOpts.explicitBrimstoneCorrection?'explicit':'');
+ctx.streamRequestSeq=(ctx.streamRequestSeq||0)+1;
+ctx.handlerName='sermon-part-'+partNum+'-'+Date.now()+'-'+ctx.streamRequestSeq+'-'+(isContinuation?ctx.continuationCount:0)+'-'+(streamOpts.yahVoiceCorrection?'yahvoice':streamOpts.driftCorrection?'drift':streamOpts.explicitBrimstoneCorrection?'explicit':'');
 var activeHandler=ctx.handlerName;
 if(isLocalLlmChapterSermonActive()&&ForgeLocalSermonProfile){
 ctx.localAbortController=new AbortController();
 ForgeLocalSermonProfile.registerStreamAbort(activeHandler,ctx.localAbortController);
 params.forge_stream_abort_key=activeHandler;
 }
+if(!isLocalLlmChapterSermonActive()){
+ctx.localAbortController=new AbortController();
+window.__forgeStreamAbortRegistry=window.__forgeStreamAbortRegistry||{};
+window.__forgeStreamAbortRegistry[activeHandler]=ctx.localAbortController;
+params.forge_stream_abort_key=activeHandler;
+}
+ctx.pausedStreamOpts=streamOpts;
 ctx.gotFirstToken=false;
 clearSermonWatchdogs();
 armSermonWatchdogs(function(){finishCurrentSermonPart('stall');});
 window.Poe.registerHandler(activeHandler,function(result){
 var msg=result.responses[0];if(!msg)return;
-if(!sermonGenCtx||sermonGenCtx.handlerName!==activeHandler)return;
+if(!sermonGenCtx||sermonGenCtx.handlerName!==activeHandler||ctx.paused)return;
 if(msg.status==='error'){
 var errText=msg.statusText||'';
+if(!isLocalLlmChapterSermonActive()&&ctx.partContent&&ctx.partContent.trim()){
+ctx.pausedStreamOpts=streamOpts;
+pauseSermonPart(ctx,partNum,'Stream interrupted: '+(errText||'connection ended')+'. Your draft is preserved.');
+return;
+}
 if(ctx.localStreamHandled){ForgeLocalSermonProfile&&ForgeLocalSermonProfile.clearStreamAbort(activeHandler);return;}
 if(isLocalLlmChapterSermonActive()&&ForgeLocalSermonProfile&&ForgeLocalSermonProfile.isContextSizeError(errText)){
 ForgeLocalSermonProfile.clearStreamAbort(activeHandler);
@@ -6881,17 +6943,26 @@ var displaySource=ctx.localDegenerationHit&&(ctx.localLastGoodContent||'').trim(
 var display=finalizeSermonPartText(displaySource,partNum);
 ctx.partContainer.innerHTML=marked.parse(display);
 if(msg.status==='complete'){
+if(window.__forgeStreamAbortRegistry)delete window.__forgeStreamAbortRegistry[activeHandler];
 ForgeLocalSermonProfile&&ForgeLocalSermonProfile.clearStreamAbort(activeHandler);
 clearSermonWatchdogs();
 var finalized=finalizeSermonPartText(ctx.partContent,partNum);
+if(msg.finishReason&&['stop','end_turn','length','max_tokens'].indexOf(msg.finishReason)===-1){
+pauseSermonPart(ctx,partNum,'The provider stopped without completing the response ('+msg.finishReason+'). Your draft is preserved.');
+return;
+}
 if(streamOpts.closingOnly){
+if(isSermonResponseTruncated(msg,finalized)){
+pauseSermonPart(ctx,partNum,'The closing was cut off. Your draft is preserved.');
+return;
+}
 commitSermonPart(partNum,ctx.partContent);
 sermonGenCtx=null;
 generatePart(partNum+1);
 return;
 }
 if(isLocalLlmChapterSermonActive()&&!finalizeLocalLlmPartIfValid(ctx,partNum,streamOpts,finalized))return;
-var truncated=detectTruncation(finalized);
+var truncated=isSermonResponseTruncated(msg,finalized);
 var underWords=isLocalLlmChapterSermonActive()?false:isForgePartUnderWordTarget(finalized,selectedPartCount);
 var maxCont=isLocalLlmChapterSermonActive()&&ForgeLocalSermonProfile?ForgeLocalSermonProfile.maxTruncationContinuations():getForgeMaxContinuations(model,selectedPartCount);
 var actDone=theatreActComplete(finalized,partNum,selectedPartCount);
@@ -6943,11 +7014,15 @@ if(isLocalLlmChapterSermonActive()&&!truncated)return;
 ctx.continuationCount++;
 if(!isTheatreModeActive()&&(underWords||shouldStageForgeClosing()))ctx.partContent=stripPrematureForgeClosing(ctx.partContent);
 ctx.partContentBeforeContinue=ctx.partContent;
-ctx.continuationOpts={underWordCount:underWords&&!truncated};
+ctx.continuationOpts={underWordCount:underWords,finishThoughtOnly:truncated&&!underWords};
 startSermonPartStream(partNum,true);
 return;
 }
-if(shouldStageForgeClosing()){
+if(truncated){
+pauseSermonPart(ctx,partNum,'Output is still incomplete after the continuation limit. Your draft is saved below; resume only if you want another request.');
+return;
+}
+if(shouldStageForgeClosing()&&partNum===selectedPartCount){
 ctx.partContent=stripPrematureForgeClosing(ctx.partContent);
 ctx.partContentBeforeContinue=ctx.partContent;
 startSermonPartStream(partNum,true,{closingOnly:true});
@@ -6960,6 +7035,7 @@ generatePart(partNum+1);
 }
 });
 window.Poe.sendUserMessage('@'+model+' '+prompt,{handler:activeHandler,stream:true,openChat:false,parameters:params}).catch(function(err){
+if(!sermonGenCtx||ctx.handlerName!==activeHandler||ctx.paused)return;
 var errText=String(err||'');
 if(isLocalLlmChapterSermonActive()&&ForgeLocalSermonProfile&&ForgeLocalSermonProfile.isContextSizeError(errText)){
 if(retryLocalLlmContextShrink(ctx,partNum,streamOpts))return;
@@ -6976,10 +7052,10 @@ return;
 }
 clearSermonWatchdogs();
 var ldr=document.getElementById('loader'+partNum);if(ldr)ldr.remove();
+if(ctx.paused)return;
 if(ctx.partContent&&ctx.partContent.trim()){
-commitSermonPart(partNum,ctx.partContent);
-sermonGenCtx=null;
-generatePart(partNum+1);
+ctx.pausedStreamOpts=streamOpts;
+pauseSermonPart(ctx,partNum,'Request failed: '+(errText||'connection ended')+'. Your draft is preserved.');
 }else{
 ctx.partContainer.innerHTML='<div class="error-msg">'+escapeHtml(errText||'Unknown error')+'</div>';
 document.getElementById('generateBtn').disabled=false;
@@ -7662,7 +7738,7 @@ return p;
 }
 function buildPartPrompt(partNum,opts){
 opts=opts||{};
-var deferClosing=shouldStageForgeClosing()&&!opts.allowClosing;
+var deferClosing=shouldStageForgeClosing()&&partNum===selectedPartCount&&!opts.allowClosing;
 var topic=currentTopic;
 var wantBehindTheVeil=document.getElementById('toggleBehindTheVeil')&&document.getElementById('toggleBehindTheVeil').checked;
 var wantPureTheatre=document.getElementById('togglePureTheatre')&&document.getElementById('togglePureTheatre').checked;

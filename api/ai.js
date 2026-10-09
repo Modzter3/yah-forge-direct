@@ -152,6 +152,7 @@ export default async function handler(req) {
       method: 'POST',
       headers: requestHeaders(providerName, apiKey),
       body: JSON.stringify(payload),
+      signal: req.signal,
     });
   } catch (err) {
     return jsonError(`Network error reaching provider (${providerName}): ${err.message}`, 502);
@@ -537,15 +538,18 @@ function streamPassThrough(upstream, providerName, model) {
   const { readable, writable } = new TransformStream();
   const writer  = writable.getWriter();
   const encoder = new TextEncoder();
+  const reader = upstream.body.getReader();
+  let ended = false;
+  // Cancel even while waiting for the next upstream chunk.
+  writer.closed.catch(() => reader.cancel().catch(() => {}));
 
   (async () => {
     try {
-      const reader  = upstream.body.getReader();
       const decoder = new TextDecoder();
       let buf = '';
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) { ended = true; break; }
         buf += decoder.decode(value, { stream: true });
         const lines = buf.split('\n');
         buf = lines.pop();
@@ -555,9 +559,11 @@ function streamPassThrough(upstream, providerName, model) {
       }
       if (buf) await writer.write(encoder.encode(buf + '\n'));
     } catch (err) {
-      await writer.write(encoder.encode(`data: {"error":"${escapeJson(err.message)}"}\n\n`));
+      try { await writer.write(encoder.encode(`data: {"error":"${escapeJson(err.message)}"}\n\n`)); } catch (_) {}
     } finally {
-      await writer.close();
+      if (!ended) { try { await reader.cancel(); } catch (_) {} }
+      reader.releaseLock();
+      try { await writer.close(); } catch (_) {}
     }
   })();
 
@@ -581,7 +587,7 @@ function jsonFromProviderToSse(parsed, providerName, model) {
 
   if (text) {
     lines.push(`data: ${JSON.stringify({
-      choices: [{ delta: { content: text }, finish_reason: null }],
+      choices: [{ delta: { content: text }, finish_reason: parsed?.choices?.[0]?.finish_reason || null }],
     })}\n\n`);
   }
   if (usage) {
