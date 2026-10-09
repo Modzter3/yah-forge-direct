@@ -6025,7 +6025,7 @@ function stripPrematureForgeClosing(text){
 var paras=String(text||'').replace(/\s+$/,'').split(/\n\s*\n/);
 // Only inspect the tail: scripture teaching earlier in the body must survive.
 var start=Math.max(1,paras.length-8);
-var signoff=/\b(this (?:has been|is) Brother|peace,? Israel|Yah First,? last,? and always|the message is (?:finished|out)|until next time|thank you for (?:listening|tuning)|thanks for (?:listening|tuning))\b/i;
+var signoff=/\b(this (?:has been|is) (?:your brother,?\s*)?Brother|this is your brother|I[’']m signing off|I am signing off|peace,? Israel|Yah First,? last,? and always|the message is (?:finished|out)|until next time|thank you for (?:listening|tuning)|thanks for (?:listening|tuning))\b/i;
 for(var i=start;i<paras.length;i++){
 if(signoff.test(paras[i]))return paras.slice(0,i).join('\n\n');
 }

@@ -104,3 +104,9 @@ assert.ok(!s.sermonGenCtx.partContent.includes('STALE CONTENT'));
 const actualBudget=vm.runInNewContext(source('getForgeMaxContinuations')+';getForgeMaxContinuations("test",2)',{getForgeWordsPerPart:()=>2000,getModelMaxOutputTokens:()=>16384});
 assert.equal(actualBudget,2);
 console.log('provider refusals, explicit resume, stale callbacks, and default continuation limit passed');
+
+// First post-fix production sample: a body sign-off must not survive before the closing.
+const productionSignoff="[low, tight] I’ve given you the manual. I’ve decoded the symbols. Turn the key, Israel. This is your brother, Bet-Tsade-Lamed-Aleph-Lamed, and I’m signing off before the firewall drops... [pause]";
+assert.equal(s.stripPrematureForgeClosing(body+'\n\n'+productionSignoff),body);
+assert.equal(s.stripPrematureForgeClosing(body+"\n\nThis is your brother, Bet, signing off."),body);
+console.log('production sign-off cleanup passed');
