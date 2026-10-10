@@ -88,8 +88,8 @@ reset(1,2);s.sermonGenCtx.partContent=tagged;s.finishCurrentSermonPart('stall');
 assert.equal(commits.length,0);assert.equal(s.sermonGenCtx.paused,true);
 // Paid continuation budgets shrink with the remaining content.
 s.getForgeWordsPerPart=()=>2000;s.countForgeWords=t=>t.trim().split(/\s+/).length;
-assert.equal(s.getForgeRemainingTokens('test','word '.repeat(1900),2),436);
-assert.equal(s.getForgeRemainingTokens('test','word '.repeat(2100),2),256);
+assert.equal(s.getForgeRemainingTokens('test','word '.repeat(1900),2),1024);
+assert.equal(s.getForgeRemainingTokens('test','word '.repeat(2100),2),1024);
 console.log('tagged endings, stop reasons, multipart closing, cutoff limits, interruptions, stalls, and remaining budgets passed');
 
 // Provider refusals must not become more automatic paid continuation requests.
@@ -111,3 +111,14 @@ const productionSignoff="[low, tight] I’ve given you the manual. I’ve decode
 assert.equal(s.stripPrematureForgeClosing(body+'\n\n'+productionSignoff),body);
 assert.equal(s.stripPrematureForgeClosing(body+"\n\nThis is your brother, Bet, signing off."),body);
 console.log('production sign-off cleanup passed');
+
+// A length-limited body already at its target gets one bounded finishing request.
+reset(1,2);s.startSermonPartStream(1,false);
+callback({responses:[{status:'complete',content:'Enough teaching. An unfinished tagged thought',finishReason:'length'}]});
+assert.equal(prompts.length,2);
+assert.equal(prompts[1].opts.parameters.max_tokens,1024);
+assert.equal(s.sermonGenCtx.continuationOpts.finishThoughtOnly,true);
+callback({responses:[{status:'complete',content:'finishes here. [pause]',finishReason:'stop'}]});
+assert.equal(commits.length,1);
+assert.equal(s.sermonGenCtx,null);
+console.log('target reached: bounded 1024-token finishing request completes without another body request');

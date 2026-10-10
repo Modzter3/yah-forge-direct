@@ -6054,7 +6054,8 @@ function getForgeRemainingTokens(model,text,totalParts){
 var tp=totalParts||selectedPartCount;
 var charGoal=tp===1?selectedStandaloneChars:selectedPartChars;
 var remaining=charGoal>0?Math.ceil(Math.max(0,charGoal-String(text||'').length)/FORGE_CHARS_PER_WORD):Math.max(0,getForgeWordsPerPart(tp)-countForgeWords(text));
-return Math.min(getModelMaxOutputTokens(model),Math.max(256,Math.ceil(remaining*1.8)+256));
+// Tagged paragraphs need room to finish even after the length target is reached.
+return Math.min(getModelMaxOutputTokens(model),Math.max(1024,Math.ceil(remaining*1.8)+512));
 }
 function isSermonResponseTruncated(msg,text){
 if(msg.finishReason==='length'||msg.finishReason==='max_tokens')return true;
@@ -6887,8 +6888,8 @@ prompt=wrapPromptForGrokIfNeeded(prompt,model,isYahStoryModeActive()&&!ctx.bezFa
 if(savedChapterTextForLocal!==null)currentChapterText=savedChapterTextForLocal;
 var params=getSermonWebSearchParams(model,selectedPartCount);
 if(isContinuation&&!isLocalLlmChapterSermonActive())params.max_tokens=getForgeRemainingTokens(model,ctx.partContent,selectedPartCount);
-if(ctx.continuationOpts&&ctx.continuationOpts.finishThoughtOnly)params.max_tokens=Math.min(256,getModelMaxOutputTokens(model));
-if(streamOpts.closingOnly)params.max_tokens=Math.min(streamOpts.closingResume?256:800,getModelMaxOutputTokens(model));
+if(ctx.continuationOpts&&ctx.continuationOpts.finishThoughtOnly)params.max_tokens=Math.min(1024,getModelMaxOutputTokens(model));
+if(streamOpts.closingOnly)params.max_tokens=Math.min(streamOpts.closingResume?1024:800,getModelMaxOutputTokens(model));
 var yahApiActive=isYahStoryModeActive()&&!ctx.bezFallbackActive;
 appendYahStoryApiParams(params,yahApiActive,{skipSystem:!!streamOpts.yahLiteRetry});
 if(typeof getForgeLlmProvider==='function'&&getForgeLlmProvider()==='local'&&ForgeLocalSermonProfile){
