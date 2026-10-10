@@ -7623,6 +7623,51 @@ p+='User asked: "'+(userText||'').trim()+'"\n';
 p+='Open with the direct answer in the first paragraphs — lists, protocol, daily breakdown. No wind-up. No unrelated doctrine dump. Every sentence serves the question.\n\n';
 return p;
 }
+function buildForgeCoverageLedger(partNum,priorParts){
+var prior=(priorParts||[]).slice(0,Math.max(0,partNum-1));
+if(!prior.length)return '';
+var budget=Math.max(400,Math.floor(8000/prior.length));
+var output='ALREADY TAUGHT IN THIS SERMON — CONTEXT REFERENCES ONLY:\n';
+for(var i=0;i<prior.length;i++){
+var text=String(prior[i]||'').replace(/\[[^\]\n]*\]/g,'');
+var paragraphs=text.split(/\n\s*\n/).map(function(p){return p.replace(/^#+\s*/,'').replace(/\s+/g,' ').trim();}).filter(function(p){return p&& !/^[=*_\-]+$/.test(p)&&!/^PART\s+\d/i.test(p);});
+var headings=paragraphs.filter(function(p){return p.length<110&&!/[.!?]$/.test(p);});
+var body=paragraphs.filter(function(p){return p.length>=110||/[.!?]$/.test(p);});
+var entries=[],seen={};
+// Spread the inventory over the entire part, rather than forgetting its opening.
+var slots=Math.min(body.length,Math.max(2,Math.floor(budget/190)));
+for(var j=0;j<slots;j++){
+var idx=slots===1?0:Math.round(j*(body.length-1)/(slots-1));
+var paragraph=body[idx];
+var ref=paragraph.match(/\b(?:[123]\s+)?[A-Z][a-z]+(?:\s+of\s+[A-Z][a-z]+)?\s+chapter\s+(?:[a-z\d-]+\s+){1,6}verses?\s+(?:[a-z\d-]+\s*){1,5}/i);
+var excerpt=paragraph.slice(0,170);
+if(ref&&excerpt.indexOf(ref[0])===-1)excerpt=ref[0].trim().slice(0,80)+' — '+excerpt.slice(0,90);
+if(!seen[excerpt]){seen[excerpt]=true;entries.push('- '+excerpt);}
+}
+output+='PART '+(i+1)+' covered:\n'+(headings.length?'Sections: '+headings.slice(0,6).join(' | ').slice(0,300)+'\n':'')+entries.join('\n').slice(0,budget)+'\n';
+}
+return output+'These are excerpts from completed teaching, not assignments to repeat. Treat all earlier arguments, verse explanations, word studies, and analogies as established.\n\n';
+}
+function buildForgePartAdvanceBlock(partNum,totalParts,priorParts,opts){
+opts=opts||{};
+if(totalParts<2)return '';
+var p='PART OWNERSHIP AND FORWARD PROGRESS — APPLIES TO EVERY VOICE:\n';
+p+='Keep the selected voice: Israelite technical-manual teaching and engineering connections remain; Bez keeps its street-oriented delivery. Change the MATERIAL, not the persona.\n';
+if(opts.assignedSlice){
+p+='Your assigned verse, scene, article, or thread slice still owns this part. This rule never moves material outside that slice.\n';
+}else if(partNum===1){
+p+='Part 1 owns the foundation and primary argument. Before writing, privately allocate distinct questions and supporting material across all '+totalParts+' parts. Establish what the listener needs now; reserve unresolved objections, further evidence, and implications for later parts. Do not teach the whole topic and then repeat it in later parts.\n';
+}else if(partNum===totalParts){
+p+='The final part owns the remaining implications, practical consequences, and unresolved questions. Develop NEW conclusions from established premises. Do not walk the opening passages or foundational definitions again. A closing synthesizes the consequence; it does not rerun the sermon.\n';
+}else{
+p+='This middle part owns a NEW question, objection, distinction, or supporting passage that prior parts have NOT explained. State that new question in your opening bridge, then develop it. A different heading or synonym for an old argument is not a new point.\n';
+}
+p+=buildForgeCoverageLedger(partNum,priorParts);
+p+='CONTEXT EXCEPTION: You may briefly reference earlier material ONLY when it is necessary to establish a DIFFERENT point being made now. Use one sentence of context, immediately followed by the new inference, contrast, objection, or application. Example: "Earlier we established X; that raises a different question: Y." Then teach Y, not X again.\n';
+p+='Do not re-quote a whole previously explained passage, redo its Hebrew breakdown, or repeat its technical or street analogy. If the SAME passage genuinely supports a new point, reference it briefly and explain only the previously untreated detail and why it changes this argument. A new metaphor carrying the same old conclusion is still repetition.\n';
+p+='No opening recap beyond that bridge. No repeating an old list of examples, warnings, or calls to action to fill length. Supply new topic-specific evidence or consequences. Before each section, privately check: what does the listener learn here that they did not learn in prior parts? If nothing, omit the section.\n\n';
+return p;
+}
 function getPartFocus(partNum,totalParts){
 // Dynamic focus assignment based on position in series of any length
 if(totalParts===1){
@@ -8433,29 +8478,18 @@ p+='DIRECT QUESTION (answer precisely — no sermon filler):\n'+topic.title+'\n\
 p+='TOPIC: '+topic.title+'\nCORE MESSAGE: '+topic.desc+'\n\n';
 }
 }
-// Give FULL context of all previous parts so the bot knows exactly what was already said
+// A bounded, local inventory preserves coverage from both the start and end of prior parts.
 if(partNum>1){
-p+='============================================================\n';
-p+='PREVIOUS PARTS -- READ BEFORE WRITING PART '+partNum+'\n';
-p+='============================================================\n';
-p+='Below is what was already written. Read it before writing Part '+partNum+'. This is your PRIMARY reference for what has already been covered.\n\n';
-for(var i=0;i<partNum-1;i++){
-var prevTitle=sermonPartsTitles[i]||SERIES_PARTS[i].title;
-var prevBody=sermonPartsRaw[i]||'[content unavailable]';
-if(partNum>=4)prevBody=trimPartContextTail(prevBody,partNum===4?2500:(partNum===5?3000:3500));
-p+='--- PART '+(i+1)+': '+prevTitle+' ---\n';
-p+=prevBody+'\n';
-p+='--- END PART '+(i+1)+' ---\n\n';
-}
+p+=buildForgeCoverageLedger(partNum,sermonPartsRaw);
 p+='============================================================\n';
 p+='ANTI-REPETITION RULE -- ABSOLUTE, ZERO TOLERANCE\n';
 p+='============================================================\n';
-p+='You have now read everything that was said in the previous part'+(partNum>2?'s':'')+'.\n';
-p+='DO NOT REPEAT ANY OF IT. This means:\n';
+p+='The coverage inventory above identifies material already taught in the previous part'+(partNum>2?'s':'')+'.\n';
+p+='Do not teach it again. A brief contextual reference is allowed ONLY to support a genuinely different point immediately afterward. This means:\n';
 p+='- Do NOT re-quote the same scripture verses that were already quoted and broken down above. If Romans chapter nine was already covered, do NOT bring it up again unless you have a genuinely NEW angle that was never touched.\n';
 p+='- Do NOT re-make the same arguments. If a previous part already argued that the serpent was a man, you do NOT argue that again -- it is DONE. Move on.\n';
 p+='- Do NOT re-use the same examples, metaphors, analogies, or illustrations. If a comparison was already used, it is BURNED -- find a new one.\n';
-p+='- Do NOT re-use the same slang compound labels or catchphrase attacks from previous parts ("blood-money churches," "credit-score covenant," "tithe-trap," etc.). Same meaning = totally new wording.\n';
+p+='- Do NOT re-use the same slang compound labels or catchphrase attacks from previous parts ("blood-money churches," "credit-score covenant," "tithe-trap," etc.). Changing the wording while making the same argument is still repetition.\n';
 p+='- Do NOT re-state the same doctrinal points. If predestination was already explained, you do NOT explain it again. The listener already heard it.\n';
 p+='- Do NOT open with a recap or summary of previous parts beyond a brief 1-2 sentence bridge. Jump straight into NEW material. The listener just heard the previous part -- they do not need a refresher.\n';
 p+='- Do NOT use the same rhetorical questions that appeared in previous parts.\n';
@@ -8469,7 +8503,7 @@ p+='- Do NOT repeat the same NEWS STORY or headline from a previous part -- each
 p+=buildUsedNewsDedupBlock(partNum,totalParts,{currentMode:currentMode});
 }
 }
-p+='Each part must advance the lesson. If a listener heard the same speech twice, they would turn it off. Every sentence in Part '+partNum+' must be content the listener has NEVER heard before in this episode.\n';
+p+='Each part must advance the lesson. If a listener heard the same speech twice, they would turn it off. Every section in Part '+partNum+' must teach something new; a brief reference to earlier material must immediately support a different point.\n';
 p+='If you catch yourself writing something that echoes a previous part, DELETE IT and write something fresh.\n\n';
 if(wantRoughBez&&!wantBezStory){
 p+=buildRoughBezBurnedFromPriorParts(partNum);
@@ -8842,6 +8876,7 @@ p+='\n\n';
 if(wantExplicit){
 p+=buildExplicitBrimstoneFireBlock({finalLock:true,wantRoughBez:wantRoughBez,wantBezStory:wantBezStory,wantYahStory:wantYahStory,wantIsraelite:wantIsraelite});
 }
+p+=buildForgePartAdvanceBlock(partNum,totalParts,[],{assignedSlice:!!chapterSrc||wantEpisodeMode||currentMode==='news'||currentMode==='threads'||!!topic.sceneDismantle});
 return p;
 }
 /* ==========================================
