@@ -1602,6 +1602,7 @@ var TOPICS=[
 {id:61,cat:'law',title:"Sunup Day Start Command",desc:"Light first... night wraps it... Torah rhythm."},
 {id:62,cat:'eschatology',title:"System Beast Economic Grip",desc:"Revelation mark... global net no escape."},
 {id:63,cat:'doctrine',title:"The Us Royal Plural",desc:"Majesty language... no persons debate."},
+{id:91,cat:'doctrine',title:"One King, Not a Committee — Us & Our vs Trinity",desc:"Yah First broadcast: Genesis 1:26–27, 3:22, 11:7, Isaiah 6:8 — majestic plural vs Nicaea committee godhead. Shema Echad. Yah alone. Yahusha is Yah in flesh. ElevenTags + Explicit + Israelite Brother."},
 {id:64,cat:'law',title:"Torah Observance Mandate",desc:"Feasts laws statutes... grace through doin'."},
 {id:65,cat:'doctrine',title:"Trinity Trash Bin",desc:"One Yah in flesh... no three-headed cloud god."},
 {id:66,cat:'identity',title:"True Israel Awakening",desc:"Negroes rise... claim birthright or perish."},
@@ -3359,7 +3360,7 @@ p+='- Grew up in church; his mother is a pastor\'s daughter. He stopped going re
 p+='- Multicultural middle school -- heathen friends, soaked in their beliefs; bounced from belief to belief for years.\n';
 p+='- Was atheist through most of his twenties.\n';
 p+='- Woke to Hebrew Israelite truth during COVID in April twenty twenty.\n';
-p+='- Has a son about thirteen with his first child\'s mother. She is a HEATHEN -- NOT an Israelite. Make that distinction course-clear. Bez mixed his seed when he was clueless, before he woke in April twenty twenty. He owns the mistake in first person without trashing his son; do not call the mother Israel or soften her as "almost in the truth."\n';
+p+='- Has a son about thirteen with his first child\'s mother. She is a HEATHEN -- NOT an Israelite. Make that distinction course-clear. Bez mixed his seed when he was clueless, before he woke in April twenty twenty. He owns the mistake in first person without trashing his son. The SON is still ISRAELITE -- Bez is the covenant father; the boy is NOT a "bastard" in the sense of not being Israel. Heathen mother does not cancel Israelite seed through an Israelite father. Do not call the son heathen, serpent seed, or outside the bloodline; do not call the mother Israel or soften her as "almost in the truth."\n';
 p+='- Married his current wife a little over a year; she walks in the truth with him; daughter on the way with her.\n';
 p+='- Works at an Amazon warehouse -- four and a half years on that job, still there currently (clock-in pressure, quotas, management, body wear are fair lived details when work comes up).\n';
 p+='BIO USE — NOT A RESUME DUMP (MANDATORY):\n';
@@ -7749,6 +7750,48 @@ p+='- Nephilim / "giants" (gibborim) = MIGHTY MEN of renown in that corrupted pr
 p+='- When using 1 Enoch\'s Watchers section: extract THIS pattern (Sethite fall, teaching heathen, life-motive, judgment). FILTER OUT heaven tours, angel hierarchies, Metatron lies, and monster-giant literalism.\n\n';
 return p;
 }
+function isPluralOfMajestyTopic(topic){
+if(!topic)return false;
+if(topic.id===14||topic.id===63||topic.id===68||topic.id===91)return true;
+var h=((topic.title||'')+' '+(topic.desc||'')+' '+(topic.customBrief||'')).toLowerCase();
+return(/\bplural of majesty\b/.test(h)||/\bmajestic plural\b/.test(h)||(/\btrinity\b/.test(h)&&/\bgenesis\b/.test(h)&&/\b(us|our)\b/.test(h))||(/\bnicaea\b/.test(h)&&/\b(us|our|elohim)\b/.test(h)));
+}
+function buildPluralOfMajestyTopicLockBlock(opts){
+opts=opts||{};
+var wantEleven=!!opts.wantElevenTags;
+var p='*** TOPIC LOCK — PLURAL OF MAJESTY / NO TRINITY COMMITTEE (MANDATORY) ***\n';
+p+='This output dismantles the lie that Genesis "us/our" language proves three divine persons. Yah is ONE sovereign — majestic plural and plural of intensity, NOT a godhead vote.\n\n';
+p+='TITLE: Invent a blunt wall-paint headline (ALL CAPS ok) — e.g. ONE ENGINEER IN THE BOOTH or THE MAJESTIC WE IS NOT THREE GODS. Do NOT reuse the sample title verbatim.\n\n';
+p+='FORMAT: Yah First Ministries ONLINE BROADCAST — Brother Bet-Tsade-Lamed-Aleph-Lamed hosting. Warm varied welcome (not canned). Third person about Yah; first person as the brother when earned — no bio dump unless the lesson needs it.\n\n';
+p+='REQUIRED CRIME-SCENE VERSES (read clearly, then hammer singular execution):\n';
+p+='- Genesis 1:26 "Let us… our image" → Genesis 1:27 HIS image, HE created — singular switch kills committee theology.\n';
+p+='- Genesis 3:22 "as one of us" — judicial throne / deliberative court language, NOT Trinity in the bushes. Book of Adam and Eve (filtered): Yah at Eden gate, one Judge.\n';
+p+='- Genesis 11:7 "let us go down" → verse 9 the Lord DID — singular. Balal (Bet-Lamed-Lamed): authority fracturing the house.\n';
+p+='- Isaiah 6:8 "Whom shall I send… who will go for us?" — I vs us in one breath; ONE throne Isaiah 6:1.\n';
+p+='- Deuteronomy 6:4 Shema — Echad (Aleph-Khet-Dalet): one door, one strength, not three-in-one math.\n';
+p+='- Isaiah 44:24 ALONE / BY MYSELF stretched heavens; 45:5 none beside; 45:18 Yah HIMSELF; 43:10 no Yah formed before me; 42:8 glory to no other.\n';
+p+='- Exodus 7:1 Moses made Elohim to Pharaoh — magnitude title, not three people in one skin.\n';
+p+='- John 10:30 ONE; John 14:9 seen me = seen Father; Colossians 2:9 fullness of Godhead bodily; Isaiah 9:6 Mighty God, Everlasting Father on the child.\n';
+p+='- Malachi 2:10 one Father, one Yah created us. Zechariah 14:9 one Lord, one name.\n\n';
+p+='PALEO + ENGINEERING (Israelite Brother — weave in flow, not end lists):\n';
+p+='- Elohim (Aleph-Lamed-He-Yod-Mem): mighty authority revealing power through chaos; -im = majesty/intensity not headcount.\n';
+p+='- Anachnu (Nun-Khet-Nun-Waw): collective unity of authority, not division.\n';
+p+='- Bara (Bet-Resh-Aleph), Tselem (Tsade-Lamed-Mem), Ruach (Resh-Waw-Khet) as His breath — not a third person with a bank account.\n';
+p+='- Sefer Yetzirah: letters as instruction set; He engraved/hewed — singular actor.\n';
+p+='- Tech bridges: CPU/monitor same system; power plant/transformer/current; livestream one man three nodes; developer "let\'s build" alone in the room; DNA 10-5-6-5 as Yod-He-Waw-He signature (optional one strong hit).\n';
+p+='- Menorah: one beaten gold stand, seven frequencies of one Light. Baptism scene: three locations not three gods.\n\n';
+p+='SEALED SCROLLS (filter serpent poison): Jasher creation/Word execution; Apocalypse of Abraham Eternal One; Jubilees angels as task agents not co-creators; Gad the Seer One filling heaven and earth; Natasrym/Natsarim oneness — NO angel councils, NO Trinity hints.\n\n';
+p+='EXPOSE: Council of Nicaea / Roman whore church / Egyptian Osiris-Isis-Horus triad with KJV paint. Demolish "talk to the nice Son" pagan good-cop bad-cop. IUIC-style separate Father-Son = Greek carnal thinking.\n\n';
+p+='VOICE: Explicit profanity when exposing pulpit lies. Street heat + teaching clarity. Queen "we are not amused" majestic plural analogy. Cuss Trinity as polytheism (Zeus triad parallel).\n\n';
+if(wantEleven){
+p+='ELEVEN TAGS ON: Dense [bracket] performance cues every few sentences — warm/steady, dry mocking, low gravelly, rising harder, pause, etc. Tags are direction only, never read aloud.\n\n';
+}else{
+p+='If user enables Eleven Tags later, retrofit with expressive [bracket] cues — do not write bare podcast prose.\n\n';
+}
+p+='ENCORE: After main sign-off you MAY do ONE short "Spirit pulled me back" encore (max one) — do NOT stack five or six fake goodbyes in a single part.\n\n';
+p+='FORBIDDEN: Affirming Trinity as mystery to honor. FORBIDDEN: Angels as co-creators of man in Yah\'s image. FORBIDDEN: Separate eternal Son beside Father. Stay on majestic plural vs committee.\n\n';
+return p;
+}
 function buildGenesis3CurseIsraelTopicLockBlock(){
 var p='*** TOPIC LOCK — GENESIS 3 CURSE IS FOR ISRAEL ONLY (MANDATORY) ***\n';
 p+='This sermon is about ONE doctrine: the Genesis chapter three judgment was NOT a universal curse on all humanity and all nations. It was covenant court on Adam and Eve — the specially formed covenant pair in Eden — and it runs forward through ISRAEL\'s line, NOT through every people on earth.\n\n';
@@ -8581,6 +8624,7 @@ p+='Weave all of this NATURALLY into the sermon flow. Do NOT dump Paleo Hebrew b
 }
 p+=buildForgeTheologicalFrameworkBlock({context:'sermon',wantIsraelite:wantIsraelite,wantStoryMode:wantStoryMode,wantBezStory:wantBezStory,wantEpisodeMode:wantEpisodeMode,topic:topic,directQuestion:directQuestion});
 if(isGenesis3CurseIsraelTopic(topic))p+=buildGenesis3CurseIsraelTopicLockBlock();
+if(isPluralOfMajestyTopic(topic))p+=buildPluralOfMajestyTopicLockBlock({wantElevenTags:isElevenLabsTagsEnabled()});
 if(wantEpisodeMode&&!isJobScriptureTopic(topic)){
 if(wantBezStory){
 p+='EPISODE MODE + BEZ STORY: The SHOW is the primary text -- decode TV symbols first in street revelation cadence. Scripture, allegory, and Job-is-Israel parallels are seasoning when a scene\'s suffering, betrayal, or false comfort naturally mirrors that pattern. Do not hijack the show into a standalone Job sermon.\n\n';
