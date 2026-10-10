@@ -11,6 +11,7 @@ for(const name of ['looksLikeForgeClosingParagraph','stripPrematureForgeClosing'
 const signoff='[low, tight] This has been Brother Bet. Peace, Israel. Yah First, last, and always. [pause]';
 assert.equal(s.stripPrematureForgeClosing(body+'\n\n'+signoff+'\n\nYou think because I said peace we are done?'),body);
 assert.equal(s.stripPrematureForgeClosing(body),body);
+for(const ending of ['[quiet] I’m Brother Bet-Tsade-Lamed-Aleph-Lamed. This has been Yah First Ministries. [pause]','[breathing heavily] This is the end of the episode, but the beginning of your trial. [pause]','[fading out] Peace. [pause]'])assert.equal(s.stripPrematureForgeClosing(body+'\n\n'+ending+'\n\nAnother closing.'),body);
 assert.equal(s.stripPrematureForgeClosing(body+'\n\n[quiet] Peace, Israel. [pause]'),body);
 assert.equal(s.stripPrematureForgeClosing('Teaching about the door closing.\n\nMore teaching.'),'Teaching about the door closing.\n\nMore teaching.');
 assert.equal(s.shouldStageForgeClosing(),true);
