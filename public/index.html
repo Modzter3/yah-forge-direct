@@ -3300,6 +3300,24 @@ p+='- Everyday modern references are fine when the verse earns them (rent, court
 p+='- Do not repeat the same phrase or image across paragraphs or parts.\n\n';
 return p;
 }
+var forgeIsraeliteOpeningMove=null;
+function buildIsraelitePodcastOpeningBlock(){
+var moves=[
+'Open on a concrete household situation raised by this topic, then welcome the listener.',
+'Open with a short phrase from the assigned scripture and its immediate question, then introduce the broadcast.',
+'Open with the practical stakes of this topic for the listener, then weave in the greeting.',
+'Open with a precise contrast or surprising detail from this topic, then identify the speaker and ministry.',
+'Begin with a brief freshly worded greeting tied to this topic, then name its central unresolved question.',
+'Open inside a scene from the assigned material, then invite the listener into the investigation.'
+];
+if(forgeIsraeliteOpeningMove===null){
+var last=-1;try{last=parseInt(localStorage.getItem('forgeIsraeliteOpeningLast'),10);}catch(e){}
+var choices=moves.map(function(_,i){return i;}).filter(function(i){return i!==last;});
+forgeIsraeliteOpeningMove=choices[Math.floor(Math.random()*choices.length)];
+try{localStorage.setItem('forgeIsraeliteOpeningLast',String(forgeIsraeliteOpeningMove));}catch(e){}
+}
+return 'DYNAMIC ISRAELITE PODCAST OPENING:\nOpening structure for THIS episode: '+moves[forgeIsraeliteOpeningMove]+'\nWithin the first two short paragraphs, naturally greet the listeners, identify Yah First Ministries and Brother Bet-Tsade-Lamed-Aleph-Lamed, and establish what THIS topic addresses and why it matters. These elements may change order; the welcome does not have to be the first sentence. Write fresh spoken wording, not a fixed station announcement.\nThe first sentence must contain a concrete detail or question specific to this topic. Do not default to Welcome back, Peace and blessings family, You are tuning in, Today we are diving into, or I am fired up today. No generic claim that a secret was buried for centuries unless the assigned material supports it. Do not invent personal memories, revelations, or historical claims to make the hook dramatic. Keep the selected tone and technical teaching style, and move promptly into the body.\n\n';
+}
 function buildOpeningVarietyBlock(partNum,totalParts,topic){
 var moves=[
 'a concrete detail from the verse itself -- a name, place, number, object, or image the text actually gives',
@@ -3891,6 +3909,7 @@ var parts=splitPastedSermonIntoParts(text);
 closeElevenTagModal();
 sermonPartsRaw=[];
 forgeSermonOutline=null;
+forgeIsraeliteOpeningMove=null;
 sermonPartsTitles=[];
 for(var i=0;i<parts.length;i++){
 sermonPartsTitles.push(extractPartTitle(parts[i],i+1)||('Part '+(i+1)));
@@ -5799,6 +5818,7 @@ isGenerating=true;
 sermonSavedThisSession=false;
 sermonPartsRaw=[];
 forgeSermonOutline=null;
+forgeIsraeliteOpeningMove=null;
 sermonPartsTitles=[];
 sermonPartsCombined='';
 sermonSeriesTitle=null;
@@ -8027,9 +8047,9 @@ if(totalParts===1){
 p+='EPISODE FORMAT -- THIS IS MANDATORY:\n';
 p+='YOUR FIRST LINE must be an EPISODE TITLE in the format: # [Your Title Here]\n';
 p+='The title should be a CATCHY, PROVOCATIVE episode title (3-10 words) that would make someone click PLAY. Think episode titles that stop the scroll -- mysterious, bold, or controversial. Examples: "# The Blueprint They Burned at Nicaea", "# Why Your Pastor Skips This Chapter", "# Sefer Yetzirah and the 22 Letters of Creation". Make it punchy and SPECIFIC to what THIS episode covers.\n\n';
-p+='AFTER the title, you MUST open with a WELCOME AND BACKDROP. This is NON-NEGOTIABLE:\n';
-p+='1. WELCOME the listeners to Yah First Ministries -- greet them warmly but with authority as Brother Bet-Tsade-Lamed-Aleph-Lamed. Something like "Welcome back to another lesson on Yah First Ministries..." or "Peace, family -- you are tuning in to another episode of Yah First Ministries with Brother Bet-Tsade-Lamed-Aleph-Lamed..." or "If you are here, you are hungry for truth -- welcome back." Make it feel like they are returning to a show they love. Vary the greeting every time -- do NOT use the same welcome.\n';
-p+='2. GIVE A BACKDROP -- Before diving into the lesson, set the stage. Tell the listeners WHAT is going to be covered today and WHY it matters. Give them a taste of what is coming -- enough to hook them but not so much that you give away the whole lesson. Build anticipation. Examples: "Today we are going somewhere most teachers will not take you..." or "In this episode, we are cracking open [topic] and I promise you by the end of this you will never read [book/chapter] the same way again..." or "What I am about to show you today has been buried for centuries..."\n';
+p+='AFTER the title, use a dynamic podcast opening that includes a greeting and topic backdrop without a fixed order:\n';
+p+=buildIsraelitePodcastOpeningBlock();
+p+='Introduce the specific question and stakes without summarizing the whole lesson or borrowing a canned teaser. '+(totalParts>1?'Briefly frame the multi-part journey without teaching later assignments.':'')+'\n';
 p+='3. THEN transition naturally into the lesson body. The transition should feel smooth -- not a hard cut from intro to content. Flow into it.\n\n';
 }else{
 p+='EPISODE FORMAT -- THIS IS MANDATORY:\n';
@@ -8037,10 +8057,10 @@ p+='This is ONE episode split into '+totalParts+' parts. YOUR FIRST LINE must be
 p+='The title should be a CATCHY, PROVOCATIVE title (3-10 words) specific to what THIS part covers. Examples: "# Part '+partNum+': The Blueprint They Burned at Nicaea", "# Part '+partNum+': Why Your Pastor Skips This Chapter". Make it punchy and SPECIFIC.\n';
 p+='TITLE RULE: Exactly ONE title line. Do NOT also write "# PART '+partNum+' -- ..." or repeat the part heading twice.\n\n';
 if(partNum===1){
-p+='AFTER the title, you MUST open with a WELCOME AND BACKDROP. This is NON-NEGOTIABLE:\n';
+p+='AFTER the title, use a dynamic podcast opening that includes a greeting and topic backdrop without a fixed order:\n';
 p+='Since this is Part 1 (the BEGINNING of the episode):\n';
-p+='1. WELCOME the listeners to Yah First Ministries -- greet them warmly but with authority as Brother Bet-Tsade-Lamed-Aleph-Lamed. Something like "Welcome back to another lesson on Yah First Ministries..." or "Peace, family -- you are tuning in to another episode of Yah First Ministries with Brother Bet-Tsade-Lamed-Aleph-Lamed..." or "If you are here, you are hungry for truth -- welcome back." Make it feel like they are returning to a show they love. Vary the greeting every time -- do NOT use the same welcome.\n';
-p+='2. GIVE A BACKDROP -- Before diving into the lesson, set the stage. Tell the listeners WHAT is going to be covered today and WHY it matters. Give them a taste of what is coming -- enough to hook them but not so much that you give away the whole lesson. Build anticipation. Let them know this is a multi-part episode and what the full journey will cover.\n';
+p+=buildIsraelitePodcastOpeningBlock();
+p+='Introduce the specific question and stakes without summarizing the whole lesson or borrowing a canned teaser. '+(totalParts>1?'Briefly frame the multi-part journey without teaching later assignments.':'')+'\n';
 p+='3. THEN transition naturally into the lesson body. The transition should feel smooth -- not a hard cut from intro to content. Flow into it.\n\n';
 }else{
 p+='Since this is Part '+partNum+' of the SAME episode (NOT a new episode):\n';
@@ -8867,7 +8887,7 @@ p+='Do NOT use mystical, vague, or "someday" language. Be SPECIFIC about what is
 p+='FORMAT: '+(wantStoryMode?'One # title line only, then continuous paragraphs -- NO ## headers, NO --- dividers, NO verse labels, NO blockquotes. ':'Markdown with ## headers, **bold**, > blockquotes for scripture, --- dividers. ');
 var openingInstruction;
 if(partNum===1||totalParts===1){
-openingInstruction=wantRoughBez?'the rough street rebuke immediately -- no welcome, no greeting, no backdrop, no episode language':(wantIsraelite?'the welcome, backdrop, and lesson body':'the lesson body directly -- no welcome, no greeting');
+openingInstruction=wantRoughBez?'the rough street rebuke immediately -- no welcome, no greeting, no backdrop, no episode language':(wantIsraelite?'the selected topic-specific podcast opening with greeting and backdrop woven in, then the lesson body':'the lesson body directly -- no welcome, no greeting');
 }else{
 openingInstruction=wantRoughBez?'a one-sentence bridge MAX, then the rough street sermon body -- no welcome, no recap, no episode language':'the brief bridge and lesson body';
 }
