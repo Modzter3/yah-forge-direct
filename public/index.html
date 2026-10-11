@@ -16,7 +16,7 @@
 <script src="/openrouter-models.js"></script>
 <script src="/apoc-local-corpus.js"></script>
 <script src="/vendor/purify.min.js"></script>
-<script src="/sermon-files.js"></script>
+<script src="/sermon-files.js?v=2"></script>
 <style>
 :root {
   --gold:#D4A017; --gold-dim:#9B7510; --crimson:#8B1A1A; --crimson-glow:#C41E3A;
@@ -9732,9 +9732,13 @@ document.body.removeChild(a);URL.revokeObjectURL(url);
 showToast('Library exported -- '+sermonLibrary.length+' sermon'+(sermonLibrary.length!==1?'s':'')+'.');
 }
 function importLibrary(){
-var input=document.createElement('input');input.type='file';input.accept=ForgeSermonFiles.accept;input.multiple=true;
+// iOS Files may classify Markdown as an unknown type and disable it when accept is set.
+// Let users select files; readFile validates supported formats after selection.
+var input=document.createElement('input');input.type='file';input.multiple=true;
+input.style.display='none';document.body.appendChild(input);
+input.oncancel=function(){input.remove();};
 input.onchange=async function(){
-var files=Array.from(input.files||[]);if(!files.length)return;
+var files=Array.from(input.files||[]);input.remove();if(!files.length)return;
 showToast('Reading sermon files...');
 var incoming=[],errors=[];
 for(var file of files){try{incoming=incoming.concat(await ForgeSermonFiles.readFile(file));}catch(error){errors.push(file.name+': '+error.message);}}
