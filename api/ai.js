@@ -18,6 +18,7 @@ import {
 export const config = { runtime: 'edge' };
 
 const PROVIDERS = {
+  nanogpt:    { baseUrl: 'https://nano-gpt.com/api/v1', keyEnv: 'NANOGPT_API_KEY' },
   openrouter: { baseUrl: 'https://openrouter.ai/api/v1', keyEnv: 'OPENROUTER_API_KEY' },
   openai:     { baseUrl: 'https://api.openai.com/v1',    keyEnv: 'OPENAI_API_KEY' },
   groq:       { baseUrl: 'https://api.groq.com/openai/v1', keyEnv: 'GROQ_API_KEY' },
@@ -96,11 +97,12 @@ export default async function handler(req) {
 
   const defaultProviderName = (process.env.AI_PROVIDER || 'openrouter').trim().toLowerCase();
   const kieModel = looksLikeKieModelId(bot) ? resolveKieModel(bot) : null;
-  const useKie = !!kieModel;
-  const providerName = useKie ? 'kie' : defaultProviderName;
+  const selectedProvider = ['nanogpt', 'openrouter'].includes(body.provider) ? body.provider : defaultProviderName;
+  const useKie = !!kieModel && selectedProvider !== 'nanogpt';
+  const providerName = useKie ? 'kie' : selectedProvider;
   const provider     = PROVIDERS[providerName] || PROVIDERS.custom;
   const baseUrl      = stripTrailingSlash(
-    (useKie ? (process.env.KIE_BASE_URL || KIE_BASE_URL) : (process.env.AI_BASE_URL || provider.baseUrl)) || ''
+    (providerName === 'nanogpt' ? (process.env.NANOGPT_BASE_URL || provider.baseUrl) : (useKie ? (process.env.KIE_BASE_URL || KIE_BASE_URL) : (process.env.AI_BASE_URL || provider.baseUrl))) || ''
   );
 
   if (!baseUrl) {
@@ -112,6 +114,7 @@ export default async function handler(req) {
 
   const apiKey = resolveApiKey(providerName, provider);
   if (!apiKey) {
+    if (providerName === 'nanogpt') return jsonError('Missing NANOGPT_API_KEY. Add it in Vercel environment variables, then redeploy.', 500);
     if (providerName === 'kie') {
       return jsonError(
         'Missing KIE_API_KEY. Add it in Vercel → Settings → Environment Variables, then redeploy.',
@@ -119,6 +122,10 @@ export default async function handler(req) {
       );
     }
     return jsonError(`Missing API key. Set AI_API_KEY or ${provider.keyEnv}.`, 500);
+  }
+
+  if (providerName === 'nanogpt' && parameters.web_search === true) {
+    return jsonError('NanoGPT web search is not configured in this integration. Disable web research or select OpenRouter for retrieval.', 400);
   }
 
   if (useKie) {
@@ -412,6 +419,7 @@ function buildUserMessageContent(query, images) {
 
 function buildPayload({ model, query, parameters, providerName, images = [] }) {
   const params = stripUndefined(parameters || {});
+  if (providerName === 'nanogpt') { delete params.web_search; delete params.plugins; }
 
   // OpenRouter ignores ad-hoc `web_search`; enable real retrieval via the web plugin
   // so answers can follow the user's date window instead of the model's training cutoff.
@@ -459,6 +467,7 @@ function buildPayload({ model, query, parameters, providerName, images = [] }) {
 }
 
 function resolveApiKey(providerName, provider) {
+  if (providerName === 'nanogpt') return process.env.NANOGPT_API_KEY || '';
   if (providerName === 'kie') {
     return process.env.KIE_API_KEY || process.env.KIE_SECRET_KEY || process.env.AI_API_KEY || '';
   }
@@ -498,6 +507,7 @@ function redirectDeprecatedModel(modelId) {
 
 function resolveModel({ requestedModel, providerName }) {
   const model        = String(requestedModel || '').trim();
+  if (providerName === 'nanogpt') return model || String(process.env.NANOGPT_DEFAULT_MODEL || '').trim();
   const defaultModel = String(process.env.DEFAULT_TEXT_MODEL || 'google/gemini-3-flash-preview').trim();
   const requested    = model || defaultModel;
   if (!requested) return '';
@@ -524,7 +534,7 @@ function requestHeaders(providerName, apiKey) {
     if (title)   headers['X-Title']      = title;
   }
 
-  const extra = parseJsonEnv('AI_EXTRA_HEADERS_JSON');
+  const extra = providerName === 'nanogpt' ? null : parseJsonEnv('AI_EXTRA_HEADERS_JSON');
   if (extra && typeof extra === 'object') {
     for (const [k, v] of Object.entries(extra)) {
       if (typeof v === 'string' && v.trim()) headers[k] = v;

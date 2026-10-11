@@ -10,7 +10,7 @@
 
   function normalizeProviderId(v) {
     if (v === 'bonsai') return 'local';
-    return v === 'local' ? 'local' : 'openrouter';
+    return v === 'nanogpt' ? 'nanogpt' : (v === 'local' ? 'local' : 'openrouter');
   }
 
   function getForgeLlmProvider() {
@@ -158,6 +158,7 @@
         ? 'OrcaRouter Local uses server env LOCAL_LLM_MODEL on your RunPod endpoint — no OpenRouter key. If RunPod is down, you will see "OrcaRouter Local offline" (no fallback).'
         : 'OpenRouter + optional kie/... models via OPENROUTER_API_KEY and KIE_API_KEY.';
     }
+    if (hint && getForgeLlmProvider() === 'nanogpt') hint.textContent = 'NanoGPT — choose a model from its catalog or enter its exact model ID.';
     if (customRow) customRow.style.display = isLocal ? 'none' : '';
     updateLocalLlmHealthBadge(isLocal ? { ok: lastHealth.ok, error: lastHealth.message } : null);
   }

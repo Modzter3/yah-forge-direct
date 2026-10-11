@@ -73,3 +73,11 @@ The UI uses friendly names (e.g. `Gemini-3-Pro`) that map to real provider model
 ```
 MODEL_ALIASES_JSON={"Gemini-3.1-Pro":"google/gemini-2.5-pro-preview","GPT-5.2":"openai/gpt-4o"}
 ```
+
+## NanoGPT on Vercel
+
+Add `NANOGPT_API_KEY` to the Vercel project's Production environment (and Preview if needed), then redeploy. Select **NanoGPT** in the app's LLM provider menu. Every text model dropdown loads NanoGPT's catalog; custom inputs accept its exact model IDs. Keys remain on the server.
+
+NanoGPT uses the OpenAI-compatible base `https://nano-gpt.com/api/v1`. Optional `NANOGPT_BASE_URL` overrides it; `NANOGPT_DEFAULT_MODEL` supplies an exact fallback ID. You can leave `AI_PROVIDER=openrouter` to retain the existing default, or set `AI_PROVIDER=nanogpt` for server-default NanoGPT routing. Existing OpenRouter keys, base overrides, and model redirects are not reused for NanoGPT requests. A missing key or unavailable catalog is reported without silently billing another provider.
+
+This integration supports text/image chat and streaming. OpenRouter-specific web retrieval is not enabled for NanoGPT; disable web research for NanoGPT generation or use OpenRouter when retrieval is needed.

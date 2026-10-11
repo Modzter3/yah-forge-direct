@@ -203,14 +203,17 @@
   }
 
   function hydrateOpenRouterCatalog() {
-    return fetch(MODELS_URL)
+    var provider = typeof window.getForgeLlmProvider === 'function' ? window.getForgeLlmProvider() : 'openrouter';
+    var url = provider === 'nanogpt' ? '/api/nanogpt-models' : MODELS_URL;
+    return fetch(url)
       .then(function (r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
+        if (!r.ok) return r.json().catch(function(){return {};}).then(function(body){throw new Error(body.error || 'HTTP ' + r.status);});
         return r.json();
       })
       .then(function (data) {
+        if (typeof window.getForgeLlmProvider === 'function' && window.getForgeLlmProvider() !== provider) return;
         var models = (data.data || []).slice();
-        for (var k = 0; k < KIE_MODELS.length; k++) models.unshift(KIE_MODELS[k]);
+        for (var k = 0; provider !== 'nanogpt' && k < KIE_MODELS.length; k++) models.unshift(KIE_MODELS[k]);
         if (!models.length) throw new Error('empty catalog');
 
         for (var s = 0; s < SELECT_IDS.length; s++) {
@@ -224,6 +227,15 @@
       })
       .catch(function (err) {
         console.warn('[openrouter-models]', err.message || err);
+        if (typeof window.getForgeLlmProvider === 'function' && window.getForgeLlmProvider() !== provider) return;
+        if (provider === 'nanogpt') {
+          for (var i = 0; i < SELECT_IDS.length; i++) {
+            var el = document.getElementById(SELECT_IDS[i]);
+            if (el) { el.innerHTML = ''; var opt = document.createElement('option'); opt.value = ''; opt.textContent = 'NanoGPT catalog unavailable — enter a custom model ID'; el.appendChild(opt); }
+          }
+          if (typeof window.showToast === 'function') window.showToast('NanoGPT: '+err.message);
+          return;
+        }
         fillSelectsWithKieOnly();
       });
   }

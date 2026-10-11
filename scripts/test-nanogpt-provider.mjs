@@ -1,0 +1,62 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+import handler from '../api/ai.js';
+import models from '../api/nanogpt-models.js';
+const previous={...process.env}, originalFetch=globalThis.fetch;
+try {
+ process.env.AI_PROVIDER='openrouter';process.env.AI_API_KEY='other-provider-key';
+ process.env.AI_BASE_URL='https://other.example/v1';
+ process.env.NANOGPT_API_KEY='nano-test-key';
+ process.env.AI_EXTRA_HEADERS_JSON=JSON.stringify({Authorization:'Bearer other-key'});
+ delete process.env.NANOGPT_BASE_URL;
+ let calls=[];
+ globalThis.fetch=async(url,init)=>{calls.push({url,init});return Response.json({choices:[{message:{content:'Done. [pause]'},finish_reason:'stop'}]});};
+ const req=(provider='nanogpt',parameters={})=>new Request('http://local/api/ai',{method:'POST',body:JSON.stringify({provider,bot:'vendor/exact-model-id',query:'test',parameters})});
+ let res=await handler(req('nanogpt',{max_tokens:4096,web_search:false}));
+ assert.equal(res.status,200);assert.equal(res.headers.get('X-AI-Provider'),'nanogpt');
+ assert.equal(calls[0].url,'https://nano-gpt.com/api/v1/chat/completions');
+ assert.equal(calls[0].init.headers.Authorization,'Bearer nano-test-key');
+ const payload=JSON.parse(calls[0].init.body);
+ assert.equal(payload.model,'vendor/exact-model-id');assert.equal(payload.max_tokens,4096);
+ assert.equal(payload.web_search,undefined);assert.equal(payload.stream,true);
+ assert.match(await res.text(),/"finish_reason":"stop"/);
+ delete process.env.NANOGPT_API_KEY;calls=[];
+ res=await handler(req());assert.equal(res.status,500);assert.equal(calls.length,0);
+ assert.match(await res.text(),/NANOGPT_API_KEY/);
+ assert.equal((await models(new Request('http://local/api/nanogpt-models'))).status,503);
+ process.env.NANOGPT_API_KEY='nano-test-key';
+ assert.equal((await handler(req('nanogpt',{web_search:true}))).status,400);
+ assert.equal(calls.length,0);
+ globalThis.fetch=async(url,init)=>{calls.push({url,init});return Response.json({data:[{id:'vendor/model',name:'Model',context_length:128000,secret:'not-for-browser'}],key:'not-for-browser'});};
+ res=await models(new Request('http://local/api/nanogpt-models'));
+ const catalog=await res.json();assert.equal(catalog.data[0].id,'vendor/model');assert.equal(catalog.data[0].secret,undefined);assert.equal(catalog.key,undefined);
+ assert.equal(calls[0].url,'https://nano-gpt.com/api/v1/models');
+ assert.equal(calls[0].init.headers.Authorization,'Bearer nano-test-key');
+ globalThis.fetch=async()=>new Response('private upstream details',{status:401});
+ res=await models(new Request('http://local/api/nanogpt-models'));assert.equal(res.status,502);assert.ok(!(await res.text()).includes('private upstream details'));
+ // Exercise browser transport: provider selection is forwarded, keys never are.
+ const events=[];let browserBody;
+ const sandbox={window:{getForgeLlmProvider:()=> 'nanogpt'},fetch:async(_,init)=>{browserBody=JSON.parse(init.body);return new Response('data: {"choices":[{"delta":{"content":"Done."},"finish_reason":"stop"}]}\n\n',{headers:{'content-type':'text/event-stream'}});},Date,Math,JSON,TextDecoder};
+ vm.runInNewContext(fs.readFileSync(new URL('../public/ai-polyfill.js',import.meta.url),'utf8'),sandbox);
+ sandbox.window.Poe.registerHandler('test',r=>events.push(r));
+ await sandbox.window.Poe.sendUserMessage('@vendor/model test',{handler:'test',stream:true});
+ assert.equal(browserBody.provider,'nanogpt');assert.ok(!JSON.stringify(browserBody).includes('nano-test-key'));assert.equal(events.at(-1).responses[0].finishReason,'stop');
+ for(const path of ['public/forge-llm-provider.js','public/openrouter-models.js'])new vm.Script(fs.readFileSync(path,'utf8'));
+ // Exercise the shipped catalog loader, including stale-provider response protection.
+ const loaderSource=fs.readFileSync('public/openrouter-models.js','utf8');
+ const loaderStart=loaderSource.indexOf('  function hydrateOpenRouterCatalog()');
+ const loaderEnd=loaderSource.indexOf('\n  window.hydrateForgeModelSelects',loaderStart);
+ let selected='nanogpt',filled=[],requestedUrl;
+ const loader={window:{getForgeLlmProvider:()=>selected},SELECT_IDS:['modelSelect'],KIE_MODELS:[{id:'kie/other'}],MODELS_URL:'https://openrouter.ai/api/v1/models',fillSelect:(id,rows)=>filled.push(rows),console,fetch:async url=>{requestedUrl=url;return Response.json({data:[{id:'nano/model'}]});}};
+ vm.createContext(loader);vm.runInContext(loaderSource.slice(loaderStart,loaderEnd),loader);
+ await loader.hydrateOpenRouterCatalog();assert.equal(requestedUrl,'/api/nanogpt-models');
+ assert.deepEqual(Array.from(filled[0],m=>m.id),['nano/model']);
+ filled=[];loader.fetch=async()=>{selected='openrouter';return Response.json({data:[{id:'stale/nano'}]});};
+ await loader.hydrateOpenRouterCatalog();assert.equal(filled.length,0);
+ console.log('NanoGPT: isolated credentials/base/model routing, missing-key protection, retrieval guard, catalog filtering/errors, and browser SSE transport passed; no paid calls.');
+} finally {
+ globalThis.fetch=originalFetch;
+ for(const key of Object.keys(process.env))if(!(key in previous))delete process.env[key];
+ Object.assign(process.env,previous);
+}
