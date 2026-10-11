@@ -7,7 +7,7 @@ function source(name){const start=html.indexOf('function '+name+'(');const end=h
 const body='Teaching one.\n\nTeaching two.\n\nTeaching three.';
 const s={selectedPartCount:1,isTheatreModeActive:()=>false,isLocalLlmChapterSermonActive:()=>false};
 vm.createContext(s);
-for(const name of ['looksLikeForgeClosingParagraph','stripPrematureForgeClosing','shouldStageForgeClosing','buildSermonClosingPrompt','detectTruncation','isSermonResponseTruncated','getForgeRemainingTokens','getForgeMaxContinuations'])vm.runInContext(source(name),s);
+for(const name of ['looksLikeForgeClosingParagraph','stripPrematureForgeClosing','shouldStageForgeClosing','buildSermonClosingPrompt','detectTruncation','isSermonResponseTruncated','getForgeRemainingTokens','getForgeMaxContinuations','recordForgeCompletionDiagnostic','forgeCompletionDiagnosticSummary'])vm.runInContext(source(name),s);
 const signoff='[low, tight] This has been Brother Bet. Peace, Israel. Yah First, last, and always. [pause]';
 assert.equal(s.stripPrematureForgeClosing(body+'\n\n'+signoff+'\n\nYou think because I said peace we are done?'),body);
 assert.equal(s.stripPrematureForgeClosing(body),body);
@@ -122,3 +122,19 @@ callback({responses:[{status:'complete',content:'finishes here. [pause]',finishR
 assert.equal(commits.length,1);
 assert.equal(s.sermonGenCtx,null);
 console.log('target reached: bounded 1024-token finishing request completes without another body request');
+
+// A provider's normal stop must not buy extra content just to meet a length target.
+s.getSermonWebSearchParams=()=>({max_tokens:4000});
+reset(1,2);s.startSermonPartStream(1,false);
+callback({responses:[{status:'complete',content:body,finishReason:'stop'}]});
+assert.equal(prompts.length,1);assert.equal(commits.length,1);
+assert.equal(s.window.__forgeLastCompletionDiagnostics.at(-1).finishReason,'stop');
+assert.equal(s.window.__forgeLastCompletionDiagnostics.at(-1).requestedTokens,4000);
+reset(1,2);s.startSermonPartStream(1,false);
+for(let i=0;i<3;i++)callback({responses:[{status:'complete',content:'unfinished text',finishReason:'length'}]});
+assert.equal(commits.length,0);assert.equal(s.sermonGenCtx.paused,true);
+assert.ok(s.sermonGenCtx.partContainer.innerHTML.includes('Stop reason: length'));
+assert.ok(s.sermonGenCtx.partContainer.innerHTML.includes('Continuations used: 2'));
+assert.equal(s.window.__forgeLastCompletionDiagnostics.length,3);
+assert.ok(!JSON.stringify(s.window.__forgeLastCompletionDiagnostics).includes('unfinished text'));
+console.log('completion diagnostics: actual budget/reason/count, no draft disclosure, genuine cutoff pause, and no length padding after normal stop passed');

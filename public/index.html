@@ -6084,6 +6084,20 @@ if(msg.finishReason==='stop'||msg.finishReason==='end_turn')return false;
 return detectTruncation(text);
 }
 
+function recordForgeCompletionDiagnostic(ctx,partNum,model,msg,closingOnly){
+var entry={part:partNum,model:model,provider:typeof getForgeLlmProvider==='function'?getForgeLlmProvider():'configured',phase:closingOnly?'closing':(ctx.continuationCount?'continuation':'body'),finishReason:msg.finishReason||'not supplied',requestedTokens:ctx.requestedTokens||null,continuations:ctx.continuationCount||0,characters:String(ctx.partContent||'').length,truncated:isSermonResponseTruncated(msg,ctx.partContent)};
+ctx.completionDiagnostics=ctx.completionDiagnostics||[];
+ctx.completionDiagnostics.push(entry);
+if(ctx.completionDiagnostics.length>30)ctx.completionDiagnostics.shift();
+if(typeof window!=='undefined')window.__forgeLastCompletionDiagnostics=ctx.completionDiagnostics.slice();
+return entry;
+}
+function forgeCompletionDiagnosticSummary(ctx){
+var rows=ctx.completionDiagnostics||[];
+if(!rows.length)return '';
+var d=rows[rows.length-1];
+return ' Model: '+d.model+'. Stop reason: '+d.finishReason+'. Requested output budget: '+(d.requestedTokens||'unspecified')+' tokens. Continuations used: '+d.continuations+'.';
+}
 function looksLikeForgeClosingParagraph(p){
 var t=String(p||'').trim();
 if(!t||t.length>1500)return false;
@@ -6821,7 +6835,7 @@ ctx.paused=true;
 if(ctx.localAbortController)ctx.localAbortController.abort();
 if(window.__forgeStreamAbortRegistry)delete window.__forgeStreamAbortRegistry[ctx.handlerName];
 var ldr=document.getElementById('loader'+partNum);if(ldr)ldr.remove();
-ctx.partContainer.innerHTML=marked.parse(finalizeSermonPartText(ctx.partContent||'',partNum))+'<div class="error-msg">'+escapeHtml(message)+' <button type="button" class="vc-btn retry" onclick="resumePausedSermonPart()">Resume this part</button></div>';
+ctx.partContainer.innerHTML=marked.parse(finalizeSermonPartText(ctx.partContent||'',partNum))+'<div class="error-msg">'+escapeHtml(message+forgeCompletionDiagnosticSummary(ctx))+' <button type="button" class="vc-btn retry" onclick="resumePausedSermonPart()">Resume this part</button></div>';
 isGenerating=false;
 document.getElementById('generateBtn').disabled=false;
 }
@@ -6935,6 +6949,7 @@ window.__forgeStreamAbortRegistry[activeHandler]=ctx.localAbortController;
 params.forge_stream_abort_key=activeHandler;
 }
 ctx.pausedStreamOpts=streamOpts;
+ctx.requestedTokens=params.max_tokens||null;
 ctx.gotFirstToken=false;
 clearSermonWatchdogs();
 armSermonWatchdogs(function(){finishCurrentSermonPart('stall');});
@@ -7011,6 +7026,7 @@ var displaySource=ctx.localDegenerationHit&&(ctx.localLastGoodContent||'').trim(
 var display=finalizeSermonPartText(displaySource,partNum);
 ctx.partContainer.innerHTML=marked.parse(display);
 if(msg.status==='complete'){
+recordForgeCompletionDiagnostic(ctx,partNum,model,msg,!!streamOpts.closingOnly);
 if(window.__forgeStreamAbortRegistry)delete window.__forgeStreamAbortRegistry[activeHandler];
 ForgeLocalSermonProfile&&ForgeLocalSermonProfile.clearStreamAbort(activeHandler);
 clearSermonWatchdogs();
@@ -7031,7 +7047,10 @@ return;
 }
 if(isLocalLlmChapterSermonActive()&&!finalizeLocalLlmPartIfValid(ctx,partNum,streamOpts,finalized))return;
 var truncated=isSermonResponseTruncated(msg,finalized);
-var underWords=isLocalLlmChapterSermonActive()?false:isForgePartUnderWordTarget(finalized,selectedPartCount);
+// A normal provider stop is complete even when shorter than the requested target.
+// Do not spend more tokens solely to pad an already completed response.
+var normalStop=msg.finishReason==='stop'||msg.finishReason==='end_turn';
+var underWords=isLocalLlmChapterSermonActive()||normalStop?false:isForgePartUnderWordTarget(finalized,selectedPartCount);
 var maxCont=isLocalLlmChapterSermonActive()&&ForgeLocalSermonProfile?ForgeLocalSermonProfile.maxTruncationContinuations():getForgeMaxContinuations(model,selectedPartCount);
 var actDone=theatreActComplete(finalized,partNum,selectedPartCount);
 if(isYahStoryModeActive()&&!ctx.bezFallbackActive&&looksLikeYahStoryGuardrailRefusal(finalized)){
@@ -7087,7 +7106,7 @@ startSermonPartStream(partNum,true);
 return;
 }
 if(truncated){
-pauseSermonPart(ctx,partNum,'Output is still incomplete after the continuation limit. Your draft is saved below; resume only if you want another request.');
+pauseSermonPart(ctx,partNum,'The provider response is still cut off after the automatic continuation limit. Your draft is saved below; Resume makes another request.');
 return;
 }
 if(shouldStageForgeClosing()&&partNum===selectedPartCount){
@@ -8926,6 +8945,7 @@ p+=buildExplicitBrimstoneFireBlock({finalLock:true,wantRoughBez:wantRoughBez,wan
 }
 p+=buildForgePartAdvanceBlock(partNum,totalParts,[],{assignedSlice:!!chapterSrc||wantEpisodeMode||currentMode==='news'||currentMode==='threads'||!!topic.sceneDismantle});
 p+=buildForgeOutlineAssignment(partNum,totalParts,!!chapterSrc||wantEpisodeMode||currentMode==='news'||currentMode==='threads'||!!topic.sceneDismantle);
+p+='LENGTH GUIDANCE — overrides earlier minimum-length demands: Aim for the selected length using substantive material, but finish your assigned material cleanly when it is covered. Do not pad, repeat, or leave a sentence unfinished to meet a quota. Body-only responses still reserve the closing for the separate closing turn.\n\n';
 return p;
 }
 /* ==========================================
