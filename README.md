@@ -81,3 +81,11 @@ Add `NANOGPT_API_KEY` to the Vercel project's Production environment (and Previe
 NanoGPT uses the OpenAI-compatible base `https://nano-gpt.com/api/v1`. Optional `NANOGPT_BASE_URL` overrides it; `NANOGPT_DEFAULT_MODEL` supplies an exact fallback ID. You can leave `AI_PROVIDER=openrouter` to retain the existing default, or set `AI_PROVIDER=nanogpt` for server-default NanoGPT routing. Existing OpenRouter keys, base overrides, and model redirects are not reused for NanoGPT requests. A missing key or unavailable catalog is reported without silently billing another provider.
 
 This integration supports text/image chat and streaming. OpenRouter-specific web retrieval is not enabled for NanoGPT; disable web research for NanoGPT generation or use OpenRouter when retrieval is needed.
+
+## Transfer sermons between devices
+
+Library → Import accepts Markdown (`.md`, `.markdown`), plain text (`.txt`), text-based PDF (`.pdf`), Word (`.docx`), and sermon backups (`.json`). Select multiple files together. Imports save to the local Library and skip matching sermons. Scanned PDFs need OCR first; old `.doc` files should be saved as `.docx`.
+
+Choose a format beside **Export to File** in a sermon or saved sermon. TXT is the default. For Windows → iPhone, save the file to iCloud Drive, then open this app on your phone and choose Library → Import. JSON preserves sermon parts and metadata; PDF and Word imports extract text. The Library’s Export button still backs up the entire library as JSON. File conversion runs locally without AI tokens.
+
+Document tools are checked in for static deployment. Rebuild them with `npm ci && npm run build:document-tools`. For the browser round-trip checks, serve `public` on port 8765 (`python3 -m http.server 8765 --directory public`), install Chromium using `npx playwright install chromium`, and run `npm run test:sermon-files`. Set `CHROMIUM_PATH` to use an existing Chromium binary or `FORGE_TEST_URL` to change the server URL.

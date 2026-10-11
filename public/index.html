@@ -15,6 +15,8 @@
 <script src="/kie-catalog.js"></script>
 <script src="/openrouter-models.js"></script>
 <script src="/apoc-local-corpus.js"></script>
+<script src="/vendor/purify.min.js"></script>
+<script src="/sermon-files.js"></script>
 <style>
 :root {
   --gold:#D4A017; --gold-dim:#9B7510; --crimson:#8B1A1A; --crimson-glow:#C41E3A;
@@ -691,7 +693,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <span class="topic-count" id="libCount">0 sermons</span>
     <div class="lib-io-btns">
       <button class="lib-io-btn" onclick="exportLibrary()" title="Export library to file"><i class="fas fa-download"></i> Export</button>
-      <button class="lib-io-btn" onclick="importLibrary()" title="Import library from file"><i class="fas fa-upload"></i> Import</button>
+      <button class="lib-io-btn" onclick="importLibrary()" title="Import MD, TXT, PDF, DOCX, or JSON sermon files"><i class="fas fa-upload"></i> Import</button>
     </div>
   </div>
   <div class="topics-container">
@@ -1157,6 +1159,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="sermon-actions" style="display:flex;">
       <button class="sermon-action-btn copy-all" onclick="copyLibrarySermon()"><i class="fas fa-copy"></i> Copy All</button>
       <button class="sermon-action-btn copy-all" onclick="copyLibrarySermonPlain()" style="border-color:var(--gold-dim);color:var(--gold-dim);background:transparent;"><i class="fas fa-align-left"></i> Copy Plain</button>
+      <select id="librarySermonExportFormat" class="model-select" aria-label="Saved sermon export format"><option value="txt">Plain text (.txt)</option><option value="md">Markdown (.md)</option><option value="pdf">PDF (.pdf)</option><option value="docx">Word (.docx)</option><option value="json">Sermon backup (.json)</option></select>
       <button class="sermon-action-btn export-btn" onclick="exportLibrarySermon()"><i class="fas fa-download"></i> Export to File</button>
       <button class="sermon-action-btn export-btn" style="border-color:var(--gold-dim);color:var(--gold);" onclick="loadLibraryEntryIntoForge()" title="Load into Forge Media Forge for Visual Package"><i class="fas fa-clapperboard"></i> Visual Package in Forge</button>
       <button class="sermon-action-btn export-btn" style="border-color:var(--crimson-glow);color:var(--crimson-glow);" onclick="deleteLibrarySermon()"><i class="fas fa-trash"></i> Delete</button>
@@ -1332,6 +1335,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="sermon-actions" id="sermonActions" style="display:none;">
       <button class="sermon-action-btn copy-all" onclick="copyAllSermon()"><i class="fas fa-copy"></i> Copy All</button>
       <button class="sermon-action-btn copy-all" onclick="copyAllSermonPlain()" style="border-color:var(--gold-dim);color:var(--gold-dim);background:transparent;"><i class="fas fa-align-left"></i> Copy Plain</button>
+      <select id="sermonExportFormat" class="model-select" aria-label="Sermon export format"><option value="txt">Plain text (.txt)</option><option value="md">Markdown (.md)</option><option value="pdf">PDF (.pdf)</option><option value="docx">Word (.docx)</option><option value="json">Sermon backup (.json)</option></select>
       <button class="sermon-action-btn export-btn" onclick="exportSermon()"><i class="fas fa-download"></i> Export to File</button>
       <button class="sermon-action-btn" id="elevenTagBtn" onclick="elevenTagCurrentSermon()" style="border-color:#7ec8a0;color:#7ec8a0;background:rgba(126,200,160,0.08);" title="Add Eleven v4-style [bracket] tags to existing sermon — no rewrite"><i class="fas fa-waveform-lines"></i> Eleven Tag</button>
       <button class="sermon-action-btn" id="elevenPolishBtn" onclick="polishElevenCurrentSermon()" style="border-color:#5a9a78;color:#9ed4b8;background:rgba(90,154,120,0.1);" title="Fix tag typos, film directions, and sparse climax paragraphs — no LLM"><i class="fas fa-wand-magic-sparkles"></i> Eleven Polish</button>
@@ -7483,20 +7487,20 @@ if(!sermonPartsCombined){showToast('No sermon to copy.');return;}
 rawCopy(mdToPlainText(sermonPartsCombined),null);
 showToast('All '+sermonPartsRaw.length+' parts copied as plain text!');
 }
-function exportSermon(){
+async function exportSermon(){
 if(!sermonPartsCombined){showToast('No sermon to export.');return;}
-var title=currentTopic?currentTopic.title.replace(/[^a-zA-Z0-9 ]/g,'').replace(/\s+/g,'_'):'Sermon';
-var blob=new Blob([sermonPartsCombined],{type:'text/markdown;charset=utf-8'});
-var url=URL.createObjectURL(blob);
-var a=document.createElement('a');
-a.href=url;
-a.download=title+'_'+sermonPartsRaw.length+'Part_Series.md';
-document.body.appendChild(a);
-a.click();
-document.body.removeChild(a);
-URL.revokeObjectURL(url);
-showToast('Sermon exported as markdown file!');
+var entry={id:crypto.randomUUID(),title:currentTopic?currentTopic.title:'Sermon',parts:sermonPartsRaw.slice(),partTitles:sermonPartsTitles.slice(),seriesTitle:sermonSeriesTitle||'',combined:sermonPartsCombined,date:new Date().toISOString(),category:currentTopic&&currentTopic.category||'doctrine',mode:currentMode||'standard'};
+await exportSermonFile(entry,'sermonExportFormat');
 }
+async function exportSermonFile(entry,selectId){
+var format=document.getElementById(selectId).value;
+try{showToast('Preparing '+format.toUpperCase()+' export...');
+var blob=await ForgeSermonFiles.exportEntry(entry,format);
+var title=entry.title.replace(/[^a-zA-Z0-9 _-]/g,'').trim().replace(/\s+/g,'_')||'Sermon';
+ForgeSermonFiles.download(blob,title+'.'+format);showToast('Sermon exported as '+format.toUpperCase()+'.');
+}catch(error){showToast('Export failed: '+error.message);}
+}
+
 function looksLikePastedBriefingOrArticle(text){
 if(!text)return false;
 var t=String(text).trim();
@@ -9728,38 +9732,25 @@ document.body.removeChild(a);URL.revokeObjectURL(url);
 showToast('Library exported -- '+sermonLibrary.length+' sermon'+(sermonLibrary.length!==1?'s':'')+'.');
 }
 function importLibrary(){
-var input=document.createElement('input');
-input.type='file';input.accept='.json';
-input.onchange=function(e){
-var file=e.target.files[0];
-if(!file)return;
-var reader=new FileReader();
-reader.onload=function(ev){
+var input=document.createElement('input');input.type='file';input.accept=ForgeSermonFiles.accept;input.multiple=true;
+input.onchange=async function(){
+var files=Array.from(input.files||[]);if(!files.length)return;
+showToast('Reading sermon files...');
+var incoming=[],errors=[];
+for(var file of files){try{incoming=incoming.concat(await ForgeSermonFiles.readFile(file));}catch(error){errors.push(file.name+': '+error.message);}}
+if(incoming.length){
 try{
-var entries=JSON.parse(ev.target.result);
-if(!Array.isArray(entries)||entries.length===0){showToast('Invalid or empty library file.');return;}
-var valid=entries.every(function(e){return e.id&&e.title&&e.combined;});
-if(!valid){showToast('File doesn\'t look like a Yah\'s Forge library.');return;}
-var existingIds={};
-sermonLibrary.forEach(function(e){existingIds[e.id]=true;});
-var added=0;
-entries.forEach(function(e){
-if(!existingIds[e.id]){
-sermonLibrary.push(e);
-added++;
+var result=ForgeSermonFiles.mergeEntries(sermonLibrary,incoming);
+var db=await openLibDB();
+await new Promise(function(resolve,reject){var tx=db.transaction(DB_STORE,'readwrite');var store=tx.objectStore(DB_STORE);result.entries.forEach(function(entry){store.put(entry);});tx.oncomplete=resolve;tx.onerror=function(){reject(tx.error);};tx.onabort=function(){reject(tx.error||new Error('Storage write aborted.'));};});
+db.close();sermonLibrary=result.entries;updateLibBadge();renderLibrary();
+showToast(result.added+' sermon(s) imported; '+(incoming.length-result.added)+' duplicate(s) skipped.'+(errors.length?' Some files failed.':''));
+}catch(error){errors.push('Could not save imported sermons: '+error.message);}
 }
-});
-sermonLibrary.sort(function(a,b){return new Date(b.date)-new Date(a.date);});
-persistLibrary();
-updateLibBadge();
-renderLibrary();
-showToast(added+' sermon'+(added!==1?'s':'')+' imported'+(added<entries.length?' ('+(entries.length-added)+' duplicates skipped)':'')+'.');
-}catch(err){showToast('Failed to parse library file.');}
-};
-reader.readAsText(file);
-};
-input.click();
+if(errors.length)alert(errors.join('\n'));
+};input.click();
 }
+
 function saveToLibrary(title,desc,category,mode,model,parts,combinedRaw,titles){
 var entry={
 id:Date.now(),
@@ -9819,7 +9810,7 @@ html+='<div class="lib-card" onclick="openLibraryEntry('+realIdx+')">';
 html+='<i class="fas fa-book-open lib-open-icon"></i>';
 html+='<div class="lib-title">'+escapeHtml(entry.title)+'</div>';
 html+='<div class="lib-meta">';
-html+='<span class="lib-meta-tag" style="background:'+catColor+'22;color:'+catColor+';">'+entry.category+'</span>';
+html+='<span class="lib-meta-tag" style="background:'+catColor+'22;color:'+catColor+';">'+escapeHtml(entry.category)+'</span>';
 html+='<span class="lib-meta-tag" style="background:rgba(255,179,0,0.12);color:var(--gold);">'+modeLabel+'</span>';
 html+='<span>'+dateStr+' '+timeStr+'</span>';
 html+='<span>~'+entry.wordCount.toLocaleString()+' words</span>';
@@ -9846,7 +9837,7 @@ entry.parts.forEach(function(partRaw,i){
 bodyHtml+='<div class="part-divider"><span class="part-num"><i class="fas fa-scroll" style="margin-right:6px;font-size:0.65rem;"></i>'+partLabel+' '+(i+1)+' of '+entry.parts.length+'</span></div>';
 bodyHtml+='<div class="sermon-body">'+marked.parse(partRaw)+'</div>';
 });
-document.getElementById('libModalBody').innerHTML=bodyHtml;
+document.getElementById('libModalBody').innerHTML=DOMPurify.sanitize(bodyHtml);
 populateTtsPartSelect('libTtsPartSelect',entry.parts.length);
 document.getElementById('libTtsAudioWrap').style.display='none';
 document.getElementById('libTtsAudioWrap').innerHTML='';
@@ -9901,17 +9892,11 @@ if(!entry||!entry.combined){showToast('No sermon to copy.');return;}
 rawCopy(mdToPlainText(entry.combined),null);
 showToast('All '+entry.parts.length+' parts copied as plain text!');
 }
-function exportLibrarySermon(){
+async function exportLibrarySermon(){
 if(activeLibIndex<0)return;
-var entry=sermonLibrary[activeLibIndex];
-var filename=entry.title.replace(/[^a-zA-Z0-9 ]/g,'').replace(/\s+/g,'_')+'.md';
-var blob=new Blob([entry.combined],{type:'text/markdown'});
-var url=URL.createObjectURL(blob);
-var a=document.createElement('a');
-a.href=url;a.download=filename;
-document.body.appendChild(a);a.click();
-document.body.removeChild(a);URL.revokeObjectURL(url);
+await exportSermonFile(sermonLibrary[activeLibIndex],'librarySermonExportFormat');
 }
+
 function deleteLibrarySermon(){
 if(activeLibIndex<0)return;
 var overlay=document.createElement('div');
