@@ -6078,6 +6078,25 @@ var remaining=charGoal>0?Math.ceil(Math.max(0,charGoal-String(text||'').length)/
 // Tagged paragraphs need room to finish even after the length target is reached.
 return Math.min(getModelMaxOutputTokens(model),Math.max(1024,Math.ceil(remaining*1.8)+512));
 }
+function getForgeContinuationOptions(text,totalParts){
+var below=isForgePartUnderWordTarget(text,totalParts);
+return {underWordCount:below,finishThoughtOnly:!below};
+}
+function getForgeAdaptiveContinuationTokens(model,text,totalParts,ctx){
+var cap=getModelMaxOutputTokens(model);
+var finishing=!!(ctx.continuationOpts&&ctx.continuationOpts.finishThoughtOnly);
+var budget=finishing?2048:Math.max(4096,getForgeRemainingTokens(model,text,totalParts));
+var history=ctx.completionDiagnostics||[];
+var last=history[history.length-1];
+// Escalate a repeatedly exhausted continuation budget; do not shrink it again.
+if(last&&last.truncated&&last.phase==='continuation'&&last.requestedTokens){
+budget=Math.max(budget,Math.ceil(last.requestedTokens*1.5));
+}
+return Math.min(cap,budget);
+}
+function stripForgeContinuationLengthDemands(prompt){
+return String(prompt||'').split('\n').filter(function(line){return !/(?:LENGTH LOCK|LENGTH MINIMUM|MINIMUM per part|MUST reach|at least 90%|word count.*(?:minimum|floor)|minimum.*word count)/i.test(line);}).join('\n');
+}
 function isSermonResponseTruncated(msg,text){
 if(msg.finishReason==='length'||msg.finishReason==='max_tokens')return true;
 if(msg.finishReason==='stop'||msg.finishReason==='end_turn')return false;
@@ -6693,10 +6712,10 @@ p+='LAST FOUR HUNDRED CHARACTERS:\n"...'+String(existing||'').slice(-400)+'"\n\n
 return p;
 }
 var oneShot=selectedPartCount===1;
-if(opts.finishThoughtOnly)return 'Finish ONLY the unfinished sentence or paragraph below in the same voice, then STOP. Maximum 100 words. No new points, heading, summary, farewell, or closing.\n\n'+String(existing||'').slice(-1500);
+if(opts.finishThoughtOnly)return 'FINISHING STEP ONLY: Finish the unfinished sentence or paragraph below in the same voice, then STOP. Aim for no more than 150 words; finish the thought naturally. Preserve voice directions before their speech and end the paragraph with [pause] if tags are in use. No new points, heading, recap, summary, farewell, or closing. No minimum word count: earlier length requirements do not apply.\n\n'+String(existing||'').slice(-2400);
 var base='';
 if(!isLocalLlmChapterSermonActive()){
-try{base=buildPartPrompt(partNum);}catch(e){base='';}
+try{base=stripForgeContinuationLengthDemands(buildPartPrompt(partNum));}catch(e){base='';}
 }
 var p='';
 if(base){
@@ -6710,12 +6729,12 @@ var current=countForgeWords(text);
 var remaining=Math.max(300,target-current);
 if((oneShot&&selectedStandaloneChars>0)||(!oneShot&&selectedPartChars>0)){
 var charGoal=oneShot?selectedStandaloneChars:selectedPartChars;
-p+='TOO SHORT: You wrote about '+text.length.toLocaleString()+' characters. This '+(oneShot?'episode':'part')+' MUST reach about '+charGoal.toLocaleString()+' characters (~'+target.toLocaleString()+' words) before it ends. You still owe roughly '+Math.max(1800,charGoal-text.length).toLocaleString()+' characters (~'+remaining.toLocaleString()+' words).\n';
+p+='LENGTH TARGET: You wrote about '+text.length.toLocaleString()+' characters. This '+(oneShot?'episode':'part')+' is aiming for about '+charGoal.toLocaleString()+' characters (~'+target.toLocaleString()+' words). Approximate room remaining: '+Math.max(1800,charGoal-text.length).toLocaleString()+' characters (~'+remaining.toLocaleString()+' words).\n';
 }else{
-p+='TOO SHORT: You only wrote about '+current.toLocaleString()+' words. This '+(oneShot?'episode':'part')+' MUST reach about '+target.toLocaleString()+' words before it ends. You still owe roughly '+remaining.toLocaleString()+' words.\n';
+p+='LENGTH TARGET: You wrote about '+current.toLocaleString()+' words. This '+(oneShot?'episode':'part')+' is aiming for about '+target.toLocaleString()+' words. Approximate room remaining: '+remaining.toLocaleString()+' words.\n';
 }
-p+='The draft ended too early. If its last lines read like a conclusion, sign-off, final warning, or altar call, that ending is VOID -- treat it as deleted and never refer to it. Do NOT wrap up, summarize, or conclude in this continuation. Save the closing for the very end, after you have written the remaining length.\n';
-p+='Find the LAST assigned verse/scene/point your draft actually reached and continue with the NEXT one. If the assigned material is already covered, go DEEPER on it -- a new symbol layer, another scripture witness, a different lived pressure, a new verified named face -- never repetition, never filler, never a generic monologue.\n';
+p+='Continue untreated assigned material from the last completed point. Finish cleanly when that material is covered; the length target is guidance, never a reason to pad or stop mid-sentence. A separate turn owns the closing.\n';
+p+='Find the LAST assigned verse/scene/point your draft reached and continue with the NEXT untreated one. If the assigned material is already covered, finish the current thought and STOP. Never add filler merely to reach length.\n';
 }else{
 p+='Your previous output was cut off mid-sentence or mid-thought. Finish the thought and keep going on the SAME subject.\n';
 }
@@ -6847,7 +6866,7 @@ isGenerating=true;
 document.getElementById('generateBtn').disabled=true;
 ctx.partContentBeforeContinue=ctx.partContent||'';
 ctx.continuationCount=0;
-ctx.continuationOpts={underWordCount:isForgePartUnderWordTarget(ctx.partContent,selectedPartCount)};
+ctx.continuationOpts=getForgeContinuationOptions(finalizeSermonPartText(ctx.partContent,ctx.partNum),selectedPartCount);
 var opts=Object.assign({},ctx.pausedStreamOpts||{});
 if(opts.closingOnly)opts.closingResume=true;
 startSermonPartStream(ctx.partNum,true,opts);
@@ -6922,8 +6941,7 @@ prompt=ForgeLocalSermonProfile.augmentPartPrompt(prompt,partNum,ctx.localSermonS
 prompt=wrapPromptForGrokIfNeeded(prompt,model,isYahStoryModeActive()&&!ctx.bezFallbackActive);
 if(savedChapterTextForLocal!==null)currentChapterText=savedChapterTextForLocal;
 var params=getSermonWebSearchParams(model,selectedPartCount);
-if(isContinuation&&!isLocalLlmChapterSermonActive())params.max_tokens=getForgeRemainingTokens(model,ctx.partContent,selectedPartCount);
-if(ctx.continuationOpts&&ctx.continuationOpts.finishThoughtOnly)params.max_tokens=Math.min(1024,getModelMaxOutputTokens(model));
+if(isContinuation&&!isLocalLlmChapterSermonActive())params.max_tokens=getForgeAdaptiveContinuationTokens(model,finalizeSermonPartText(ctx.partContent,partNum),selectedPartCount,ctx);
 if(streamOpts.closingOnly)params.max_tokens=Math.min(streamOpts.closingResume?1024:800,getModelMaxOutputTokens(model));
 var yahApiActive=isYahStoryModeActive()&&!ctx.bezFallbackActive;
 appendYahStoryApiParams(params,yahApiActive,{skipSystem:!!streamOpts.yahLiteRetry});
@@ -7101,7 +7119,7 @@ if(isLocalLlmChapterSermonActive()&&!truncated)return;
 ctx.continuationCount++;
 if(!isTheatreModeActive()&&(underWords||shouldStageForgeClosing()))ctx.partContent=stripPrematureForgeClosing(ctx.partContent);
 ctx.partContentBeforeContinue=ctx.partContent;
-ctx.continuationOpts={underWordCount:underWords,finishThoughtOnly:truncated&&!underWords};
+ctx.continuationOpts=getForgeContinuationOptions(finalized,selectedPartCount);
 startSermonPartStream(partNum,true);
 return;
 }

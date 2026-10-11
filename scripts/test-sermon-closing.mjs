@@ -7,7 +7,7 @@ function source(name){const start=html.indexOf('function '+name+'(');const end=h
 const body='Teaching one.\n\nTeaching two.\n\nTeaching three.';
 const s={selectedPartCount:1,isTheatreModeActive:()=>false,isLocalLlmChapterSermonActive:()=>false};
 vm.createContext(s);
-for(const name of ['looksLikeForgeClosingParagraph','stripPrematureForgeClosing','shouldStageForgeClosing','buildSermonClosingPrompt','detectTruncation','isSermonResponseTruncated','getForgeRemainingTokens','getForgeMaxContinuations','recordForgeCompletionDiagnostic','forgeCompletionDiagnosticSummary'])vm.runInContext(source(name),s);
+for(const name of ['looksLikeForgeClosingParagraph','stripPrematureForgeClosing','shouldStageForgeClosing','buildSermonClosingPrompt','detectTruncation','isSermonResponseTruncated','getForgeRemainingTokens','getForgeMaxContinuations','recordForgeCompletionDiagnostic','forgeCompletionDiagnosticSummary','getForgeContinuationOptions','getForgeAdaptiveContinuationTokens','stripForgeContinuationLengthDemands'])vm.runInContext(source(name),s);
 const signoff='[low, tight] This has been Brother Bet. Peace, Israel. Yah First, last, and always. [pause]';
 assert.equal(s.stripPrematureForgeClosing(body+'\n\n'+signoff+'\n\nYou think because I said peace we are done?'),body);
 assert.equal(s.stripPrematureForgeClosing(body),body);
@@ -116,12 +116,12 @@ console.log('production sign-off cleanup passed');
 reset(1,2);s.startSermonPartStream(1,false);
 callback({responses:[{status:'complete',content:'Enough teaching. An unfinished tagged thought',finishReason:'length'}]});
 assert.equal(prompts.length,2);
-assert.equal(prompts[1].opts.parameters.max_tokens,1024);
+assert.equal(prompts[1].opts.parameters.max_tokens,2048);
 assert.equal(s.sermonGenCtx.continuationOpts.finishThoughtOnly,true);
 callback({responses:[{status:'complete',content:'finishes here. [pause]',finishReason:'stop'}]});
 assert.equal(commits.length,1);
 assert.equal(s.sermonGenCtx,null);
-console.log('target reached: bounded 1024-token finishing request completes without another body request');
+console.log('target reached: bounded 2048-token finishing request completes without another body request');
 
 // A provider's normal stop must not buy extra content just to meet a length target.
 s.getSermonWebSearchParams=()=>({max_tokens:4000});
@@ -138,3 +138,33 @@ assert.ok(s.sermonGenCtx.partContainer.innerHTML.includes('Continuations used: 2
 assert.equal(s.window.__forgeLastCompletionDiagnostics.length,3);
 assert.ok(!JSON.stringify(s.window.__forgeLastCompletionDiagnostics).includes('unfinished text'));
 console.log('completion diagnostics: actual budget/reason/count, no draft disclosure, genuine cutoff pause, and no length padding after normal stop passed');
+
+// Adaptive budgets grow after repeated cutoffs, stay bounded, and separate finishing.
+s.getModelMaxOutputTokens=()=>16000;
+s.isForgePartUnderWordTarget=()=>true;
+assert.equal(s.getForgeContinuationOptions('draft',3).finishThoughtOnly,false);
+const ctx={continuationOpts:{finishThoughtOnly:false},completionDiagnostics:[]};
+assert.ok(s.getForgeAdaptiveContinuationTokens('test','word '.repeat(1900),3,ctx)>=4096);
+ctx.completionDiagnostics=[{phase:'continuation',truncated:true,requestedTokens:4096}];
+assert.equal(s.getForgeAdaptiveContinuationTokens('test','word '.repeat(1900),3,ctx),6144);
+ctx.completionDiagnostics[0].requestedTokens=14000;
+assert.equal(s.getForgeAdaptiveContinuationTokens('test','word '.repeat(1900),3,ctx),16000);
+s.isForgePartUnderWordTarget=()=>false;
+assert.equal(s.getForgeContinuationOptions('draft',3).finishThoughtOnly,true);
+ctx.continuationOpts={finishThoughtOnly:true};ctx.completionDiagnostics=[];
+assert.equal(s.getForgeAdaptiveContinuationTokens('test','draft',3,ctx),2048);
+ctx.completionDiagnostics=[{phase:'continuation',truncated:true,requestedTokens:2048}];
+assert.equal(s.getForgeAdaptiveContinuationTokens('test','draft',3,ctx),3072);
+assert.equal(s.stripForgeContinuationLengthDemands('VOICE: keep persona\nPART LENGTH LOCK: MINIMUM per part\nMust cover assigned material'),'VOICE: keep persona\nMust cover assigned material');
+console.log('adaptive continuation: substantial body budget, dedicated finishing budget, repeated-cutoff growth, model ceiling, and removal of conflicting quota passed');
+
+// Actual stream lifecycle: finishing budget escalates once, then pauses at the cap.
+reset(1,2);s.startSermonPartStream(1,false);
+callback({responses:[{status:'complete',content:'unfinished thought',finishReason:'length'}]});
+assert.equal(prompts[1].opts.parameters.max_tokens,2048);
+callback({responses:[{status:'complete',content:'still unfinished',finishReason:'length'}]});
+assert.equal(prompts[2].opts.parameters.max_tokens,3072);
+callback({responses:[{status:'complete',content:'still unfinished',finishReason:'length'}]});
+assert.equal(prompts.length,3);assert.equal(s.sermonGenCtx.paused,true);assert.equal(commits.length,0);
+assert.ok(s.sermonGenCtx.partContainer.innerHTML.includes('3072 tokens'));
+console.log('actual stream: finishing budget grows from 2048 to 3072, no third automatic continuation, draft remains saved');
