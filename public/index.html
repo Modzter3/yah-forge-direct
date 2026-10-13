@@ -3489,16 +3489,24 @@ var el=document.getElementById('toggleElevenLabsTags');
 return el&&el.checked;
 }
 function stripDisabledElevenDeliveryTags(text){
-return String(text||'').replace(/\[([^\[\]\n]{1,160})\]/g,function(token,inner,offset,source){
+var clean=String(text||'').replace(/\[([^\[\]\n]{1,160})\]/g,function(token,inner,offset,source){
 // Preserve Markdown links, reference labels, and scripture citations.
 if(source.charAt(offset+token.length)==='('||source.charAt(offset+token.length)==='['||source.charAt(offset+token.length)===':')return token;
 if(/\d/.test(inner))return token;
-var cue=/\b(?:pause|beat|silence|angry|bitter|warm|steady|low|quiet|soft|slow|fast|dry|flat|tight|sharp|clipped|heavy|tired|grave|solemn|gentle|calm|firm|urgent|serious|emotional|dramatic|breathy|gravelly|raspy|hoarse|conversational|reflective|reverent|mocking|furious|loud|deep|measured|deliberate|intense|tender|holding back|leaning in|drawn out|voice|tone|whisper\w*|shout\w*|yell\w*|scream\w*|roar\w*|boom\w*|laugh\w*|scoff\w*|sigh\w*|cry\w*|chuckle\w*|gasp\w*|breath\w*)\b/i;
+var cue=/\b(?:pause|beat|silence|stern|authoritative|prophetic|angry|bitter|warm|steady|low|quiet|soft|slow|fast|dry|flat|tight|sharp|clipped|heavy|tired|grave|solemn|gentle|calm|firm|urgent|serious|emotional|dramatic|breathy|gravelly|raspy|hoarse|conversational|reflective|reverent|mocking|furious|loud|deep|measured|deliberate|intense|tender|holding back|leaning in|drawn out|voice|tone|whisper\w*|shout\w*|yell\w*|scream\w*|roar\w*|boom\w*|laugh\w*|scoff\w*|sigh\w*|cry\w*|chuckle\w*|gasp\w*|breath\w*)\b/i;
 return cue.test(inner)?'':token;
-}).replace(/[ \t]+\n/g,'\n').replace(/ {2,}/g,' ').trim();
+ });
+// Models sometimes turn delivery tags into parenthesized paragraph prefixes.
+// Only remove a prefix made entirely of delivery words; keep ordinary asides.
+clean=clean.replace(/(^|\n[ \t]*\n)([ \t]*)\(([^()\n]{1,100})\)[ \t]*/g,function(token,boundary,space,inner){
+var words=inner.toLowerCase().split(/[\s,;/-]+/).filter(Boolean);
+var delivery=/^(?:stern|authoritative|sharp|prophetic|warm|steady|low|quiet|soft|slow|fast|dry|flat|tight|heavy|grave|solemn|gentle|calm|firm|urgent|serious|emotional|dramatic|breathy|gravelly|raspy|hoarse|conversational|reflective|reverent|mocking|furious|loud|deep|measured|deliberate|intense|tender|bitter|angry|clipped|whispering|shouting|whispers|pause|with|and|a|voice|tone|conviction|authority)$/;
+return words.length&&words.length<=10&&words.every(function(word){return delivery.test(word);})?boundary+space:token;
+});
+return clean.replace(/[ \t]+\n/g,'\n').replace(/ {2,}/g,' ').trim();
 }
 function buildSermonDeliveryPolicy(){
-return isElevenLabsTagsEnabled()?'Eleven Tags is ON: Put each delivery cue BEFORE its speech and end each body paragraph with [pause].':'Eleven Tags is OFF: Write plain prose. Do not add ANY bracketed delivery, emotion, pacing, sound, or stage-direction tags, including in the closing. Scripture citations may remain.';
+return isElevenLabsTagsEnabled()?'Eleven Tags is ON: Put each delivery cue BEFORE its speech and end each body paragraph with [pause].':'Eleven Tags is OFF: Write plain prose. Do not add ANY delivery, emotion, pacing, sound, or stage-direction tags in square brackets OR parentheses, including in the closing. Write only the spoken words. Scripture citations may remain.';
 }
 var ELEVEN_TAG_MAX_WORDS=5;
 var ELEVEN_TAG_MAX_CHARS=36;
@@ -6157,7 +6165,7 @@ var assignment=buildPartPrompt(partNum,{allowClosing:true});
 var start=assignment.indexOf('RULE 6 -- CLOSING');
 var end=assignment.indexOf('VOICE & STYLE RULES:',start);
 var closing=start>=0?assignment.slice(start,end>=0?end:undefined):'End with one brief topic-specific closing.';
-return 'FINAL CLOSING ONLY: The sermon body is complete. Write ONLY one short closing (one or two paragraphs), then STOP. No new teaching, title, recap of the whole sermon, invented audience comments, or reopening after goodbye. Match the exact speaker and perspective of the draft. '+buildSermonDeliveryPolicy()+' Ignore all length minimums; those apply to the completed body.\n\n'+closing+'\n\nEND OF COMPLETED BODY:\n'+String(existing||'').slice(-2400);
+return 'FINAL CLOSING ONLY: The sermon body is complete. Write ONLY one short closing (one or two paragraphs), then STOP. No new teaching, title, recap of the whole sermon, invented audience comments, or reopening after goodbye. Match the exact speaker and perspective of the draft. '+buildSermonDeliveryPolicy()+' Ignore all length minimums; those apply to the completed body.\n\n'+closing+'\n\nEND OF COMPLETED BODY:\n'+String(existing||'').slice(-2400)+'\n\nFINAL DELIVERY RULE (overrides any cues in the draft): '+buildSermonDeliveryPolicy();
 }
 function countForgeWords(text){
 return String(text||'').trim().split(/\s+/).filter(Boolean).length;
