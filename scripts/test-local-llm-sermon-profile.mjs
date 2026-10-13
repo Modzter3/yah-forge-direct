@@ -266,6 +266,9 @@ if (!html.includes('Genesis 3 Curse — Israel Only') || !html.includes('GENESIS
 if (!html.includes('buildGenesis3CurseIsraelTopicLockBlock')) {
   throw new Error('index.html missing Genesis 3 curse topic lock block');
 }
+if (!html.includes('buildPluralOfMajestyTopicLockBlock') || !html.includes('One King, Not a Committee')) {
+  throw new Error('index.html missing plural of majesty topic lock and preset');
+}
 if (!html.includes('buildElevenExplicitTagPerformanceBlock') || !html.includes('EXPLICIT + ELEVEN TAGS')) {
   throw new Error('index.html missing Explicit/Eleven tag delivery balance');
 }
