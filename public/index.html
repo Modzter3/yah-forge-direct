@@ -3488,6 +3488,18 @@ function isElevenLabsTagsEnabled(){
 var el=document.getElementById('toggleElevenLabsTags');
 return el&&el.checked;
 }
+function stripDisabledElevenDeliveryTags(text){
+return String(text||'').replace(/\[([^\[\]\n]{1,160})\]/g,function(token,inner,offset,source){
+// Preserve Markdown links, reference labels, and scripture citations.
+if(source.charAt(offset+token.length)==='('||source.charAt(offset+token.length)==='['||source.charAt(offset+token.length)===':')return token;
+if(/\d/.test(inner))return token;
+var cue=/\b(?:pause|beat|silence|angry|bitter|warm|steady|low|quiet|soft|slow|fast|dry|flat|tight|sharp|clipped|heavy|tired|grave|solemn|gentle|calm|firm|urgent|serious|emotional|dramatic|breathy|gravelly|raspy|hoarse|conversational|reflective|reverent|mocking|furious|loud|deep|measured|deliberate|intense|tender|holding back|leaning in|drawn out|voice|tone|whisper\w*|shout\w*|yell\w*|scream\w*|roar\w*|boom\w*|laugh\w*|scoff\w*|sigh\w*|cry\w*|chuckle\w*|gasp\w*|breath\w*)\b/i;
+return cue.test(inner)?'':token;
+}).replace(/[ \t]+\n/g,'\n').replace(/ {2,}/g,' ').trim();
+}
+function buildSermonDeliveryPolicy(){
+return isElevenLabsTagsEnabled()?'Eleven Tags is ON: Put each delivery cue BEFORE its speech and end each body paragraph with [pause].':'Eleven Tags is OFF: Write plain prose. Do not add ANY bracketed delivery, emotion, pacing, sound, or stage-direction tags, including in the closing. Scripture citations may remain.';
+}
 var ELEVEN_TAG_MAX_WORDS=5;
 var ELEVEN_TAG_MAX_CHARS=36;
 function getElevenBracketTags(text){
@@ -6145,7 +6157,7 @@ var assignment=buildPartPrompt(partNum,{allowClosing:true});
 var start=assignment.indexOf('RULE 6 -- CLOSING');
 var end=assignment.indexOf('VOICE & STYLE RULES:',start);
 var closing=start>=0?assignment.slice(start,end>=0?end:undefined):'End with one brief topic-specific closing.';
-return 'FINAL CLOSING ONLY: The sermon body is complete. Write ONLY one short closing (one or two paragraphs), then STOP. No new teaching, title, recap of the whole sermon, invented audience comments, or reopening after goodbye. Match the exact speaker, perspective, and voice tags of the draft. If the draft uses voice tags, START each closing paragraph with its delivery tag BEFORE the speech and END it with [pause]. No trailing direction tags. Ignore all length minimums; those apply to the completed body.\n\n'+closing+'\n\nEND OF COMPLETED BODY:\n'+String(existing||'').slice(-2400);
+return 'FINAL CLOSING ONLY: The sermon body is complete. Write ONLY one short closing (one or two paragraphs), then STOP. No new teaching, title, recap of the whole sermon, invented audience comments, or reopening after goodbye. Match the exact speaker and perspective of the draft. '+buildSermonDeliveryPolicy()+' Ignore all length minimums; those apply to the completed body.\n\n'+closing+'\n\nEND OF COMPLETED BODY:\n'+String(existing||'').slice(-2400);
 }
 function countForgeWords(text){
 return String(text||'').trim().split(/\s+/).filter(Boolean).length;
@@ -6319,6 +6331,7 @@ var priorForDedupe=(currentTopic&&currentTopic.sceneDismantle&&partNum>1)?(sermo
 out=dedupeRepeatedParagraphs(out,priorForDedupe);
 var webEl=document.getElementById('toggleWebResearch');
 if(webEl&&webEl.checked)out=stripMediaSources(out);
+if(!isElevenLabsTagsEnabled()&&!isTheatreModeActive())out=stripDisabledElevenDeliveryTags(out);
 return out;
 }
 function dedupeMultipartSermonText(parts){
@@ -6716,7 +6729,7 @@ p+='LAST FOUR HUNDRED CHARACTERS:\n"...'+String(existing||'').slice(-400)+'"\n\n
 return p;
 }
 var oneShot=selectedPartCount===1;
-if(opts.finishThoughtOnly)return 'FINISHING STEP ONLY: Finish the unfinished sentence or paragraph below in the same voice, then STOP. Aim for no more than 150 words; finish the thought naturally. Preserve voice directions before their speech and end the paragraph with [pause] if tags are in use. No new points, heading, recap, summary, farewell, or closing. No minimum word count: earlier length requirements do not apply.\n\n'+String(existing||'').slice(-2400);
+if(opts.finishThoughtOnly)return 'FINISHING STEP ONLY: Finish the unfinished sentence or paragraph below in the same voice, then STOP. Aim for no more than 150 words; finish the thought naturally. '+buildSermonDeliveryPolicy()+' No new points, heading, recap, summary, farewell, or closing. No minimum word count: earlier length requirements do not apply.\n\n'+String(existing||'').slice(-2400);
 var base='';
 if(!isLocalLlmChapterSermonActive()){
 try{base=stripForgeContinuationLengthDemands(buildPartPrompt(partNum));}catch(e){base='';}
@@ -6745,6 +6758,7 @@ p+='Your previous output was cut off mid-sentence or mid-thought. Finish the tho
 p+='SUBJECT + FIRE LOCK: Stay on the exact subject and text of the original assignment. Same voice, same persona, same heat as the opening of your draft -- do not cool into a general reflection, teaching tone, or a loose monologue. Every paragraph must still be tied to the assigned text/topic.\n';
 p+='Do NOT add a new "# Part" heading. Do NOT restart the title. Pick up EXACTLY where you stopped and keep writing ONLY this '+(oneShot?'episode':'part')+'.\n';
 p+='Do NOT add diagrams, flowcharts, ASCII art, tables, matrices, box-drawing characters, or arrow-chain visuals -- prose paragraphs only.\n\n';
+p+=buildSermonDeliveryPolicy()+'\n\n';
 if(isExplicitModeActive())p+='EXPLICIT MODE STILL ON: Continue with SUSTAINED brimstone fire -- do NOT cool into neutral teaching or essay voice in the continuation.\n\n';
 var paras=text.split(/\n\s*\n/).map(function(x){return x.trim();}).filter(function(x){return x&&!/^#/.test(x);});
 if(paras.length>3){

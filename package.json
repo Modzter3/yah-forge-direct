@@ -18,6 +18,7 @@
   },
   "scripts": {
     "build:document-tools": "node scripts/build-document-tools.mjs",
-    "test:sermon-files": "node tests/sermon-files.cjs"
+    "test:sermon-files": "node tests/sermon-files.cjs",
+    "test:sermon-delivery": "node tests/sermon-delivery.cjs"
   }
 }
