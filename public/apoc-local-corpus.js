@@ -339,6 +339,13 @@
     return data.book;
   }
 
+  function hasImportedBook(book) {
+    var books = readOverrides().books || {};
+    return Object.keys(books).some(function (name) {
+      return bookMatches(name, books[name].aliases, book);
+    });
+  }
+
   function clearOverrides() {
     try {
       localStorage.removeItem(STORAGE_KEY);
@@ -354,6 +361,7 @@
     hasBuiltinApocrypha: hasBuiltinApocrypha,
     hasBuiltinSealed: hasBuiltinSealed,
     hasBuiltinChapterText: hasBuiltinChapterText,
+    hasImportedBook: hasImportedBook,
     importBookJson: importBookJson,
     clearOverrides: clearOverrides,
     normalizeBookName: normalizeBookName,

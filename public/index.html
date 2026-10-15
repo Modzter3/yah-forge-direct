@@ -14,7 +14,7 @@
 <script src="/local-llm-sermon-profile.js"></script>
 <script src="/kie-catalog.js"></script>
 <script src="/openrouter-models.js"></script>
-<script src="/apoc-local-corpus.js"></script>
+<script src="/apoc-local-corpus.js?v=2"></script>
 <script src="/vendor/purify.min.js"></script>
 <script src="/sermon-files.js?v=2"></script>
 <style>
@@ -1660,7 +1660,7 @@ var APOC_BOOKS=[
 {n:"Testament of Abraham",c:20},{n:"Testament of Moses (Assumption)",c:12},{n:"Testament of Job",c:53},
 {n:"Testament of Adam",c:4},{n:"Apocalypse of Abraham",c:32},{n:"1 Adam and Eve (Vita Adae)",c:79},
 {n:"2 Adam and Eve",c:22},{n:"Book of Giants",c:8},{n:"Sefer Raziel HaMalakh",c:7},
-{n:"Shepherd of Hermas",c:27},{n:"Didache (Teaching of the Twelve)",c:16},{n:"Gospel of Nicodemus (Acts of Pilate)",c:27},
+{n:"Shepherd of Hermas",c:27},{n:"Didache (Teaching of the Twelve)",c:16},{n:"Gospel of Nicodemus (Acts of Pilate)",c:23},
 {n:"Psalms of Solomon",c:18},{n:"Odes of Solomon",c:42},{n:"3 Baruch (Greek Apocalypse)",c:17},
 {n:"4 Baruch (Rest of Jeremiah)",c:9},{n:"Apocalypse of Zephaniah",c:12},{n:"Ladder of Jacob",c:7},
 {n:"Treatise of Shem",c:12},{n:"Lives of the Prophets",c:23},{n:"Martyrdom of Isaiah",c:5},
@@ -1688,7 +1688,7 @@ var SEALED_BOOKS=[
 {n:"Sefer Raziel HaMalakh",c:7,desc:"The Book of Raziel the Angel -- the secrets given to Adam at the gate of Eden, sealed until now."},
 {n:"Shepherd of Hermas",c:27,desc:"Five Visions, Twelve Mandates, Ten Similitudes -- early parables of repentance and the tower of Yah."},
 {n:"Didache (Teaching of the Twelve)",c:16,desc:"The earliest church manual -- the Two Ways, baptism, fasting, and the signs before the end."},
-{n:"Gospel of Nicodemus (Acts of Pilate)",c:27,desc:"Pilate's report, the trial details they removed, the Descent into Hell and the harrowing of Sheol."},
+{n:"Gospel of Nicodemus (Acts of Pilate)",c:23,desc:"Pilate's report, the trial details they removed, the Descent into Hell and the harrowing of Sheol."},
 {n:"Psalms of Solomon",c:18,desc:"The hidden psalms -- messianic prophecies, judgment on Jerusalem, the righteous remnant cries out."},
 {n:"Odes of Solomon",c:42,desc:"Forty-two sealed hymns -- the earliest Israelite poetry outside the canon, the voice of the Anointed."},
 {n:"3 Baruch (Greek Apocalypse)",c:17,desc:"Baruch's journey through five heavens -- the vine that caused the fall, the phoenix that shields the world."},
@@ -2555,6 +2555,7 @@ function isLocalCorpusBook(name,type){
 if(!name)return false;
 if(type==='bible')return true;
 if(!window.ForgeLocalCorpus||!ForgeLocalCorpus.normalizeBookName)return isNatasrymBookName(name);
+if(ForgeLocalCorpus.hasImportedBook&&ForgeLocalCorpus.hasImportedBook(name))return true;
 var n=ForgeLocalCorpus.normalizeBookName(name);
 if(type==='sealed')return !!(FORGE_LOCAL_SEALED_BOOKS[n]||FORGE_LOCAL_APOC_BOOKS[n]);
 if(type==='apocrypha')return !!FORGE_LOCAL_APOC_BOOKS[n];
@@ -2597,6 +2598,7 @@ try{
 if(!window.ForgeLocalCorpus)throw new Error('Corpus module not loaded');
 var name=ForgeLocalCorpus.importBookJson(reader.result);
 showToast('Imported local corpus: '+name);
+syncApocCorpusNote();syncSealedCorpusNote();
 }catch(e){showToast('Import failed: '+(e.message||e));}
 };
 reader.readAsText(file);
@@ -5055,6 +5057,8 @@ return true;
 return false;
 }
 function fetchChapterTextFromModel(book,chapter,type,callback){
+var loadingText=document.querySelector('#scriptureFetchLoader .loading-text');
+if(loadingText)loadingText.textContent='No local corpus found for '+book+'. Retrieving Chapter '+chapter+' via '+getScriptureFetchModel()+'...';
 var handlerName='scripture-fetch-'+Date.now();
 var fetchModel=getScriptureFetchModel();
 var fetchPrompt;
@@ -5108,29 +5112,29 @@ callback(String(err),null,fetchModel,false);
 });
 }
 function fetchChapterText(book,chapter,type,callback){
-if(window.ForgeLocalCorpus&&(type==='bible'||type==='apocrypha'||type==='sealed')){
-var resolveFn=ForgeLocalCorpus.resolveChapterText?ForgeLocalCorpus.resolveChapterText(book,chapter,type):ForgeLocalCorpus.resolveLocalChapterText(book,chapter);
-Promise.resolve(resolveFn).then(function(local){
-if(local&&local.text){
-callback(null,local.text,local.source||'local corpus',false);
+if(!window.ForgeLocalCorpus){
+callback('The local corpus module did not load. Refresh the app and try again.',null,'local corpus',false);
 return;
 }
-if(type==='bible'){
-callback('Built-in KJV corpus missing for '+book+' Chapter '+chapter+'. Redeploy or run scripts/build-kjv-corpus.py.',null,'local corpus',false);
+var corpus=ForgeLocalCorpus;
+Promise.resolve().then(function(){
+return corpus.resolveChapterText?corpus.resolveChapterText(book,chapter,type):corpus.resolveLocalChapterText(book,chapter);
+}).then(function(local){
+if(local&&local.text){callback(null,local.text,local.source||'local corpus',false);return;}
+var expectedLocal=isLocalCorpusBook(book,type);
+return Promise.resolve(corpus.hasBuiltinChapterText?corpus.hasBuiltinChapterText(book,type):false).then(function(builtin){
+if(expectedLocal||builtin){
+callback('Local corpus chapter unavailable for '+book+' Chapter '+chapter+'. Retry loading or check the imported book. No model request was made.',null,'local corpus',false);
 return;
 }
-fetchChapterTextFromModel(book,chapter,type,callback);
-}).catch(function(){
-if(type==='bible'){
-callback('Failed to load built-in KJV corpus.',null,'local corpus',false);
-return;
-}
+// Only books not present in a built-in or imported corpus use model retrieval.
 fetchChapterTextFromModel(book,chapter,type,callback);
 });
-return;
+}).catch(function(error){
+callback('Could not load local corpus for '+book+' Chapter '+chapter+': '+(error.message||error)+'. No model request was made.',null,'local corpus',false);
+});
 }
-fetchChapterTextFromModel(book,chapter,type,callback);
-}
+
 function countVersesInText(text){
 // Strategy A: one verse per line — "1. In the beginning..." (local corpus / manual paste)
 var lines=(text||'').split('\n');
@@ -5882,12 +5886,7 @@ box.innerHTML='<div class="vc-title"><i class="fas fa-paste" style="margin-right
 output.appendChild(box);
 }else{
 // No manual paste -- proceed with auto-fetch
-var fetchModelName=getScriptureFetchModel();
-var useLocalCorpus=isLocalCorpusBook(currentChapterSource.book,currentChapterSource.type);
-var fetchIcon=useLocalCorpus?'fa-database':((currentChapterSource.type==='apocrypha'||currentChapterSource.type==='sealed')?'fa-globe':'fa-book-bible');
-var fetchLabel=useLocalCorpus?'Loading built-in corpus for ':(currentChapterSource.type==='sealed')?'Unearthing sealed text for ':(currentChapterSource.type==='apocrypha')?'Searching the web for ':'Retrieving ';
-var fetchExtra=useLocalCorpus?(currentChapterSource.type==='bible'?' <span style="opacity:0.7;font-size:0.8em;">(built-in KJV)</span>':' <span style="opacity:0.7;font-size:0.8em;">(built-in local corpus)</span>'):((currentChapterSource.type==='apocrypha'||currentChapterSource.type==='sealed')?' <span style="opacity:0.7;font-size:0.8em;">(web search enabled)</span>':'');
-output.innerHTML='<div class="loading-state" id="scriptureFetchLoader"><div class="loading-pulse"></div><div class="loading-text"><i class="fas '+fetchIcon+'" style="margin-right:6px;"></i>'+fetchLabel+escapeHtml(currentChapterSource.book)+' Chapter '+currentChapterSource.chapter+(useLocalCorpus?'':' via <strong>'+escapeHtml(fetchModelName)+'</strong>')+fetchExtra+'...</div></div>';
+output.innerHTML='<div class="loading-state" id="scriptureFetchLoader"><div class="loading-pulse"></div><div class="loading-text"><i class="fas fa-database" style="margin-right:6px;"></i>Loading local corpus for '+escapeHtml(currentChapterSource.book)+' Chapter '+currentChapterSource.chapter+'...</div></div>';
 fetchChapterText(currentChapterSource.book,currentChapterSource.chapter,currentChapterSource.type,function(err,text,usedModel,truncated){
 var loader=document.getElementById('scriptureFetchLoader');
 if(loader)loader.remove();
@@ -5948,7 +5947,7 @@ var fetchModelName=getScriptureFetchModel();
 var retryLoader=document.createElement('div');
 retryLoader.className='loading-state';
 retryLoader.id='scriptureFetchLoader';
-retryLoader.innerHTML='<div class="loading-pulse"></div><div class="loading-text"><i class="fas fa-book-bible" style="margin-right:6px;"></i>Retrying '+escapeHtml(currentChapterSource.book)+' Chapter '+currentChapterSource.chapter+' via <strong>'+escapeHtml(fetchModelName)+'</strong>...</div>';
+retryLoader.innerHTML='<div class="loading-pulse"></div><div class="loading-text"><i class="fas fa-database" style="margin-right:6px;"></i>Retrying local corpus for '+escapeHtml(currentChapterSource.book)+' Chapter '+currentChapterSource.chapter+'...</div>';
 output.appendChild(retryLoader);
 fetchChapterText(currentChapterSource.book,currentChapterSource.chapter,currentChapterSource.type,function(err,text,usedModel,truncated){
 var rl=document.getElementById('scriptureFetchLoader');
