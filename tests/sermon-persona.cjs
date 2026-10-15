@@ -13,6 +13,8 @@ for(const name of ['buildBezSpeakerBoundaryBlock','buildBezStoryVoiceLockBlock',
 for(const name of ['buildBezStoryVoiceLockBlock','buildBezStoryKnowledgeBlock','buildBezStoryLiveHumanBlock']){
  const prompt=context[name]();
  assert.match(prompt,/Do not introduce personal biography/);
+ assert.match(prompt,/Do not talk about the user or the speaker at all/);
+ assert.doesNotMatch(prompt,/First person may express|personal testimony is not required/);
  assert.doesNotMatch(prompt,/Miami|Missouri|Amazon|COVID|thirteen|pastor.s daughter|canonical bio/i);
  assert.doesNotMatch(prompt,/one memory pulling another|more memory|LIVED STRUGGLE DETAILS/);
  console.log(name+': no bio facts or required personal anecdotes');
