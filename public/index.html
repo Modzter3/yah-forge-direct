@@ -15,6 +15,7 @@
 <script src="/kie-catalog.js"></script>
 <script src="/openrouter-models.js"></script>
 <script src="/apoc-local-corpus.js?v=2"></script>
+<script src="/reading-sections.js"></script>
 <script src="/vendor/purify.min.js"></script>
 <script src="/sermon-files.js?v=2"></script>
 <style>
@@ -247,6 +248,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .chapter-selector p{font-size:0.82rem;color:var(--text-muted);text-align:center;margin-bottom:20px;font-style:italic;}
 .selector-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
 .selector-row select,.selector-row input{flex:1;min-width:120px;padding:12px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:'Bitter',serif;font-size:16px;outline:none;appearance:auto;-webkit-appearance:auto;}
+.reading-range .selector-row select{flex:1 1 100%;width:100%;min-width:0;max-width:100%;}
 .selector-row select:focus,.selector-row input:focus{border-color:var(--gold-dim);}
 .selector-row select option{background:var(--bg-card);color:var(--text-primary);}
 .chapter-gen-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--crimson),var(--crimson-glow));border:none;border-radius:10px;color:#fff;font-family:'Cinzel Decorative',serif;font-size:0.95rem;font-weight:700;cursor:pointer;transition:all 0.25s;letter-spacing:0.04em;}
@@ -641,7 +643,15 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <p>Select a permitted apocryphal book and chapter. Enoch, Jasher, and Jubilees excluded.<br><span style="font-size:0.78em;opacity:0.7;"><i class="fas fa-globe" style="margin-right:3px;"></i>Books without a built-in JSON corpus still use web search for chapter text.</span><br><span id="apocCorpusNote" style="display:none;font-size:0.78em;opacity:0.85;color:var(--accent-teal);"><i class="fas fa-database" style="margin-right:3px;"></i><span id="apocCorpusNoteText"></span></span></p>
     <div class="selector-row">
       <select id="apocBook" onchange="updateApocChapters()"><option value="">-- Select Book --</option></select>
-      <select id="apocChapter" disabled><option value="">-- Chapter --</option></select>
+      <select id="apocChapter" onchange="updateReadingSections('apoc')" disabled><option value="">-- Chapter --</option></select>
+    </div>
+    <div id="apocReadingWrap" class="reading-range" style="display:none;margin:12px 0;">
+      <label style="display:block;margin-bottom:6px;">Reading sections</label>
+      <div class="selector-row">
+        <select id="apocReadingStart" aria-label="First reading section" onchange="syncReadingSectionEnd('apoc')"></select>
+        <select id="apocReadingEnd" aria-label="Last reading section"></select>
+      </div>
+      <p style="font-size:0.78em;">Choose one section or a consecutive range. These are reading aids, not original chapters. Source text and reference numbers are preserved. “Full source text” includes everything in this chapter.</p>
     </div>
     <div class="scripture-fetch-model-row">
       <label><i class="fas fa-download" style="margin-right:4px;font-size:0.65rem;"></i>OpenRouter model:</label>
@@ -669,9 +679,17 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <span style="font-size:0.78em;opacity:0.7;"><i class="fas fa-globe" style="margin-right:3px;"></i>Sealed books without a built-in JSON corpus still use web search.</span><br><span id="sealedCorpusNote" style="display:none;font-size:0.78em;opacity:0.85;color:var(--accent-teal);"><i class="fas fa-database" style="margin-right:3px;"></i><span id="sealedCorpusNoteText"></span></span></p>
     <div class="selector-row">
       <select id="sealedBook" onchange="updateSealedChapters()" style="border-color:rgba(139,26,26,0.25);"><option value="">-- Select Sealed Text --</option></select>
-      <select id="sealedChapter" disabled style="border-color:rgba(139,26,26,0.25);"><option value="">-- Chapter --</option></select>
+      <select id="sealedChapter" onchange="updateReadingSections('sealed')" disabled style="border-color:rgba(139,26,26,0.25);"><option value="">-- Chapter --</option></select>
     </div>
     <div id="sealedBookDesc" style="display:none;font-size:0.78rem;color:var(--text-muted);font-style:italic;padding:8px 12px;margin-top:8px;background:rgba(139,26,26,0.06);border-left:3px solid var(--crimson-glow);border-radius:0 6px 6px 0;line-height:1.5;"></div>
+    <div id="sealedReadingWrap" class="reading-range" style="display:none;margin:12px 0;">
+      <label style="display:block;margin-bottom:6px;">Reading sections</label>
+      <div class="selector-row">
+        <select id="sealedReadingStart" aria-label="First reading section" onchange="syncReadingSectionEnd('sealed')"></select>
+        <select id="sealedReadingEnd" aria-label="Last reading section"></select>
+      </div>
+      <p style="font-size:0.78em;">Choose one section or a consecutive range. These are reading aids, not original chapters. Source text and reference numbers are preserved. “Full source text” includes everything in this chapter.</p>
+    </div>
     <div class="scripture-fetch-model-row">
       <label><i class="fas fa-download" style="margin-right:4px;font-size:0.65rem;"></i>OpenRouter model:</label>
       <select id="sealedFetchModel" class="fetch-model-select">
@@ -2605,13 +2623,68 @@ reader.readAsText(file);
 };
 input.click();
 }
+var readingSectionStates={};
+function resetReadingSections(prefix){
+readingSectionStates[prefix]={};
+document.getElementById(prefix+'ReadingWrap').style.display='none';
+}
+async function updateReadingSections(prefix){
+resetReadingSections(prefix);
+var token=readingSectionStates[prefix];token.loading=true;
+var bookEl=document.getElementById(prefix+'Book');var chapter=document.getElementById(prefix+'Chapter').value;
+if(!bookEl.value||!chapter){token.loading=false;return;}
+var book=(prefix==='sealed'?SEALED_BOOKS:APOC_BOOKS)[Number(bookEl.value)];
+try{
+var result=await ForgeLocalCorpus.resolveChapterText(book.n,Number(chapter),prefix==='sealed'?'sealed':'apocrypha');
+if(readingSectionStates[prefix]!==token)return;
+var set=result&&ForgeReadingSections.create(book.n,chapter,result.text);
+token.set=set;token.book=book.n;token.chapter=Number(chapter);
+if(!set)return;
+var start=document.getElementById(prefix+'ReadingStart');start.innerHTML='';
+set.sections.forEach(function(section){var option=document.createElement('option');option.value=section.number;option.textContent=ForgeReadingSections.label(set,section);start.appendChild(option);});
+var all=document.createElement('option');all.value='all';all.textContent='Full source text';start.appendChild(all);
+document.getElementById(prefix+'ReadingWrap').style.display='block';syncReadingSectionEnd(prefix);
+}catch(error){token.error='Could not prepare reading sections. Retry selecting the chapter.';showToast(token.error);}
+finally{token.loading=false;}
+}
+function syncReadingSectionEnd(prefix){
+var state=readingSectionStates[prefix];if(!state||!state.set)return;
+var first=document.getElementById(prefix+'ReadingStart').value,end=document.getElementById(prefix+'ReadingEnd');end.innerHTML='';
+end.style.display=first==='all'?'none':'';if(first==='all')return;
+state.set.sections.filter(function(section){return section.number>=Number(first);}).forEach(function(section){var option=document.createElement('option');option.value=section.number;option.textContent='Through '+ForgeReadingSections.label(state.set,section);end.appendChild(option);});
+}
+function applyReadingSectionSource(prefix,source){
+if((document.getElementById(prefix+'ManualPaste').value||'').trim())return true;
+var state=readingSectionStates[prefix];
+if(state&&state.loading){showToast('Preparing reading sections — please try again in a moment.');return false;}
+if(state&&state.error){showToast(state.error);return false;}
+if(!state||!state.set||state.book!==source.book||state.chapter!==source.chapter)return true;
+var from=document.getElementById(prefix+'ReadingStart').value;if(from==='all'){source.readingVerseIds=ForgeReadingSections.verseIds(state.set.text);return true;}
+var to=document.getElementById(prefix+'ReadingEnd').value;
+var selection=ForgeReadingSections.select(state.set,from,to);
+source.readingSelection={from:Number(from),to:Number(to)};source.readingLabel=selection.label;source.readingVerseIds=selection.verseIds;
+return true;
+}
+function fetchSelectedChapterText(source,callback){
+fetchChapterText(source.book,source.chapter,source.type,function(error,text,origin,truncated){
+if(!error&&source.readingSelection){
+try{var set=ForgeReadingSections.create(source.book,source.chapter,text);if(!set)throw new Error('Reading sections are unavailable for this source.');
+var selected=ForgeReadingSections.select(set,source.readingSelection.from,source.readingSelection.to);
+text=selected.text;source.readingLabel=selected.label;source.readingVerseIds=selected.verseIds;
+}catch(e){callback(e.message,null,'local corpus',false);return;}
+}
+callback(error,text,origin,truncated);
+});
+}
 function updateApocChapters(){
+resetReadingSections('apoc');
 var sel=document.getElementById('apocBook');var ch=document.getElementById('apocChapter');
 ch.innerHTML='<option value="">-- Chapter --</option>';
 if(!sel.value){ch.disabled=true;syncApocCorpusNote();return;}
 var book=APOC_BOOKS[parseInt(sel.value)];ch.disabled=false;
 var chapters=book.chapterIds||Array.from({length:book.c},function(_,i){return i+1;});
 chapters.forEach(function(i){var o=document.createElement('option');o.value=i;o.textContent=i===0?'Introduction':'Chapter '+i;ch.appendChild(o);});
+if(book.c===1&&(book.n==='Testament of Solomon'||book.n==='Book of Giants')){ch.value='1';ch.options[1].textContent='Source text (continuous)';updateReadingSections('apoc');}
 syncApocCorpusNote();
 }
 function populateSealedBooks(){
@@ -2621,6 +2694,7 @@ var o=document.createElement('option');o.value=i;o.textContent=SEALED_BOOKS[i].n
 }
 }
 function updateSealedChapters(){
+resetReadingSections('sealed');
 var sel=document.getElementById('sealedBook');var ch=document.getElementById('sealedChapter');
 ch.innerHTML='<option value="">-- Chapter --</option>';
 var descEl=document.getElementById('sealedBookDesc');
@@ -2628,6 +2702,7 @@ if(!sel.value){ch.disabled=true;if(descEl){descEl.style.display='none';descEl.te
 var book=SEALED_BOOKS[parseInt(sel.value)];ch.disabled=false;
 var chapters=book.chapterIds||Array.from({length:book.c},function(_,i){return i+1;});
 chapters.forEach(function(i){var o=document.createElement('option');o.value=i;o.textContent=i===0?'Introduction':'Chapter '+i;ch.appendChild(o);});
+if(book.c===1&&(book.n==='Testament of Solomon'||book.n==='Book of Giants')){ch.value='1';ch.options[1].textContent='Source text (continuous)';updateReadingSections('sealed');}
 if(descEl&&book.desc){descEl.textContent=book.desc;descEl.style.display='block';}else if(descEl){descEl.style.display='none';}
 syncSealedCorpusNote();
 }
@@ -2638,7 +2713,9 @@ if(!bi||!ci){showToast('Select a sealed text and chapter first.');return;}
 var book=SEALED_BOOKS[parseInt(bi)];
 currentMode='sealed';
 currentChapterSource={book:book.n,chapter:parseInt(ci),type:'sealed'};
+if(!applyReadingSectionSource('sealed',currentChapterSource))return;
 currentTopic={id:0,cat:'doctrine',title:book.n+' '+ci,desc:'Sermon forged from '+book.n+' Chapter '+ci+' (Sealed Scroll)'};
+if(currentChapterSource.readingLabel){currentTopic.title=book.n+' — '+currentChapterSource.readingLabel;currentTopic.desc='Sermon from '+currentTopic.title;}
 openModal();
 }
 function openBibleSermon(){
@@ -2658,7 +2735,9 @@ if(!bi||!ci){showToast('Select a book and chapter first.');return;}
 var book=APOC_BOOKS[parseInt(bi)];
 currentMode='apocrypha';
 currentChapterSource={book:book.n,chapter:parseInt(ci),type:'apocrypha'};
+if(!applyReadingSectionSource('apoc',currentChapterSource))return;
 currentTopic={id:0,cat:'doctrine',title:book.n+' '+ci,desc:'Sermon forged from '+book.n+' Chapter '+ci+' (Apocrypha)'};
+if(currentChapterSource.readingLabel){currentTopic.title=book.n+' — '+currentChapterSource.readingLabel;currentTopic.desc='Sermon from '+currentTopic.title;}
 openModal();
 }
 /* ==========================================
@@ -4759,14 +4838,14 @@ p+='Use ONLY these verses. Do NOT invent verses beyond what appears below.\n';
 p+='=======================================\n';
 p+=currentChapterText+'\n';
 p+='=======================================\n';
-p+='END OF CHAPTER TEXT.\n\n';
+p+=chapterSrc.readingSelection?'END OF SELECTED READING TEXT. This is an excerpt; only teach the supplied original source references. These reading sections are editorial aids, not original chapters.\n\n':'END OF CHAPTER TEXT.\n\n';
 }
 p+='VERSE-BY-VERSE IN ORDER: Walk '+chapterSrc.book+' Chapter '+chapterSrc.chapter+' sequentially. Do NOT skip verses in your assignment. Do NOT rearrange. Do NOT jump ahead into another act\'s verses.\n';
 p+='DO NOT HALLUCINATE VERSES. Only quote verses that ACTUALLY EXIST in this chapter'+(currentChapterText?' (see text above)':'')+'.\n';
 if(totalParts>1){
 if(currentChapterVerseCount>0){
 var range=getVerseRangeForPart(partNum,totalParts,currentChapterVerseCount);
-p+='THIS CHAPTER HAS EXACTLY '+currentChapterVerseCount+' VERSES TOTAL, split across '+totalParts+' acts.\n';
+p+=(chapterSrc.readingSelection?'THIS READING SELECTION CONTAINS ':'THIS CHAPTER HAS EXACTLY ')+currentChapterVerseCount+' VERSES TOTAL, split across '+totalParts+' acts.\n';
 p+='VERSE ASSIGNMENT MAP FOR ALL '+totalParts+' ACTS:\n';
 for(var pi=1;pi<=totalParts;pi++){
 var pr=getVerseRangeForPart(pi,totalParts,currentChapterVerseCount);
@@ -5138,6 +5217,7 @@ callback('Could not load local corpus for '+book+' Chapter '+chapter+': '+(error
 }
 
 function countVersesInText(text){
+if(currentChapterSource&&currentChapterSource.readingVerseIds){var ids=ForgeReadingSections.verseIds(text||'');if(ids.length)return ids.length;}
 // Strategy A: one verse per line — "1. In the beginning..." (local corpus / manual paste)
 var lines=(text||'').split('\n');
 var lineNums=[];
@@ -5313,6 +5393,8 @@ start+=base+(i<=remainder?1:0);
 }
 var count=base+(partNum<=remainder?1:0);
 var end=start+count-1;
+var ids=currentChapterSource&&currentChapterSource.readingVerseIds;
+if(ids&&ids.length===totalVerses&&count>0)return {start:ids[start-1],end:ids[end-1],count:count};
 return {start:start,end:end,count:count};
 }
 /* ==========================================
@@ -5889,7 +5971,7 @@ output.appendChild(box);
 }else{
 // No manual paste -- proceed with auto-fetch
 output.innerHTML='<div class="loading-state" id="scriptureFetchLoader"><div class="loading-pulse"></div><div class="loading-text"><i class="fas fa-database" style="margin-right:6px;"></i>Loading local corpus for '+escapeHtml(currentChapterSource.book)+' Chapter '+currentChapterSource.chapter+'...</div></div>';
-fetchChapterText(currentChapterSource.book,currentChapterSource.chapter,currentChapterSource.type,function(err,text,usedModel,truncated){
+fetchSelectedChapterText(currentChapterSource,function(err,text,usedModel,truncated){
 var loader=document.getElementById('scriptureFetchLoader');
 if(loader)loader.remove();
 if(err){
@@ -5922,7 +6004,7 @@ var box=document.createElement('div');
 box.className='verse-confirm-box';
 box.innerHTML='<div class="vc-title"><i class="fas fa-check-circle" style="margin-right:6px;"></i>Scripture Retrieved'+(truncated?' <span style="color:var(--gold);font-size:0.75em;">(possibly incomplete)</span>':'')+'</div>'
 +'<div class="vc-count">'+vcLabel+'</div>'
-+'<div class="vc-detail">'+escapeHtml(currentChapterSource.book)+' Chapter '+currentChapterSource.chapter+' loaded via <strong>'+escapeHtml(usedModel)+'</strong>.<br>'
++'<div class="vc-detail">'+escapeHtml(currentChapterSource.book)+' '+escapeHtml(currentChapterSource.readingLabel||('Chapter '+currentChapterSource.chapter))+' loaded via <strong>'+escapeHtml(usedModel)+'</strong>.<br>'
 +(vc>0?'Verses will be evenly distributed across <strong>'+selectedPartCount+' part'+(selectedPartCount!==1?'s':'')+'</strong> (~'+Math.floor(vc/selectedPartCount)+' verses per part).':'Verse pacing will use the bot\'s own knowledge.')
 +'</div>'
 +truncWarn
@@ -5951,7 +6033,7 @@ retryLoader.className='loading-state';
 retryLoader.id='scriptureFetchLoader';
 retryLoader.innerHTML='<div class="loading-pulse"></div><div class="loading-text"><i class="fas fa-database" style="margin-right:6px;"></i>Retrying local corpus for '+escapeHtml(currentChapterSource.book)+' Chapter '+currentChapterSource.chapter+'...</div>';
 output.appendChild(retryLoader);
-fetchChapterText(currentChapterSource.book,currentChapterSource.chapter,currentChapterSource.type,function(err,text,usedModel,truncated){
+fetchSelectedChapterText(currentChapterSource,function(err,text,usedModel,truncated){
 var rl=document.getElementById('scriptureFetchLoader');
 if(rl)rl.remove();
 if(err){
@@ -5984,7 +6066,7 @@ var box=document.createElement('div');
 box.className='verse-confirm-box';
 box.innerHTML='<div class="vc-title"><i class="fas fa-check-circle" style="margin-right:6px;"></i>Scripture Retrieved'+(truncated?' <span style="color:var(--gold);font-size:0.75em;">(possibly incomplete)</span>':'')+'</div>'
 +'<div class="vc-count">'+vcLabel+'</div>'
-+'<div class="vc-detail">'+escapeHtml(currentChapterSource.book)+' Chapter '+currentChapterSource.chapter+' loaded via <strong>'+escapeHtml(usedModel)+'</strong>.<br>'
++'<div class="vc-detail">'+escapeHtml(currentChapterSource.book)+' '+escapeHtml(currentChapterSource.readingLabel||('Chapter '+currentChapterSource.chapter))+' loaded via <strong>'+escapeHtml(usedModel)+'</strong>.<br>'
 +(vc>0?'Verses will be evenly distributed across <strong>'+selectedPartCount+' part'+(selectedPartCount!==1?'s':'')+'</strong> (~'+Math.floor(vc/selectedPartCount)+' verses per part).':'Verse pacing will use the bot\'s own knowledge.')
 +'</div>'
 +truncWarn
@@ -8248,14 +8330,14 @@ p+='=======================================\n';
 if(chapterSrc.type==='custom'){
 p+='END OF PASTED TEXT. The above is the COMPLETE scripture the user provided. Walk it in order from top to bottom. There are NO additional verses beyond what is shown.\n\n';
 }else{
-p+='END OF CHAPTER TEXT. The above is the COMPLETE chapter. There are NO additional verses beyond what is shown.\n\n';
+p+=chapterSrc.readingSelection?'END OF SELECTED READING TEXT. This is an excerpt, not the entire chapter. Cover ONLY these original source references; do not fetch, invent, or teach omitted portions.\n\n':'END OF CHAPTER TEXT. The above is the COMPLETE chapter. There are NO additional verses beyond what is shown.\n\n';
 }
 }
 if(isYahushaMinistryChapterContext(chapterSrc,currentChapterText)){
 p+=buildYahushaMinistryIsraelIdentityBlock({strict:true});
 }
 p+=(wantStoryMode?'VERSE-BY-VERSE REVELATION':'VERSE-BY-VERSE BREAKDOWN')+' -- THIS IS MANDATORY FOR CHAPTER SERMONS:\n';
-p+=(wantStoryMode?'You MUST walk through ':'You MUST go through ')+chapterSrc.book+' Chapter '+chapterSrc.chapter+' VERSE BY VERSE in SEQUENTIAL ORDER. Start at verse one and work through the chapter in order -- do NOT skip verses, do NOT rearrange, do NOT jump around. Every verse gets addressed in the order it appears.\n';
+p+=(wantStoryMode?'You MUST walk through ':'You MUST go through ')+chapterSrc.book+' Chapter '+chapterSrc.chapter+' VERSE BY VERSE in SEQUENTIAL ORDER. '+(chapterSrc.readingSelection?'Start at the FIRST PROVIDED source reference and work through ONLY this reading selection':'Start at verse one and work through the chapter in order')+' -- do NOT skip verses, do NOT rearrange, do NOT jump around. Every verse gets addressed in the order it appears.\n';
 if(currentChapterText){
 p+='The FULL scripture text for this chapter has been provided above. You MUST reference ONLY the verses shown in that text. Do NOT quote any verse that does not appear in the provided text. The provided text IS the authoritative source -- if a verse number is not in that text, it does NOT EXIST in this chapter.\n';
 }
@@ -8272,7 +8354,7 @@ if(totalParts>1){
 if(currentChapterVerseCount>0){
 // We know the exact verse count -- give hard assignments
 var range=getVerseRangeForPart(partNum,totalParts,currentChapterVerseCount);
-p+='THIS CHAPTER HAS EXACTLY '+currentChapterVerseCount+' VERSES TOTAL, split across '+totalParts+' parts.\n';
+p+=(chapterSrc.readingSelection?'THIS READING SELECTION CONTAINS ':'THIS CHAPTER HAS EXACTLY ')+currentChapterVerseCount+' VERSES TOTAL, split across '+totalParts+' parts.\n';
 p+='VERSE ASSIGNMENT MAP FOR ALL '+totalParts+' PARTS:\n';
 for(var pi=1;pi<=totalParts;pi++){
 var pr=getVerseRangeForPart(pi,totalParts,currentChapterVerseCount);
@@ -8966,6 +9048,7 @@ p+=buildExplicitBrimstoneFireBlock({finalLock:true,wantRoughBez:wantRoughBez,wan
 p+=buildForgePartAdvanceBlock(partNum,totalParts,[],{assignedSlice:!!chapterSrc||wantEpisodeMode||currentMode==='news'||currentMode==='threads'||!!topic.sceneDismantle});
 p+=buildForgeOutlineAssignment(partNum,totalParts,!!chapterSrc||wantEpisodeMode||currentMode==='news'||currentMode==='threads'||!!topic.sceneDismantle);
 p+='LENGTH GUIDANCE — overrides earlier minimum-length demands: Aim for the selected length using substantive material, but finish your assigned material cleanly when it is covered. Do not pad, repeat, or leave a sentence unfinished to meet a quota. Body-only responses still reserve the closing for the separate closing turn.\n\n';
+if(chapterSrc&&chapterSrc.readingSelection)p+='\nREADING SELECTION BOUNDARY: '+chapterSrc.readingLabel+'. These are editorial reading sections, NOT original chapters. Preserve original source numbers. Only teach the supplied excerpt; ignore any earlier instruction to start at verse one or finish the whole source chapter. Complete only your assigned part of this excerpt.\n';
 return p;
 }
 /* ==========================================

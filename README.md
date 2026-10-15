@@ -89,3 +89,11 @@ Library → Import accepts Markdown (`.md`, `.markdown`), plain text (`.txt`), t
 Choose a format beside **Export to File** in a sermon or saved sermon. TXT is the default. For Windows → iPhone, save the file to iCloud Drive, then open this app on your phone and choose Library → Import. JSON preserves sermon parts and metadata; PDF and Word imports extract text. The Library’s Export button still backs up the entire library as JSON. File conversion runs locally without AI tokens.
 
 Document tools are checked in for static deployment. Rebuild them with `npm ci && npm run build:document-tools`. For the browser round-trip checks, serve `public` on port 8765 (`python3 -m http.server 8765 --directory public`), install Chromium using `npx playwright install chromium`, and run `npm run test:sermon-files`. Set `CHROMIUM_PATH` to use an existing Chromium binary or `FORGE_TEST_URL` to change the server URL.
+
+## Reading sections for long scrolls
+
+In **Sealed Scrolls** or **Apocrypha**, Testament of Solomon and Book of Giants offer labeled **Reading Sections**. Select the first section and the last section to cover one section or a consecutive range. Select **Full source text** to use the whole original chapter. Ordinary chapter selection remains available for other books.
+
+Other corpus chapters over 3,000 words also offer smaller reading sections between complete numbered source paragraphs. These are editorial reading aids, not original chapter divisions. The original corpus files, wording, and reference numbers remain unchanged. Sermon generation uses only the selected excerpt and allocates its original reference numbers across parts. Manual pasted text still overrides automatic corpus retrieval.
+
+Run `npm run test:reading-sections` to verify lossless section coverage. With `public` served locally and Chromium available, run `npm run test:reading-sections-browser` to check both panels, range selection, retrieval, and multipart prompts. It accepts the same `CHROMIUM_PATH` and `FORGE_TEST_URL` options as the other browser checks.
