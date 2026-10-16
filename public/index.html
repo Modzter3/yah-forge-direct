@@ -16,6 +16,7 @@
 <script src="/openrouter-models.js"></script>
 <script src="/apoc-local-corpus.js?v=2"></script>
 <script src="/reading-sections.js"></script>
+<script src="/sermon-followups.js"></script>
 <script src="/vendor/purify.min.js"></script>
 <script src="/sermon-files.js?v=2"></script>
 <style>
@@ -1174,7 +1175,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <button class="modal-close" onclick="closeLibraryModal()">&times;</button>
     </div>
     <div class="sermon-output" id="libModalBody"></div>
+    <div id="libraryFollowupsBody" style="padding:16px;" aria-live="polite"></div>
     <div class="sermon-actions" style="display:flex;">
+      <button class="sermon-action-btn" onclick="showLibraryFollowups()">Explore Follow-up Lessons</button>
       <button class="sermon-action-btn copy-all" onclick="copyLibrarySermon()"><i class="fas fa-copy"></i> Copy All</button>
       <button class="sermon-action-btn copy-all" onclick="copyLibrarySermonPlain()" style="border-color:var(--gold-dim);color:var(--gold-dim);background:transparent;"><i class="fas fa-align-left"></i> Copy Plain</button>
       <select id="librarySermonExportFormat" class="model-select" aria-label="Saved sermon export format"><option value="txt">Plain text (.txt)</option><option value="md">Markdown (.md)</option><option value="pdf">PDF (.pdf)</option><option value="docx">Word (.docx)</option><option value="json">Sermon backup (.json)</option></select>
@@ -1378,14 +1381,14 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="hidden-threads" id="hiddenThreads">
       <div class="hidden-threads-header">
         <i class="fas fa-eye-slash ht-icon"></i>
-        <h3>Hidden Threads</h3>
-        <span class="ht-tag">Classified</span>
+        <h3>Where to Go Deeper</h3>
+        <span class="ht-tag">Follow-up lessons</span>
       </div>
-      <div class="hidden-threads-desc">Threads buried beneath the surface of this topic -- rabbit holes most will never find. Click to forge.</div>
-      <div id="hiddenThreadsBody">
+      <div class="hidden-threads-desc">Choose an avenue from this sermon. Your choice fills the topic field with a detailed study brief; you can review it before forging.</div>
+      <div id="hiddenThreadsBody" aria-live="polite">
         <div class="ht-loading">
           <div class="ht-loading-anim"></div>
-          <div class="ht-loading-text">Unearthing buried threads...</div>
+          <div class="ht-loading-text">Finding follow-up avenues from this sermon...</div>
         </div>
       </div>
     </div>
@@ -5427,6 +5430,12 @@ function forgeCustomTopic(){
 var input=document.getElementById('customTopicInput');
 var raw=input.value.trim();
 if(!raw){showToast('Type a topic first -- anything you want a sermon on.');return;}
+if(pendingSermonFollowup&&(raw===pendingSermonFollowup.brief||raw.indexOf(pendingSermonFollowup.marker)!==-1)){
+currentTopic={id:-1,cat:'doctrine',title:pendingSermonFollowup.title,desc:raw,customBrief:raw,subjectHint:pendingSermonFollowup.title};
+currentMode='standard';currentChapterSource=null;currentChapterText=null;currentChapterVerseCount=0;currentThreadsContext=null;currentNewsVeilFromUrl=false;
+openModal();return;
+}
+
 if(isNewsArticleUrl(raw)){
 forgeNewsUrlBehindTheVeil(raw);
 return;
@@ -5509,9 +5518,10 @@ document.getElementById('outputImages').innerHTML='';
 document.getElementById('outputVideo').innerHTML='';
 document.getElementById('outputLyrics').innerHTML='';
 var vpOut=document.getElementById('outputVisualPackage');if(vpOut)vpOut.innerHTML='';
-// Reset hidden threads
+// Reset follow-ups
+if(typeof sermonFollowupViews!=='undefined')delete sermonFollowupViews.hiddenThreadsBody;
 var htWrap=document.getElementById('hiddenThreads');
-if(htWrap){htWrap.classList.remove('visible');document.getElementById('hiddenThreadsBody').innerHTML='<div class="ht-loading"><div class="ht-loading-anim"></div><div class="ht-loading-text">Unearthing buried threads...</div></div>';}
+if(htWrap){htWrap.classList.remove('visible');document.getElementById('hiddenThreadsBody').innerHTML='<div class="ht-loading"><div class="ht-loading-anim"></div><div class="ht-loading-text">Finding follow-up avenues from this sermon...</div></div>';}
 if(!opts.disableGenerateBtn)document.getElementById('generateBtn').disabled=false;
 if(!opts.skipPartRec)updatePartRecommendation();
 else updatePartWordEstDisplay();
@@ -7310,223 +7320,65 @@ startSermonPartStream(partNum,false);
 /* ==========================================
 HIDDEN THREADS -- Deep rabbit holes
 ========================================== */
+var sermonFollowupViews={};
+var sermonFollowupCache=[];
+var sermonFollowupCounter=0;
+var pendingSermonFollowup=null;
 function fetchHiddenThreads(){
-var wrap=document.getElementById('hiddenThreads');
-var body=document.getElementById('hiddenThreadsBody');
-if(!wrap||!body)return;
-// Reset and show
-wrap.classList.add('visible');
-body.innerHTML='<div class="ht-loading"><div class="ht-loading-anim"></div><div class="ht-loading-text">Unearthing buried threads...</div></div>';
-var topicTitle=currentTopic?currentTopic.title:'Unknown';
-var topicCat=currentTopic?currentTopic.cat:'doctrine';
-var topicDesc=currentTopic?currentTopic.desc:'';
-var chapterInfo='';
-if(currentChapterSource){
-chapterInfo=' (Source: '+currentChapterSource.book+' Chapter '+currentChapterSource.chapter+')';
+var wrap=document.getElementById('hiddenThreads');if(wrap)wrap.classList.add('visible');
+requestSermonFollowups({title:currentTopic?currentTopic.title:'Sermon',desc:currentTopic?currentTopic.desc:'',combined:sermonPartsCombined||sermonPartsRaw.join('\n\n'),source:currentChapterSource?(currentChapterSource.book+' '+(currentChapterSource.readingLabel||('Chapter '+currentChapterSource.chapter))):''},'hiddenThreadsBody');
 }
-var prompt='You are a Hebrew Israelite research analyst who specializes in OBSCURE, BURIED, and SUPPRESSED scriptural connections that 99% of people -- even within the Israelite community -- have never heard of or explored.\n\n';
-prompt+='THEOLOGICAL FILTER -- MANDATORY:\n';
-prompt+='Everything you suggest MUST align with this framework. If a thread touches on sealed scrolls, apocryphal texts, or ancient sources, you MUST filter it: extract the BURIED TRUTH that confirms Torah, and DESTROY any serpent seed corruption (angel worship, supernatural demons, Trinity hints, mystical rituals, Gnostic infiltration, kabbalistic mysticism). If a connection involves a source with corrupted elements, the description should acknowledge the corruption and point to the REAL truth underneath it. Torah is supreme. Always.\n';
-prompt+='Core beliefs: Flat earth with dome firmament. Gravity is not real — motion and "falling" are buoyancy and density in air and water, not mass pulling mass. Yod-He-Waw-Shin-Ayin IS Yah in the flesh (no Trinity). No supernatural devil or demons. No free will -- predestination. True Israel = scattered Negroes worldwide. Pre-Adamic populations existed before Adam. Serpent was a MAN who seduced Eve (two seed lines). Genesis 3 curse (thorns, sweat, death, expulsion) was covenant judgment on Adam\'s Israel line in Eden — NOT a universal curse on every nation; other nations are outside that covenant ledger. Angels = human messengers. No eternal hell. Sabbath = Saturday sunrise to sunset. The sealed scrolls are weapons of truth but must be filtered for serpent seed corruption. The TWO WITNESSES of Revelation eleven are ISRAEL AND JUDAH (the two houses waking up NOW) -- NOT Enoch and Elijah (both DEAD, John 3:13). Enoch is DEAD, Elijah is DEAD -- no man ascended to heaven. FILTER ENOCH TEXTS HARDEST of all sealed scrolls. WATCHERS = Sethites who turned from Yah and taught heathen nations Yah\'s knowledge for life — NOT pre-Adamic heathen as Watchers, NOT angel sex. Nephilim/gibborim = mighty men not literal giants.\n\n';
-prompt+='MASTER ENGINEER LENS -- MANDATORY:\n';
-prompt+='Yah is the MASTER ENGINEER. At least 1-2 of the 5 threads MUST reveal the HIGH-TECH, ENGINEERING, or SCIENTIFIC aspects hidden in the scriptures. These include:\n';
-prompt+='- Engineering specifications hidden in biblical measurements (ark, tabernacle, temple, firmament, New Jerusalem) -- ratios, proportions, load-bearing design, material science, acoustics, optics\n';
-prompt+='- Sacred geometry, frequency, vibration, and wave physics encoded in the Hebrew text\n';
-prompt+='- The Paleo Hebrew letters as a PROGRAMMING LANGUAGE (Sefer Yetzirah) -- the 22 original pictographic letters as building blocks of creation with shape (geometry) and function (creative force). ALWAYS use Paleo Hebrew script, NEVER modern Babylonian square-script. Give English names and pictographic translations for each letter.\n';
-prompt+='- DNA as Yah\'s biological source code, the human body as precision machinery\n';
-prompt+='- Astronomical/cosmological engineering (celestial circuits, luminaries, dome structure, waters above/below)\n';
-prompt+='- Ancient technology or advanced knowledge in scripture that modern science has only recently discovered\n';
-prompt+='- Structural engineering principles encoded in temple measurements, architectural specifications, and construction materials\n';
-prompt+='- MODERN TECH PARALLELS: When a thread involves engineering or science, ALWAYS compare scripture\'s technical specifications to modern technology our people use today. The Ark = capacitor. DNA = source code. Temple = motherboard. Firmament = pressurized containment. Paleo Hebrew letters = instruction set architecture. The feasts = scheduled system maintenance. Prayer = secure network connection. Show Israel that every piece of modern tech is a crude copy of something in the blueprint.\n';
-prompt+='Show people what the Master Engineer was REALLY pointing to beneath the surface.\n\n';
-prompt+='The user just finished a sermon on: "'+topicTitle+'"'+chapterInfo+'\n';
-prompt+='Category: '+topicCat+'\n';
-prompt+='Description: '+topicDesc+'\n\n';
-prompt+='Your task: Suggest exactly 5 HIDDEN THREADS -- deep rabbit holes connected to this topic that most people have NEVER encountered. These should be:\n';
-prompt+='- Obscure scriptural cross-references that are rarely taught\n';
-prompt+='- Suppressed historical connections (Dead Sea Scrolls fragments, early church councils that removed texts, ancient Hebrew customs lost to time)\n';
-prompt+='- Apocryphal or pseudepigraphal connections most skip over -- BUT filtered through the theological framework above. Destroy serpent seed corruption, extract the buried gold\n';
-prompt+='- Linguistic rabbit holes (original Paleo Hebrew/Aramaic words that change everything when properly translated -- use Paleo Hebrew letters with English names and pictographic meanings, NEVER modern square-script)\n';
-prompt+='- Connections to SEALED SCROLLS that most people have never read: Sefer Yetzirah (Book of Formation/Creation), 1 Enoch (FILTER HARD -- Enoch is DEAD per John 3:13, heaven tours are fabricated, only pre-flood history and flat earth astronomy are usable), 2 Enoch (MOST CORRUPTED -- ten heavens is serpent seed garbage), 3 Enoch (Metatron mythology is kabbalistic poison), Book of Jasher, Book of Jubilees, Testaments of Abraham/Moses/Job/Adam/Solomon, Apocalypse of Abraham, 1 & 2 Adam and Eve, Book of Giants, Sefer Raziel HaMalakh, Psalms of Solomon, Odes of Solomon, Ladder of Jacob, Apocalypse of Zephaniah/Elijah/Peter (Elijah is also DEAD -- same rule), Martyrdom of Isaiah, Conflict of Adam and Eve with Satan, Pistis Sophia, Sefer HaBahir, History of the Rechabites, Treatise of Shem, Book of Natasrym (Natsarim)\n';
-prompt+='- Buried historical parallels (specific ancient civilizations, archaeological finds, suppressed manuscripts)\n';
-prompt+='- Engineering, physics, or technical specifications hidden in the text -- show the DESIGN that the Master Engineer embedded. When referencing Hebrew letters, use Paleo Hebrew with English names and pictographic translations ONLY.\n';
-prompt+='- Engineering, physics, or scientific concepts encoded in scripture that modern science only recently discovered\n';
-prompt+='- Connections between seemingly unrelated scriptures that reveal a hidden thread\n';
-prompt+='- Specific chapters or passages from the sealed scrolls above that DIRECTLY connect to this topic and reveal what was hidden from Israel\n\n';
-prompt+='PRIORITY:\n';
-prompt+='- At least 2 of the 5 threads should connect to SEALED SCROLLS or ancient suppressed texts. These are the buried treasures the serpent seed does not want Israel to find.\n';
-prompt+='- At least 1-2 of the 5 threads should reveal the HIGH-TECH or ENGINEERING layer -- sacred geometry, frequency/vibration science, engineering specifications, structural design, the Paleo Hebrew letters as programming language, or other technical aspects that show the Master Engineer\'s fingerprint.\n\n';
-prompt+='Each thread should feel like classified intel -- something that makes the reader say "I never knew that..."\n\n';
-prompt+='CRITICAL: Every description must be FILTERED through the theological framework. If a sealed scroll source contains serpent seed corruption (angel worship, demons as real entities, Trinity hints, mystical rituals), the description must acknowledge that corruption exists and point to the REAL truth underneath. Do NOT present corrupted doctrine as truth. Expose the bullshit and extract the gold. If the thread involves a corrupted text, the description should hint at the corruption AND the buried truth -- e.g., "The serpent seed scribes added angel-worship garbage to this text, but buried underneath is the REAL account of..."\n\n';
-prompt+='Assign each thread a depth level:\n';
-prompt+='- "deep" = obscure but findable if you dig\n';
-prompt+='- "buried" = requires specialized knowledge to uncover\n';
-prompt+='- "sealed" = almost nobody teaches this, sealed knowledge\n\n';
-prompt+='RESPOND WITH ONLY A JSON ARRAY. No explanation, no markdown, no code fences. Just raw JSON:\n';
-prompt+='[{"title":"Short punchy title 3-8 words","desc":"One sentence teaser that hooks them -- filtered through the framework, no serpent seed corruption presented as truth","depth":"deep|buried|sealed","cat":"identity|doctrine|cosmology|prophecy|adversary|deception|law|eschatology|engineering","connection":"One sentence explaining the hidden link to the original topic"}]\n\n';
-prompt+='Make each one genuinely surprising and specific -- not generic doctrine everyone already knows. These are TOP SECRET threads. At least one should reveal the Master Engineer\'s high-tech fingerprint.';
-
-var handlerName='hidden-threads-'+Date.now();
-window.Poe.registerHandler(handlerName,function(result){
-var msg=result.responses[0];
-if(!msg)return;
-if(msg.status==='error'){
-body.innerHTML='<div class="ht-error"><i class="fas fa-exclamation-triangle"></i> Could not unearth threads: '+escapeHtml(msg.statusText||'Unknown error')+'</div><button class="ht-refresh-btn" onclick="fetchHiddenThreads()"><i class="fas fa-rotate"></i> Try Again</button>';
-return;
+function showLibraryFollowups(){
+var entry=sermonLibrary[activeLibIndex];if(!entry)return;
+requestSermonFollowups({title:entry.title,desc:entry.desc,combined:entry.combined},'libraryFollowupsBody');
+document.getElementById('libraryFollowupsBody').scrollIntoView({behavior:'smooth',block:'center'});
 }
+function requestSermonFollowups(source,bodyId,refresh){
+var body=document.getElementById(bodyId);if(!body)return;
+// Snapshot the completed lesson so later modal/topic changes cannot alter its follow-ups.
+source={title:String(source.title||'Sermon'),desc:String(source.desc||''),combined:String(source.combined||''),source:String(source.source||'')};
+if(!source.combined.trim()){body.textContent='Complete or load a sermon to explore follow-up lessons.';return;}
+var active=sermonFollowupViews[bodyId];
+if(!refresh&&active&&active.loading&&active.source.title===source.title&&active.source.combined===source.combined)return;
+var state={source:source,id:++sermonFollowupCounter,items:[],loading:true};sermonFollowupViews[bodyId]=state;
+var cached=!refresh&&sermonFollowupCache.find(function(entry){return entry.source.title===source.title&&entry.source.combined===source.combined;});
+if(cached){state.items=cached.items;state.loading=false;renderSermonFollowups(bodyId);return;}
+body.innerHTML='<div class="ht-loading"><div class="ht-loading-anim"></div><div class="ht-loading-text">Finding different ways to go deeper…</div></div>';
+var handler='sermon-followups-'+state.id;
+function fail(message){if(sermonFollowupViews[bodyId]!==state)return;state.loading=false;state.items=[];body.innerHTML='<div class="ht-error">'+escapeHtml(message)+'</div><button type="button" class="ht-refresh-btn" onclick="refreshSermonFollowups(\''+bodyId+'\')">Try Again</button>';}
+window.Poe.registerHandler(handler,function(result){
+if(sermonFollowupViews[bodyId]!==state||!state.loading)return;
+var msg=result.responses&&result.responses[0];if(!msg)return;
+if(msg.status==='error'){fail(msg.statusText||'Could not prepare follow-up lessons.');return;}
 if(msg.status==='complete'){
-var raw=stripThinking(msg.content||'');
-try{
-// Extract JSON from potential markdown fences
-var jsonStr=raw.replace(/```(?:json)?\s*/gi,'').replace(/```/g,'').trim();
-var threads=JSON.parse(jsonStr);
-if(!Array.isArray(threads)||threads.length===0)throw new Error('Empty');
-renderHiddenThreads(threads);
-}catch(e){
-// Attempt to find JSON array in the response
-var bracketStart=raw.indexOf('[');
-var bracketEnd=raw.lastIndexOf(']');
-if(bracketStart!==-1&&bracketEnd>bracketStart){
-try{
-var threads2=JSON.parse(raw.substring(bracketStart,bracketEnd+1));
-if(Array.isArray(threads2)&&threads2.length>0){
-renderHiddenThreads(threads2);
-return;
-}
-}catch(e2){/* fall through */}
-}
-body.innerHTML='<div class="ht-error"><i class="fas fa-lock"></i> Threads too deeply encrypted to parse.</div><button class="ht-refresh-btn" onclick="fetchHiddenThreads()"><i class="fas fa-rotate"></i> Dig Deeper</button>';
-}
+try{state.items=ForgeSermonFollowups.normalize(stripThinking(msg.content||''));state.loading=false;
+sermonFollowupCache=sermonFollowupCache.filter(function(entry){return entry.source.title!==source.title||entry.source.combined!==source.combined;});
+sermonFollowupCache.push({source:source,items:state.items});if(sermonFollowupCache.length>20)sermonFollowupCache.shift();renderSermonFollowups(bodyId);
+}catch(error){fail(error.message||'Could not read follow-up choices.');}
 }
 });
-window.Poe.sendUserMessage('@'+getSelectedModel()+' '+prompt,{handler:handlerName,stream:false,openChat:false,parameters:{}}).catch(function(err){
-body.innerHTML='<div class="ht-error"><i class="fas fa-exclamation-triangle"></i> '+escapeHtml(String(err))+'</div><button class="ht-refresh-btn" onclick="fetchHiddenThreads()"><i class="fas fa-rotate"></i> Try Again</button>';
+window.Poe.sendUserMessage('@'+getSelectedModel()+' '+ForgeSermonFollowups.buildPrompt(source),{handler:handler,stream:false,openChat:false,parameters:{max_tokens:2600}}).catch(function(error){if(state.loading)fail(String(error));});
+}
+function refreshSermonFollowups(bodyId){var state=sermonFollowupViews[bodyId];if(state)requestSermonFollowups(state.source,bodyId,true);}
+function renderSermonFollowups(bodyId){
+var state=sermonFollowupViews[bodyId],body=document.getElementById(bodyId);if(!state||!body)return;
+var html='<h3>Follow-up Lessons</h3><p>Choose one path to fill the topic field with a complete study brief.</p><div class="ht-grid">';
+state.items.forEach(function(item,i){
+html+='<div class="ht-card"><div class="ht-card-inner"><div class="ht-card-content"><div class="ht-card-cat">'+escapeHtml(item.avenue)+'</div><h4>'+escapeHtml(item.title)+'</h4><p>'+escapeHtml(item.question)+'</p><div class="ht-card-desc">'+escapeHtml(item.why)+'</div><ul>';
+item.focus.forEach(function(point){html+='<li>'+escapeHtml(point)+'</li>';});
+html+='</ul><button type="button" class="ht-forge-btn" onclick="chooseSermonFollowup(\''+bodyId+'\','+i+')">Use This for Next Lesson</button></div></div></div>';
 });
+html+='</div><button type="button" class="ht-refresh-btn" onclick="refreshSermonFollowups(\''+bodyId+'\')">Explore Different Avenues</button>';body.innerHTML=html;
 }
-function renderHiddenThreads(threads){
-var body=document.getElementById('hiddenThreadsBody');
-if(!body)return;
-// Action bar
-var html='<div class="ht-action-bar">';
-html+='<div class="ht-action-bar-info"><i class="fas fa-eye-slash"></i> <span id="htSelectedCount">'+threads.length+'</span> of '+threads.length+' threads selected</div>';
-html+='<div class="ht-action-btns">';
-html+='<button class="ht-forge-btn forge-all" onclick="forgeAllHiddenThreads()"><i class="fas fa-bolt"></i> Forge All Into Sermon</button>';
-html+='<button class="ht-forge-btn forge-selected" onclick="forgeSelectedHiddenThreads()"><i class="fas fa-check-double"></i> Forge Selected</button>';
-html+='</div>';
-html+='</div>';
-html+='<div class="ht-grid">';
-var depthLabels={deep:'Deep',buried:'Buried',sealed:'Sealed'};
-for(var i=0;i<threads.length;i++){
-var t=threads[i];
-var depth=t.depth||'deep';
-if(!depthLabels[depth])depth='deep';
-var cat=t.cat||'doctrine';
-var title=escapeHtml(t.title||'Unknown Thread');
-var desc=escapeHtml(t.desc||'');
-var connection=escapeHtml(t.connection||'');
-html+='<div class="ht-card" data-ht-idx="'+i+'">';
-html+='<div class="ht-card-inner">';
-html+='<div class="ht-card-check"><input type="checkbox" class="ht-select-cb" data-idx="'+i+'" checked onchange="updateHtCount()" onclick="event.stopPropagation()"></div>';
-html+='<div class="ht-card-content" onclick="forgeHiddenThread('+i+')">';
-html+='<div class="ht-card-top">';
-html+='<span class="ht-card-depth '+escapeHtml(depth)+'">'+escapeHtml(depthLabels[depth])+'</span>';
-html+='<span class="ht-card-cat">'+escapeHtml(cat)+'</span>';
-html+='</div>';
-html+='<div class="ht-card-title">'+title+'</div>';
-html+='<div class="ht-card-desc">'+desc+'</div>';
-if(connection){
-html+='<div class="ht-card-why"><i class="fas fa-link"></i> '+connection+'</div>';
-}
-html+='</div>';
-html+='<i class="fas fa-arrow-right forge-arrow" onclick="forgeHiddenThread('+i+')"></i>';
-html+='</div>';
-html+='</div>';
-}
-html+='</div>';
-html+='<button class="ht-refresh-btn" onclick="fetchHiddenThreads()" style="margin-top:14px;"><i class="fas fa-rotate"></i> Unearth Different Threads</button>';
-body.innerHTML=html;
-// Store threads data for click handling
-body.setAttribute('data-threads',JSON.stringify(threads));
-}
-function updateHtCount(){
-var total=document.querySelectorAll('.ht-select-cb').length;
-var checked=document.querySelectorAll('.ht-select-cb:checked').length;
-var el=document.getElementById('htSelectedCount');
-if(el)el.textContent=checked;
-}
-function getSelectedHtIndices(){
-var cbs=document.querySelectorAll('.ht-select-cb:checked');
-var indices=[];
-for(var i=0;i<cbs.length;i++){indices.push(parseInt(cbs[i].getAttribute('data-idx')));}
-return indices;
-}
-function forgeAllHiddenThreads(){
-var body=document.getElementById('hiddenThreadsBody');
-if(!body)return;
-var raw=body.getAttribute('data-threads');
-if(!raw){showToast('No threads to forge.');return;}
-try{
-var threads=JSON.parse(raw);
-if(!threads||threads.length===0){showToast('No threads to forge.');return;}
-var title='Hidden Threads -- '+threads.length+' Buried Rabbit Holes Unsealed';
-var desc='Deep-dive sermon covering '+threads.length+' obscure, suppressed scriptural threads that most have never explored.';
-currentTopic={id:-1,cat:'doctrine',title:title,desc:desc};
-currentMode='threads';
-currentChapterSource=null;
-currentChapterText=null;
-currentChapterVerseCount=0;
-currentThreadsContext=threads.slice();
-sermonSavedThisSession=false;
-openModal();
-}catch(e){showToast('Could not forge threads.');}
-}
-function forgeSelectedHiddenThreads(){
-var body=document.getElementById('hiddenThreadsBody');
-if(!body)return;
-var raw=body.getAttribute('data-threads');
-if(!raw){showToast('No threads loaded.');return;}
-var indices=getSelectedHtIndices();
-if(indices.length===0){showToast('Select at least one thread.');return;}
-try{
-var threads=JSON.parse(raw);
-var selected=[];
-for(var i=0;i<indices.length;i++){if(threads[indices[i]])selected.push(threads[indices[i]]);}
-if(selected.length===0){showToast('Select at least one thread.');return;}
-var title='Hidden Threads -- '+selected.length+' Buried Rabbit Hole'+(selected.length!==1?'s':'')+' Unsealed';
-var desc='Deep-dive sermon covering '+selected.length+' selected obscure scriptural threads.';
-currentTopic={id:-1,cat:'doctrine',title:title,desc:desc};
-currentMode='threads';
-currentChapterSource=null;
-currentChapterText=null;
-currentChapterVerseCount=0;
-currentThreadsContext=selected;
-sermonSavedThisSession=false;
-openModal();
-}catch(e){showToast('Could not forge threads.');}
-}
-function forgeHiddenThread(idx){
-var body=document.getElementById('hiddenThreadsBody');
-if(!body)return;
-var raw=body.getAttribute('data-threads');
-if(!raw)return;
-try{
-var threads=JSON.parse(raw);
-var t=threads[idx];
-if(!t)return;
-// Close current modal and set up new topic
-var cat=t.cat||'doctrine';
-var validCats=['identity','doctrine','cosmology','prophecy','adversary','deception','law','eschatology'];
-if(validCats.indexOf(cat)===-1)cat='doctrine';
-currentTopic={id:-1,cat:cat,title:t.title,desc:t.desc||'Hidden thread: '+t.title};
-currentMode='standard';
-currentChapterSource=null;
-currentChapterText=null;
-currentChapterVerseCount=0;
-sermonSavedThisSession=false;
-openModal();
-}catch(e){
-showToast('Could not forge that thread.');
-}
+function chooseSermonFollowup(bodyId,index){
+var state=sermonFollowupViews[bodyId],item=state&&state.items[index];if(!item)return;
+var brief=ForgeSermonFollowups.buildBrief(item,state.source);
+pendingSermonFollowup={brief:brief,title:item.title,marker:'Follow-up to: '+state.source.title};
+// Stage the next topic; choosing a path never starts a sermon request.
+closeModal();closeLibraryModal();
+switchTab('topics',document.querySelector('.tab-btn'));
+var input=document.getElementById('customTopicInput');input.value=brief;input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();input.scrollIntoView({behavior:'smooth',block:'center'});
+showToast('Follow-up topic ready. Review it, then press Forge.');
 }
 function seriesComplete(){
 updateProgress(selectedPartCount);
@@ -9908,6 +9760,8 @@ grid.innerHTML=html;
 }
 function openLibraryEntry(idx){
 activeLibIndex=idx;
+delete sermonFollowupViews.libraryFollowupsBody;
+document.getElementById('libraryFollowupsBody').innerHTML='';
 var entry=sermonLibrary[idx];
 if(!entry)return;
 document.getElementById('libModalTitle').textContent=entry.title;

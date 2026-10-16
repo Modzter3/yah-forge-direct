@@ -97,3 +97,11 @@ In **Sealed Scrolls** or **Apocrypha**, Testament of Solomon and Book of Giants 
 Other corpus chapters over 3,000 words also offer smaller reading sections between complete numbered source paragraphs. These are editorial reading aids, not original chapter divisions. The original corpus files, wording, and reference numbers remain unchanged. Sermon generation uses only the selected excerpt and allocates its original reference numbers across parts. Manual pasted text still overrides automatic corpus retrieval.
 
 Run `npm run test:reading-sections` to verify lossless section coverage. With `public` served locally and Chromium available, run `npm run test:reading-sections-browser` to check both panels, range selection, retrieval, and multipart prompts. It accepts the same `CHROMIUM_PATH` and `FORGE_TEST_URL` options as the other browser checks.
+
+## Follow-up lessons
+
+After a completed sermon, **Where to Go Deeper** offers five different follow-up paths based on the completed text. Choose **Use This for Next Lesson** to fill the Topics field with a detailed study brief: central question, investigation objectives, sources to verify, and continuity guidance. Review or edit it, press **Forge** to configure the next lesson, then generate when ready. Selecting a path does not start a sermon request.
+
+Saved sermons offer **Explore Follow-up Lessons** in the Library reader. Planning uses one request through the selected model; repeated views reuse choices during the session, and **Explore Different Avenues** requests alternatives. Research leads and earlier sermon claims still need verification. These choices replace the former topic-only Hidden Threads suggestions.
+
+Run `npm run test:sermon-followups` for brief/schema checks. With `public` served locally, `npm run test:sermon-followups-browser` tests planning, choosing and editing a topic, saved sermons, retries, stale responses, and request reuse with a stubbed model. Browser options are `CHROMIUM_PATH` and `FORGE_TEST_URL`.
