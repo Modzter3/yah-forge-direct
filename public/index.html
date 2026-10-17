@@ -6402,9 +6402,32 @@ if(kept.length)paras[i]=kept.join(' ');else paras.splice(i,1);
 }
 return paras.join('\n\n');
 }
+function buildDefaultVerseFormatBlock(chapterMode){
+return '\nDEFAULT SCRIPTURE FORMAT — overrides earlier thematic-heading instructions: Keep the overall sermon title and part heading. Never invent a title, slogan, or thematic heading for an individual verse or verse group. No "VERSE SEVEN: THE HIDDEN SIGNAL", no "## Verses 1–5 — Theme", and no separator rules between verses. '+(chapterMode?'For each assigned verse, give its actual book/chapter/verse reference, quote the scripture, then immediately explain it in flowing paragraphs. Move naturally to the next reference and scripture. Preserve the original source numbers; do not rename verses. ':'When examining a scripture, give its reference and quotation, then explain it directly without a thematic verse title. ')+'Voice and depth stay as selected; voice tags depend only on their toggle.\n';
+}
+function stripInventedVerseHeadings(text){
+var lines=String(text||'').split(/\r?\n/),out=[];
+var number='(?:\\d+|[a-z]+(?:[ -][a-z]+){0,6})';
+var title=new RegExp('^(?:#{1,6}\\s*)?(?:\\*\\*)?verses?\\s+'+number+'\\s*(?::|[—–]|--|\\s-\\s)\\s*\\S','i');
+for(var i=0;i<lines.length;i++){
+var trimmed=lines[i].trim();
+var isHeading=/^(?:#{1,6}\s|\*\*)/.test(trimmed)||trimmed===trimmed.toUpperCase()||(i+1<lines.length&&/^\s*[=\-_*]{3,}\s*$/.test(lines[i+1]));
+if(isHeading&&title.test(trimmed)){
+// Remove only the decorative rule belonging to this discarded heading.
+if(i+1<lines.length&&/^\s*[=\-_*]{3,}\s*$/.test(lines[i+1]))i++;
+continue;
+}
+// A real reference may stand alone; discard only an attached invented subtitle.
+var ref=trimmed.match(/^(?:#{1,6}\s+|\*\*)([1-3]?\s*[A-Za-z][A-Za-z '’]+\s+\d+:\d+(?:[–-]\d+)?)(?:\*\*)?\s*(?:[—–]|--|\s-\s)\s+.+$/);
+if(ref){out.push('**'+ref[1].trim()+'**');if(i+1<lines.length&&/^\s*[=\-_*]{3,}\s*$/.test(lines[i+1]))i++;continue;}
+out.push(lines[i]);
+}
+return out.join('\n');
+}
 function finalizeSermonPartText(text,partNum){
 var out=stripSermonPreamble(captureForgeSermonOutline(text,partNum));
 out=stripSermonDiagrams(out);
+if(!isTheatreModeActive())out=stripInventedVerseHeadings(out);
 if(isTheatreModeActive()){
 out=truncateAtTheatreBoundary(out,partNum,selectedPartCount);
 }else{
@@ -6844,6 +6867,7 @@ p+='SUBJECT + FIRE LOCK: Stay on the exact subject and text of the original assi
 p+='Do NOT add a new "# Part" heading. Do NOT restart the title. Pick up EXACTLY where you stopped and keep writing ONLY this '+(oneShot?'episode':'part')+'.\n';
 p+='Do NOT add diagrams, flowcharts, ASCII art, tables, matrices, box-drawing characters, or arrow-chain visuals -- prose paragraphs only.\n\n';
 p+=buildSermonDeliveryPolicy()+'\n\n';
+p+=buildDefaultVerseFormatBlock(!!currentChapterSource);
 if(isExplicitModeActive())p+='EXPLICIT MODE STILL ON: Continue with SUSTAINED brimstone fire -- do NOT cool into neutral teaching or essay voice in the continuation.\n\n';
 var paras=text.split(/\n\s*\n/).map(function(x){return x.trim();}).filter(function(x){return x&&!/^#/.test(x);});
 if(paras.length>3){
@@ -8829,7 +8853,7 @@ p+='BEZ STORY BREAKDOWN STRUCTURE: One # title line only. Then dense continuous 
 p+='STORY MODE STRUCTURE: One # title line, then dense continuous paragraphs only. Weave every scripture reference into the flow. No section headers, no blockquotes, no verse labels, no dividers.\n\n';
 }else if(wantBreakdown){
 if(chapterSrc){
-p+='STRUCTURE: Use ## headers to group verses into thematic sections (e.g. "## Verses One Through Five -- [Section Theme]"). Within each section, go through EVERY verse individually in order. For each verse: use a > blockquote to quote the verse text, then immediately break it down -- symbology, allegory, Hebrew word meanings, theological framework, tear down false teaching. Do NOT just list verses with surface commentary -- DIG DEEP into each one. The verse order is your outline but group related verses under thematic headers for readability.\n\n';
+p+=buildDefaultVerseFormatBlock(true);
 }else{
 p+='STRUCTURE: Use clear ## headers for each major section within this part. ';
 p+='Each section should state the truth, cite scripture, and demolish false teaching. ';
@@ -8910,6 +8934,7 @@ p+=buildForgePartAdvanceBlock(partNum,totalParts,[],{assignedSlice:!!chapterSrc|
 p+=buildForgeOutlineAssignment(partNum,totalParts,!!chapterSrc||wantEpisodeMode||currentMode==='news'||currentMode==='threads'||!!topic.sceneDismantle);
 p+='LENGTH GUIDANCE — overrides earlier minimum-length demands: Aim for the selected length using substantive material, but finish your assigned material cleanly when it is covered. Do not pad, repeat, or leave a sentence unfinished to meet a quota. Body-only responses still reserve the closing for the separate closing turn.\n\n';
 if(chapterSrc&&chapterSrc.readingSelection)p+='\nREADING SELECTION BOUNDARY: '+chapterSrc.readingLabel+'. These are editorial reading sections, NOT original chapters. Preserve original source numbers. Only teach the supplied excerpt; ignore any earlier instruction to start at verse one or finish the whole source chapter. Complete only your assigned part of this excerpt.\n';
+p+=buildDefaultVerseFormatBlock(!!chapterSrc);
 return p;
 }
 /* ==========================================
