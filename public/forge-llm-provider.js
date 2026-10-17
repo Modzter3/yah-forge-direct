@@ -22,7 +22,22 @@
   }
 
   function setForgeLlmProvider(id) {
+    var previous = getForgeLlmProvider();
     var next = normalizeProviderId(id);
+    if (next !== previous) {
+      ['customYahChatModel', 'customModelInput'].forEach(function (inputId) {
+        var input = document.getElementById(inputId);
+        if (input) { input.value = ''; input.classList.remove('active-override'); }
+      });
+      ['yahChatModel', 'modelSelect'].forEach(function (selectId) {
+        var el = document.getElementById(selectId); if (el) el.style.opacity = '1';
+      });
+      var chatModels = document.getElementById('yahChatModel');
+      if (chatModels) {
+        chatModels.innerHTML = '';
+        var loading = document.createElement('option'); loading.value = ''; loading.textContent = 'Loading provider models...'; chatModels.appendChild(loading);
+      }
+    }
     try {
       localStorage.setItem(STORAGE_KEY, next);
     } catch (e) {}
@@ -150,6 +165,19 @@
   function syncProviderUi() {
     var sel = document.getElementById('forgeLlmProvider');
     if (sel) sel.value = getForgeLlmProvider();
+    var chatProvider = document.getElementById('yahChatProvider');
+    if (chatProvider) chatProvider.value = getForgeLlmProvider();
+    var chatLabel = document.getElementById('yahChatCustomModelLabel');
+    var chatHint = document.getElementById('yahChatProviderHint');
+    var chatCustom = document.getElementById('customYahChatModel');
+    var provider = getForgeLlmProvider();
+    if (chatLabel) chatLabel.textContent = provider === 'nanogpt' ? 'Custom NanoGPT model ID:' : 'Custom OpenRouter ID:';
+    if (chatCustom) {
+      chatCustom.placeholder = provider === 'nanogpt' ? 'Exact NanoGPT model ID' : 'e.g. google/gemini-3-flash-preview';
+      if (chatCustom.parentElement) chatCustom.parentElement.style.display = provider === 'local' ? 'none' : '';
+    }
+    if (chatHint) chatHint.textContent = (provider === 'nanogpt' ? 'NanoGPT uses your existing server API key. ' : '') + 'Provider selection is shared with the sermon Forge.';
+
     var hint = document.getElementById('forgeLlmProviderHint');
     var customRow = document.querySelector('.model-select-block .custom-model-row');
     var isLocal = getForgeLlmProvider() === 'local';

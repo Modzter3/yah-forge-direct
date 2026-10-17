@@ -105,3 +105,9 @@ After a completed sermon, **Where to Go Deeper** offers five different follow-up
 Saved sermons offer **Explore Follow-up Lessons** in the Library reader. Planning uses one request through the selected model; repeated views reuse choices during the session, and **Explore Different Avenues** requests alternatives. Research leads and earlier sermon claims still need verification. These choices replace the former topic-only Hidden Threads suggestions.
 
 Run `npm run test:sermon-followups` for brief/schema checks. With `public` served locally, `npm run test:sermon-followups-browser` tests planning, choosing and editing a topic, saved sermons, retries, stale responses, and request reuse with a stubbed model. Browser options are `CHROMIUM_PATH` and `FORGE_TEST_URL`.
+
+## NanoGPT in Yah Chat
+
+In **Yah Chat**, select **NanoGPT** under **LLM provider**, then pick a catalog model or enter its exact NanoGPT ID. This uses the existing server-side `NANOGPT_API_KEY`. The provider setting is shared with the sermon Forge and persists after refresh. Switching providers clears stale custom model overrides. If the NanoGPT catalog is unavailable, enter a custom model ID before sending; the typed message is preserved.
+
+With `public` served locally, run `npm run test:yah-chat-nanogpt` (supports `CHROMIUM_PATH` and `FORGE_TEST_URL`) to test catalog selection, provider synchronization and persistence, send/retry payloads, and catalog failures with stubbed API responses.

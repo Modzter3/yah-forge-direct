@@ -23,6 +23,7 @@
     "test:reading-sections": "node tests/reading-sections.cjs",
     "test:reading-sections-browser": "node tests/reading-sections-browser.cjs",
     "test:sermon-followups": "node tests/sermon-followups.cjs",
-    "test:sermon-followups-browser": "node tests/sermon-followups-browser.cjs"
+    "test:sermon-followups-browser": "node tests/sermon-followups-browser.cjs",
+    "test:yah-chat-nanogpt": "node tests/yah-chat-nanogpt.cjs"
   }
 }
