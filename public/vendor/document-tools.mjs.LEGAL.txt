@@ -46,7 +46,8 @@ html2canvas/dist/html2canvas.js:
       ***************************************************************************** */
 
 dompurify/dist/purify.es.mjs:
-  /*! @license DOMPurify 3.2.7 | (c) Cure53 and other contributors | Released under the Apache license 2.0 and Mozilla Public License 2.0 | github.com/cure53/DOMPurify/blob/3.2.7/LICENSE */
+  /*! @license DOMPurify 3.4.17 | (c) Cure53 and other contributors | Released under the Apache license 2.0 and Mozilla Public License 2.0 | github.com/cure53/DOMPurify/blob/3.4.17/LICENSE */
+  /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */
 
 svg-pathdata/lib/SVGPathData.module.js:
   /*! *****************************************************************************
@@ -74,16 +75,19 @@ docx/dist/index.mjs:
    */
   /*! http://mths.be/fromcodepoint v0.1.0 by @mathias */
 
+pako/dist/pako.esm.mjs:
+  /*! pako 2.2.0 https://github.com/nodeca/pako @license (MIT AND Zlib) */
+
 jspdf/dist/jspdf.es.min.js:
   /** @license
    *
    * jsPDF - PDF Document creation from JavaScript
-   * Version 3.0.1 Built on 2025-03-17T14:19:36.873Z
+   * Version 4.2.1 Built on 2026-03-17T11:11:27.057Z
    *                      CommitID 00000000
    *
-   * Copyright (c) 2010-2021 James Hall <james@parall.ax>, https://github.com/MrRio/jsPDF
-   *               2015-2021 yWorks GmbH, http://www.yworks.com
-   *               2015-2021 Lukas Holländer <lukas.hollaender@yworks.com>, https://github.com/HackbrettXXX
+   * Copyright (c) 2010-2025 James Hall <james@parall.ax>, https://github.com/MrRio/jsPDF
+   *               2015-2025 yWorks GmbH, http://www.yworks.com
+   *               2015-2025 Lukas Holländer <lukas.hollaender@yworks.com>, https://github.com/HackbrettXXX
    *               2016-2018 Aras Abbasi <aras.abbasi@gmail.com>
    *               2010 Aaron Spike, https://github.com/acspike
    *               2012 Willow Systems Corporation, https://github.com/willowsystems
@@ -160,59 +164,6 @@ jspdf/dist/jspdf.es.min.js:
    */
   /**
    * @license
-   *
-   * Copyright (c) 2014 James Robb, https://github.com/jamesbrobb
-   *
-   * Permission is hereby granted, free of charge, to any person obtaining
-   * a copy of this software and associated documentation files (the
-   * "Software"), to deal in the Software without restriction, including
-   * without limitation the rights to use, copy, modify, merge, publish,
-   * distribute, sublicense, and/or sell copies of the Software, and to
-   * permit persons to whom the Software is furnished to do so, subject to
-   * the following conditions:
-   *
-   * The above copyright notice and this permission notice shall be
-   * included in all copies or substantial portions of the Software.
-   *
-   * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-   * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-   * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-   * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-   * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-   * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-   * ====================================================================
-   */
-  /**
-   * @license
-   * (c) Dean McNamee <dean@gmail.com>, 2013.
-   *
-   * https://github.com/deanm/omggif
-   *
-   * Permission is hereby granted, free of charge, to any person obtaining a copy
-   * of this software and associated documentation files (the "Software"), to
-   * deal in the Software without restriction, including without limitation the
-   * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-   * sell copies of the Software, and to permit persons to whom the Software is
-   * furnished to do so, subject to the following conditions:
-   *
-   * The above copyright notice and this permission notice shall be included in
-   * all copies or substantial portions of the Software.
-   *
-   * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-   * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-   * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-   * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-   * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-   * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-   * IN THE SOFTWARE.
-   *
-   * omggif is a JavaScript implementation of a GIF 89a encoder and decoder,
-   * including animation and compression.  It does not rely on any specific
-   * underlying system, so should run in the browser, Node, or Plask.
-   */
-  /**
-   * @license
     Copyright (c) 2008, Adobe Systems Incorporated
     All rights reserved.
   
@@ -249,4 +200,29 @@ jspdf/dist/jspdf.es.min.js:
    *
    * Licensed under the MIT License.
    * http://opensource.org/licenses/mit-license
+   */
+  /** ====================================================================
+   * @license
+   * jsPDF XMP metadata plugin
+   * Copyright (c) 2016 Jussi Utunen, u-jussi@suomi24.fi
+   *
+   * Permission is hereby granted, free of charge, to any person obtaining
+   * a copy of this software and associated documentation files (the
+   * "Software"), to deal in the Software without restriction, including
+   * without limitation the rights to use, copy, modify, merge, publish,
+   * distribute, sublicense, and/or sell copies of the Software, and to
+   * permit persons to whom the Software is furnished to do so, subject to
+   * the following conditions:
+   *
+   * The above copyright notice and this permission notice shall be
+   * included in all copies or substantial portions of the Software.
+   *
+   * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+   * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+   * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+   * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+   * ====================================================================
    */

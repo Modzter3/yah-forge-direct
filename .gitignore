@@ -1,2 +1,4 @@
 scripts/__pycache__/
 node_modules/
+yahforge-output/
+.env.local

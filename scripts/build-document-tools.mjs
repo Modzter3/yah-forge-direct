@@ -1,7 +1,8 @@
 import {createRequire} from 'node:module';
+import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs';
-const root=path.resolve(path.dirname(new URL(import.meta.url).pathname),'..');
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const modules=path.resolve(process.argv[2]||path.join(root,'node_modules'));
 const require=createRequire(path.join(modules,'../package.json'));
 const {build}=require('esbuild');

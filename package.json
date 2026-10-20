@@ -3,20 +3,23 @@
   "version": "1.0.0",
   "description": "YAH Forge Direct - provider-agnostic deployment with your own AI APIs",
   "private": true,
+  "type": "module",
   "engines": {
     "node": ">=18"
   },
   "devDependencies": {
     "pdfjs-dist": "4.10.38",
-    "mammoth": "1.9.0",
+    "mammoth": "1.13.0",
     "docx": "9.2.0",
-    "jspdf": "3.0.1",
+    "jspdf": "4.2.1",
     "esbuild": "0.25.0",
     "buffer": "6.0.3",
-    "dompurify": "3.2.7",
+    "dompurify": "3.4.17",
     "playwright": "1.64.0"
   },
   "scripts": {
+    "yahforge": "node scripts/yahforge-cli.mjs",
+    "test:auth": "node tests/auth.mjs",
     "build:document-tools": "node scripts/build-document-tools.mjs",
     "test:sermon-files": "node tests/sermon-files.cjs",
     "test:sermon-delivery": "node tests/sermon-delivery.cjs",

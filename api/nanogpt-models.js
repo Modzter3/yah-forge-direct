@@ -1,7 +1,10 @@
 export const config = { runtime: 'edge' };
+import { requireAuthorization } from './_auth.js';
 
 export default async function handler(req) {
   if (req.method !== 'GET') return Response.json({error:'Method not allowed'}, {status:405});
+  const authFailure = requireAuthorization(req);
+  if (authFailure) return authFailure;
   const apiKey = process.env.NANOGPT_API_KEY;
   if (!apiKey) return Response.json({error:'Add NANOGPT_API_KEY in Vercel environment variables, then redeploy.'}, {status:503});
   const base = (process.env.NANOGPT_BASE_URL || 'https://nano-gpt.com/api/v1').replace(/\/+$/, '');

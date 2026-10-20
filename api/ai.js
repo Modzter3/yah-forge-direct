@@ -14,6 +14,7 @@ import {
   getLocalLlmConfig,
   isLocalLlmProviderRequest,
 } from './local-llm-provider.js';
+import { requireAuthorization } from './_auth.js';
 
 export const config = { runtime: 'edge' };
 
@@ -77,6 +78,9 @@ export default async function handler(req) {
   if (req.method !== 'POST') {
     return jsonError('Method not allowed', 405);
   }
+
+  const authFailure = requireAuthorization(req);
+  if (authFailure) return authFailure;
 
   let body;
   try {
