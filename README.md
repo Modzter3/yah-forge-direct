@@ -58,16 +58,13 @@ vercel --prod
 
 Then add your environment variables in the Vercel project dashboard under **Settings → Environment Variables**.
 
-### Secure access and Cline automation
+### Cline automation
 
-Set `YAHFORGE_ACCESS_TOKEN` in Vercel to a random value of at least 24 characters and redeploy. Paid AI, media, and model-catalog routes require either the secure browser session cookie or this value as a bearer token. The browser asks for the token and exchanges it for an HttpOnly, Secure, SameSite session cookie; provider keys remain server-only.
-
-For Cline or another local agent, install dependencies and set matching local variables:
+For Cline or another local agent, install dependencies and optionally set the deployment URL:
 
 ```powershell
 npm ci
 $env:YAHFORGE_URL = 'https://yah-forge-direct.vercel.app'
-$env:YAHFORGE_ACCESS_TOKEN = '<same value configured in Vercel>'
 npm run yahforge -- generate --topic 'Forgiveness and restoration' --parts 3 --eleven-tags
 ```
 

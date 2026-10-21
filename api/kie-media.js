@@ -151,15 +151,10 @@ function kieErr(parsed, raw, fallback) {
   return String(raw || fallback || 'Kie request failed').slice(0, 600);
 }
 
-import { requireAuthorization } from './_auth.js';
-
 export default async function handler(req) {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: corsHeaders() });
   }
-
-  const authFailure = requireAuthorization(req);
-  if (authFailure) return authFailure;
 
   const key = resolveKieKey();
   if (!key) {

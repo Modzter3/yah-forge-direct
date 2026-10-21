@@ -26,7 +26,6 @@ Options:
   --timeout-minutes <n>    Overall generation deadline (default: 30)
 
 Environment:
-  YAHFORGE_ACCESS_TOKEN    Required; matches the Vercel secret
   YAHFORGE_URL             Optional default deployment URL
 `);
 }
@@ -124,9 +123,6 @@ async function run() {
   if (!Number.isInteger(parts) || parts < 1 || parts > 7) throw new Error('--parts must be from 1 through 7.');
   const beats = Number.parseInt(args.beats || '5', 10);
   if (!Number.isInteger(beats) || beats < 3 || beats > 8) throw new Error('--beats must be from 3 through 8.');
-  const token = String(process.env.YAHFORGE_ACCESS_TOKEN || '').trim();
-  if (token.length < 24) throw new Error('Set YAHFORGE_ACCESS_TOKEN to the same 24+ character secret configured in Vercel.');
-
   const baseUrl = String(args.url || process.env.YAHFORGE_URL || 'https://yah-forge-direct.vercel.app').replace(/\/+$/, '');
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   const outputDir = path.resolve(args.output || path.join('yahforge-output', `${stamp}-${safeName(topic)}`));
@@ -136,12 +132,6 @@ async function run() {
 
   try {
     const context = await browser.newContext({ acceptDownloads: true });
-    const auth = await context.request.post(`${baseUrl}/api/auth`, {
-      data: { token },
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!auth.ok()) throw new Error(`YahForge authentication failed (HTTP ${auth.status()}).`);
-
     const page = await context.newPage();
     page.on('console', (message) => {
       if (message.type() === 'error') console.error(`Browser: ${message.text()}`);
