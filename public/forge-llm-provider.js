@@ -230,8 +230,47 @@
     var isLocal = provider === 'local';
     if (hint) hint.textContent = meta.hint || CATALOG_PROVIDERS.openrouter.hint;
     if (customRow) customRow.style.display = isLocal ? 'none' : '';
+    updateVercelEnvKeysPanel(provider);
     updateLocalLlmHealthBadge(isLocal ? { ok: lastHealth.ok, error: lastHealth.message } : null);
   }
+
+  function updateVercelEnvKeysPanel(provider) {
+    var panel = document.getElementById('forgeVercelEnvKeysPanel');
+    var active = document.getElementById('forgeVercelEnvKeysActive');
+    if (!panel) return;
+    var rows = panel.querySelectorAll('[data-forge-env-provider]');
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      var match = row.getAttribute('data-forge-env-provider') === provider;
+      row.style.background = match ? 'rgba(212,160,23,0.12)' : '';
+      row.style.outline = match ? '1px solid var(--gold-dim)' : '';
+    }
+    if (active) {
+      if (provider === 'opencode_go') {
+        active.textContent = 'Selected: set OPENCODE_GO_API_KEY in Vercel, then redeploy.';
+      } else if (provider === 'clinepass') {
+        active.textContent = 'Selected: set CLINEPASS_API_KEY in Vercel (ClinePass models use cline-pass/... slugs), then redeploy.';
+      } else if (provider === 'refuseless') {
+        active.textContent = 'Selected: set REFUSELESS_API_KEY in Vercel, then redeploy.';
+      } else {
+        active.textContent = 'Optional: add keys above only for the subscription providers you use.';
+      }
+    }
+    var chatEnv = document.getElementById('yahChatVercelEnvHint');
+    if (chatEnv) {
+      var envNames = {
+        opencode_go: 'Vercel env: OPENCODE_GO_API_KEY (or OPENCODE_API_KEY)',
+        clinepass: 'Vercel env: CLINEPASS_API_KEY (or CLINE_API_KEY)',
+        refuseless: 'Vercel env: REFUSELESS_API_KEY',
+      };
+      if (envNames[provider]) {
+        chatEnv.textContent = envNames[provider] + ' — add in Settings → Environment Variables, redeploy.';
+        chatEnv.style.display = '';
+      } else {
+        chatEnv.textContent = '';
+        chatEnv.style.display = 'none';
+      }
+    }
 
   function onForgeLlmProviderChange() {
     var sel = document.getElementById('forgeLlmProvider');

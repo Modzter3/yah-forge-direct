@@ -58,6 +58,28 @@ vercel --prod
 
 Then add your environment variables in the Vercel project dashboard under **Settings → Environment Variables**.
 
+### Vercel API keys — OpenCode Go, ClinePass, Refuseless
+
+Add **one row per provider** you use. Leave values empty in git; paste **your** keys only in the Vercel dashboard, then **Redeploy**.
+
+| Vercel variable name | Where you get the key | Used when UI provider is |
+| --- | --- | --- |
+| `OPENCODE_GO_API_KEY` | [OpenCode](https://opencode.ai) Go / console API key (`OPENCODE_API_KEY` also works) | **OpenCode Go** |
+| `CLINEPASS_API_KEY` | [app.cline.bot](https://app.cline.bot) → Settings → API Keys (`CLINE_API_KEY` also works) | **ClinePass** |
+| `REFUSELESS_API_KEY` | [Refuseless](https://refuseless.com) console | **Refuseless** |
+
+Optional per provider (only if you need overrides): `OPENCODE_GO_BASE_URL`, `CLINEPASS_BASE_URL`, `REFUSELESS_BASE_URL`, and `*_DEFAULT_MODEL`.
+
+Copy-paste names for Vercel (values are your secrets):
+
+```
+OPENCODE_GO_API_KEY=
+CLINEPASS_API_KEY=
+REFUSELESS_API_KEY=
+```
+
+Same checklist lives in `.env.example` under **VERCEL API KEYS — OpenCode Go · ClinePass · Refuseless**.
+
 ### Cline automation
 
 For Cline or another local agent, install dependencies and optionally set the deployment URL:
