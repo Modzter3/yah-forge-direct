@@ -271,6 +271,7 @@
         chatEnv.style.display = 'none';
       }
     }
+  }
 
   function onForgeLlmProviderChange() {
     var sel = document.getElementById('forgeLlmProvider');
