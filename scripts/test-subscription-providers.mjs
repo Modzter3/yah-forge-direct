@@ -100,7 +100,14 @@ try {
     const catalog = await res.json();
     assert.ok(catalog.data.some((m) => m.id === c.modelId));
     if (c.provider === 'clinepass') {
-      assert.ok(!catalog.data.some((m) => m.id === 'anthropic/claude-sonnet-4-6'));
+      assert.equal(res.status, 200);
+      assert.ok(catalog.data.length >= 10);
+      delete process.env.CLINEPASS_API_KEY;
+      delete process.env.CLINE_API_KEY;
+      const noKey = await clinepassModels(new Request('http://local/api/models'));
+      assert.equal(noKey.status, 200);
+      const noKeyBody = await noKey.json();
+      assert.ok(noKeyBody.data.some((m) => m.id === 'cline-pass/kimi-k3'));
     }
     assert.equal(catalog.secret, undefined);
     assert.equal(calls.at(-1).url, `${c.base}/models`);
