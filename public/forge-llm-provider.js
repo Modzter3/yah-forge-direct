@@ -8,9 +8,53 @@
   var HEALTH_URL = '/api/local-llm-health';
   var lastHealth = { checkedAt: 0, ok: null, message: '' };
 
+  var CATALOG_PROVIDERS = {
+    openrouter: {
+      label: 'OpenRouter',
+      customLabel: 'Custom OpenRouter ID:',
+      customPlaceholder: 'e.g. google/gemini-3-flash-preview',
+      hint: 'OpenRouter + optional kie/... models via OPENROUTER_API_KEY and KIE_API_KEY.',
+    },
+    nanogpt: {
+      label: 'NanoGPT',
+      customLabel: 'Custom NanoGPT model ID:',
+      customPlaceholder: 'Exact NanoGPT model ID',
+      hint: 'NanoGPT — choose a model from its catalog or enter its exact model ID. Set NANOGPT_API_KEY in Vercel.',
+    },
+    opencode_go: {
+      label: 'OpenCode Go',
+      customLabel: 'Custom OpenCode Go model ID:',
+      customPlaceholder: 'e.g. kimi-k3 or glm-5.3-flash',
+      hint: 'OpenCode Go subscription — set OPENCODE_GO_API_KEY (or OPENCODE_API_KEY) in Vercel.',
+    },
+    clinepass: {
+      label: 'ClinePass',
+      customLabel: 'Custom ClinePass model slug:',
+      customPlaceholder: 'e.g. cline-pass/kimi-k3',
+      hint: 'ClinePass — use cline-pass/... slugs. Set CLINEPASS_API_KEY or CLINE_API_KEY in Vercel.',
+    },
+    refuseless: {
+      label: 'Refuseless',
+      customLabel: 'Custom Refuseless model ID:',
+      customPlaceholder: 'e.g. glm-5.3-abliterated',
+      hint: 'Refuseless abliterated lineup — set REFUSELESS_API_KEY in Vercel.',
+    },
+    local: {
+      label: 'OrcaRouter Local',
+      hint: 'OrcaRouter Local uses server env LOCAL_LLM_MODEL on your RunPod endpoint — no OpenRouter key. If RunPod is down, you will see "OrcaRouter Local offline" (no fallback).',
+    },
+  };
+
   function normalizeProviderId(v) {
     if (v === 'bonsai') return 'local';
-    return v === 'nanogpt' ? 'nanogpt' : (v === 'local' ? 'local' : 'openrouter');
+    var s = String(v || '').trim().toLowerCase();
+    if (CATALOG_PROVIDERS[s]) return s;
+    return 'openrouter';
+  }
+
+  function isForgeCatalogLlmProvider(id) {
+    var p = id != null ? normalizeProviderId(id) : getForgeLlmProvider();
+    return p !== 'openrouter' && p !== 'local';
   }
 
   function getForgeLlmProvider() {
@@ -171,22 +215,20 @@
     var chatHint = document.getElementById('yahChatProviderHint');
     var chatCustom = document.getElementById('customYahChatModel');
     var provider = getForgeLlmProvider();
-    if (chatLabel) chatLabel.textContent = provider === 'nanogpt' ? 'Custom NanoGPT model ID:' : 'Custom OpenRouter ID:';
+    var meta = CATALOG_PROVIDERS[provider] || CATALOG_PROVIDERS.openrouter;
+    if (chatLabel) chatLabel.textContent = meta.customLabel || CATALOG_PROVIDERS.openrouter.customLabel;
     if (chatCustom) {
-      chatCustom.placeholder = provider === 'nanogpt' ? 'Exact NanoGPT model ID' : 'e.g. google/gemini-3-flash-preview';
+      chatCustom.placeholder = meta.customPlaceholder || CATALOG_PROVIDERS.openrouter.customPlaceholder;
       if (chatCustom.parentElement) chatCustom.parentElement.style.display = provider === 'local' ? 'none' : '';
     }
-    if (chatHint) chatHint.textContent = (provider === 'nanogpt' ? 'NanoGPT uses your existing server API key. ' : '') + 'Provider selection is shared with the sermon Forge.';
+    if (chatHint) {
+      chatHint.textContent = (provider !== 'openrouter' && provider !== 'local' ? meta.label + ' uses your server API key. ' : '') + 'Provider selection is shared with the sermon Forge.';
+    }
 
     var hint = document.getElementById('forgeLlmProviderHint');
     var customRow = document.querySelector('.model-select-block .custom-model-row');
-    var isLocal = getForgeLlmProvider() === 'local';
-    if (hint) {
-      hint.textContent = isLocal
-        ? 'OrcaRouter Local uses server env LOCAL_LLM_MODEL on your RunPod endpoint — no OpenRouter key. If RunPod is down, you will see "OrcaRouter Local offline" (no fallback).'
-        : 'OpenRouter + optional kie/... models via OPENROUTER_API_KEY and KIE_API_KEY.';
-    }
-    if (hint && getForgeLlmProvider() === 'nanogpt') hint.textContent = 'NanoGPT — choose a model from its catalog or enter its exact model ID.';
+    var isLocal = provider === 'local';
+    if (hint) hint.textContent = meta.hint || CATALOG_PROVIDERS.openrouter.hint;
     if (customRow) customRow.style.display = isLocal ? 'none' : '';
     updateLocalLlmHealthBadge(isLocal ? { ok: lastHealth.ok, error: lastHealth.message } : null);
   }
@@ -222,6 +264,7 @@
 
   global.getForgeLlmProvider = getForgeLlmProvider;
   global.setForgeLlmProvider = setForgeLlmProvider;
+  global.isForgeCatalogLlmProvider = isForgeCatalogLlmProvider;
   global.getLocalLlmModelId = getLocalLlmModelId;
   global.getBonsaiModelId = getBonsaiModelId;
   global.onForgeLlmProviderChange = onForgeLlmProviderChange;

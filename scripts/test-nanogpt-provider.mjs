@@ -48,7 +48,7 @@ try {
  const loaderStart=loaderSource.indexOf('  function hydrateOpenRouterCatalog()');
  const loaderEnd=loaderSource.indexOf('\n  window.hydrateForgeModelSelects',loaderStart);
  let selected='nanogpt',filled=[],requestedUrl;
- const loader={window:{getForgeLlmProvider:()=>selected},SELECT_IDS:['modelSelect'],KIE_MODELS:[{id:'kie/other'}],MODELS_URL:'https://openrouter.ai/api/v1/models',fillSelect:(id,rows)=>filled.push(rows),console,fetch:async url=>{requestedUrl=url;return Response.json({data:[{id:'nano/model'}]});}};
+ const loader={window:{getForgeLlmProvider:()=>selected},SELECT_IDS:['modelSelect'],KIE_MODELS:[{id:'kie/other'}],MODELS_URL:'https://openrouter.ai/api/v1/models',SERVER_CATALOG_URLS:{nanogpt:'/api/nanogpt-models'},fillSelect:(id,rows)=>filled.push(rows),console,fetch:async url=>{requestedUrl=url;return Response.json({data:[{id:'nano/model'}]});}};
  vm.createContext(loader);vm.runInContext(loaderSource.slice(loaderStart,loaderEnd),loader);
  await loader.hydrateOpenRouterCatalog();assert.equal(requestedUrl,'/api/nanogpt-models');
  assert.deepEqual(Array.from(filled[0],m=>m.id),['nano/model']);

@@ -94,6 +94,18 @@ NanoGPT uses the OpenAI-compatible base `https://nano-gpt.com/api/v1`. Optional 
 
 This integration supports text/image chat and streaming. OpenRouter-specific web retrieval is not enabled for NanoGPT; disable web research for NanoGPT generation or use OpenRouter when retrieval is needed.
 
+## OpenCode Go, ClinePass, and Refuseless on Vercel
+
+These appear as separate **LLM provider** categories in the Forge and Yah Chat menus. Add the matching key in Vercel → Environment Variables, redeploy, then pick the provider and choose a catalog model (or paste an exact model id).
+
+| Provider | Vercel env var(s) | Default API base | Model id examples |
+| --- | --- | --- | --- |
+| OpenCode Go | `OPENCODE_GO_API_KEY` (or `OPENCODE_API_KEY`) | `https://opencode.ai/zen/go/v1` | `kimi-k3`, `glm-5.3-flash` |
+| ClinePass | `CLINEPASS_API_KEY` (or `CLINE_API_KEY`) | `https://api.cline.bot/api/v1` | `cline-pass/kimi-k3` |
+| Refuseless | `REFUSELESS_API_KEY` | `https://api.refuseless.com/v1` | `glm-5.3-abliterated` |
+
+Optional overrides: `OPENCODE_GO_BASE_URL`, `CLINEPASS_BASE_URL`, `REFUSELESS_BASE_URL`, and `*_DEFAULT_MODEL` for server-side fallbacks. ClinePass catalogs are filtered to `cline-pass/...` slugs. Web research (OpenRouter plugins) is not enabled on these providers — use OpenRouter when you need retrieval.
+
 ## Transfer sermons between devices
 
 Library → Import accepts Markdown (`.md`, `.markdown`), plain text (`.txt`), text-based PDF (`.pdf`), Word (`.docx`), and sermon backups (`.json`). Select multiple files together. Imports save to the local Library and skip matching sermons. Scanned PDFs need OCR first; old `.doc` files should be saved as `.docx`.

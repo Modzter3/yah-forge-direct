@@ -1142,6 +1142,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <select class="model-select" id="yahChatProvider" onchange="setForgeLlmProvider(this.value)" style="width:100%;margin-bottom:8px;">
           <option value="openrouter">OpenRouter</option>
           <option value="nanogpt">NanoGPT</option>
+          <option value="opencode_go">OpenCode Go</option>
+          <option value="clinepass">ClinePass</option>
+          <option value="refuseless">Refuseless</option>
           <option value="local">OrcaRouter Local</option>
         </select>
         <div id="yahChatProviderHint" class="custom-model-hint" style="margin-bottom:8px;">Provider selection is shared with the sermon Forge.</div>
@@ -1282,6 +1285,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           <select class="model-select" id="forgeLlmProvider" onchange="onForgeLlmProviderChange()" style="max-width:220px;">
             <option value="openrouter" selected>OpenRouter</option>
             <option value="nanogpt">NanoGPT</option>
+            <option value="opencode_go">OpenCode Go</option>
+            <option value="clinepass">ClinePass</option>
+            <option value="refuseless">Refuseless</option>
             <option value="local">OrcaRouter Local</option>
           </select>
           <span id="localLlmHealthStatus" style="display:none;font-size:0.72rem;font-family:'Fira Code',monospace;margin-left:6px;"></span>
@@ -5629,7 +5635,7 @@ function getYahChatModel(){
 var custom=(document.getElementById('customYahChatModel').value||'').trim();
 if(custom)return custom;
 var selected=document.getElementById('yahChatModel').value;
-if(!selected&&typeof getForgeLlmProvider==='function'&&getForgeLlmProvider()==='nanogpt')return '';
+if(!selected&&typeof isForgeCatalogLlmProvider==='function'&&isForgeCatalogLlmProvider())return '';
 return selected||(typeof getForgeDefaultTextModel==='function'?getForgeDefaultTextModel():'google/gemini-3-flash-preview');
 }
 function onYahChatModelDropdown(){
@@ -12485,7 +12491,7 @@ runYahChatPrompt(initialPrompt);
 }
 function sendYahChat(){
 if(yahChatBusy)return;
-if(!getYahChatModel()){showToast('Choose a NanoGPT model or enter its exact model ID first.');return;}
+if(!getYahChatModel()){showToast('Choose a catalog model or enter its exact model ID first.');return;}
 var input=document.getElementById('yahChatInput');
 if(!input)return;
 var text=(input.value||'').trim();
@@ -12514,7 +12520,7 @@ attachments:apiAttachments
 }
 function retryYahChatLastReply(){
 if(yahChatBusy)return;
-if(!getYahChatModel()){showToast('Choose a NanoGPT model or enter its exact model ID first.');return;}
+if(!getYahChatModel()){showToast('Choose a catalog model or enter its exact model ID first.');return;}
 var assistantIdx=-1;
 for(var i=yahChatMessages.length-1;i>=0;i--){
 if(yahChatMessages[i].role==='assistant'){assistantIdx=i;break;}

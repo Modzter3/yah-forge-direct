@@ -96,7 +96,13 @@
     if (images && images.length) payload.images = images;
     const provider = resolveLlmProvider();
     if (provider === 'local' || provider === 'bonsai') payload.provider = 'local';
-    else if (provider === 'nanogpt' || provider === 'openrouter') payload.provider = provider;
+    else if (
+      provider === 'nanogpt'
+      || provider === 'openrouter'
+      || provider === 'opencode_go'
+      || provider === 'clinepass'
+      || provider === 'refuseless'
+    ) payload.provider = provider;
     const signal = resolveAbortSignal(parameters);
     const fetchOpts = {
       method: 'POST',
