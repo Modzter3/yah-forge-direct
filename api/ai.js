@@ -16,8 +16,26 @@ import {
 } from './local-llm-provider.js';
 export const config = { runtime: 'edge' };
 
+const CLIENT_LLM_PROVIDERS = new Set([
+  'nanogpt',
+  'openrouter',
+  'opencode_go',
+  'clinepass',
+  'refuseless',
+]);
+
+const NO_WEB_SEARCH_PROVIDERS = new Set([
+  'nanogpt',
+  'opencode_go',
+  'clinepass',
+  'refuseless',
+]);
+
 const PROVIDERS = {
   nanogpt:    { baseUrl: 'https://nano-gpt.com/api/v1', keyEnv: 'NANOGPT_API_KEY' },
+  opencode_go:{ baseUrl: 'https://opencode.ai/zen/go/v1', keyEnv: 'OPENCODE_GO_API_KEY' },
+  clinepass:  { baseUrl: 'https://api.cline.bot/api/v1', keyEnv: 'CLINEPASS_API_KEY' },
+  refuseless: { baseUrl: 'https://api.refuseless.com/v1', keyEnv: 'REFUSELESS_API_KEY' },
   openrouter: { baseUrl: 'https://openrouter.ai/api/v1', keyEnv: 'OPENROUTER_API_KEY' },
   openai:     { baseUrl: 'https://api.openai.com/v1',    keyEnv: 'OPENAI_API_KEY' },
   groq:       { baseUrl: 'https://api.groq.com/openai/v1', keyEnv: 'GROQ_API_KEY' },
@@ -96,13 +114,12 @@ export default async function handler(req) {
 
   const defaultProviderName = (process.env.AI_PROVIDER || 'openrouter').trim().toLowerCase();
   const kieModel = looksLikeKieModelId(bot) ? resolveKieModel(bot) : null;
-  const selectedProvider = ['nanogpt', 'openrouter'].includes(body.provider) ? body.provider : defaultProviderName;
-  const useKie = !!kieModel && selectedProvider !== 'nanogpt';
+  const bodyProvider = String(body.provider || '').trim().toLowerCase();
+  const selectedProvider = CLIENT_LLM_PROVIDERS.has(bodyProvider) ? bodyProvider : defaultProviderName;
+  const useKie = !!kieModel && !NO_WEB_SEARCH_PROVIDERS.has(selectedProvider);
   const providerName = useKie ? 'kie' : selectedProvider;
   const provider     = PROVIDERS[providerName] || PROVIDERS.custom;
-  const baseUrl      = stripTrailingSlash(
-    (providerName === 'nanogpt' ? (process.env.NANOGPT_BASE_URL || provider.baseUrl) : (useKie ? (process.env.KIE_BASE_URL || KIE_BASE_URL) : (process.env.AI_BASE_URL || provider.baseUrl))) || ''
-  );
+  const baseUrl      = stripTrailingSlash(resolveProviderBaseUrl(providerName, useKie, provider));
 
   if (!baseUrl) {
     return jsonError(
@@ -114,6 +131,15 @@ export default async function handler(req) {
   const apiKey = resolveApiKey(providerName, provider);
   if (!apiKey) {
     if (providerName === 'nanogpt') return jsonError('Missing NANOGPT_API_KEY. Add it in Vercel environment variables, then redeploy.', 500);
+    if (providerName === 'opencode_go') {
+      return jsonError('Missing OPENCODE_GO_API_KEY (or OPENCODE_API_KEY). Add it in Vercel environment variables, then redeploy.', 500);
+    }
+    if (providerName === 'clinepass') {
+      return jsonError('Missing CLINEPASS_API_KEY (or CLINE_API_KEY). Add it in Vercel environment variables, then redeploy.', 500);
+    }
+    if (providerName === 'refuseless') {
+      return jsonError('Missing REFUSELESS_API_KEY. Add it in Vercel environment variables, then redeploy.', 500);
+    }
     if (providerName === 'kie') {
       return jsonError(
         'Missing KIE_API_KEY. Add it in Vercel → Settings → Environment Variables, then redeploy.',
@@ -123,8 +149,9 @@ export default async function handler(req) {
     return jsonError(`Missing API key. Set AI_API_KEY or ${provider.keyEnv}.`, 500);
   }
 
-  if (providerName === 'nanogpt' && parameters.web_search === true) {
-    return jsonError('NanoGPT web search is not configured in this integration. Disable web research or select OpenRouter for retrieval.', 400);
+  if (NO_WEB_SEARCH_PROVIDERS.has(providerName) && parameters.web_search === true) {
+    const label = providerName === 'nanogpt' ? 'NanoGPT' : providerName === 'opencode_go' ? 'OpenCode Go' : providerName === 'clinepass' ? 'ClinePass' : 'Refuseless';
+    return jsonError(`${label} web search is not configured in this integration. Disable web research or select OpenRouter for retrieval.`, 400);
   }
 
   if (useKie) {
@@ -418,7 +445,7 @@ function buildUserMessageContent(query, images) {
 
 function buildPayload({ model, query, parameters, providerName, images = [] }) {
   const params = stripUndefined(parameters || {});
-  if (providerName === 'nanogpt') { delete params.web_search; delete params.plugins; }
+  if (NO_WEB_SEARCH_PROVIDERS.has(providerName)) { delete params.web_search; delete params.plugins; }
 
   // OpenRouter ignores ad-hoc `web_search`; enable real retrieval via the web plugin
   // so answers can follow the user's date window instead of the model's training cutoff.
@@ -467,6 +494,13 @@ function buildPayload({ model, query, parameters, providerName, images = [] }) {
 
 function resolveApiKey(providerName, provider) {
   if (providerName === 'nanogpt') return process.env.NANOGPT_API_KEY || '';
+  if (providerName === 'opencode_go') {
+    return process.env.OPENCODE_GO_API_KEY || process.env.OPENCODE_API_KEY || '';
+  }
+  if (providerName === 'clinepass') {
+    return process.env.CLINEPASS_API_KEY || process.env.CLINE_API_KEY || '';
+  }
+  if (providerName === 'refuseless') return process.env.REFUSELESS_API_KEY || '';
   if (providerName === 'kie') {
     return process.env.KIE_API_KEY || process.env.KIE_SECRET_KEY || process.env.AI_API_KEY || '';
   }
@@ -507,6 +541,15 @@ function redirectDeprecatedModel(modelId) {
 function resolveModel({ requestedModel, providerName }) {
   const model        = String(requestedModel || '').trim();
   if (providerName === 'nanogpt') return model || String(process.env.NANOGPT_DEFAULT_MODEL || '').trim();
+  if (providerName === 'opencode_go') {
+    return model || String(process.env.OPENCODE_GO_DEFAULT_MODEL || '').trim();
+  }
+  if (providerName === 'clinepass') {
+    return model || String(process.env.CLINEPASS_DEFAULT_MODEL || '').trim();
+  }
+  if (providerName === 'refuseless') {
+    return model || String(process.env.REFUSELESS_DEFAULT_MODEL || '').trim();
+  }
   const defaultModel = String(process.env.DEFAULT_TEXT_MODEL || 'google/gemini-3-flash-preview').trim();
   const requested    = model || defaultModel;
   if (!requested) return '';
@@ -533,7 +576,7 @@ function requestHeaders(providerName, apiKey) {
     if (title)   headers['X-Title']      = title;
   }
 
-  const extra = providerName === 'nanogpt' ? null : parseJsonEnv('AI_EXTRA_HEADERS_JSON');
+  const extra = NO_WEB_SEARCH_PROVIDERS.has(providerName) ? null : parseJsonEnv('AI_EXTRA_HEADERS_JSON');
   if (extra && typeof extra === 'object') {
     for (const [k, v] of Object.entries(extra)) {
       if (typeof v === 'string' && v.trim()) headers[k] = v;
@@ -639,6 +682,23 @@ function cleanErrorMessage(parsed, raw) {
 
 function stripTrailingSlash(v) {
   return String(v || '').replace(/\/+$/, '');
+}
+
+function resolveProviderBaseUrl(providerName, useKie, provider) {
+  if (useKie) {
+    return (process.env.KIE_BASE_URL || KIE_BASE_URL) || '';
+  }
+  const dedicated = {
+    nanogpt: process.env.NANOGPT_BASE_URL,
+    opencode_go: process.env.OPENCODE_GO_BASE_URL,
+    clinepass: process.env.CLINEPASS_BASE_URL || process.env.CLINE_BASE_URL,
+    refuseless: process.env.REFUSELESS_BASE_URL,
+  }[providerName];
+  if (dedicated) return dedicated;
+  if (providerName === 'openrouter' || !PROVIDERS[providerName]) {
+    return process.env.AI_BASE_URL || provider?.baseUrl || '';
+  }
+  return provider?.baseUrl || '';
 }
 
 async function safeReadText(res) {

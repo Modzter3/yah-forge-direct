@@ -1142,6 +1142,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <select class="model-select" id="yahChatProvider" onchange="setForgeLlmProvider(this.value)" style="width:100%;margin-bottom:8px;">
           <option value="openrouter">OpenRouter</option>
           <option value="nanogpt">NanoGPT</option>
+          <option value="opencode_go">OpenCode Go</option>
+          <option value="clinepass">ClinePass</option>
+          <option value="refuseless">Refuseless</option>
           <option value="local">OrcaRouter Local</option>
         </select>
         <div id="yahChatProviderHint" class="custom-model-hint" style="margin-bottom:8px;">Provider selection is shared with the sermon Forge.</div>
@@ -1282,11 +1285,27 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           <select class="model-select" id="forgeLlmProvider" onchange="onForgeLlmProviderChange()" style="max-width:220px;">
             <option value="openrouter" selected>OpenRouter</option>
             <option value="nanogpt">NanoGPT</option>
+            <option value="opencode_go">OpenCode Go</option>
+            <option value="clinepass">ClinePass</option>
+            <option value="refuseless">Refuseless</option>
             <option value="local">OrcaRouter Local</option>
           </select>
           <span id="localLlmHealthStatus" style="display:none;font-size:0.72rem;font-family:'Fira Code',monospace;margin-left:6px;"></span>
         </div>
         <div id="forgeLlmProviderHint" class="custom-model-hint" style="margin-bottom:8px;">OpenRouter + optional kie/... models via OPENROUTER_API_KEY and KIE_API_KEY.</div>
+        <details class="vercel-env-keys-panel" id="forgeVercelEnvKeysPanel" style="margin-bottom:10px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:rgba(212,160,23,0.04);">
+          <summary style="cursor:pointer;font-family:'Fira Code',monospace;font-size:0.72rem;color:var(--gold);list-style-position:inside;"><i class="fas fa-key" style="margin-right:6px;"></i>Vercel API keys (server-only — paste your keys in Vercel, not here)</summary>
+          <p style="font-size:0.68rem;color:var(--text-muted);margin:10px 0 8px;line-height:1.5;font-family:'Bitter',serif;">Project → <strong>Settings → Environment Variables</strong> → Add each name → your secret value → enable <strong>Production</strong> → <strong>Redeploy</strong>.</p>
+          <table class="vercel-env-keys-table" style="width:100%;border-collapse:collapse;font-size:0.62rem;font-family:'Fira Code',monospace;">
+            <thead><tr style="color:var(--text-dim);text-align:left;"><th style="padding:4px 6px;border-bottom:1px solid var(--border);">Variable</th><th style="padding:4px 6px;border-bottom:1px solid var(--border);">Forge provider</th></tr></thead>
+            <tbody>
+              <tr data-forge-env-provider="opencode_go"><td style="padding:5px 6px;"><code>OPENCODE_GO_API_KEY</code></td><td style="padding:5px 6px;">OpenCode Go <span style="opacity:0.7;">(or <code>OPENCODE_API_KEY</code>)</span></td></tr>
+              <tr data-forge-env-provider="clinepass"><td style="padding:5px 6px;"><code>CLINEPASS_API_KEY</code></td><td style="padding:5px 6px;">ClinePass <span style="opacity:0.7;">(or <code>CLINE_API_KEY</code>)</span></td></tr>
+              <tr data-forge-env-provider="refuseless"><td style="padding:5px 6px;"><code>REFUSELESS_API_KEY</code></td><td style="padding:5px 6px;">Refuseless</td></tr>
+            </tbody>
+          </table>
+          <p id="forgeVercelEnvKeysActive" class="custom-model-hint" style="margin:8px 0 0;font-size:0.65rem;"></p>
+        </details>
         <div class="model-select-wrap">
           <label><i class="fas fa-robot"></i> Model:</label>
           <select class="model-select" id="modelSelect" onchange="onSermonModelDropdown()">
@@ -5629,7 +5648,7 @@ function getYahChatModel(){
 var custom=(document.getElementById('customYahChatModel').value||'').trim();
 if(custom)return custom;
 var selected=document.getElementById('yahChatModel').value;
-if(!selected&&typeof getForgeLlmProvider==='function'&&getForgeLlmProvider()==='nanogpt')return '';
+if(!selected&&typeof isForgeCatalogLlmProvider==='function'&&isForgeCatalogLlmProvider())return '';
 return selected||(typeof getForgeDefaultTextModel==='function'?getForgeDefaultTextModel():'google/gemini-3-flash-preview');
 }
 function onYahChatModelDropdown(){
@@ -12485,7 +12504,7 @@ runYahChatPrompt(initialPrompt);
 }
 function sendYahChat(){
 if(yahChatBusy)return;
-if(!getYahChatModel()){showToast('Choose a NanoGPT model or enter its exact model ID first.');return;}
+if(!getYahChatModel()){showToast('Choose a catalog model or enter its exact model ID first.');return;}
 var input=document.getElementById('yahChatInput');
 if(!input)return;
 var text=(input.value||'').trim();
@@ -12514,7 +12533,7 @@ attachments:apiAttachments
 }
 function retryYahChatLastReply(){
 if(yahChatBusy)return;
-if(!getYahChatModel()){showToast('Choose a NanoGPT model or enter its exact model ID first.');return;}
+if(!getYahChatModel()){showToast('Choose a catalog model or enter its exact model ID first.');return;}
 var assistantIdx=-1;
 for(var i=yahChatMessages.length-1;i>=0;i--){
 if(yahChatMessages[i].role==='assistant'){assistantIdx=i;break;}

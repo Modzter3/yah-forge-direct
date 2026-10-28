@@ -58,6 +58,28 @@ vercel --prod
 
 Then add your environment variables in the Vercel project dashboard under **Settings → Environment Variables**.
 
+### Vercel API keys — OpenCode Go, ClinePass, Refuseless
+
+Add **one row per provider** you use. Leave values empty in git; paste **your** keys only in the Vercel dashboard, then **Redeploy**.
+
+| Vercel variable name | Where you get the key | Used when UI provider is |
+| --- | --- | --- |
+| `OPENCODE_GO_API_KEY` | [OpenCode](https://opencode.ai) Go / console API key (`OPENCODE_API_KEY` also works) | **OpenCode Go** |
+| `CLINEPASS_API_KEY` | [app.cline.bot](https://app.cline.bot) → Settings → API Keys (`CLINE_API_KEY` also works) | **ClinePass** |
+| `REFUSELESS_API_KEY` | [Refuseless](https://refuseless.com) console | **Refuseless** |
+
+Optional per provider (only if you need overrides): `OPENCODE_GO_BASE_URL`, `CLINEPASS_BASE_URL`, `REFUSELESS_BASE_URL`, and `*_DEFAULT_MODEL`.
+
+Copy-paste names for Vercel (values are your secrets):
+
+```
+OPENCODE_GO_API_KEY=
+CLINEPASS_API_KEY=
+REFUSELESS_API_KEY=
+```
+
+Same checklist lives in `.env.example` under **VERCEL API KEYS — OpenCode Go · ClinePass · Refuseless**.
+
 ### Cline automation
 
 For Cline or another local agent, install dependencies and optionally set the deployment URL:
@@ -93,6 +115,18 @@ Add `NANOGPT_API_KEY` to the Vercel project's Production environment (and Previe
 NanoGPT uses the OpenAI-compatible base `https://nano-gpt.com/api/v1`. Optional `NANOGPT_BASE_URL` overrides it; `NANOGPT_DEFAULT_MODEL` supplies an exact fallback ID. You can leave `AI_PROVIDER=openrouter` to retain the existing default, or set `AI_PROVIDER=nanogpt` for server-default NanoGPT routing. Existing OpenRouter keys, base overrides, and model redirects are not reused for NanoGPT requests. A missing key or unavailable catalog is reported without silently billing another provider.
 
 This integration supports text/image chat and streaming. OpenRouter-specific web retrieval is not enabled for NanoGPT; disable web research for NanoGPT generation or use OpenRouter when retrieval is needed.
+
+## OpenCode Go, ClinePass, and Refuseless on Vercel
+
+These appear as separate **LLM provider** categories in the Forge and Yah Chat menus. Add the matching key in Vercel → Environment Variables, redeploy, then pick the provider and choose a catalog model (or paste an exact model id).
+
+| Provider | Vercel env var(s) | Default API base | Model id examples |
+| --- | --- | --- | --- |
+| OpenCode Go | `OPENCODE_GO_API_KEY` (or `OPENCODE_API_KEY`) | `https://opencode.ai/zen/go/v1` | `kimi-k3`, `glm-5.3-flash` |
+| ClinePass | `CLINEPASS_API_KEY` (or `CLINE_API_KEY`) | `https://api.cline.bot/api/v1` | `cline-pass/kimi-k3` |
+| Refuseless | `REFUSELESS_API_KEY` | `https://api.refuseless.com/v1` | `glm-5.3-abliterated` |
+
+Optional overrides: `OPENCODE_GO_BASE_URL`, `CLINEPASS_BASE_URL`, `REFUSELESS_BASE_URL`, and `*_DEFAULT_MODEL` for server-side fallbacks. ClinePass catalogs are filtered to `cline-pass/...` slugs. Web research (OpenRouter plugins) is not enabled on these providers — use OpenRouter when you need retrieval.
 
 ## Transfer sermons between devices
 

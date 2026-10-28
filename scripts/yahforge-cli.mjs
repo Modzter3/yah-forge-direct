@@ -15,7 +15,7 @@ Options:
   --topic <text>           Required sermon topic or detailed brief
   --parts <1-7>            Number of parts (default: 1)
   --model <provider/id>    Optional exact model id
-  --provider <name>        openrouter, nanogpt, or local (default: openrouter)
+  --provider <name>        openrouter, nanogpt, opencode_go, clinepass, refuseless, or local (default: openrouter)
   --words <n>              One-part target words supported by the Forge UI
   --eleven-tags            Run YahForge's Eleven v4 tagging pass
   --visuals                Generate the visual package (may spend Kie credits)

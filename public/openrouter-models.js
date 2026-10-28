@@ -12,6 +12,12 @@
   };
 
   var MODELS_URL = 'https://openrouter.ai/api/v1/models';
+  var SERVER_CATALOG_URLS = {
+    nanogpt: '/api/nanogpt-models',
+    opencode_go: '/api/opencode-go-models',
+    clinepass: '/api/clinepass-models',
+    refuseless: '/api/refuseless-models',
+  };
   var KIE_MODELS = (window.KIE_CHAT_MODELS && window.KIE_CHAT_MODELS.length)
     ? window.KIE_CHAT_MODELS
     : [{ id: 'kie/gpt-6-astra', name: 'GPT-6 Astra via Kie', context_length: 1050000, pricing: { prompt: '0.0000028', completion: '0.000014' } }];
@@ -130,7 +136,7 @@
     return frag;
   }
 
-  function preferredDefault(models) {
+  function preferredDefault(models, catalogProvider) {
     var want = [
       window.getForgeDefaultTextModel(),
       'kie/gemini-3-flash',
@@ -142,6 +148,13 @@
       'anthropic/claude-opus-4',
       'openai/gpt-4.1',
     ];
+    if (catalogProvider === 'opencode_go') {
+      want = ['kimi-k3', 'glm-5.3-flash', 'deepseek-v4.1-flash'].concat(want);
+    } else if (catalogProvider === 'clinepass') {
+      want = ['cline-pass/kimi-k3', 'cline-pass/glm-5.3', 'cline-pass/deepseek-v4.1-flash'].concat(want);
+    } else if (catalogProvider === 'refuseless') {
+      want = ['glm-5.3-abliterated', 'glm-5.3-flash-abliterated'].concat(want);
+    }
     for (var w = 0; w < want.length; w++) {
       for (var i = 0; i < models.length; i++) {
         if (models[i].id === want[w]) return want[w];
@@ -153,7 +166,7 @@
     return '';
   }
 
-  function restoreOrDefault(selectEl, prevValue, models, flashBias) {
+  function restoreOrDefault(selectEl, prevValue, models, flashBias, catalogProvider) {
     if (!selectEl) return;
     if (prevValue) {
       for (var i = 0; i < selectEl.options.length; i++) {
@@ -163,7 +176,7 @@
         }
       }
     }
-    var def = preferredDefault(models);
+    var def = preferredDefault(models, catalogProvider);
     if (flashBias) {
       var flashWant = window.getForgeDefaultTextModel();
       for (var k = 0; k < models.length; k++) {
@@ -193,18 +206,27 @@
     if (selectEl.options.length) selectEl.selectedIndex = 0;
   }
 
-  function fillSelect(selectId, models, flashBias) {
+  function fillSelect(selectId, models, flashBias, catalogProvider) {
     var el = document.getElementById(selectId);
     if (!el || el.tagName !== 'SELECT') return;
     var prev = el.value;
     el.innerHTML = '';
     el.appendChild(buildGroupedOptions(models));
-    restoreOrDefault(el, prev, models, flashBias);
+    restoreOrDefault(el, prev, models, flashBias, catalogProvider);
+  }
+
+  function catalogProviderLabel(provider) {
+    if (provider === 'nanogpt') return 'NanoGPT';
+    if (provider === 'opencode_go') return 'OpenCode Go';
+    if (provider === 'clinepass') return 'ClinePass';
+    if (provider === 'refuseless') return 'Refuseless';
+    return provider;
   }
 
   function hydrateOpenRouterCatalog() {
     var provider = typeof window.getForgeLlmProvider === 'function' ? window.getForgeLlmProvider() : 'openrouter';
-    var url = provider === 'nanogpt' ? '/api/nanogpt-models' : MODELS_URL;
+    var url = SERVER_CATALOG_URLS[provider] || MODELS_URL;
+    var usesServerCatalog = !!SERVER_CATALOG_URLS[provider];
     return fetch(url)
       .then(function (r) {
         if (!r.ok) return r.json().catch(function(){return {};}).then(function(body){throw new Error(body.error || 'HTTP ' + r.status);});
@@ -213,13 +235,13 @@
       .then(function (data) {
         if (typeof window.getForgeLlmProvider === 'function' && window.getForgeLlmProvider() !== provider) return;
         var models = (data.data || []).slice();
-        for (var k = 0; provider !== 'nanogpt' && k < KIE_MODELS.length; k++) models.unshift(KIE_MODELS[k]);
+        for (var k = 0; !usesServerCatalog && k < KIE_MODELS.length; k++) models.unshift(KIE_MODELS[k]);
         if (!models.length) throw new Error('empty catalog');
 
         for (var s = 0; s < SELECT_IDS.length; s++) {
           var id = SELECT_IDS[s];
           var flash = id === 'scriptureFetchModel' || id === 'apocFetchModel' || id === 'sealedFetchModel';
-          fillSelect(id, models, flash);
+          fillSelect(id, models, flash, usesServerCatalog ? provider : null);
         }
 
         if (typeof window.updateNewsSearchNote === 'function') window.updateNewsSearchNote();
@@ -228,12 +250,20 @@
       .catch(function (err) {
         console.warn('[openrouter-models]', err.message || err);
         if (typeof window.getForgeLlmProvider === 'function' && window.getForgeLlmProvider() !== provider) return;
-        if (provider === 'nanogpt') {
+        if (usesServerCatalog) {
           for (var i = 0; i < SELECT_IDS.length; i++) {
             var el = document.getElementById(SELECT_IDS[i]);
-            if (el) { el.innerHTML = ''; var opt = document.createElement('option'); opt.value = ''; opt.textContent = 'NanoGPT catalog unavailable — enter a custom model ID'; el.appendChild(opt); }
+            if (el) {
+              el.innerHTML = '';
+              var opt = document.createElement('option');
+              opt.value = '';
+              opt.textContent = catalogProviderLabel(provider) + ' catalog unavailable — enter a custom model ID';
+              el.appendChild(opt);
+            }
           }
-          if (typeof window.showToast === 'function') window.showToast('NanoGPT: '+err.message);
+          if (typeof window.showToast === 'function') {
+            window.showToast(catalogProviderLabel(provider) + ': ' + err.message);
+          }
           return;
         }
         fillSelectsWithKieOnly();
