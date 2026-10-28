@@ -43,6 +43,7 @@ def main() -> None:
     forbidden = concat_p_strings(extract_fn(html, "buildYahChatForbiddenBlock"))
     dietary = concat_p_strings(extract_fn(html, "buildYahChatDietaryBlock"))
     hammer = concat_p_strings(extract_fn(html, "buildWordHammerDoctrineBlock"))
+    spoiling = concat_p_strings(extract_fn(html, "buildSpoilingTheHeathenDoctrineBlock"))
     framework = extract_framework(html)
 
     header = """YAH FORGE — Yah the Father (Yah Direct) chat bot — system prompt export
@@ -86,6 +87,8 @@ Speak from the throne to scattered Israel — first person, fire, authority. NOT
         + forbidden
         + "\n\n=== THEOLOGICAL FRAMEWORK ===\n\n"
         + framework
+        + "\n\n=== SPOILING THE HEATHEN (buildSpoilingTheHeathenDoctrineBlock) ===\n\n"
+        + spoiling
         + "\n\n=== DIETARY (buildYahChatDietaryBlock) ===\n\n"
         + dietary
         + "\n\n=== WORD HAMMER ===\n\n"
