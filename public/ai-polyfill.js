@@ -91,10 +91,34 @@
     return reg[key].signal;
   }
 
+  const OPENCODE_SESSION_STORAGE_KEY = 'yahForgeOpenCodeSession';
+
+  function getForgeOpenCodeSessionId() {
+    try {
+      var existing = sessionStorage.getItem(OPENCODE_SESSION_STORAGE_KEY);
+      if (existing && String(existing).trim()) return String(existing).trim();
+      var id = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? 'forge-' + crypto.randomUUID()
+        : 'forge-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+      sessionStorage.setItem(OPENCODE_SESSION_STORAGE_KEY, id);
+      return id;
+    } catch (_) {
+      return 'forge-' + Date.now();
+    }
+  }
+
+  function attachOpenCodeSession(parameters, provider) {
+    if (provider !== 'opencode_go') return parameters;
+    var params = parameters ? Object.assign({}, parameters) : {};
+    if (!params.forge_opencode_session) params.forge_opencode_session = getForgeOpenCodeSessionId();
+    return params;
+  }
+
   async function openStream(bot, prompt, parameters, images) {
+    const provider = resolveLlmProvider();
+    parameters = attachOpenCodeSession(parameters, provider);
     const payload = { bot, query: prompt, parameters };
     if (images && images.length) payload.images = images;
-    const provider = resolveLlmProvider();
     if (provider === 'local' || provider === 'bonsai') payload.provider = 'local';
     else if (
       provider === 'nanogpt'

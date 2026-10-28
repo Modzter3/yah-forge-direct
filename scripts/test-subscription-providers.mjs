@@ -57,7 +57,9 @@ try {
           provider: c.provider,
           bot: c.modelId,
           query: 'test',
-          parameters,
+          parameters: c.provider === 'opencode_go'
+            ? { ...parameters, forge_opencode_session: parameters.forge_opencode_session || 'test-session-123' }
+            : parameters,
         }),
       });
 
@@ -66,6 +68,10 @@ try {
     assert.equal(res.headers.get('X-AI-Provider'), c.provider);
     assert.equal(calls[0].url, `${c.base}/chat/completions`);
     assert.equal(calls[0].init.headers.Authorization, `Bearer ${c.keyValue}`);
+    if (c.provider === 'opencode_go') {
+      assert.ok(calls[0].init.headers['x-opencode-session']);
+      assert.match(calls[0].init.headers['User-Agent'], /yah-forge-direct/);
+    }
     const payload = JSON.parse(calls[0].init.body);
     assert.equal(payload.model, c.modelId);
     assert.equal(payload.web_search, undefined);
@@ -120,6 +126,7 @@ try {
   sandbox.window.Poe.registerHandler('test', () => {});
   await sandbox.window.Poe.sendUserMessage('@kimi-k3 test', { handler: 'test', stream: true });
   assert.equal(browserBody.provider, 'opencode_go');
+  assert.ok(browserBody.parameters && browserBody.parameters.forge_opencode_session);
   assert.ok(!JSON.stringify(browserBody).includes('go-test-key'));
 
   console.log('subscription-providers: OpenCode Go, ClinePass, and Refuseless routing/catalog tests passed; no paid calls.');

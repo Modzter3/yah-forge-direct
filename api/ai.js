@@ -177,13 +177,17 @@ export default async function handler(req) {
     );
   }
 
+  const opencodeSession = providerName === 'opencode_go'
+    ? resolveOpenCodeSession(parameters)
+    : '';
+
   const payload = buildPayload({ model: resolvedModel, query, parameters, providerName, images: imageList });
 
   let upstream;
   try {
     upstream = await fetch(`${baseUrl}/chat/completions`, {
       method: 'POST',
-      headers: requestHeaders(providerName, apiKey),
+      headers: requestHeaders(providerName, apiKey, { opencodeSession }),
       body: JSON.stringify(payload),
       signal: req.signal,
     });
@@ -445,6 +449,9 @@ function buildUserMessageContent(query, images) {
 
 function buildPayload({ model, query, parameters, providerName, images = [] }) {
   const params = stripUndefined(parameters || {});
+  delete params.forge_stream_abort_key;
+  delete params.forge_opencode_session;
+  delete params.opencode_session;
   if (NO_WEB_SEARCH_PROVIDERS.has(providerName)) { delete params.web_search; delete params.plugins; }
 
   // OpenRouter ignores ad-hoc `web_search`; enable real retrieval via the web plugin
@@ -563,11 +570,18 @@ function resolveModel({ requestedModel, providerName }) {
   return redirectDeprecatedModel(providerAliases[requested] || requested);
 }
 
-function requestHeaders(providerName, apiKey) {
+function requestHeaders(providerName, apiKey, opts = {}) {
   const headers = {
     Authorization: `Bearer ${apiKey}`,
     'Content-Type': 'application/json',
   };
+
+  if (providerName === 'opencode_go') {
+    const session = String(opts.opencodeSession || resolveOpenCodeSession(null) || '').trim();
+    if (session) headers['x-opencode-session'] = session.slice(0, 256);
+    const ua = String(process.env.OPENCODE_GO_USER_AGENT || 'yah-forge-direct/1.0').trim();
+    if (ua) headers['User-Agent'] = ua;
+  }
 
   if (providerName === 'openrouter') {
     const referer = process.env.AI_HTTP_REFERER || process.env.APP_PUBLIC_URL;
@@ -584,6 +598,24 @@ function requestHeaders(providerName, apiKey) {
   }
 
   return headers;
+}
+
+function resolveOpenCodeSession(parameters) {
+  const params = parameters || {};
+  const fromClient = String(params.forge_opencode_session || params.opencode_session || '').trim();
+  if (fromClient) return fromClient.slice(0, 256);
+  const fromEnv = String(process.env.OPENCODE_GO_SESSION_ID || '').trim();
+  if (fromEnv) return fromEnv.slice(0, 256);
+  return createOpenCodeSessionId();
+}
+
+function createOpenCodeSessionId() {
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return `yah-forge-${crypto.randomUUID()}`;
+    }
+  } catch (_) {}
+  return `yah-forge-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
 }
 
 function streamPassThrough(upstream, providerName, model) {
