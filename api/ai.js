@@ -489,7 +489,8 @@ function normalizeOpenRouterReasoning(params, model) {
   if (Number.isFinite(maxOut) && maxOut > 0 && maxOut < 4096) return;
 
   let effort = budgetZero ? 'none' : (mapReasoningEffort(level) || mapReasoningEffort(effortParam));
-  if (fastStart && (!effort || effort === 'none')) effort = 'minimal';
+  // Fast start is an explicit user speed knob: it wins over any other effort the app set.
+  if (fastStart) effort = 'minimal';
   if (effort === 'none') effort = 'minimal'; // floor effort -- safest way to mean "barely think"
   // OpenRouter accepts EITHER effort OR max_tokens, never both.
   if (effort) {

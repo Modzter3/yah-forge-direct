@@ -1169,6 +1169,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch" id="toggleBezStoryModeWrap" title="Bez revelation cadence — street fire, grammatically sound English, names culprits by full name and what they do (no vague they/the elites)"><input type="checkbox" id="toggleBezStoryMode"><span class="toggle-track bez-story-track"></span><span><i class="fas fa-book-open" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Bez Story</span></label>
       <label class="toggle-switch" id="toggleElevenLabsTagsWrap" title="Eleven v3 medium-density emotional tags — [angry], [whispers], [shouts], etc. woven through every paragraph for TTS"><input type="checkbox" id="toggleElevenLabsTags"><span class="toggle-track" style="background:linear-gradient(135deg,#1a3a2a,#2a6a4a);"></span><span><i class="fas fa-waveform-lines" style="color:#7ec8a0;margin-right:3px;font-size:0.7rem;"></i>Eleven Tags</span></label>
       <label class="toggle-switch" id="toggleSermonEpisodeModeWrap" title="TV season episode-by-episode breakdown across parts"><input type="checkbox" id="toggleSermonEpisodeMode"><span class="toggle-track"></span><span><i class="fas fa-tv" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Episode Mode</span></label>
+      <label class="toggle-switch" id="toggleFastStartWrap" title="Speed knob for frontier/reasoning models: tells the model to think minimally so it starts writing sooner (Claude, GPT-5.x, Gemini, Grok). Costs some reasoning depth. Off = the model thinks at its provider default."><input type="checkbox" id="toggleFastStart"><span class="toggle-track" style="background:linear-gradient(135deg,#3a2a00,#8a6a00);"></span><span><i class="fas fa-bolt" style="color:#e8c040;margin-right:3px;font-size:0.7rem;"></i>Fast start</span></label>
       <label class="toggle-switch" title="Live web search: verify facts, roles, and topic context (silent — no URLs in output). Adds a retrieval round before the model writes -- leave it off for the fastest start. Does not weave headlines unless News Weave is also on."><input type="checkbox" id="toggleWebResearch" onchange="syncNewsWeaveToggles()"><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
       <label class="toggle-switch" id="toggleNewsWeaveWrap" title="Weave verified current headlines into the sermon — separate from Yah/Bez Story voice. Requires Web Research."><input type="checkbox" id="toggleNewsWeave" onchange="syncNewsWeaveToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#1a3a5c,#2a6496);"></span><span><i class="fas fa-newspaper" style="color:#7ec8e3;margin-right:3px;font-size:0.7rem;"></i>News Weave</span></label>
       <label class="toggle-switch" id="toggleBehindTheVeilWrap" title="News-triggered closed-door drama: real headlines → dramatized meeting where sector elites plot the beast-system policy (prophetic illustration, not leaked intel)"><input type="checkbox" id="toggleBehindTheVeil"><span class="toggle-track" style="background:linear-gradient(135deg,#4a1a6a,#8B1A1A);"></span><span><i class="fas fa-door-closed" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Behind the Veil</span></label>
@@ -2362,6 +2363,10 @@ var need=wordsToOutputTokens(words);
 var cap=getModelMaxOutputTokens(model);
 return Math.min(Math.max(need,4096),cap);
 }
+function isForgeFastStartEnabled(){
+var el=document.getElementById('toggleFastStart');
+return !!(el&&el.checked);
+}
 function getSermonWebSearchParams(model,totalParts){
 var params={};
 var theatre=isTheatreModeActive();
@@ -2374,6 +2379,7 @@ if(isVeilUltraEliteCastRequested())params.thinking_level='high';
 else if(forgeIsFlashTier(model))params.thinking_level='medium';
 }
 params.max_tokens=getForgeMaxTokens(model,totalParts);
+if(isForgeFastStartEnabled())params.forge_fast_start=true;
 return params;
 }
 function isYahChatBezMode(){
@@ -11713,6 +11719,7 @@ prompt=buildTranscriptContinuationPrompt(partNum,ctx.partContent,ctx.continuatio
 prompt=buildTranscriptPartPrompt(partNum,transcriptOpts);
 }
 var params={max_tokens:getForgeMaxTokens(model,selectedTranscriptPartCount)};
+if(isForgeFastStartEnabled())params.forge_fast_start=true;
 var voiceMode=getTranscriptPartVoiceMode(partNum,selectedTranscriptPartCount,transcriptOpts.wantYah,transcriptOpts.wantBez);
 var yahApiActive=(voiceMode==='yah'||voiceMode==='dual')&&!ctx.bezFallbackActive;
 appendYahStoryApiParams(params,yahApiActive,{skipSystem:!!streamOpts.yahLiteRetry});

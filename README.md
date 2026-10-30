@@ -138,6 +138,8 @@ Frontier models (Claude Opus, GPT-5.x, Gemini Pro, Grok 4.x) are reasoning model
 
 **Web Research** now defaults to off because it adds a retrieval round before the model writes. News scans and Behind the Veil still force retrieval — their grounding depends on a real headline.
 
+**Fast start** (forge toggles) is the speed knob for the slow models. On, it tells Claude / GPT-5.x / Gemini / Grok to think minimally (`reasoning: { effort: 'minimal' }`), so a frontier act starts writing in seconds instead of minutes. It overrides any deeper thinking the mode would otherwise request, and it costs reasoning depth — leave it off when you want the model to chew on the material. It does nothing on non-reasoning models (the proxy only sends `reasoning` to models the live catalog flags as reasoning-capable), and the toggle also applies to the transcript forge. On the Poe port it maps onto Poe's own `thinking_budget` / `thinking_level` / `reasoning_effort`.
+
 ## Transfer sermons between devices
 
 Library → Import accepts Markdown (`.md`, `.markdown`), plain text (`.txt`), text-based PDF (`.pdf`), Word (`.docx`), and sermon backups (`.json`). Select multiple files together. Imports save to the local Library and skip matching sermons. Scanned PDFs need OCR first; old `.doc` files should be saved as `.docx`.

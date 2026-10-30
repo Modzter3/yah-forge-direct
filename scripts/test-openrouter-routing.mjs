@@ -92,6 +92,10 @@ try {
   assert.equal(payload.reasoning.effort, 'minimal');
   assert.equal(payload.forge_fast_start, undefined);
 
+  // 12b. Fast start is a user speed knob: it overrides a higher effort the app asked for.
+  await handler(req({ max_tokens: 20000, thinking_level: 'high', forge_fast_start: true, forge_supports_reasoning: true }, 'google/gemini-3.8-flash'));
+  assert.deepEqual(payloadOf().reasoning, { effort: 'minimal' });
+
   // 13. Non-OpenRouter providers keep their Poe-style params and get no provider object.
   process.env.NANOGPT_API_KEY = 'nano-test-key';
   await handler(new Request('http://local/api/ai', {

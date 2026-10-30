@@ -38,6 +38,14 @@ export default async function handler(req) {
   if (parameters.voice            !== undefined) payload.voice            = parameters.voice;
   if (parameters.music_length_ms  !== undefined) payload.music_length_ms  = parameters.music_length_ms;
 
+  // Fast start (the direct app's speed knob) maps onto Poe's own thinking params, so the
+  // toggle means the same thing on this deployment. Only the family-appropriate key is set.
+  if (parameters.forge_fast_start === true) {
+    if (payload.thinking_budget === undefined && /claude/i.test(String(bot))) payload.thinking_budget = 0;
+    if (payload.thinking_level === undefined && /gemini/i.test(String(bot))) payload.thinking_level = 'minimal';
+    if (payload.reasoning_effort === undefined && /(gpt-5|gpt-6|^o[1-9])/i.test(String(bot))) payload.reasoning_effort = 'minimal';
+  }
+
   const candidates = modelCandidates(bot);
   let poeRes = null;
   let modelUsed = null;
