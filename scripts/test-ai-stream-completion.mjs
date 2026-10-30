@@ -41,4 +41,16 @@ assert.equal(think.length,2,'each reasoning delta reports progress');
 assert.equal(think.at(-1).chars,'weighing the verse and the symbol'.length);
 assert.equal(think[0].first,true,'first reasoning delta is flagged');
 console.log('ai-stream-completion: reasoning deltas reported as progress without polluting output');
+// The client tells the proxy whether the selected model accepts reasoning params.
+{
+ let body=null;
+ const sandbox={window:{forgeModelSupportsReasoning:m=>m==='reasoner/model'},fetch:async(_,init)=>{body=JSON.parse(init.body);return new Response('data: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}});},Date,Math,JSON,TextDecoder};
+ vm.runInNewContext(source,sandbox);
+ sandbox.window.Poe.registerHandler('cap',()=>{});
+ await sandbox.window.Poe.sendUserMessage('@reasoner/model hi',{handler:'cap',stream:true});
+ assert.equal(body.parameters.forge_supports_reasoning,true,'reasoning-capable model must be flagged');
+ await sandbox.window.Poe.sendUserMessage('@plain/model hi',{handler:'cap',stream:true});
+ assert.equal(body.parameters.forge_supports_reasoning,false,'non-reasoning model must be flagged false');
+ console.log('ai-stream-completion: model reasoning capability flagged to the proxy');
+}
 console.log('ai-stream-completion: provider stop reasons, DONE, missing completion, partial errors, and connection failures passed');

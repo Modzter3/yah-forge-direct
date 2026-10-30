@@ -469,6 +469,7 @@ function normalizeOpenRouterReasoning(params, model) {
   const level = params.thinking_level;
   const effortParam = params.reasoning_effort;
   const fastStart = params.forge_fast_start === true;
+  const supportsReasoning = params.forge_supports_reasoning === true;
   const hasBudget = budget !== undefined;
   const numericBudget = Number(budget);
   const budgetZero = hasBudget && Number.isFinite(numericBudget) && numericBudget <= 0;
@@ -476,33 +477,28 @@ function normalizeOpenRouterReasoning(params, model) {
   delete params.thinking_level;
   delete params.reasoning_effort;
   delete params.forge_fast_start;
+  delete params.forge_supports_reasoning;
   if (params.reasoning !== undefined) return; // explicit client reasoning object wins
+  // 119 of 456 catalog models do not advertise `reasoning` at all (gpt-4.1, deepseek-chat,
+  // older gemini/claude tiers). Sending it there is at best ignored and at worst a 400, so
+  // only models the catalog flags as reasoning-capable get any reasoning control.
+  if (!supportsReasoning) return;
+  const maxOut = Number(params.max_tokens || params.max_completion_tokens);
+  // Anthropic needs max_tokens strictly above the thinking budget (min 1024), so a tiny
+  // closing-only request must not carry a reasoning budget.
+  if (Number.isFinite(maxOut) && maxOut > 0 && maxOut < 4096) return;
 
-  const takesReasoningTokens = /^(anthropic|google)\//i.test(String(model || ''));
   let effort = budgetZero ? 'none' : (mapReasoningEffort(level) || mapReasoningEffort(effortParam));
   if (fastStart && (!effort || effort === 'none')) effort = 'minimal';
-
-  if (effort === 'none' && takesReasoningTokens) {
-    params.reasoning = { enabled: false };
+  if (effort === 'none') effort = 'minimal'; // floor effort -- safest way to mean "barely think"
+  // OpenRouter accepts EITHER effort OR max_tokens, never both.
+  if (effort) {
+    params.reasoning = { effort };
     return;
   }
-
-  const reasoning = {};
-  if (effort) reasoning.effort = effort === 'none' ? 'minimal' : effort;
-  // Anthropic/Google honor reasoning.max_tokens (OpenAI/Grok only take effort).
-  if (takesReasoningTokens) {
-    if (!reasoning.effort && hasBudget && Number.isFinite(numericBudget) && numericBudget > 0) {
-      reasoning.max_tokens = Math.floor(numericBudget);
-    }
-    const maxOut = Number(params.max_tokens || params.max_completion_tokens);
-    if (Number.isFinite(maxOut) && maxOut > 0) {
-      // Anthropic derives its thinking budget from max_tokens (up to 0.95x at high effort),
-      // so cap thinking here instead of letting it swallow the whole completion budget.
-      const cap = Math.max(1024, Math.min(8192, Math.floor(maxOut * 0.35)));
-      reasoning.max_tokens = reasoning.max_tokens ? Math.min(reasoning.max_tokens, cap) : cap;
-    }
+  if (hasBudget && Number.isFinite(numericBudget) && numericBudget > 0) {
+    params.reasoning = { max_tokens: Math.floor(numericBudget) };
   }
-  if (Object.keys(reasoning).length) params.reasoning = reasoning;
 }
 
 function applyOpenRouterRouting(params) {
@@ -543,6 +539,7 @@ function buildPayload({ model, query, parameters, providerName, images = [] }) {
   } else {
     delete params.forge_fast_start;
     delete params.forge_provider_sort;
+    delete params.forge_supports_reasoning;
   }
 
   const yahStorySystem = params.yah_story_system === true;

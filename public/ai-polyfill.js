@@ -114,9 +114,18 @@
     return params;
   }
 
+  function attachReasoningSupport(parameters, bot) {
+    if (typeof window === 'undefined' || typeof window.forgeModelSupportsReasoning !== 'function') return parameters;
+    var params = parameters ? Object.assign({}, parameters) : {};
+    if (params.forge_supports_reasoning === undefined) {
+      params.forge_supports_reasoning = !!window.forgeModelSupportsReasoning(bot);
+    }
+    return params;
+  }
+
   async function openStream(bot, prompt, parameters, images) {
     const provider = resolveLlmProvider();
-    parameters = attachOpenCodeSession(parameters, provider);
+    parameters = attachReasoningSupport(attachOpenCodeSession(parameters, provider), bot);
     const payload = { bot, query: prompt, parameters };
     if (images && images.length) payload.images = images;
     if (provider === 'local' || provider === 'bonsai') payload.provider = 'local';

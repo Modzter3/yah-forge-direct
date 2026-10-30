@@ -24,6 +24,8 @@ const build=(topic,extra)=>context.buildClosedDoorTheatrePrompt(1,Object.assign(
 // Detection.
 assert.equal(context.theatreTopicWantsCounterPlay(gaming),true,'gaming topic must be detected');
 assert.equal(context.theatreTopicWantsCounterPlay({title:'How to beat the banks'}),true);
+assert.equal(context.theatreTopicWantsCounterPlay({title:'Inside the Boardroom: How Credit Card Insiders Legally Beat Their Own System'}),true,'boardroom/beat-their-own-system titles must be detected');
+assert.equal(context.theatreTopicWantsCounterPlay({title:'Credit card insiders and the fee cap'}),false,'plain insider mention must not trigger');
 assert.equal(context.theatreTopicWantsCounterPlay({title:'What the smart money does'}),true);
 assert.equal(context.theatreTopicWantsCounterPlay({title:'Insider secrets'}),true);
 assert.equal(context.theatreTopicWantsCounterPlay(neutral),false,'neutral topic must not trigger counter-play');

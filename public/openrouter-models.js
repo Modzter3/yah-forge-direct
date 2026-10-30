@@ -12,6 +12,18 @@
   };
 
   var MODELS_URL = 'https://openrouter.ai/api/v1/models';
+  // id -> true for models that advertise reasoning/thinking support. Filled from the live
+  // catalog so the proxy only ever sends OpenRouter `reasoning` params to models that
+  // actually accept them (119 of 456 catalog models do not).
+  var reasoningIds = null;
+  window.forgeModelSupportsReasoning = function (model) {
+    if (!reasoningIds) return false;
+    var id = String(model || '').trim().toLowerCase();
+    if (!id) return false;
+    if (reasoningIds[id] === true) return true;
+    var base = id.replace(/:(free|batch|nitro|floor|extended|thinking|online)$/, '');
+    return reasoningIds[base] === true;
+  };
   var SERVER_CATALOG_URLS = {
     nanogpt: '/api/nanogpt-models',
     opencode_go: '/api/opencode-go-models',
@@ -237,6 +249,14 @@
         var models = (data.data || []).slice();
         for (var k = 0; !usesServerCatalog && k < KIE_MODELS.length; k++) models.unshift(KIE_MODELS[k]);
         if (!models.length) throw new Error('empty catalog');
+
+        reasoningIds = {};
+        for (var ri = 0; ri < models.length; ri++) {
+          var sp = models[ri] && models[ri].supported_parameters;
+          if (sp && typeof sp.indexOf === 'function' && sp.indexOf('reasoning') !== -1) {
+            reasoningIds[String(models[ri].id || '').toLowerCase()] = true;
+          }
+        }
 
         for (var s = 0; s < SELECT_IDS.length; s++) {
           var id = SELECT_IDS[s];

@@ -4920,7 +4920,7 @@ return p;
 function theatreTopicWantsCounterPlay(topic){
 if(!topic)return false;
 var hay=String([topic.title,topic.desc,topic.customBrief,topic.subjectHint,topic.toneHint].filter(Boolean).join(' '));
-return /\b(out-?smart\w*|game (?:the|their|this)|gaming the|beat the (?:system|bank|banks|card|cards|giant|giants|house)|work the system|play the game|insider (?:secret|secrets|tip|tips|knowledge)|loophole|exploit\w*|cheat ?code|how to (?:beat|avoid|win|get|use|play|game)|tips? and tricks|what the smart|smart money|life ?hacks?)\b/i.test(hay);
+return /\b(out-?smart\w*|inside the boardroom|insider (?:secret|secrets|tip|tips|knowledge|trick|tricks)|game (?:the|their|his|its|this|my|our)|gaming the|beat (?:the|their|his|its|this) (?:own )?(?:system|bank|banks|card|cards|giant|giants|house|machine|game|rules)|work the system|work around the system|play the game|loophole\w*|exploit\w*|cheat ?code|how to (?:beat|avoid|win|get|use|play|game|work)|tips? and tricks|what the smart|how the smart|smart money|life ?hacks?)\b/i.test(hay);
 }
 function buildTheatreCounterPlayBlock(topic,partNum,totalParts){
 var title=topic&&topic.title?topic.title:'this system';
@@ -7435,7 +7435,7 @@ output.appendChild(partContainer);
 var loader=document.createElement('div');
 loader.className='loading-state';
 loader.id='loader'+partNum;
-loader.innerHTML='<div class="loading-pulse"></div><div class="loading-text">Forging '+getForgePartLabel(partNum,true)+'...</div>'
+loader.innerHTML='<div class="loading-pulse"></div><div class="loading-text">Forging '+getForgePartLabel(partNum,true)+' — Model is thinking…</div>'
 +'<button type="button" class="vc-btn cancel" style="margin-top:12px;font-size:0.75rem;" onclick="forceNextSermonPart()"><i class="fas fa-forward" style="margin-right:4px;"></i>Stuck? Force next part</button>';
 output.appendChild(loader);
 loader.scrollIntoView({behavior:'smooth',block:'center'});
@@ -13301,7 +13301,7 @@ body.appendChild(partContainer);
 var loader=document.createElement('div');
 loader.className='loading-state';
 loader.id='transcriptLoader'+partNum;
-loader.innerHTML='<div class="loading-pulse"></div><div class="loading-text">Forging '+getTranscriptPartLabel(partNum,true)+'...</div>';
+loader.innerHTML='<div class="loading-pulse"></div><div class="loading-text">Forging '+getTranscriptPartLabel(partNum,true)+' — Model is thinking…</div>';
 body.appendChild(loader);
 loader.scrollIntoView({behavior:'smooth',block:'center'});
 var transcriptWaitPrefix='Forging '+getTranscriptPartLabel(partNum,true)+' — ';
