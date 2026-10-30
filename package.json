@@ -34,6 +34,7 @@
     "test:wait-indicator": "node tests/wait-indicator.cjs",
     "test:theatre-counter-play": "node tests/theatre-counter-play.cjs",
     "test:fast-start-toggle": "node tests/fast-start-toggle.cjs",
+    "test:continuation-budget": "node tests/continuation-budget.cjs",
     "test:openrouter-routing": "node scripts/test-openrouter-routing.mjs",
     "test:ai-stream-completion": "node scripts/test-ai-stream-completion.mjs"
   }

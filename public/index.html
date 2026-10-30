@@ -2875,11 +2875,37 @@ return 16384;
 function wordsToOutputTokens(wordTarget){
 return Math.ceil(wordTarget*1.45)+512;
 }
+function looksLikeReasoningModelName(model){
+// Fallback when the live catalog has not hydrated yet, or on a deployment without it
+// (the Poe port). Only families that actually bill thinking tokens against max_tokens.
+var s=forgeModelLower(model);
+if(!s)return false;
+if(/gpt-?[5-9]/.test(s))return true;
+if(/(^|\/)o[1-9]/.test(s))return true;
+if(/claude-(opus|sonnet)-([4-9]|1[0-9])/.test(s))return true;
+if(/gemini-2\.5|gemini-[3-9]/.test(s))return true;
+if(/grok-[4-9]/.test(s))return true;
+if(/deepseek-r[1-9]|deepseek-v3\.[12]|glm-[5-9]|qwen.*thinking|kimi.*(thinking|k2)/.test(s))return true;
+return false;
+}
+function getForgeReasoningHeadroom(model){
+// Thinking tokens count against max_tokens on most providers, so a reasoning model that
+// is not in Fast start can burn a few thousand tokens before the body even begins and
+// then hit the ceiling mid-thought. That is the "talkative model" truncation.
+try{
+var supported=false;
+if(typeof forgeModelSupportsReasoning==='function')supported=!!forgeModelSupportsReasoning(model);
+if(!supported)supported=looksLikeReasoningModelName(model);
+if(!supported)return 0;
+return forgeIsFlashTier(model)?2048:4096;
+}catch(e){return 0;}
+}
 function getForgeMaxTokens(model,totalParts){
 var words=getForgeWordsPerPart(totalParts||selectedPartCount||1);
 var need=wordsToOutputTokens(words);
 var cap=getModelMaxOutputTokens(model);
-return Math.min(Math.max(need,4096),cap);
+var budget=Math.max(need,4096)+getForgeReasoningHeadroom(model);
+return Math.min(cap,budget);
 }
 function isForgeFastStartEnabled(){
 var el=document.getElementById('toggleFastStart');
@@ -6236,11 +6262,20 @@ return selectedStandaloneChars>0?selectedStandaloneChars:selectedStandaloneWords
 }
 var SERMON_STANDALONE_MIN_RATIO=0.93;
 var SERMON_PART_CHARS_MIN_RATIO=0.9;
-function getForgeMaxContinuations(model,totalParts){
+function getForgeMaxContinuations(model,totalParts,ctx,partNum){
 var words=getForgeWordsPerPart(totalParts||selectedPartCount||1);
 var perResponse=Math.max(800,Math.floor((getModelMaxOutputTokens(model)-512)/1.8));
 // Ordinary parts get at most two body continuations; larger explicit targets scale.
-return Math.min(12,Math.max(2,Math.ceil(words/perResponse)));
+var limit=Math.min(12,Math.max(2,Math.ceil(words/perResponse)));
+// A talkative model that keeps hitting the ceiling on THIS part earns more automatic
+// attempts instead of stopping at two and handing a half-finished draft back.
+var rows=ctx&&ctx.completionDiagnostics?ctx.completionDiagnostics:[];
+var truncations=0;
+for(var i=0;i<rows.length;i++){
+if(rows[i]&&rows[i].part===partNum&&rows[i].truncated)truncations++;
+}
+if(truncations>=2)limit=Math.max(limit,Math.min(SERMON_MAX_CONTINUATIONS,truncations+2));
+return limit;
 }
 function getForgeRemainingTokens(model,text,totalParts){
 var tp=totalParts||selectedPartCount;
@@ -6256,12 +6291,15 @@ return {underWordCount:below,finishThoughtOnly:!below};
 function getForgeAdaptiveContinuationTokens(model,text,totalParts,ctx){
 var cap=getModelMaxOutputTokens(model);
 var finishing=!!(ctx.continuationOpts&&ctx.continuationOpts.finishThoughtOnly);
-var budget=finishing?2048:Math.max(4096,getForgeRemainingTokens(model,text,totalParts));
+// A continuation that only has to land the last thought still needs real room: the model
+// may think again before it finishes the sentence, and 2048 was being eaten alive.
+var budget=finishing?4096:Math.max(4096,getForgeRemainingTokens(model,text,totalParts));
+budget+=getForgeReasoningHeadroom(model);
 var history=ctx.completionDiagnostics||[];
 var last=history[history.length-1];
 // Escalate a repeatedly exhausted continuation budget; do not shrink it again.
 if(last&&last.truncated&&last.phase==='continuation'&&last.requestedTokens){
-budget=Math.max(budget,Math.ceil(last.requestedTokens*1.5));
+budget=Math.max(budget,Math.ceil(last.requestedTokens*1.5)+getForgeReasoningHeadroom(model));
 }
 return Math.min(cap,budget);
 }
@@ -7321,7 +7359,7 @@ var truncated=isSermonResponseTruncated(msg,finalized);
 // Do not spend more tokens solely to pad an already completed response.
 var normalStop=msg.finishReason==='stop'||msg.finishReason==='end_turn';
 var underWords=isLocalLlmChapterSermonActive()||normalStop?false:isForgePartUnderWordTarget(finalized,selectedPartCount);
-var maxCont=isLocalLlmChapterSermonActive()&&ForgeLocalSermonProfile?ForgeLocalSermonProfile.maxTruncationContinuations():getForgeMaxContinuations(model,selectedPartCount);
+var maxCont=isLocalLlmChapterSermonActive()&&ForgeLocalSermonProfile?ForgeLocalSermonProfile.maxTruncationContinuations():getForgeMaxContinuations(model,selectedPartCount,ctx,partNum);
 var actDone=theatreActComplete(finalized,partNum,selectedPartCount);
 if(isYahStoryModeActive()&&!ctx.bezFallbackActive&&looksLikeYahStoryGuardrailRefusal(finalized)){
 if(forgeHandleYahStoryGuardrailRefusal(ctx,partNum,streamOpts,startSermonPartStream))return;
@@ -7376,7 +7414,8 @@ startSermonPartStream(partNum,true);
 return;
 }
 if(truncated){
-pauseSermonPart(ctx,partNum,'The provider response is still cut off after the automatic continuation limit. Your draft is saved below; Resume makes another request.');
+var contUsed=ctx.continuationCount||0;
+pauseSermonPart(ctx,partNum,'The provider response is still cut off after '+contUsed+' automatic continuation'+(contUsed===1?'':'s')+'. Your draft is saved below; Resume makes another request. This model is writing past its budget — turn on Fast start (less thinking leaves more room for the body), or lower Chars / Part so one response can hold the part.');
 return;
 }
 if(shouldStageForgeClosing()&&partNum===selectedPartCount){
