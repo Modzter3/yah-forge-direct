@@ -140,6 +140,16 @@ Frontier models (Claude Opus, GPT-5.x, Gemini Pro, Grok 4.x) are reasoning model
 
 **Fast start** (forge toggles) is the speed knob for the slow models. On, it tells Claude / GPT-5.x / Gemini / Grok to think minimally (`reasoning: { effort: 'minimal' }`), so a frontier act starts writing in seconds instead of minutes. It overrides any deeper thinking the mode would otherwise request, and it costs reasoning depth — leave it off when you want the model to chew on the material. It does nothing on non-reasoning models (the proxy only sends `reasoning` to models the live catalog flags as reasoning-capable), and the toggle also applies to the transcript forge. On the Poe port it maps onto Poe's own `thinking_budget` / `thinking_level` / `reasoning_effort`.
 
+### Bez commentary puts the listener on game
+
+With **Scene guide → Bez pauses & explains**, every pause now has to hand the listener a usable nugget instead of just decoding the room:
+
+- **The mechanism** — what actually triggers it, what it costs, who it hits.
+- **The move** — what a wise listener does instead, in order, with the number, deadline, or clause that decides it.
+- **The tell** — how to spot it on a statement, app screen, contract, or letter before it bites.
+
+One clean nugget per pause, grounded in the beat that just played, addressed to the listener ("peep what he just said," "they count on you not knowing this"). Doomer closers are banned — no "there is no escape," no "you cannot win," no "the only way is not to play," and no ending a pause without telling the listener what to do or watch for. When the topic itself asks how to beat them, the pause must also restate the seam the room just leaked, the smart-money move with its number, and one guard the room did not mention. Yah's commentary keeps its own three-beat throne cadence.
+
 ### Talkative models and the "still cut off" notice
 
 Thinking tokens count against `max_tokens`, so a reasoning model that is not in Fast start can spend a few thousand tokens thinking and then hit the ceiling mid-thought. The forge now budgets for that: reasoning models get **+4096 tokens of headroom** (+2048 for flash/lite/mini tiers) on the first response and on every continuation, taken from the live catalog with a model-name fallback for the window before the catalog loads. Continuations also get a 4096 floor instead of 2048 and escalate 1.5× when the previous one was cut off. If a model keeps blowing the ceiling **on the same part**, the automatic continuation limit grows (2 → 4 → up to `SERMON_MAX_CONTINUATIONS`) instead of handing the draft back after two. If it still cannot finish, the notice now says how many continuations were spent and tells you to turn on Fast start or lower Chars / Part.
