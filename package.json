@@ -32,6 +32,7 @@
     "test:yah-chat-spoiling-doctrine": "node tests/yah-chat-spoiling-doctrine.cjs",
     "test:theatre-commentary-off": "node tests/theatre-commentary-off.cjs",
     "test:wait-indicator": "node tests/wait-indicator.cjs",
+    "test:theatre-counter-play": "node tests/theatre-counter-play.cjs",
     "test:openrouter-routing": "node scripts/test-openrouter-routing.mjs",
     "test:ai-stream-completion": "node scripts/test-ai-stream-completion.mjs"
   }

@@ -4914,6 +4914,28 @@ p+='Single act: cover EVERY verse in the chapter from first to last — miss not
 p+='\n';
 return p;
 }
+// Topics that ask how the prey beats the machine need the seam leaked inside the
+// boardroom, because with Scene guide off there is no narrator voice left to hand the
+// listener the counter-move.
+function theatreTopicWantsCounterPlay(topic){
+if(!topic)return false;
+var hay=String([topic.title,topic.desc,topic.customBrief,topic.subjectHint,topic.toneHint].filter(Boolean).join(' '));
+return /\b(out-?smart\w*|game (?:the|their|this)|gaming the|beat the (?:system|bank|banks|card|cards|giant|giants|house)|work the system|play the game|insider (?:secret|secrets|tip|tips|knowledge)|loophole|exploit\w*|cheat ?code|how to (?:beat|avoid|win|get|use|play|game)|tips? and tricks|what the smart|smart money|life ?hacks?)\b/i.test(hay);
+}
+function buildTheatreCounterPlayBlock(topic,partNum,totalParts){
+var title=topic&&topic.title?topic.title:'this system';
+var p='COUNTER-PLAY (MANDATORY -- THE ROOM MUST LEAK THE SEAM):\n';
+p+='The topic asks how the prey beats the machine ("'+title+'"). A confession-only act FAILS this brief. The elites still speak ONLY from their own point of view -- but their contempt has to keep slipping into the one thing they cannot close: the seam, the loophole, the move the smart ones make, and what they are privately afraid the public will figure out.\n\n';
+p+='EVERY ACT MUST DELIVER, INSIDE BOARDROOM DIALOGUE (not narration, not a pause, not a decoder voice):\n';
+p+='- THE SEAM: one SPECIFIC mechanic that is exploitable by design or by oversight -- named plainly, not "the system is rigged." Someone in the room says the quiet part out loud: "we cannot close that," "that is the hole the smart ones live in," "we eat it and move on."\n';
+p+='- THE SMART-MONEY MOVE: the actual play a savvy customer runs against that seam -- in their words, grudgingly, with the numbers attached (which fee, which deadline, which clause, which timing, which account).\n';
+p+='- THE DAMAGE: what the move costs them when it is run well, and why they tolerate it instead of closing it (volume, enforcement cost, a regulator they would have to admit exists, a quiet write-off line item).\n';
+p+='- THE ESCALATION: what they are changing next to close it, and the NEW seam that change opens.\n';
+p+='NEW MECHANICS ONLY: each act must introduce seams and moves NOT used in earlier acts. Any mechanic already named in a previous act is BURNED -- do not restate it, re-explain it, or rename it.\n';
+p+='VOICE: counter-play comes out as elite contempt -- "the ones who read paragraph 87," "the churners," "the freaks who pay in full" -- never as friendly advice, never as a how-to list, never as a sermon, never as a summary for the audience. They resent it, they grudgingly respect it, and they are already planning around it. The room knows the awakened seed is learning these seams and that is the threat they cannot price.\n';
+p+='FORBIDDEN CLOSERS (ANY ONE FAILS THE ACT): "there is no escape," "you cannot win," "the only way to win is to not play," "no one outsmarts us," "the house always wins" as the last beat, or any ending that leaves the listener with no usable mechanic from THIS act. The room may be arrogant -- it may NOT read as invincible. End the act on the seam they cannot close, or on the change they are making to close it.\n\n';
+return p;
+}
 function buildClosedDoorTheatrePrompt(partNum,opts){
 opts=opts||{};
 var topic=opts.topic||currentTopic;
@@ -5025,6 +5047,9 @@ p+='- LAYMAN\'S TERMS ON: speakers say who gets hurt in plain words — no "lega
 }else{
 p+='- Beast-system framing is atmospheric -- they ARE the machine talking to itself. Israel/scattered Negroes may appear only as "legacy populations" or "demographic problem" in THEIR mouths.\n';
 }
+if(theatreTopicWantsCounterPlay(topic)){
+p+=buildTheatreCounterPlayBlock(topic,partNum,totalParts);
+}
 if(wantBehind){
 p+='\nBEHIND THE VEIL -- NEWS TRIGGER (MANDATORY):\n';
 if(currentNewsContext&&currentNewsContext.length>0&&currentNewsContext[0].source_url){
@@ -5100,6 +5125,11 @@ p+='- Anything after [SCENE END] on the final act\n';
 p+='- Cutting to a NEW location: second [SCENE START], EXT./INT. slug lines, street scenes, war rooms, server bunkers\n';
 p+='- PART '+(partNum+1)+', Act '+(partNum+1)+', or --- dividers starting a new document\n';
 p+='- Unrelated blockbuster plots: AI apocalypse, coups, explosions, chases -- anything not about "'+title+'"\n';
+if(theatreTopicWantsCounterPlay(topic)){
+p+='- Confession-only acts with no seam, no smart-money move, and no cost to the room -- this topic REQUIRES counter-play in every act\n';
+p+='- Despair closers: "there is no escape," "you cannot win," "the only way to win is to not play," "no one outsmarts us"\n';
+p+='- Reusing a mechanic, seam, or move that already appeared in an earlier act\n';
+}
 if(theatreLooksLikeTechEnclosureThread(topic,currentNewsContext)){
 p+='- Agreeing v6 regressed/was gelded/muzzled; Shulman lamenting castration; execs validating Reddit audio complaints; sympathizing with cancel whiners\n';
 }
