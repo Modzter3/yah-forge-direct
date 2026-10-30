@@ -147,7 +147,45 @@
     return res;
   }
 
-  function deltaText(parsed) {
+  /**
+ * Streaming reasoning/thinking progress.
+ *
+ * Frontier models (GPT-5.x, Claude Opus, Grok 4.x, Gemini Pro) stream reasoning tokens
+ * BEFORE any answer text. Those deltas are not answer content, so they must never enter
+ * the draft — but the UI needs to know the model is alive, otherwise a 30-60s think looks
+ * like a hang. Report them through an optional hook the page can wire up.
+ */
+function reasoningText(parsed) {
+  try {
+    const d = parsed.choices[0].delta || {};
+    if (typeof d.reasoning === 'string' && d.reasoning) return d.reasoning;
+    if (typeof d.reasoning_content === 'string' && d.reasoning_content) return d.reasoning_content;
+    if (Array.isArray(d.reasoning_details)) {
+      let out = '';
+      for (const part of d.reasoning_details) {
+        if (part && typeof part.text === 'string') out += part.text;
+      }
+      return out;
+    }
+    return '';
+  } catch {
+    return '';
+  }
+}
+
+function reportReasoningProgress(chunk) {
+  if (!chunk || typeof window === 'undefined') return;
+  const hook = window.onForgeReasoningProgress;
+  if (typeof hook !== 'function') return;
+  try {
+    const state = window.__forgeReasoningState || (window.__forgeReasoningState = { chars: 0, startedAt: Date.now() });
+    state.chars += chunk.length;
+    state.updatedAt = Date.now();
+    hook({ chars: state.chars, elapsedMs: Date.now() - state.startedAt, first: state.chars === chunk.length });
+  } catch (_) {}
+}
+
+function deltaText(parsed) {
     try {
       var c = parsed.choices[0];
       if (!c) return '';
@@ -200,6 +238,7 @@
       let parsed;
       try { parsed = JSON.parse(raw); } catch { continue; }
       if (parsed.error) throw new Error(parsed.error.message || parsed.error);
+      reportReasoningProgress(reasoningText(parsed));
       text += deltaText(parsed);
       if (isFinished(parsed)) finishReason = parsed.choices[0].finish_reason;
     }
@@ -220,6 +259,7 @@
         let parsed;
         try { parsed = JSON.parse(raw); } catch { continue; }
         if (parsed.error) throw new Error(parsed.error.message || parsed.error);
+        reportReasoningProgress(reasoningText(parsed));
         const delta = deltaText(parsed);
         if (delta) {
           text += delta;

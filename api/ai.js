@@ -447,6 +447,76 @@ function buildUserMessageContent(query, images) {
   return parts;
 }
 
+// --- OpenRouter routing + reasoning normalization --------------------------------
+// OpenRouter ignores Poe/Google-style thinking params (thinking_budget, thinking_level)
+// and wants the normalized `reasoning` object. Translate them so frontier/reasoning
+// models can actually be told how much to think, and steer routing at a low-latency
+// endpoint instead of taking whatever the default price/load lottery picks.
+function mapReasoningEffort(value) {
+  const s = String(value == null ? '' : value).trim().toLowerCase();
+  if (!s) return null;
+  if (s === 'none' || s === 'off' || s === 'disabled' || s === '0' || s === 'false') return 'none';
+  if (s === 'minimal' || s === 'min') return 'minimal';
+  if (s === 'low') return 'low';
+  if (s === 'medium' || s === 'med' || s === 'default') return 'medium';
+  if (s === 'high') return 'high';
+  if (s === 'xhigh' || s === 'max') return 'xhigh';
+  return null;
+}
+
+function normalizeOpenRouterReasoning(params, model) {
+  const budget = params.thinking_budget;
+  const level = params.thinking_level;
+  const effortParam = params.reasoning_effort;
+  const fastStart = params.forge_fast_start === true;
+  const hasBudget = budget !== undefined;
+  const numericBudget = Number(budget);
+  const budgetZero = hasBudget && Number.isFinite(numericBudget) && numericBudget <= 0;
+  delete params.thinking_budget;
+  delete params.thinking_level;
+  delete params.reasoning_effort;
+  delete params.forge_fast_start;
+  if (params.reasoning !== undefined) return; // explicit client reasoning object wins
+
+  const takesReasoningTokens = /^(anthropic|google)\//i.test(String(model || ''));
+  let effort = budgetZero ? 'none' : (mapReasoningEffort(level) || mapReasoningEffort(effortParam));
+  if (fastStart && (!effort || effort === 'none')) effort = 'minimal';
+
+  if (effort === 'none' && takesReasoningTokens) {
+    params.reasoning = { enabled: false };
+    return;
+  }
+
+  const reasoning = {};
+  if (effort) reasoning.effort = effort === 'none' ? 'minimal' : effort;
+  // Anthropic/Google honor reasoning.max_tokens (OpenAI/Grok only take effort).
+  if (takesReasoningTokens) {
+    if (!reasoning.effort && hasBudget && Number.isFinite(numericBudget) && numericBudget > 0) {
+      reasoning.max_tokens = Math.floor(numericBudget);
+    }
+    const maxOut = Number(params.max_tokens || params.max_completion_tokens);
+    if (Number.isFinite(maxOut) && maxOut > 0) {
+      // Anthropic derives its thinking budget from max_tokens (up to 0.95x at high effort),
+      // so cap thinking here instead of letting it swallow the whole completion budget.
+      const cap = Math.max(1024, Math.min(8192, Math.floor(maxOut * 0.35)));
+      reasoning.max_tokens = reasoning.max_tokens ? Math.min(reasoning.max_tokens, cap) : cap;
+    }
+  }
+  if (Object.keys(reasoning).length) params.reasoning = reasoning;
+}
+
+function applyOpenRouterRouting(params) {
+  const hint = String(params.forge_provider_sort || '').trim().toLowerCase();
+  delete params.forge_provider_sort;
+  const sort = hint || String(process.env.OPENROUTER_PROVIDER_SORT || 'latency').trim().toLowerCase();
+  const provider = Object.assign({}, params.provider && typeof params.provider === 'object' ? params.provider : {});
+  if (!provider.sort && sort && sort !== 'off' && sort !== 'none') provider.sort = sort;
+  if (provider.allow_fallbacks === undefined) provider.allow_fallbacks = true;
+  const only = parseJsonEnv('OPENROUTER_ONLY_PROVIDERS');
+  if (!provider.only && Array.isArray(only) && only.length) provider.only = only;
+  if (Object.keys(provider).length) params.provider = provider;
+}
+
 function buildPayload({ model, query, parameters, providerName, images = [] }) {
   const params = stripUndefined(parameters || {});
   delete params.forge_stream_abort_key;
@@ -465,6 +535,14 @@ function buildPayload({ model, query, parameters, providerName, images = [] }) {
       );
       params.plugins = [{ id: 'web', max_results: max }];
     }
+  }
+
+  if (providerName === 'openrouter') {
+    normalizeOpenRouterReasoning(params, model);
+    applyOpenRouterRouting(params);
+  } else {
+    delete params.forge_fast_start;
+    delete params.forge_provider_sort;
   }
 
   const yahStorySystem = params.yah_story_system === true;

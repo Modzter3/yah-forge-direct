@@ -30,6 +30,9 @@
     "test:subscription-providers": "node scripts/test-subscription-providers.mjs",
     "test:yah-chat-nanogpt": "node tests/yah-chat-nanogpt.cjs",
     "test:yah-chat-spoiling-doctrine": "node tests/yah-chat-spoiling-doctrine.cjs",
-    "test:theatre-commentary-off": "node tests/theatre-commentary-off.cjs"
+    "test:theatre-commentary-off": "node tests/theatre-commentary-off.cjs",
+    "test:wait-indicator": "node tests/wait-indicator.cjs",
+    "test:openrouter-routing": "node scripts/test-openrouter-routing.mjs",
+    "test:ai-stream-completion": "node scripts/test-ai-stream-completion.mjs"
   }
 }

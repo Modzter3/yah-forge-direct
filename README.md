@@ -128,6 +128,16 @@ These appear as separate **LLM provider** categories in the Forge and Yah Chat m
 
 Optional overrides: `OPENCODE_GO_BASE_URL`, `CLINEPASS_BASE_URL`, `REFUSELESS_BASE_URL`, and `*_DEFAULT_MODEL` for server-side fallbacks. ClinePass catalogs are filtered to `cline-pass/...` slugs. Web research (OpenRouter plugins) is not enabled on these providers — use OpenRouter when you need retrieval.
 
+## OpenRouter speed (frontier models)
+
+Frontier models (Claude Opus, GPT-5.x, Gemini Pro, Grok 4.x) are reasoning models: they stream thinking tokens before any answer text, so the forge can sit silent for 30-90 seconds. Three things keep that from looking broken:
+
+- The part loader ticks elapsed time and flips from **"Model is thinking…"** (showing how much reasoning it has seen) to **"Writing…"** on the first answer token. Reasoning text is reported as progress only — it never enters the draft.
+- Poe-style thinking params (`thinking_budget`, `thinking_level`, `reasoning_effort`) are translated server-side into OpenRouter's normalized `reasoning` object, and thinking is capped below `max_tokens` on Anthropic/Google so it cannot swallow the output budget.
+- Requests route to the lowest-latency endpoint by default (`OPENROUTER_PROVIDER_SORT=latency`; also `throughput`, `price`, `off`), with an optional hard pin via `OPENROUTER_ONLY_PROVIDERS=["Anthropic"]`.
+
+**Web Research** now defaults to off because it adds a retrieval round before the model writes. News scans and Behind the Veil still force retrieval — their grounding depends on a real headline.
+
 ## Transfer sermons between devices
 
 Library → Import accepts Markdown (`.md`, `.markdown`), plain text (`.txt`), text-based PDF (`.pdf`), Word (`.docx`), and sermon backups (`.json`). Select multiple files together. Imports save to the local Library and skip matching sermons. Scanned PDFs need OCR first; old `.doc` files should be saved as `.docx`.

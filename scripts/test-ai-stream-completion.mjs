@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 const source=fs.readFileSync(new URL('../public/ai-polyfill.js',import.meta.url),'utf8');
-async function run(events,{stream=true,breakStream=false}={}){
+async function run(events,{stream=true,breakStream=false,onReasoning}={}){
  const results=[];
  const encoder=new TextEncoder();
  const body=new ReadableStream({start(controller){
@@ -12,6 +12,7 @@ async function run(events,{stream=true,breakStream=false}={}){
  },pull(controller){if(this.fail)controller.error(new Error('connection lost'));}});
  const sandbox={window:{},fetch:async()=>new Response(body),Date,Math,JSON,TextDecoder};
  vm.runInNewContext(source,sandbox);
+ if(onReasoning)sandbox.window.onForgeReasoningProgress=onReasoning;
  sandbox.window.Poe.registerHandler('test',r=>results.push(r.responses[0]));
  await sandbox.window.Poe.sendUserMessage('@test prompt',{handler:'test',stream});
  return results;
@@ -28,4 +29,16 @@ results=await run([delta]);assert.equal(results.at(-1).status,'error');assert.ma
 results=await run([delta,{error:{message:'provider failed'}}]);assert.equal(results.at(-1).status,'error');assert.equal(results.at(-1).content,delta.choices[0].delta.content);
 results=await run([delta],{breakStream:true});assert.equal(results.at(-1).status,'error');assert.equal(results.at(-1).content,delta.choices[0].delta.content);
 results=await run([delta,done('length'),'[DONE]'],{stream:false});assert.equal(results.at(-1).finishReason,'length');
+// Reasoning deltas must never enter the draft, but must report thinking progress.
+const think=[];
+results=await run([
+ {choices:[{delta:{reasoning:'weighing the verse '},finish_reason:null}]},
+ {choices:[{delta:{reasoning_details:[{type:'reasoning.text',text:'and the symbol'}]},finish_reason:null}]},
+ delta,done('stop'),'[DONE]',
+],{onReasoning:info=>think.push(info)});
+assert.equal(results.at(-1).content,delta.choices[0].delta.content,'reasoning must not leak into the draft');
+assert.equal(think.length,2,'each reasoning delta reports progress');
+assert.equal(think.at(-1).chars,'weighing the verse and the symbol'.length);
+assert.equal(think[0].first,true,'first reasoning delta is flagged');
+console.log('ai-stream-completion: reasoning deltas reported as progress without polluting output');
 console.log('ai-stream-completion: provider stop reasons, DONE, missing completion, partial errors, and connection failures passed');

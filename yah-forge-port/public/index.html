@@ -1169,7 +1169,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label class="toggle-switch" id="toggleBezStoryModeWrap" title="Bez revelation cadence — street fire, grammatically sound English, names culprits by full name and what they do (no vague they/the elites)"><input type="checkbox" id="toggleBezStoryMode"><span class="toggle-track bez-story-track"></span><span><i class="fas fa-book-open" style="color:#ff6f00;margin-right:3px;font-size:0.7rem;"></i>Bez Story</span></label>
       <label class="toggle-switch" id="toggleElevenLabsTagsWrap" title="Eleven v3 medium-density emotional tags — [angry], [whispers], [shouts], etc. woven through every paragraph for TTS"><input type="checkbox" id="toggleElevenLabsTags"><span class="toggle-track" style="background:linear-gradient(135deg,#1a3a2a,#2a6a4a);"></span><span><i class="fas fa-waveform-lines" style="color:#7ec8a0;margin-right:3px;font-size:0.7rem;"></i>Eleven Tags</span></label>
       <label class="toggle-switch" id="toggleSermonEpisodeModeWrap" title="TV season episode-by-episode breakdown across parts"><input type="checkbox" id="toggleSermonEpisodeMode"><span class="toggle-track"></span><span><i class="fas fa-tv" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Episode Mode</span></label>
-      <label class="toggle-switch" title="Live web search: verify facts, roles, and topic context (silent — no URLs in output). Does not weave headlines unless News Weave is also on."><input type="checkbox" id="toggleWebResearch" checked onchange="syncNewsWeaveToggles()"><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
+      <label class="toggle-switch" title="Live web search: verify facts, roles, and topic context (silent — no URLs in output). Adds a retrieval round before the model writes -- leave it off for the fastest start. Does not weave headlines unless News Weave is also on."><input type="checkbox" id="toggleWebResearch" onchange="syncNewsWeaveToggles()"><span class="toggle-track"></span><span><i class="fas fa-globe" style="color:#38bdb0;margin-right:3px;font-size:0.7rem;"></i>Web Research</span></label>
       <label class="toggle-switch" id="toggleNewsWeaveWrap" title="Weave verified current headlines into the sermon — separate from Yah/Bez Story voice. Requires Web Research."><input type="checkbox" id="toggleNewsWeave" onchange="syncNewsWeaveToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#1a3a5c,#2a6496);"></span><span><i class="fas fa-newspaper" style="color:#7ec8e3;margin-right:3px;font-size:0.7rem;"></i>News Weave</span></label>
       <label class="toggle-switch" id="toggleBehindTheVeilWrap" title="News-triggered closed-door drama: real headlines → dramatized meeting where sector elites plot the beast-system policy (prophetic illustration, not leaked intel)"><input type="checkbox" id="toggleBehindTheVeil"><span class="toggle-track" style="background:linear-gradient(135deg,#4a1a6a,#8B1A1A);"></span><span><i class="fas fa-door-closed" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Behind the Veil</span></label>
       <label class="toggle-switch" id="toggleModalVeilUltraEliteWrap" style="display:none;" title="Dynastic families — cream of the crop who truly run the world (current titles, private POV only)"><input type="checkbox" id="toggleModalVeilUltraElite" onchange="syncVeilUltraEliteToggles()"><span class="toggle-track" style="background:linear-gradient(135deg,#4a1a6a,#2a1810);"></span><span><i class="fas fa-crown" style="color:#c9a227;margin-right:3px;font-size:0.7rem;"></i>Ultra Elite</span></label>
@@ -5513,6 +5513,47 @@ var t=setTimeout(onStall,ms);
 if(sermonGenCtx.gotFirstToken)sermonGenCtx.chunkTimer=t;
 else sermonGenCtx.firstTokenTimer=t;
 }
+// --- Waiting-for-model indicator ------------------------------------------------
+// Frontier models stream reasoning tokens before any answer text, so the forge can sit
+// silent for 30-90s. Tick elapsed time and reasoning volume so a slow model reads as
+// "thinking", not "broken".
+var forgeWaitState={active:false,startedAt:0,phase:'thinking',reasoningChars:0,timer:null,apply:null};
+function forgeWaitLabel(){
+var secs=Math.max(0,Math.round((Date.now()-forgeWaitState.startedAt)/1000));
+if(forgeWaitState.phase==='writing')return 'Writing… '+secs+'s';
+var detail=forgeWaitState.reasoningChars>0?(' — '+forgeWaitState.reasoningChars.toLocaleString()+' chars of reasoning so far'):'';
+return 'Model is thinking… '+secs+'s'+detail;
+}
+function renderForgeWait(){
+if(!forgeWaitState.active||!forgeWaitState.apply)return;
+try{forgeWaitState.apply(forgeWaitLabel());}catch(e){}
+}
+function beginForgeWait(apply){
+forgeWaitState.active=true;
+forgeWaitState.startedAt=Date.now();
+forgeWaitState.phase='thinking';
+forgeWaitState.reasoningChars=0;
+forgeWaitState.apply=apply||null;
+window.__forgeReasoningState={chars:0,startedAt:Date.now()};
+renderForgeWait();
+if(forgeWaitState.timer)clearInterval(forgeWaitState.timer);
+forgeWaitState.timer=setInterval(renderForgeWait,1000);
+}
+function markForgeWaitWriting(){
+if(!forgeWaitState.active||forgeWaitState.phase==='writing')return;
+forgeWaitState.phase='writing';
+renderForgeWait();
+}
+function endForgeWait(){
+forgeWaitState.active=false;
+forgeWaitState.apply=null;
+if(forgeWaitState.timer){clearInterval(forgeWaitState.timer);forgeWaitState.timer=null;}
+}
+window.onForgeReasoningProgress=function(info){
+if(!info||!forgeWaitState.active)return;
+forgeWaitState.reasoningChars=info.chars||0;
+renderForgeWait();
+};
 function isRoughBezForgeActive(){
 var el=document.getElementById('toggleRoughBez');
 return !!(el&&el.checked);
@@ -5787,7 +5828,7 @@ return !!(window.ForgeLocalSermonProfile&&ForgeLocalSermonProfile.shouldUseProfi
 }
 function handleLocalLlmPartFailure(ctx,partNum,message){
 clearSermonWatchdogs();
-var ldr=document.getElementById('loader'+partNum);if(ldr)ldr.remove();
+var ldr=document.getElementById('loader'+partNum);if(ldr)ldr.remove();endForgeWait();
 ctx.partContainer.innerHTML='<div class="error-msg"><i class="fas fa-exclamation-triangle"></i> OrcaRouter Local: '+escapeHtml(message||'Generation failed')+'</div>';
 document.getElementById('generateBtn').disabled=false;
 isGenerating=false;
@@ -5873,6 +5914,7 @@ var angle=sermonNewsAnglePlan&&sermonNewsAnglePlan[partNum-1]?sermonNewsAnglePla
 recordSermonNewsLedger(partNum,finalized,angle);
 var ldr=document.getElementById('loader'+partNum);
 if(ldr)ldr.remove();
+endForgeWait();
 updateProgress(partNum);
 }
 function finishCurrentSermonPart(reason){
@@ -5985,7 +6027,7 @@ startSermonPartStream(partNum,isContinuation,streamOpts);
 return;
 }
 clearSermonWatchdogs();
-var ldr=document.getElementById('loader'+partNum);if(ldr)ldr.remove();
+var ldr=document.getElementById('loader'+partNum);if(ldr)ldr.remove();endForgeWait();
 ctx.partContainer.innerHTML='<div class="error-msg"><i class="fas fa-exclamation-triangle"></i> '+getForgePartLabel(partNum,false)+' failed: '+escapeHtml(errText||'Unknown error')+'</div>';
 document.getElementById('generateBtn').disabled=false;
 isGenerating=false;
@@ -5996,6 +6038,7 @@ if(chunk&&!ctx.gotFirstToken){
 ctx.gotFirstToken=true;
 if(ctx.firstTokenTimer){clearTimeout(ctx.firstTokenTimer);ctx.firstTokenTimer=null;}
 }
+if(chunk)markForgeWaitWriting();
 armSermonWatchdogs(function(){finishCurrentSermonPart('stall');});
 if(isContinuation)ctx.partContent=(ctx.partContentBeforeContinue||'')+'\n\n'+chunk;
 else ctx.partContent=chunk;
@@ -6116,7 +6159,7 @@ startSermonPartStream(partNum,isContinuation,streamOpts);
 return;
 }
 clearSermonWatchdogs();
-var ldr=document.getElementById('loader'+partNum);if(ldr)ldr.remove();
+var ldr=document.getElementById('loader'+partNum);if(ldr)ldr.remove();endForgeWait();
 if(ctx.partContent&&ctx.partContent.trim()){
 commitSermonPart(partNum,ctx.partContent);
 sermonGenCtx=null;
@@ -6152,6 +6195,13 @@ loader.innerHTML='<div class="loading-pulse"></div><div class="loading-text">For
 +'<button type="button" class="vc-btn cancel" style="margin-top:12px;font-size:0.75rem;" onclick="forceNextSermonPart()"><i class="fas fa-forward" style="margin-right:4px;"></i>Stuck? Force next part</button>';
 output.appendChild(loader);
 loader.scrollIntoView({behavior:'smooth',block:'center'});
+var forgeWaitPrefix='Forging '+getForgePartLabel(partNum,true)+' — ';
+beginForgeWait(function(text){
+var waitLdr=document.getElementById('loader'+partNum);
+if(!waitLdr)return;
+var waitText=waitLdr.querySelector('.loading-text');
+if(waitText)waitText.textContent=forgeWaitPrefix+text;
+});
 sermonGenCtx={
 partNum:partNum,
 partContent:'',
@@ -11260,6 +11310,8 @@ var attachBtn=document.getElementById('yahChatAttachBtn');
 if(sendBtn){
 sendBtn.disabled=on;
 sendBtn.innerHTML=on?'<i class="fas fa-spinner fa-spin"></i> ...':'<i class="fas fa-paper-plane"></i> Send';
+if(on)beginForgeWait(function(text){sendBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i> '+text;});
+else endForgeWait();
 }
 if(input)input.disabled=on;
 if(attachBtn)attachBtn.disabled=on;
@@ -11280,6 +11332,7 @@ renderYahChatHistory(-1);
 persistYahChat();
 showToast('Chat error.');
 }else if(msg.status==='incomplete'||msg.status==='complete'){
+markForgeWaitWriting();
 var cleaned=stripThinking(msg.content||'');
 if(!chatCtx.bezMode)cleaned=stripYahChatBotSlop(cleaned);
 if(isYahChatWebResearchEnabled())cleaned=stripMediaSources(cleaned);
@@ -11551,6 +11604,7 @@ var finalized=stripSermonPreamble(partContent||'');
 transcriptPartsRaw[partNum-1]=finalized;
 var ldr=document.getElementById('transcriptLoader'+partNum);
 if(ldr)ldr.remove();
+endForgeWait();
 updateTranscriptProgress(partNum);
 }
 function transcriptSeriesComplete(){
@@ -11580,6 +11634,13 @@ loader.id='transcriptLoader'+partNum;
 loader.innerHTML='<div class="loading-pulse"></div><div class="loading-text">Forging '+getTranscriptPartLabel(partNum,true)+'...</div>';
 body.appendChild(loader);
 loader.scrollIntoView({behavior:'smooth',block:'center'});
+var transcriptWaitPrefix='Forging '+getTranscriptPartLabel(partNum,true)+' — ';
+beginForgeWait(function(text){
+var waitLdr=document.getElementById('transcriptLoader'+partNum);
+if(!waitLdr)return;
+var waitText=waitLdr.querySelector('.loading-text');
+if(waitText)waitText.textContent=transcriptWaitPrefix+text;
+});
 transcriptGenCtx={
 partNum:partNum,
 partContent:'',
@@ -11631,13 +11692,14 @@ window.Poe.registerHandler(activeHandler,function(result){
 var msg=result.responses[0];if(!msg)return;
 if(!transcriptGenCtx||transcriptGenCtx.handlerName!==activeHandler)return;
 if(msg.status==='error'){
-var ldr=document.getElementById('transcriptLoader'+partNum);if(ldr)ldr.remove();
+var ldr=document.getElementById('transcriptLoader'+partNum);if(ldr)ldr.remove();endForgeWait();
 ctx.partContainer.innerHTML='<div class="error-msg"><i class="fas fa-exclamation-triangle"></i> '+getTranscriptPartLabel(partNum,false)+' failed: '+escapeHtml(msg.statusText||'Unknown error')+'</div>';
 document.getElementById('transcriptBtn').disabled=false;
 transcriptIsGenerating=false;
 transcriptGenCtx=null;
 }else if(msg.status==='incomplete'||msg.status==='complete'){
 var chunk=msg.content||'';
+if(chunk)markForgeWaitWriting();
 if(isContinuation)ctx.partContent=(ctx.partContentBeforeContinue||'')+'\n\n'+chunk;
 else ctx.partContent=chunk;
 var display=stripSermonPreamble(ctx.partContent);
@@ -11690,7 +11752,7 @@ generateTranscriptPart(partNum+1);
 }
 });
 window.Poe.sendUserMessage('@'+model+' '+prompt,{handler:activeHandler,stream:true,openChat:false,parameters:params}).catch(function(err){
-var ldr=document.getElementById('transcriptLoader'+partNum);if(ldr)ldr.remove();
+var ldr=document.getElementById('transcriptLoader'+partNum);if(ldr)ldr.remove();endForgeWait();
 if(ctx.partContent&&ctx.partContent.trim()){
 commitTranscriptPart(partNum,ctx.partContent);
 transcriptGenCtx=null;
