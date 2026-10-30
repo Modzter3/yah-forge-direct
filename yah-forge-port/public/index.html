@@ -2814,7 +2814,11 @@ p+='ISRAELITE BROTHER + EXPLICIT: Prophet-from-the-mountain fire with street pro
 p+='YAH DIRECT + EXPLICIT: Thunder from the throne with sustained graphic wrath and raw judgment language every paragraph.\n\n';
 }
 if(context==='theatre'){
+if(wantYahStory||wantBezStory){
 p+='THEATRE + EXPLICIT: Boardroom masks drop with profane contempt. Yah/Bez commentary pauses stay RAW -- not a sanitized decoder after a hot scene.\n\n';
+}else{
+p+='THEATRE + EXPLICIT: Boardroom masks drop with profane contempt — raw profane boardroom dialogue only. NO narrator, NO commentary pause, NO [PAUSE -- ... COMMENTARY], NO [RESUME SCENE].\n\n';
+}
 }
 p+='SELF-CHECK EVERY PARAGRAPH: "Would a sleeping Israelite still feel corner-preacher pressure reading THIS paragraph?" If no -- rewrite hotter before moving on.\n\n';
 return p;
@@ -3437,7 +3441,11 @@ if(isTabernacleLeviChapterContext(chapterSrc))p+=buildTabernacleLeviSymbolAtlasB
 if(opts.wantRoughBez){
 p+='ROUGH BEZALEEL SYMBOL LOCK: Corner pressure around DECODED meaning -- quote verse, decode symbol/name/number in plain fire (symbol layer BEFORE wrath), one modern example, next verse. No literal dragons. No skipping symbolism to jump to "you dumb-ass" application. No sermon that sounds like you believe John saw Marvel characters.\n\n';
 }else if(opts.theatre){
+if(opts.commentaryVoice&&opts.commentaryVoice!=='off'){
 p+='THEATRE SYMBOL LOCK: When scripture is on the table, elites argue over the TEXT while revealing what the SYMBOL protects in their business. Commentary pauses must decode the symbol for Israel in plain English before the scene resumes.\n\n';
+}else{
+p+='THEATRE SYMBOL LOCK: When scripture is on the table, elites argue over the TEXT while revealing what the SYMBOL protects in their business. Decode the symbol INSIDE the scene through dialogue and [BEAT]s — no narrator, no commentary pause, no [RESUME SCENE] marker.\n\n';
+}
 }else if(opts.wantBreakdown){
 p+='BREAKDOWN LOCK: Each verse/point gets FULL symbolic unraveling before the next -- symbol, lie, who profits, land on twenty twenty-six Israel.\n\n';
 }
@@ -4208,6 +4216,7 @@ p+='- Cast REAL prominent figures in that sector (full name + CURRENT title). Th
 }
 if(commentaryVoice==='off'){
 p+='- NO narrator voice in the room. NO Yah. NO Brother Bet breaking the scene. Boardroom dialogue only.\n';
+p+='- COMMENTARY IS OFF (ZERO TOLERANCE): NEVER write [PAUSE -- YAH COMMENTARY], [PAUSE -- BEZ COMMENTARY], [RESUME SCENE], or any pause-and-explain break. The scene NEVER freezes. If a verse or policy needs decoding, a speaker in the room does it in dialogue.\n';
 }else{
 p+='- Boardroom speakers stay in character. Yah/Bez do NOT sit at the table -- they PAUSE the scene from outside and comment, then [RESUME SCENE].\n';
 }
@@ -4253,7 +4262,7 @@ p+='- PASTED BRIEFING ONLY: This is corporate/news/policy text — NOT scripture
 }
 if(chapterSrc&&!topicIsBriefing){
 p+=buildTheatreChapterVerseBlock(partNum,totalParts,chapterSrc,wordsPerPart,commentaryVoice,scripturePerch);
-p+=buildUniversalSymbolDecoderBlock({voice:'theatre',chapterSrc:chapterSrc,topic:topic,wantRoughBez:wantRoughBez,theatre:true,wantBreakdown:true});
+p+=buildUniversalSymbolDecoderBlock({voice:'theatre',chapterSrc:chapterSrc,topic:topic,wantRoughBez:wantRoughBez,theatre:true,wantBreakdown:true,commentaryVoice:commentaryVoice});
 }
 if(eli5Enabled){
 p+='- LAYMAN\'S TERMS ON: speakers say who gets hurt in plain words — no "legacy populations" or corporate codewords.\n';
@@ -4345,7 +4354,12 @@ p+='- Covering verses outside your assigned range for this act\n';
 p+='- Skipping verses inside your assigned range\n';
 }
 p+='\nCRITICAL OUTPUT RULES:\n';
-p+='- Bracket stage directions: [SCENE START], [BEAT], [PRESENT: Name, Title | ...], [ENTER -- Name, Title: arrival], [EXIT -- Name: reason], [PAUSE -- YAH COMMENTARY] or [PAUSE -- BEZ COMMENTARY], [RESUME SCENE], [SCENE END] on final act only\n';
+if(commentaryVoice==='off'){
+p+='- Bracket stage directions ONLY: [SCENE START], [BEAT], [PRESENT: Name, Title | ...], [ENTER -- Name, Title: arrival], [EXIT -- Name: reason], [SCENE END] on final act only\n';
+p+='- COMMENTARY IS OFF: NEVER write [PAUSE -- YAH COMMENTARY], [PAUSE -- BEZ COMMENTARY], [RESUME SCENE], or any narrator/decoder pause. No commentary voice speaks anywhere in the script.\n';
+}else{
+p+='- Bracket stage directions: [SCENE START], [BEAT], [PRESENT: Name, Title | ...], [ENTER -- Name, Title: arrival], [EXIT -- Name: reason], [PAUSE -- '+(commentaryVoice==='bez'?'BEZ':'YAH')+' COMMENTARY], [RESUME SCENE], [SCENE END] on final act only\n';
+}
 p+='- No thinking tags, no word-count meta in the output\n';
 p+='- NO DIAGRAMS, FLOWCHARTS, ASCII ART, TABLES, OR MATRICES -- plain prose and dialogue only\n';
 p+='- Start with disclaimer, then # title. WRITE LONG. Stay in the boardroom on topic.\n';
@@ -5387,6 +5401,17 @@ if(cut>=0)return lines.slice(0,cut).join('\n').replace(/\s+$/,'');
 return text;
 }
 /** Theatre: trim only drift/spill -- keep long boardroom runs on topic */
+function stripTheatreCommentaryWhenOff(text){
+if(!text)return text;
+var t=String(text);
+if(!/\[\s*PAUSE\b[^\]]*COMMENTARY/i.test(t)&&!/\[\s*RESUME\s+SCENE\s*\]/i.test(t))return t;
+// Drop any commentary pause block the model emitted anyway, then orphan markers.
+t=t.replace(/\[\s*PAUSE\b[^\]]*COMMENTARY[^\]]*\][\s\S]*?\[\s*RESUME\s+SCENE\s*\]/gi,'');
+t=t.replace(/\[\s*PAUSE\b[^\]]*COMMENTARY[^\]]*\]/gi,'');
+t=t.replace(/\[\s*RESUME\s+SCENE\s*\]/gi,'');
+t=t.replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n');
+return t.replace(/^\s+|\s+$/g,'');
+}
 function truncateAtTheatreBoundary(text,currentPartNum,totalParts){
 if(!text)return text;
 var t=text;
@@ -5449,6 +5474,7 @@ var out=stripSermonPreamble(text||'');
 out=stripSermonDiagrams(out);
 if(isTheatreModeActive()){
 out=truncateAtTheatreBoundary(out,partNum,selectedPartCount);
+if(getTheatreCommentaryVoice()==='off')out=stripTheatreCommentaryWhenOff(out);
 }else{
 out=truncateAtNextPartBoundary(out,partNum);
 }
