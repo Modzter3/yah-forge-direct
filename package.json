@@ -36,6 +36,7 @@
     "test:fast-start-toggle": "node tests/fast-start-toggle.cjs",
     "test:continuation-budget": "node tests/continuation-budget.cjs",
     "test:bez-commentary-game": "node tests/bez-commentary-game.cjs",
+    "test:bez-money-mode": "node tests/bez-money-mode.cjs",
     "test:openrouter-routing": "node scripts/test-openrouter-routing.mjs",
     "test:ai-stream-completion": "node scripts/test-ai-stream-completion.mjs"
   }

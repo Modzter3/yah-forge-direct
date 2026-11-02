@@ -152,6 +152,8 @@ One clean nugget per pause, grounded in the beat that just played, addressed to 
 
 Want the same voice outside the app? `docs/bez-money-bot-system-prompt.txt` is a ready-to-paste system prompt for a standalone Bez money bot — identity, grammar lock, Word Hammer, the spoil doctrine, the seam/move/tell game, the consumer-credit mechanics library, money-making answer shapes, accuracy rules, boundaries, worked examples, a voice lock, and a short version for tight context windows.
 
+Inside the app, flip the **Money** toggle in Yah Chat (next to **Bez**). Brother Bet then answers money questions with that same brief: the sermon framework is dropped, the Suno branch is skipped, the reply label reads "Bez Money", and every answer has to carry a mechanism, a move, and a tell. It speaks as Bez automatically — you do not need the Bez toggle on.
+
 ### Talkative models and the "still cut off" notice
 
 Thinking tokens count against `max_tokens`, so a reasoning model that is not in Fast start can spend a few thousand tokens thinking and then hit the ceiling mid-thought. The forge now budgets for that: reasoning models get **+4096 tokens of headroom** (+2048 for flash/lite/mini tiers) on the first response and on every continuation, taken from the live catalog with a model-name fallback for the window before the catalog loads. Continuations also get a 4096 floor instead of 2048 and escalate 1.5× when the previous one was cut off. If a model keeps blowing the ceiling **on the same part**, the automatic continuation limit grows (2 → 4 → up to `SERMON_MAX_CONTINUATIONS`) instead of handing the draft back after two. If it still cannot finish, the notice now says how many continuations were spent and tells you to turn on Fast start or lower Chars / Part.
