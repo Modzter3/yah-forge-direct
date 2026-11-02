@@ -2947,18 +2947,23 @@ var el=document.getElementById('yahChatWebResearch');
 return !!(el&&el.checked);
 }
 function syncYahChatVoiceUi(){
+var money=isYahChatMoneyMode();
 var bez=isYahChatBezMode();
 var input=document.getElementById('yahChatInput');
 var empty=document.getElementById('yahChatEmpty');
 if(input){
-input.placeholder=bez
+input.placeholder=money
+?'Bez Money… paste the statement line, the fee, the offer, the side hustle you are weighing (Enter to send)'
+:(bez
 ?'Bez… paste Suno peons, Reddit whiners, tech drama — no sermon, just the tech (Enter to send)'
-:'Ask Yah… paste Suno whiners, Reddit quotes, tech drama (Enter to send, Shift+Enter for new line)';
+:'Ask Yah… paste Suno whiners, Reddit quotes, tech drama (Enter to send, Shift+Enter for new line)');
 }
 if(empty&&!yahChatMessages.length){
-empty.innerHTML=bez
+empty.innerHTML=money
+?'<i class="fas fa-coins"></i>Bez Money mode — bring a statement, a fee, a debt, an offer, or a way you want to make income. He gives you the mechanism, the move, and the tell. No sermon framework.'
+:(bez
 ?'<i class="fas fa-book-open"></i>Bez mode — torch Suno nay-sayers in plain tech talk. No Yah, no scripture. Just the extraordinary engineering and why v6 peons are wrong.'
-:'<i class="fas fa-fire-flame-curved"></i>Ask Yah anything — doctrine, a verse, a situation, a lie you heard. Paste Suno complaints and he will torch them in real talk.';
+:'<i class="fas fa-fire-flame-curved"></i>Ask Yah anything — doctrine, a verse, a situation, a lie you heard. Paste Suno complaints and he will torch them in real talk.');
 }
 }
 function getYahChatParams(model,bezMode){
