@@ -10787,7 +10787,7 @@ var item=items[j];
 if(!item.source_url){item.linkStatus='none';continue;}
 var hit=map[item.source_url];
 if(!hit){item.linkStatus='unknown';continue;}
-item.linkStatus=hit.ok?'ok':'dead';
+item.linkStatus=hit.verdict||(hit.ok?'ok':(hit.status===404||hit.status===410?'dead':'unknown'));
 item.linkHttpStatus=hit.status||0;
 }
 renderNewsCards(container);
@@ -10805,14 +10805,15 @@ var old=container.querySelector('.news-link-summary');
 if(old)old.remove();
 var items=newsItems||[];
 if(!items.length)return;
-var ok=0,dead=0,none=0,unknown=0,checking=0;
+var ok=0,dead=0,blocked=0,none=0,unknown=0,checking=0;
 for(var i=0;i<items.length;i++){
 var s=items[i].linkStatus||'';
-if(s==='ok')ok++;else if(s==='dead')dead++;else if(s==='none')none++;else if(s==='checking')checking++;else unknown++;
+if(s==='ok')ok++;else if(s==='dead')dead++;else if(s==='blocked')blocked++;else if(s==='none')none++;else if(s==='checking')checking++;else unknown++;
 }
 var parts=[];
 if(ok)parts.push(ok+' verified');
 if(dead)parts.push(dead+' dead');
+if(blocked)parts.push(blocked+' bot-blocked');
 if(none)parts.push(none+' with no link');
 if(unknown)parts.push(unknown+' unchecked');
 if(checking)parts.push(checking+' checking');
@@ -10909,6 +10910,7 @@ html+='<a class="news-direct-link" href="'+escapeAttr(item.source_url)+'" target
 var _ls=item.linkStatus||'';
 if(_ls==='ok'){html+='<span class="news-link-badge" style="border-color:rgba(45,139,122,0.5);color:#2D8B7A;"><i class="fas fa-circle-check"></i> link verified</span>';}
 else if(_ls==='dead'){html+='<span class="news-link-badge" style="border-color:rgba(196,30,58,0.5);color:#C41E3A;"><i class="fas fa-circle-exclamation"></i> link dead'+(item.linkHttpStatus?' ('+item.linkHttpStatus+')':'')+'</span>';}
+else if(_ls==='blocked'){html+='<span class="news-link-badge" style="border-color:rgba(212,160,23,0.45);color:var(--gold-dim);"><i class="fas fa-shield-halved"></i> bot-blocked, cannot confirm'+(item.linkHttpStatus?' ('+item.linkHttpStatus+')':'')+'</span>';}
 else if(_ls==='checking'){html+='<span class="news-link-badge" style="border-color:var(--border);color:var(--text-dim);"><i class="fas fa-spinner fa-spin"></i> checking link</span>';}
 else if(_ls==='none'||!_ls){html+='<span class="news-link-badge" style="border-color:rgba(212,160,23,0.5);color:var(--gold);"><i class="fas fa-triangle-exclamation"></i> no link — verify manually</span>';}
 else{html+='<span class="news-link-badge" style="border-color:var(--border);color:var(--text-dim);"><i class="fas fa-question-circle"></i> link unchecked</span>';}

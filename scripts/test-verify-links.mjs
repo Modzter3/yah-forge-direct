@@ -17,7 +17,8 @@ try {
       return new Response('', { status: 200, headers: { 'content-type': 'text/html' } });
     }
     if (String(url).includes('dead.example.com')) return new Response('', { status: 404 });
-    if (String(url).includes('head-blocked.example.com')) {
+    if (String(url).includes('refuse403.example.com')) return new Response('', { status: 403 });
+    if (String(url).includes('headrefuse.example.com')) {
       // Sites that refuse HEAD must be retried with GET.
       return init && init.method === 'HEAD' ? new Response('', { status: 405 }) : new Response('', { status: 200 });
     }
@@ -26,8 +27,9 @@ try {
   let res = await verifyLinks(post([
     'https://good.example.com/story',
     'https://dead.example.com/story',
-    'https://head-blocked.example.com/story',
+    'https://headrefuse.example.com/story',
     'https://gone.example.com/story',
+    'https://refuse403.example.com/story',
     'not-a-url',
     'ftp://nope.example.com/x',
     'https://good.example.com/story',
@@ -35,12 +37,14 @@ try {
   assert.equal(res.status, 200);
   const body = await res.json();
   const byUrl = Object.fromEntries(body.results.map((r) => [r.url, r]));
-  assert.equal(body.results.length, 4, 'dedupe + drop non-http entries');
+  assert.equal(body.results.length, 5, 'dedupe + drop non-http entries');
   assert.equal(byUrl['https://good.example.com/story'].ok, true);
   assert.equal(byUrl['https://dead.example.com/story'].ok, false);
   assert.equal(byUrl['https://dead.example.com/story'].status, 404);
-  assert.equal(byUrl['https://head-blocked.example.com/story'].ok, true, 'HEAD 405 must fall back to GET');
-  assert.equal(byUrl['https://gone.example.com/story'].ok, false, 'network failure is not a valid link');
+  assert.equal(byUrl['https://headrefuse.example.com/story'].ok, true, 'HEAD 405 must fall back to GET');
+  assert.equal(byUrl['https://gone.example.com/story'].verdict, 'unreachable', 'network failure is not a valid link');
+  assert.equal(byUrl['https://refuse403.example.com/story'].verdict, 'blocked', '403 is bot protection, never "dead"');
+  assert.equal(byUrl['https://dead.example.com/story'].verdict, 'dead', '404/410 is a dead link');
   assert.equal(body.skipped, 3, 'two non-http entries plus the duplicate');
   console.log('verify-links: verified, dead, head-blocked and unreachable URLs separated');
 
@@ -71,6 +75,7 @@ try {
   assert.match(html, /link verified/, 'card must show a verified badge');
   assert.match(html, /link dead/, 'card must show a dead-link badge');
   assert.match(html, /no link — verify manually/, 'card must flag items with no link');
+  assert.match(html, /bot-blocked, cannot confirm/, 'card must separate bot-blocked from dead');
   assert.match(html, /dead links are usually invented headlines/, 'summary must warn about invented headlines');
   assert.match(html, /NO-FABRICATION LOCK/, 'the scan prompt must forbid invented headlines and URLs');
   assert.match(html, /renderNewsAndVerify\(/, 'parsing must trigger verification');

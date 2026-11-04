@@ -57,15 +57,29 @@ async function probe(url) {
     if (res.status === 400 || res.status === 403 || res.status === 405 || res.status === 501) {
       res = await fetch(url, { ...opts, method: 'GET' });
     }
-    const status =	res.status;
+    const status = res.status;
+    // Big outlets answer 401/403/429 to datacenter IPs. That is bot protection, NOT a
+    // dead story, so it must never be reported the same way as a 404.
+    let verdict;
+    if (status >= 200 && status < 400) verdict = 'ok';
+    else if (status === 404 || status === 410) verdict = 'dead';
+    else if (status === 401 || status === 403 || status === 429 || status === 451 || status === 503) verdict = 'blocked';
+    else verdict = 'unknown';
     return {
       url,
-      ok: status >= 200 && status < 400,
+      ok: verdict === 'ok',
+      verdict,
       status,
       finalUrl: res.url || url,
     };
   } catch (err) {
-    return { url, ok: false, status: 0, reason: String((err && err.message) || err).slice(0, 140) };
+    return {
+      url,
+      ok: false,
+      verdict: 'unreachable',
+      status: 0,
+      reason: String((err && err.message) || err).slice(0, 140),
+    };
   } finally {
     clearTimeout(timer);
   }
