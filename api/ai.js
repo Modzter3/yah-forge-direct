@@ -161,12 +161,14 @@ export default async function handler(req) {
   // The client sends a short, dated query for search-shaped flows (news scans, breakdowns).
   // Flows that need the model to READ a specific page do not send one and keep the plugin.
   const searchQuery = String(parameters.forge_search_query || '').trim();
+  const searchNews = parameters.forge_search_news === true;
   delete parameters.forge_search_query;
+  delete parameters.forge_search_news;
   if (parameters.web_search === true && process.env.FORGE_SERVER_WEB_SEARCH !== 'off') {
     if (searchQuery) {
       let results = [];
       try {
-        results = await searchWeb(searchQuery, { max: 8 });
+        results = await searchWeb(searchQuery, { max: 8, news: searchNews });
       } catch {
         results = [];
       }
