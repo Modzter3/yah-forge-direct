@@ -1038,11 +1038,21 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     </div>
     <div class="news-controls" style="flex-wrap:wrap;gap:10px;">
       <div style="flex:1;min-width:180px;">
+        <label style="display:block;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:4px;"><i class="fas fa-server" style="margin-right:3px;"></i>LLM provider</label>
+        <select class="model-select" id="newsProvider" style="width:100%;margin-bottom:8px;" onchange="setForgeLlmProvider(this.value)">
+          <option value="openrouter">OpenRouter</option>
+          <option value="nanogpt">NanoGPT</option>
+          <option value="opencode_go">OpenCode Go</option>
+          <option value="clinepass">ClinePass</option>
+          <option value="refuseless">Refuseless</option>
+          <option value="local">OrcaRouter Local</option>
+        </select>
+        <div id="newsProviderHint" class="custom-model-hint" style="margin-bottom:8px;">Provider selection is shared with the Forge and Yah Chat.</div>
         <select class="model-select" id="newsModel" style="width:100%;" onchange="onNewsModelDropdown()">
             <option value="google/gemini-3-flash-preview" selected>Loading OpenRouter catalog...</option>
           </select>
         <div class="custom-model-row">
-          <label>Custom OpenRouter ID:</label>
+          <label id="newsCustomModelLabel">Custom OpenRouter ID:</label>
           <input type="text" class="custom-model-input" id="customNewsModel" placeholder="e.g. Llama-4-Scout" oninput="onCustomModel(this,'newsModel')" onfocus="this.select()">
         </div>
       </div>
@@ -5807,8 +5817,13 @@ function updateNewsSearchNote(){
 var noteEl=document.getElementById('newsSearchNote');
 if(!noteEl)return;
 var isCustom=(document.getElementById('customNewsModel').value||'').trim().length>0;
+var provider=typeof getForgeLlmProvider==='function'?getForgeLlmProvider():'openrouter';
+var providerLabel={nanogpt:'NanoGPT',opencode_go:'OpenCode Go',clinepass:'ClinePass',refuseless:'Refuseless',local:'OrcaRouter Local'}[provider]||'';
+var noWeb=!!providerLabel&&provider!=='local';
 if(isCustom){
-noteEl.innerHTML='<i class="fas fa-question-circle" style="color:var(--gold);margin-right:4px;"></i>Custom model id -- browsing/plugins depend on OpenRouter + provider; check the model card.';
+noteEl.innerHTML='<i class="fas fa-question-circle" style="color:var(--gold);margin-right:4px;"></i>Custom model id — browsing/plugins depend on the provider; check the model card.';
+}else if(noWeb){
+noteEl.innerHTML='<i class="fas fa-info-circle" style="color:#38bdb0;margin-right:4px;"></i>'+providerLabel+' has no web plugin on this proxy — the scan still runs on the model\'s own knowledge, just without live retrieval. Switch the provider to OpenRouter (Gemini, Claude, OpenAI) for browsing.';
 }else{
 noteEl.innerHTML='<i class="fas fa-info-circle" style="color:#38bdb0;margin-right:4px;"></i>Scan requests web search from your API when supported. Prefer Gemini, Claude, or OpenAI models for reliable browsing.';
 }

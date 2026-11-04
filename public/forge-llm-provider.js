@@ -69,11 +69,11 @@
     var previous = getForgeLlmProvider();
     var next = normalizeProviderId(id);
     if (next !== previous) {
-      ['customYahChatModel', 'customModelInput'].forEach(function (inputId) {
+      ['customYahChatModel', 'customModelInput', 'customNewsModel'].forEach(function (inputId) {
         var input = document.getElementById(inputId);
         if (input) { input.value = ''; input.classList.remove('active-override'); }
       });
-      ['yahChatModel', 'modelSelect'].forEach(function (selectId) {
+      ['yahChatModel', 'modelSelect', 'newsModel'].forEach(function (selectId) {
         var el = document.getElementById(selectId); if (el) el.style.opacity = '1';
       });
       var chatModels = document.getElementById('yahChatModel');
@@ -211,9 +211,14 @@
     if (sel) sel.value = getForgeLlmProvider();
     var chatProvider = document.getElementById('yahChatProvider');
     if (chatProvider) chatProvider.value = getForgeLlmProvider();
+    var newsProvider = document.getElementById('newsProvider');
+    if (newsProvider) newsProvider.value = getForgeLlmProvider();
     var chatLabel = document.getElementById('yahChatCustomModelLabel');
     var chatHint = document.getElementById('yahChatProviderHint');
     var chatCustom = document.getElementById('customYahChatModel');
+    var newsLabel = document.getElementById('newsCustomModelLabel');
+    var newsHint = document.getElementById('newsProviderHint');
+    var newsCustom = document.getElementById('customNewsModel');
     var provider = getForgeLlmProvider();
     var meta = CATALOG_PROVIDERS[provider] || CATALOG_PROVIDERS.openrouter;
     if (chatLabel) chatLabel.textContent = meta.customLabel || CATALOG_PROVIDERS.openrouter.customLabel;
@@ -223,6 +228,14 @@
     }
     if (chatHint) {
       chatHint.textContent = (provider !== 'openrouter' && provider !== 'local' ? meta.label + ' uses your server API key. ' : '') + 'Provider selection is shared with the sermon Forge.';
+    }
+    if (newsLabel) newsLabel.textContent = meta.customLabel || CATALOG_PROVIDERS.openrouter.customLabel;
+    if (newsCustom) {
+      newsCustom.placeholder = meta.customPlaceholder || CATALOG_PROVIDERS.openrouter.customPlaceholder;
+      if (newsCustom.parentElement) newsCustom.parentElement.style.display = provider === 'local' ? 'none' : '';
+    }
+    if (newsHint) {
+      newsHint.textContent = (provider !== 'openrouter' && provider !== 'local' ? meta.label + ' uses your server API key. ' : '') + 'Provider selection is shared with the Forge and Yah Chat.';
     }
 
     var hint = document.getElementById('forgeLlmProviderHint');
