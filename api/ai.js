@@ -152,25 +152,40 @@ export default async function handler(req) {
 
   // Providers without their own retrieval (NanoGPT, OpenCode Go, ClinePass, Refuseless,
   // Kie) get a real server-side search, injected into the prompt as the factual spine.
-  // OpenRouter keeps using its native web plugin.
+  // Server-side retrieval for EVERY provider. OpenRouter's web plugin is not reliable --
+  // models happily answer from training data when it returns nothing (a flash model will
+  // hand you 2024 headlines for a 2026 window). So we search ourselves, inject the dated
+  // results, and only fall back to the plugin when our own search comes back empty.
   let effectiveQuery = query;
   let webSearchMode = 'off';
+  // The client sends a short, dated query for search-shaped flows (news scans, breakdowns).
+  // Flows that need the model to READ a specific page do not send one and keep the plugin.
+  const searchQuery = String(parameters.forge_search_query || '').trim();
+  delete parameters.forge_search_query;
   if (parameters.web_search === true && process.env.FORGE_SERVER_WEB_SEARCH !== 'off') {
-    if (providerName === 'openrouter') {
-      webSearchMode = 'plugin';
-    } else {
+    if (searchQuery) {
+      let results = [];
       try {
-        const results = await searchWeb(query, { max: 8 });
-        const context = formatWebSearchContext(results, { label: 'WEB SEARCH' });
-        if (context) {
-          effectiveQuery = context + query;
-          webSearchMode = 'live';
-        } else {
-          webSearchMode = 'empty';
-        }
+        results = await searchWeb(searchQuery, { max: 8 });
       } catch {
+        results = [];
+      }
+      const context = formatWebSearchContext(results, { label: 'WEB SEARCH' });
+      if (context) {
+        effectiveQuery = context + query;
+        webSearchMode = 'live';
+        // Our results are in the prompt now -- do not also pay for the plugin.
+        delete parameters.web_search;
+        delete parameters.plugins;
+      } else if (providerName === 'openrouter') {
+        webSearchMode = 'plugin';
+      } else {
         webSearchMode = 'empty';
       }
+    } else if (providerName === 'openrouter') {
+      webSearchMode = 'plugin';
+    } else {
+      webSearchMode = 'empty';
     }
   }
 

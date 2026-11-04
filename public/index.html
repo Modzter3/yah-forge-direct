@@ -10333,6 +10333,23 @@ function getNewsResultCount(){
 var el=document.getElementById('newsResultCount');
 return el?parseInt(el.value)||10:10;
 }
+// Short, dated query for the server-side search. The scan prompt itself is thousands of
+// characters of instruction -- searching with it would return garbage, so the server gets
+// a compact query like 'AI technology news November 2026'.
+var NEWS_SEARCH_LABELS={all:'world news',wars:'war conflict',famine:'famine drought',israel:'Black diaspora discrimination',nature:'earthquake hurricane',deception:'media propaganda',economy:'economy inflation',tech:'AI technology',law:'civil liberties law',race:'Black America',health:'pharma health',education:'schools education',police:'police brutality',church:'megachurch scandal',land:'housing land',military:'military buildup',caribbean:'Caribbean',latam:'Latin America',africa:'Africa',europe:'Europe',mideast:'Middle East',asia:'Asia',northamerica:'United States Canada',gaming:'video games',entertain:'entertainment',electronics:'Apple Samsung gadgets'};
+function newsSearchStamp(){
+var el=document.getElementById('newsDateEnd');
+if(!el||!el.value)return '';
+var d=new Date(el.value+'T12:00:00');
+if(isNaN(d.getTime()))return '';
+return d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+}
+function buildNewsSearchQuery(customQuery){
+var q=String(customQuery||'').trim();
+if(!q){var cat=selectedNewsCat||'all';q=NEWS_SEARCH_LABELS[cat]||cat;}
+var stamp=newsSearchStamp();
+return (q+(stamp?' '+stamp:'')).replace(/\s+/g,' ').trim().slice(0,160);
+}
 function buildNewsScanPrompt(category,customQuery){
 var catMap={
 // --- ALL ---
@@ -10539,8 +10556,9 @@ resetNewsScanBtn();
 },240000);
 var prompt=buildNewsScanPrompt(selectedNewsCat,customQuery);
 var handlerName='news-scan-'+Date.now();
-// Build model-specific params -- the server runs the search for providers without retrieval
+// Build model-specific params -- the server runs a short dated search for this scan
 var params={web_search:true};
+params.forge_search_query=buildNewsSearchQuery(customQuery);
 if(forgeIsClaude(model)){
 params.thinking_budget=0;
 }else if(forgeIsOpenAI(model)){
@@ -11164,6 +11182,7 @@ actionsEl.style.display='none';
 var model=getNewsModel();
 var params={};
 if(forgeSupportsWebBrowse(model))params.web_search=true;
+if(item&&item.headline)params.forge_search_query=(item.headline+' '+(item.date||'')).replace(/\s+/g,' ').trim().slice(0,160);
 if(forgeIsClaude(model)){params.thinking_budget=0;}
 else if(forgeIsOpenAI(model)){params.reasoning_effort='low';}
 else if(forgeIsGemini(model)&&forgeIsFlashTier(model)){params.thinking_level='low';}

@@ -57,7 +57,7 @@ try {
     return new Response('', { status: 404 });
   };
 
-  let res = await handler(req('refuseless', 'glm-5.3-abliterated', { web_search: true, max_tokens: 4000 }));
+  let res = await handler(req('refuseless', 'glm-5.3-abliterated', { web_search: true, forge_search_query: 'credit card late fee cap', max_tokens: 4000 }));
   assert.equal(res.status, 200, 'subscription providers must answer instead of 400');
   assert.equal(res.headers.get('X-AI-Web-Search'), 'live', 'mode must be reported to the client');
   const chatCall = calls.filter((c) => c.url.includes('refuseless.com')).at(-1);
@@ -67,6 +67,7 @@ try {
   assert.match(body.messages[0].content, /biggest headlines this week$/, 'the user query must still be at the end');
   assert.equal(body.web_search, undefined, 'the flag must not be forwarded upstream');
   assert.equal(body.plugins, undefined);
+  assert.equal(body.forge_search_query, undefined, 'the search hint must not reach the upstream body');
   console.log('web-server-search: results injected into the prompt and the mode reported');
   // 3. Empty search -> header says so, prompt untouched.
   globalThis.fetch = async (url, init) => {
@@ -75,7 +76,7 @@ try {
     return Response.json({ choices: [{ message: { content: 'done' }, finish_reason: 'stop' }] });
   };
   calls.length = 0;
-  res = await handler(req('refuseless', 'glm-5.3-abliterated', { web_search: true, max_tokens: 4000 }));
+  res = await handler(req('refuseless', 'glm-5.3-abliterated', { web_search: true, forge_search_query: 'zimbabwe coup', max_tokens: 4000 }));
   assert.equal(res.headers.get('X-AI-Web-Search'), 'empty');
   const emptyBody = JSON.parse(calls.filter((c) => c.url.includes('refuseless.com')).at(-1).init.body);
   assert.equal(emptyBody.messages[0].content, 'biggest headlines this week', 'no retrieval -> no injected block');
@@ -93,7 +94,23 @@ try {
   const orBody = JSON.parse(calls.at(-1).init.body);
   assert.deepEqual(orBody.plugins, [{ id: 'web', max_results: 10 }]);
   assert.equal(orBody.messages[0].content, 'biggest headlines this week');
-  console.log('web-server-search: OpenRouter still uses its web plugin');
+  console.log('web-server-search: OpenRouter without a query keeps its web plugin');
+
+  // 4b. OpenRouter WITH a query gets our own dated results instead -- the plugin silently
+  // returns nothing for plenty of models, which is how a 2024 story lands in a 2026 scan.
+  globalThis.fetch = async (url, init) => {
+    calls.push({ url: String(url), init });
+    if (String(url).includes('bing.com/search')) return new Response(BING_HTML, { headers: { 'content-type': 'text/html' } });
+    return Response.json({ choices: [{ message: { content: 'done' }, finish_reason: 'stop' }] });
+  };
+  calls.length = 0;
+  res = await handler(req('openrouter', 'google/gemini-3.8-flash', { web_search: true, forge_search_query: 'Apple news October 2026', max_tokens: 4000 }));
+  assert.equal(res.headers.get('X-AI-Web-Search'), 'live', 'OpenRouter must get server results when a query is supplied');
+  const orLive = JSON.parse(calls.at(-1).init.body);
+  assert.match(orLive.messages[0].content, /^LIVE WEB SEARCH RESULTS/);
+  assert.equal(orLive.plugins, undefined, 'no double retrieval: plugin is dropped once we inject');
+  assert.ok(calls.some((c) => c.url.includes('bing.com/search')), 'the server search ran for OpenRouter');
+  console.log('web-server-search: OpenRouter with a query uses our own dated results');
 
   // 5. Kill switch.
   process.env.FORGE_SERVER_WEB_SEARCH = 'off';
@@ -101,7 +118,7 @@ try {
     if (String(url).includes('bing.com/search')) throw new Error('search must not run when disabled');
     return Response.json({ choices: [{ message: { content: 'done' }, finish_reason: 'stop' }] });
   };
-  res = await handler(req('refuseless', 'glm-5.3-abliterated', { web_search: true, max_tokens: 4000 }));
+  res = await handler(req('refuseless', 'glm-5.3-abliterated', { web_search: true, forge_search_query: 'anything', max_tokens: 4000 }));
   assert.equal(res.headers.get('X-AI-Web-Search'), 'off', 'FORGE_SERVER_WEB_SEARCH=off must disable retrieval');
   delete process.env.FORGE_SERVER_WEB_SEARCH;
   console.log('web-server-search: FORGE_SERVER_WEB_SEARCH=off disables it');

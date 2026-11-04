@@ -181,6 +181,8 @@ export function formatWebSearchContext(results, opts = {}) {
     `LIVE ${label} RESULTS (retrieved ${when} from a real web search -- treat these as the factual spine; do not invent headlines, dates, or figures beyond them, and say so if they do not cover the question):`,
     ...lines,
     '',
+    `RECENCY LOCK: today is ${when}. Items in these results are current; anything you remember from training data is NOT. If a result falls outside the requested date window, give its REAL date or drop it -- never present stale or remembered stories as recent news.`,
+    '',
     'END LIVE RESULTS.',
     '',
     'USER REQUEST:',
