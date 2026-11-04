@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import handler from '../api/ai.js';
-import { searchWeb, formatWebSearchContext } from '../api/web-search.js';
+import { searchWeb, formatWebSearchContext, filterSearchResults } from '../api/web-search.js';
 
 const previous = { ...process.env };
 const originalFetch = globalThis.fetch;
@@ -41,6 +41,27 @@ try {
   assert.equal(formatWebSearchContext([]), '', 'no rows must produce no block');
   console.log('web-server-search: injection block is framed and sourced');
 
+  const BING_NEWS_HTML = `
+<html><body><div class="news-card newsitem cardcommon"
+            url="https://www.macworld.com/article/apple-november-2026.html" data-url="https://www.macworld.com/article/apple-november-2026.html"
+            data-title="Apple hardware news for November 2026"><div class="snippet">Apple should finally be done announcing new hardware for 2026.</div></div></body></html>`;
+  globalThis.fetch = async (url) => {
+    if (String(url).includes('bing.com/news/search')) {
+      return new Response(BING_NEWS_HTML, { headers: { 'content-type': 'text/html' } });
+    }
+    return new Response('', { status: 404 });
+  };
+  const newsRows = await searchWeb('Apple smartphone news November 2026', { max: 5, news: true });
+  assert.equal(newsRows.length, 1, 'news mode must parse Bing News cards');
+  assert.match(newsRows[0].url, /macworld\.com/);
+  assert.match(newsRows[0].title, /Apple hardware news/i);
+  const junk = filterSearchResults(
+    [{ title: 'Manage your Apple Account', url: 'https://account.apple.com/', snippet: '' }],
+    { news: true },
+  );
+  assert.equal(junk.length, 0, 'account portals must be filtered out');
+  console.log('web-server-search: news mode uses Bing News and filters junk');
+
   // 2. A provider without retrieval gets the search results injected before its prompt.
   const calls = [];
   const req = (provider, bot, parameters) =>
@@ -50,6 +71,9 @@ try {
     });
   globalThis.fetch = async (url, init) => {
     calls.push({ url: String(url), init });
+    if (String(url).includes('bing.com/news/search')) {
+      return new Response(BING_NEWS_HTML, { headers: { 'content-type': 'text/html' } });
+    }
     if (String(url).includes('bing.com/search')) return new Response(BING_HTML, { headers: { 'content-type': 'text/html' } });
     if (String(url).includes('refuseless.com')) {
       return Response.json({ choices: [{ message: { content: 'done' }, finish_reason: 'stop' }] });
@@ -57,13 +81,13 @@ try {
     return new Response('', { status: 404 });
   };
 
-  let res = await handler(req('refuseless', 'glm-5.3-abliterated', { web_search: true, forge_search_query: 'credit card late fee cap', max_tokens: 4000 }));
+  let res = await handler(req('refuseless', 'glm-5.3-abliterated', { web_search: true, forge_search_query: 'credit card late fee cap', forge_search_news: true, max_tokens: 4000 }));
   assert.equal(res.status, 200, 'subscription providers must answer instead of 400');
   assert.equal(res.headers.get('X-AI-Web-Search'), 'live', 'mode must be reported to the client');
   const chatCall = calls.filter((c) => c.url.includes('refuseless.com')).at(-1);
   const body = JSON.parse(chatCall.init.body);
   assert.match(body.messages[0].content, /^LIVE WEB SEARCH RESULTS/);
-  assert.match(body.messages[0].content, /example\.news\/fee-cap/);
+  assert.match(body.messages[0].content, /macworld\.com/);
   assert.match(body.messages[0].content, /biggest headlines this week$/, 'the user query must still be at the end');
   assert.equal(body.web_search, undefined, 'the flag must not be forwarded upstream');
   assert.equal(body.plugins, undefined);
@@ -72,7 +96,9 @@ try {
   // 3. Empty search -> header says so, prompt untouched.
   globalThis.fetch = async (url, init) => {
     calls.push({ url: String(url), init });
-    if (String(url).includes('bing.com/search')) return new Response('<html><body>no results</body></html>', { headers: { 'content-type': 'text/html' } });
+    if (String(url).includes('bing.com/search') || String(url).includes('bing.com/news/search')) {
+      return new Response('<html><body>no results</body></html>', { headers: { 'content-type': 'text/html' } });
+    }
     return Response.json({ choices: [{ message: { content: 'done' }, finish_reason: 'stop' }] });
   };
   calls.length = 0;
@@ -100,16 +126,19 @@ try {
   // returns nothing for plenty of models, which is how a 2024 story lands in a 2026 scan.
   globalThis.fetch = async (url, init) => {
     calls.push({ url: String(url), init });
+    if (String(url).includes('bing.com/news/search')) {
+      return new Response(BING_NEWS_HTML, { headers: { 'content-type': 'text/html' } });
+    }
     if (String(url).includes('bing.com/search')) return new Response(BING_HTML, { headers: { 'content-type': 'text/html' } });
     return Response.json({ choices: [{ message: { content: 'done' }, finish_reason: 'stop' }] });
   };
   calls.length = 0;
-  res = await handler(req('openrouter', 'google/gemini-3.8-flash', { web_search: true, forge_search_query: 'Apple news October 2026', max_tokens: 4000 }));
+  res = await handler(req('openrouter', 'google/gemini-3.8-flash', { web_search: true, forge_search_query: 'Apple news October 2026', forge_search_news: true, max_tokens: 4000 }));
   assert.equal(res.headers.get('X-AI-Web-Search'), 'live', 'OpenRouter must get server results when a query is supplied');
   const orLive = JSON.parse(calls.at(-1).init.body);
   assert.match(orLive.messages[0].content, /^LIVE WEB SEARCH RESULTS/);
   assert.equal(orLive.plugins, undefined, 'no double retrieval: plugin is dropped once we inject');
-  assert.ok(calls.some((c) => c.url.includes('bing.com/search')), 'the server search ran for OpenRouter');
+  assert.ok(calls.some((c) => c.url.includes('bing.com/news/search')), 'the server news search ran for OpenRouter');
   console.log('web-server-search: OpenRouter with a query uses our own dated results');
 
   // 5. Kill switch.
@@ -126,6 +155,7 @@ try {
   // 6. Client wiring: the page requests retrieval and reports what the server did.
   const html = fs.readFileSync('public/index.html', 'utf8');
   assert.match(html, /var params=\{web_search:true\};/, 'the news scan must request retrieval');
+  assert.match(html, /forge_search_news=true/, 'the news scan must request news-shaped retrieval');
   assert.match(html, /window\.__forgeWebSearchMode/, 'the results banner must read the server mode');
   assert.match(html, /server-side web search/, 'the provider note must describe server-side search');
   assert.match(fs.readFileSync('public/ai-polyfill.js', 'utf8'), /X-AI-Web-Search/, 'the polyfill must stash the mode header');

@@ -89,6 +89,63 @@ function parseBingHtml(html) {
   return out;
 }
 
+/** Bing News uses news-card blocks, not b_algo list items. */
+function parseBingNewsHtml(html) {
+  const out = [];
+  const blocks = String(html || '').split('news-card newsitem cardcommon').slice(1);
+  for (const block of blocks) {
+    const url =
+      (block.match(/\bdata-url="([^"]+)"/) || block.match(/\burl="([^"]+)"/) || [])[1] || '';
+    const dataTitle = (block.match(/\bdata-title="([^"]*)"/) || [])[1];
+    const title = stripTags(
+      dataTitle || (block.match(/<h2[^>]*>([\s\S]*?)<\/h2>/) || [])[1] || '',
+    );
+    const snippet = stripTags(
+      (block.match(/<div class="snippet"[^>]*>([\s\S]*?)<\/div>/) || [])[1] || '',
+    );
+    if (!/^https?:\/\//i.test(url)) continue;
+    out.push({ title: title || hostOf(url), url, snippet: snippet.slice(0, SNIPPET_CAP) });
+  }
+  return out;
+}
+
+const JUNK_URL_RX =
+  /(?:account\.apple\.com|asw\.apple\.com|support\.apple\.com|\/sign-?in|\bsign in\b|\/login(?:\/|$)|\/log-?in|manage your .* account)/i;
+const CORP_ROOT_HOSTS = new Set([
+  'apple.com',
+  'samsung.com',
+  'google.com',
+  'microsoft.com',
+  'amazon.com',
+]);
+
+/** Drop corporate homepages and login pages that pollute generic web search. */
+export function filterSearchResults(rows, opts = {}) {
+  const list = Array.isArray(rows) ? rows : [];
+  const newsMode = opts.news === true;
+  return list.filter((r) => {
+    const url = String(r.url || '');
+    const title = String(r.title || '');
+    if (!/^https?:\/\//i.test(url)) return false;
+    if (JUNK_URL_RX.test(`${title} ${url}`)) return false;
+    if (!newsMode) return true;
+    let path = '/';
+    let host = '';
+    try {
+      const u = new URL(url);
+      path = u.pathname || '/';
+      host = u.hostname.replace(/^www\./, '').toLowerCase();
+    } catch {
+      return false;
+    }
+    if (path === '/' || path === '/home' || path === '/store' || path === '/us') {
+      if (CORP_ROOT_HOSTS.has(host)) return false;
+    }
+    if (title.length < 12) return false;
+    return true;
+  });
+}
+
 async function braveSearch(query, max) {
   const key = process.env.BRAVE_API_KEY;
   if (!key) return [];
@@ -145,6 +202,25 @@ async function serperSearch(query, max) {
   })).filter((r) => /^https?:\/\//i.test(r.url));
 }
 
+async function serperNewsSearch(query, max) {
+  const key = process.env.SERPER_API_KEY;
+  if (!key) return [];
+  const text = await getText('https://google.serper.dev/news', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-API-KEY': key },
+    body: JSON.stringify({ q: query, num: max }),
+  });
+  if (!text) return [];
+  let parsed;
+  try { parsed = JSON.parse(text); } catch { return []; }
+  const rows = (parsed && parsed.news) || [];
+  return rows.slice(0, max).map((r) => ({
+    title: stripTags(r.title || ''),
+    url: r.link || '',
+    snippet: stripTags(r.snippet || '').slice(0, SNIPPET_CAP),
+  })).filter((r) => /^https?:\/\//i.test(r.url));
+}
+
 async function bingScrape(query, max) {
   const html = await getText(
     `https://www.bing.com/search?q=${encodeURIComponent(query)}&count=${max}&setlang=en-US`,
@@ -153,21 +229,42 @@ async function bingScrape(query, max) {
   return parseBingHtml(html).slice(0, max);
 }
 
+async function bingNewsScrape(query, max) {
+  const html = await getText(
+    `https://www.bing.com/news/search?q=${encodeURIComponent(query)}&count=${max}&setlang=en-US`,
+  );
+  if (!html) return [];
+  return parseBingNewsHtml(html).slice(0, max);
+}
+
 /** Returns [{ title, url, snippet }] -- empty array when nothing works. */
 export async function searchWeb(query, opts = {}) {
   const q = String(query || '').trim().slice(0, 400);
   if (!q) return [];
   const max = Math.min(10, Math.max(1, Number(opts.max) || MAX_RESULTS));
-  const strategies = [braveSearch, tavilySearch, serperSearch, bingScrape];
-  for (const run of strategies) {
-    try {
-      const rows = await run(q, max);
-      if (rows && rows.length) return rows;
-    } catch {
-      // try the next strategy
+  const newsMode = opts.news === true;
+  const strategies = newsMode
+    ? [braveSearch, tavilySearch, serperNewsSearch, bingNewsScrape, bingScrape]
+    : [braveSearch, tavilySearch, serperSearch, bingScrape];
+  const tryStrategies = async (query) => {
+    for (const run of strategies) {
+      try {
+        const rows = await run(query, max);
+        const kept = filterSearchResults(rows, { news: newsMode });
+        if (kept.length) return kept;
+      } catch {
+        // try the next strategy
+      }
     }
+    return [];
+  };
+
+  let results = await tryStrategies(q);
+  if (!results.length && newsMode && q.length > 72) {
+    const shorter = q.slice(0, 72).replace(/\s+\S*$/, '').trim();
+    if (shorter && shorter !== q) results = await tryStrategies(shorter);
   }
-  return [];
+  return results;
 }
 
 /** Compact context block the model can treat as the factual spine. */
