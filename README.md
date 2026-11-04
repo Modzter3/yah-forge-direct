@@ -136,6 +136,8 @@ Frontier models (Claude Opus, GPT-5.x, Gemini Pro, Grok 4.x) are reasoning model
 - Poe-style thinking params (`thinking_budget`, `thinking_level`, `reasoning_effort`) are translated server-side into OpenRouter's normalized `reasoning` object, and thinking is capped below `max_tokens` on Anthropic/Google so it cannot swallow the output budget.
 - Requests route to the lowest-latency endpoint by default (`OPENROUTER_PROVIDER_SORT=latency`; also `throughput`, `price`, `off`), with an optional hard pin via `OPENROUTER_ONLY_PROVIDERS=["Anthropic"]`.
 
+**Web search works on every provider.** OpenRouter runs retrieval with its own `web` plugin. NanoGPT, OpenCode Go, ClinePass and Refuseless have no retrieval of their own, so the proxy runs the search for them: `api/web-search.js` uses `BRAVE_API_KEY` / `TAVILY_API_KEY` / `SERPER_API_KEY` when one is set, otherwise a keyless Bing scrape, and the results are injected into the prompt as the factual spine. The response carries `X-AI-Web-Search: live | empty | plugin | off`, and the News tab labels results accordingly ("live web results pulled on the server" versus "no live results, model knowledge only"). Set `FORGE_SERVER_WEB_SEARCH=off` to disable it entirely.
+
 **Web Research** now defaults to off because it adds a retrieval round before the model writes. News scans and Behind the Veil still force retrieval — their grounding depends on a real headline.
 
 **Fast start** (forge toggles) is the speed knob for the slow models. On, it tells Claude / GPT-5.x / Gemini / Grok to think minimally (`reasoning: { effort: 'minimal' }`), so a frontier act starts writing in seconds instead of minutes. It overrides any deeper thinking the mode would otherwise request, and it costs reasoning depth — leave it off when you want the model to chew on the material. It does nothing on non-reasoning models (the proxy only sends `reasoning` to models the live catalog flags as reasoning-capable), and the toggle also applies to the transcript forge. On the Poe port it maps onto Poe's own `thinking_budget` / `thinking_level` / `reasoning_effort`.
@@ -157,8 +159,6 @@ Inside the app, flip the **Money** toggle in Yah Chat (next to **Bez**). Brother
 ### Talkative models and the "still cut off" notice
 
 Thinking tokens count against `max_tokens`, so a reasoning model that is not in Fast start can spend a few thousand tokens thinking and then hit the ceiling mid-thought. The forge now budgets for that: reasoning models get **+4096 tokens of headroom** (+2048 for flash/lite/mini tiers) on the first response and on every continuation, taken from the live catalog with a model-name fallback for the window before the catalog loads. Continuations also get a 4096 floor instead of 2048 and escalate 1.5× when the previous one was cut off. If a model keeps blowing the ceiling **on the same part**, the automatic continuation limit grows (2 → 4 → up to `SERMON_MAX_CONTINUATIONS`) instead of handing the draft back after two. If it still cannot finish, the notice now says how many continuations were spent and tells you to turn on Fast start or lower Chars / Part.
-
-**Web Research** now defaults to off because it adds a retrieval round before the model writes. News scans and Behind the Veil still force retrieval — their grounding depends on a real headline.
 
 ## Transfer sermons between devices
 

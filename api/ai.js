@@ -1,3 +1,4 @@
+import { searchWeb, formatWebSearchContext } from './web-search.js';
 import {
   KIE_BASE_URL,
   buildKieChatCompletionsPayload,
@@ -149,10 +150,38 @@ export default async function handler(req) {
     return jsonError(`Missing API key. Set AI_API_KEY or ${provider.keyEnv}.`, 500);
   }
 
+  // Providers without their own retrieval (NanoGPT, OpenCode Go, ClinePass, Refuseless,
+  // Kie) get a real server-side search, injected into the prompt as the factual spine.
+  // OpenRouter keeps using its native web plugin.
+  let effectiveQuery = query;
+  let webSearchMode = 'off';
+  if (parameters.web_search === true && process.env.FORGE_SERVER_WEB_SEARCH !== 'off') {
+    if (providerName === 'openrouter') {
+      webSearchMode = 'plugin';
+    } else {
+      try {
+        const results = await searchWeb(query, { max: 8 });
+        const context = formatWebSearchContext(results, { label: 'WEB SEARCH' });
+        if (context) {
+          effectiveQuery = context + query;
+          webSearchMode = 'live';
+        } else {
+          webSearchMode = 'empty';
+        }
+      } catch {
+        webSearchMode = 'empty';
+      }
+    }
+  }
+
+  const webHeaders = { 'X-AI-Web-Search': webSearchMode };
+
   if (useKie) {
     return handleKieRequest({
       bot,
-      query,
+      query: effectiveQuery,
+      webSearchMode,
+      webHeaders,
       parameters,
       imageList,
       kieModel,
@@ -176,7 +205,7 @@ export default async function handler(req) {
     ? resolveOpenCodeSession(parameters)
     : '';
 
-  const payload = buildPayload({ model: resolvedModel, query, parameters, providerName, images: imageList });
+  const payload = buildPayload({ model: resolvedModel, query: effectiveQuery, parameters, providerName, images: imageList });
 
   let upstream;
   try {
@@ -193,7 +222,7 @@ export default async function handler(req) {
   const contentType = upstream.headers.get('content-type') || '';
 
   if (contentType.includes('text/event-stream')) {
-    return streamPassThrough(upstream, providerName, resolvedModel);
+    return streamPassThrough(upstream, providerName, resolvedModel, webHeaders);
   }
 
   const raw = await safeReadText(upstream);
@@ -208,7 +237,7 @@ export default async function handler(req) {
     );
   }
 
-  return jsonFromProviderToSse(parsed, providerName, resolvedModel);
+  return jsonFromProviderToSse(parsed, providerName, resolvedModel, webHeaders);
 }
 
 async function handleLocalLlmRequest({ query, parameters, imageList }) {
@@ -278,7 +307,7 @@ async function handleLocalLlmRequest({ query, parameters, imageList }) {
   return jsonFromProviderToSse(parsed, LOCAL_LLM_PROVIDER_ID, resolvedModel);
 }
 
-async function handleKieRequest({ bot, query, parameters, imageList, kieModel, apiKey, baseUrl }) {
+async function handleKieRequest({ bot, query, parameters, imageList, kieModel, apiKey, baseUrl, webHeaders = {} }) {
   const spec = kieModel || resolveKieModel(bot);
   if (!spec) {
     return jsonError(
@@ -388,7 +417,7 @@ async function handleKieChatCompletions({ spec, query, params, imageList, system
 
   const contentType = upstream.headers.get('content-type') || '';
   if (contentType.includes('text/event-stream')) {
-    return streamPassThrough(upstream, 'kie', spec.id);
+    return streamPassThrough(upstream, 'kie', spec.id, webHeaders);
   }
 
   const raw = await safeReadText(upstream);
@@ -403,7 +432,7 @@ async function handleKieChatCompletions({ spec, query, params, imageList, system
     );
   }
 
-  return jsonFromProviderToSse(parsed, 'kie', spec.id);
+  return jsonFromProviderToSse(parsed, 'kie', spec.id, webHeaders);
 }
 
 function normalizeImageInputs(images) {
@@ -689,7 +718,7 @@ function createOpenCodeSessionId() {
   return `yah-forge-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
 }
 
-function streamPassThrough(upstream, providerName, model) {
+function streamPassThrough(upstream, providerName, model, extraHeaders = {}) {
   const { readable, writable } = new TransformStream();
   const writer  = writable.getWriter();
   const encoder = new TextEncoder();
@@ -729,13 +758,14 @@ function streamPassThrough(upstream, providerName, model) {
       'Content-Type':      'text/event-stream',
       'Cache-Control':     'no-cache',
       'X-Accel-Buffering': 'no',
+      ...extraHeaders,
       'X-AI-Provider':     providerName,
       'X-AI-Model':        model,
     },
   });
 }
 
-function jsonFromProviderToSse(parsed, providerName, model) {
+function jsonFromProviderToSse(parsed, providerName, model, extraHeaders = {}) {
   const text  = parsed?.choices?.[0]?.message?.content || parsed?.output_text || '';
   const usage = parsed?.usage || null;
   const lines = [];
@@ -757,6 +787,7 @@ function jsonFromProviderToSse(parsed, providerName, model) {
       'Content-Type':      'text/event-stream',
       'Cache-Control':     'no-cache',
       'X-Accel-Buffering': 'no',
+      ...extraHeaders,
       'X-AI-Provider':     providerName,
       'X-AI-Model':        model,
     },

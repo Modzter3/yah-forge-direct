@@ -153,7 +153,11 @@
       }
       throw new Error(errText);
     }
+    try { if (typeof window !== 'undefined') window.__forgeWebSearchMode = res.headers.get('X-AI-Web-Search') || ''; } catch (_) {}
     return res;
+  }
+
+  function reasoningText(parsed) {
   }
 
   /**

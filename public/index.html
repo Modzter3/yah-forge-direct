@@ -2943,7 +2943,7 @@ function getSermonWebSearchParams(model,totalParts){
 var params={};
 var theatre=isTheatreModeActive();
 var webEl=document.getElementById('toggleWebResearch');
-if(!isLocalLlmChapterSermonActive()&&(webEl&&webEl.checked||theatre)&&forgeCanWebSearch(model)){
+if(!isLocalLlmChapterSermonActive()&&(webEl&&webEl.checked||theatre)&&forgeSupportsWebBrowse(model)){
 params.web_search=true;
 }
 if(theatre&&forgeIsGemini(model)){
@@ -2994,7 +2994,7 @@ var params={};
 if(forgeIsClaude(model))params.thinking_budget=0;
 else if(forgeIsOpenAI(model))params.reasoning_effort='none';
 else if(forgeIsGemini(model)&&forgeIsFlashTier(model))params.thinking_level='minimal';
-if(isYahChatWebResearchEnabled()&&forgeCanWebSearch(model))params.web_search=true;
+if(isYahChatWebResearchEnabled()&&forgeSupportsWebBrowse(model))params.web_search=true;
 if(!bezMode)appendYahStoryApiParams(params,true);
 return params;
 }
@@ -5271,7 +5271,7 @@ if(forgeIsFlashTier(model)){params.thinking_level='minimal';}
 else{params.thinking_budget=0;}
 }
 if(type==='apocrypha'||type==='sealed'){
-if(forgeCanWebSearch(model)){
+if(forgeSupportsWebBrowse(model)){
 params.web_search=true;
 if(forgeIsOpenAI(model))params.reasoning_effort='low';
 }
@@ -5836,7 +5836,7 @@ var noWeb=!!providerLabel&&provider!=='local';
 if(isCustom){
 noteEl.innerHTML='<i class="fas fa-question-circle" style="color:var(--gold);margin-right:4px;"></i>Custom model id — browsing/plugins depend on the provider; check the model card.';
 }else if(noWeb){
-noteEl.innerHTML='<i class="fas fa-info-circle" style="color:#38bdb0;margin-right:4px;"></i>'+providerLabel+' has no web plugin on this proxy — the scan runs on the model\'s own knowledge, without live retrieval, and the results get flagged. <button type="button" class="vc-btn" style="margin-left:6px;font-size:0.7rem;padding:2px 8px;" onclick="setForgeLlmProvider(\'openrouter\')">Use OpenRouter</button>';
+noteEl.innerHTML='<i class="fas fa-info-circle" style="color:#38bdb0;margin-right:4px;"></i>'+providerLabel+' has no browsing of its own — the scan runs a <strong>server-side web search</strong> and feeds those results to the model. If the search comes back empty it falls back to the model\'s own knowledge, and the results get flagged. <button type="button" class="vc-btn" style="margin-left:6px;font-size:0.7rem;padding:2px 8px;" onclick="setForgeLlmProvider(\'openrouter\')">Use OpenRouter</button>';
 }else{
 noteEl.innerHTML='<i class="fas fa-info-circle" style="color:#38bdb0;margin-right:4px;"></i>Scan requests web search from your API when supported. Prefer Gemini, Claude, or OpenAI models for reliable browsing.';
 }
@@ -10531,10 +10531,8 @@ resetNewsScanBtn();
 },240000);
 var prompt=buildNewsScanPrompt(selectedNewsCat,customQuery);
 var handlerName='news-scan-'+Date.now();
-// Build model-specific params
-var params={};
-var newsScanLive=forgeCanWebSearch(model);
-if(newsScanLive)params.web_search=true;
+// Build model-specific params -- the server runs the search for providers without retrieval
+var params={web_search:true};
 if(forgeIsClaude(model)){
 params.thinking_budget=0;
 }else if(forgeIsOpenAI(model)){
@@ -10569,7 +10567,7 @@ el.innerHTML=loadingMsg+'<br><span style="font-size:0.72rem;color:var(--accent-t
 }else if(msg.status==='complete'){
 clearInterval(elapsedTimer);clearTimeout(scanTimeout);
 if(!scanHandled){scanHandled=true;parseNewsResults(msg.content||'',results);
-if(!newsScanLive){var noRet=document.createElement('div');noRet.className='news-empty';noRet.innerHTML='<i class="fas fa-exclamation-triangle"></i><p><strong>No live retrieval.</strong> '+escapeHtml(forgeProviderLabel()||'This provider')+' cannot browse on this proxy, so these headlines come from the model\'s own knowledge and may be out of date. Verify before you use them, or switch the provider to <strong>OpenRouter</strong> for live search.</p>';results.insertBefore(noRet,results.firstChild);}
+var wsMode=(typeof window!=='undefined'&&window.__forgeWebSearchMode)||'';if(wsMode==='empty'){var noRet=document.createElement('div');noRet.className='news-empty';noRet.innerHTML='<i class="fas fa-exclamation-triangle"></i><p><strong>No live results.</strong> The server search came back empty for this scan, so these headlines come from the model\'s own knowledge and may be out of date. Verify before you use them, or try again.</p>';results.insertBefore(noRet,results.firstChild);}else if(wsMode==='live'){var liveTag=document.createElement('div');liveTag.className='news-empty';liveTag.innerHTML='<i class="fas fa-satellite-dish"></i><p><strong>Live web results</strong> were pulled on the server and fed to the model for this scan.</p>';results.insertBefore(liveTag,results.firstChild);}
 resetNewsScanBtn();}
 }
 });
@@ -10895,7 +10893,7 @@ function fetchNewsArticleForVeil(url,callback){
 var model=getNewsModel();
 var ultraElite=isVeilUltraEliteCastRequested();
 var params={};
-if(forgeCanWebSearch(model))params.web_search=true;
+if(forgeSupportsWebBrowse(model))params.web_search=true;
 if(forgeIsClaude(model)){params.thinking_budget=0;}
 else if(forgeIsOpenAI(model)){params.reasoning_effort='low';}
 else if(forgeIsGemini(model)&&forgeIsFlashTier(model)){params.thinking_level='low';}
@@ -11080,7 +11078,7 @@ bodyEl.innerHTML='<div class="news-loading"><div class="loading-pulse"></div><di
 actionsEl.style.display='none';
 var model=getNewsModel();
 var params={};
-if(forgeCanWebSearch(model))params.web_search=true;
+if(forgeSupportsWebBrowse(model))params.web_search=true;
 if(forgeIsClaude(model)){params.thinking_budget=0;}
 else if(forgeIsOpenAI(model)){params.reasoning_effort='low';}
 else if(forgeIsGemini(model)&&forgeIsFlashTier(model)){params.thinking_level='low';}
@@ -13081,7 +13079,7 @@ if(!msg||done)return;
 if(msg.status==='complete'){done=true;clearTimeout(timer);resolve(String(msg.content||'').trim());}
 else if(msg.status==='error'){done=true;clearTimeout(timer);resolve('');}
 });
-window.Poe.sendUserMessage('@'+model+' '+prompt,{handler:handlerName,stream:false,openChat:false,parameters:Object.assign(forgeCanWebSearch(model)?{web_search:true}:{},{max_tokens:Math.min(16000,getModelMaxOutputTokens(model))})}).catch(function(){
+window.Poe.sendUserMessage('@'+model+' '+prompt,{handler:handlerName,stream:false,openChat:false,parameters:{web_search:true,max_tokens:Math.min(16000,getModelMaxOutputTokens(model))}}).catch(function(){
 if(!done){done=true;clearTimeout(timer);resolve('');}
 });
 });
@@ -13318,7 +13316,7 @@ dismantleRawResult='';
 dismantleContinueCount=0;
 body.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text">Yah is reading and tearing this apart...</div></div>';
 var params={};
-if(isLink&&forgeCanWebSearch(model)){
+if(isLink&&forgeSupportsWebBrowse(model)){
 params.web_search=true;
 }
 appendYahStoryApiParams(params,!israelite);
@@ -13710,7 +13708,7 @@ if(!ctx)return;
 var body=ctx.body,btn=ctx.btn,actions=ctx.actions;
 var model=getDestroyModel();
 var params={max_tokens:16384};
-if(forgeCanWebSearch(model))params.web_search=true;
+if(forgeSupportsWebBrowse(model))params.web_search=true;
 var destroyIsraelite=document.getElementById('destroyIsraelite')&&document.getElementById('destroyIsraelite').checked;
 appendYahStoryApiParams(params,!destroyIsraelite);
 destroyBusy=true;
