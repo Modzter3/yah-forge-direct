@@ -39,6 +39,7 @@
     "test:bez-money-mode": "node tests/bez-money-mode.cjs",
     "test:news-provider-select": "node tests/news-provider-select.cjs",
     "test:web-server-search": "node scripts/test-web-server-search.mjs",
+    "test:verify-links": "node scripts/test-verify-links.mjs",
     "test:openrouter-routing": "node scripts/test-openrouter-routing.mjs",
     "test:ai-stream-completion": "node scripts/test-ai-stream-completion.mjs"
   }

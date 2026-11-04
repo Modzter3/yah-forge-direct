@@ -237,6 +237,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .news-verify-btn:hover{background:rgba(45,139,122,0.18);border-color:rgba(45,139,122,0.5);color:#2d8b7a;}
 .news-verify-btn i{font-size:0.58rem;}
 .news-direct-link{display:inline-flex;align-items:center;gap:4px;font-family:'Fira Code',monospace;font-size:0.62rem;color:var(--text-dim);text-decoration:none;padding:3px 8px;border:1px solid var(--border);border-radius:5px;transition:all 0.2s;overflow:hidden;max-width:220px;white-space:nowrap;text-overflow:ellipsis;}
+.news-link-badge{display:inline-flex;align-items:center;gap:4px;font-family:'Fira Code',monospace;font-size:0.62rem;border:1px solid var(--border);border-radius:5px;padding:3px 8px;white-space:nowrap;}
+.news-link-badge i{font-size:0.58rem;}
 .news-direct-link:hover{border-color:var(--accent-blue);color:var(--accent-blue);}
 .news-breakdown-output{margin-top:14px;padding:16px;background:var(--bg-elevated,var(--bg-card));border:1px solid var(--border);border-radius:10px;display:none;}
 .news-breakdown-output.visible{display:block;}
@@ -10473,6 +10475,12 @@ p+='    "connection": "1 sentence explaining HOW this fulfills or echoes the pro
 p+='    "weaves_with": "Use empty string ONLY when this array has exactly one object. When there are 2+ articles, REQUIRED: 1-2 sentences on how THIS headline harmonizes with OTHER items in THIS SAME array. Quote a SHORT distinctive substring from each related headline (exact text from their headline field) so the reader can match cards. Say if they confirm, extend a timeline, show policy vs human cost, regional echo, etc."\n';
 p+='  }\n';
 p+=']\n\n';
+p+='NO-FABRICATION LOCK (the app probes every link you return):\n';
+p+='- Every headline MUST be a story you actually saw in THIS scan\'s search results. If you did not see it, do not write it.\n';
+p+='- Copy source_url EXACTLY as the search result returned it. Never rebuild, shorten, clean up, or invent a URL to satisfy the schema.\n';
+p+='- If you have a real headline but no URL, return source_url as an empty string. The app marks those "no link, verify manually" -- that is honest. A made-up URL is a lie and shows up as a dead link.\n';
+p+='- If a LIVE WEB SEARCH RESULTS block appears above, treat it as the authoritative list of what is real for this scan.\n';
+p+='- Do NOT pad the array to hit the requested count. Fewer real stories beats more invented ones.\n\n';
 p+='RULES:\n';
 p+='- ONLY real articles from your web search results. The headline, source, date, and URL must all come from articles you actually found.\n';
 p+='- TARGET: Return exactly '+resultCount+' articles. Search aggressively with multiple queries. Broaden your search terms if initial queries are too narrow. You have web search -- use it thoroughly.\n';
@@ -10717,7 +10725,7 @@ showToast('No valid articles after import (need headline or summary per item).')
 return;
 }
 newsItems=polished;
-renderNewsCards(container);
+renderNewsAndVerify(container);
 showToast('Loaded '+newsItems.length+' article(s) from JSON.');
 return;
 }
@@ -10748,6 +10756,75 @@ out.push(item);
 }
 return out;
 }
+var newsVerifySeq=0;
+function renderNewsAndVerify(container){
+renderNewsCards(container);
+verifyNewsLinks(container);
+}
+// Cheap models invent headlines AND matching URLs, so every link the scan returns is
+// probed once; the card says verified / dead / no link. A resolving link is not proof of
+// accuracy -- it only proves the URL exists.
+function verifyNewsLinks(container){
+var items=newsItems||[];
+var urls=[];var seen={};
+for(var i=0;i<items.length;i++){
+var it=items[i];
+if(!it.source_url){it.linkStatus='none';continue;}
+it.linkStatus='checking';
+if(!seen[it.source_url]){seen[it.source_url]=1;urls.push(it.source_url);}
+}
+renderNewsCards(container);
+if(!urls.length){updateNewsLinkSummary(container);return;}
+var token=++newsVerifySeq;
+fetch('/api/verify-links',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({urls:urls.slice(0,30)})})
+.then(function(r){return r.ok?r.json():null;})
+.then(function(data){
+if(token!==newsVerifySeq)return;
+var map={};var rows=(data&&data.results)||[];
+for(var r=0;r<rows.length;r++)map[rows[r].url]=rows[r];
+for(var j=0;j<items.length;j++){
+var item=items[j];
+if(!item.source_url){item.linkStatus='none';continue;}
+var hit=map[item.source_url];
+if(!hit){item.linkStatus='unknown';continue;}
+item.linkStatus=hit.ok?'ok':'dead';
+item.linkHttpStatus=hit.status||0;
+}
+renderNewsCards(container);
+updateNewsLinkSummary(container);
+}).catch(function(){
+if(token!==newsVerifySeq)return;
+for(var k=0;k<items.length;k++){if(items[k].linkStatus==='checking')items[k].linkStatus='unknown';}
+renderNewsCards(container);
+updateNewsLinkSummary(container);
+});
+}
+function updateNewsLinkSummary(container){
+if(!container)return;
+var old=container.querySelector('.news-link-summary');
+if(old)old.remove();
+var items=newsItems||[];
+if(!items.length)return;
+var ok=0,dead=0,none=0,unknown=0,checking=0;
+for(var i=0;i<items.length;i++){
+var s=items[i].linkStatus||'';
+if(s==='ok')ok++;else if(s==='dead')dead++;else if(s==='none')none++;else if(s==='checking')checking++;else unknown++;
+}
+var parts=[];
+if(ok)parts.push(ok+' verified');
+if(dead)parts.push(dead+' dead');
+if(none)parts.push(none+' with no link');
+if(unknown)parts.push(unknown+' unchecked');
+if(checking)parts.push(checking+' checking');
+if(!parts.length)return;
+var div=document.createElement('div');
+div.className='news-link-summary';
+div.style.cssText='padding:8px 16px 4px;font-size:0.74rem;color:var(--text-muted);font-family:\'Bitter\',serif;line-height:1.5;';
+var tone=dead?'var(--crimson-glow)':'var(--accent-teal)';
+var tail=dead?' — dead links are usually invented headlines, so verify those yourself.':' — a resolving link proves the URL exists, not that the story is accurate.';
+div.innerHTML='<i class="fas fa-link" style="margin-right:5px;color:'+tone+';"></i>Links: '+parts.join(' &middot; ')+tail;
+container.insertBefore(div,container.firstChild);
+}
 function parseNewsResults(raw,container){
 var cleaned=raw.replace(/```json\s*/gi,'').replace(/```\s*/gi,'').trim();
 cleaned=stripThinking(cleaned);
@@ -10759,13 +10836,13 @@ if(lastBracket>firstBracket){
 var jsonStr=cleaned.substring(firstBracket,lastBracket+1);
 try{
 var parsed=JSON.parse(jsonStr);
-if(Array.isArray(parsed)&&parsed.length>0){newsItems=dedupeNewsItems(parsed);renderNewsCards(container);return;}
+if(Array.isArray(parsed)&&parsed.length>0){newsItems=dedupeNewsItems(parsed);renderNewsAndVerify(container);return;}
 // Empty array [] -- fall through to citation extraction
 }catch(e){
 try{
 var repaired=repairJSON(jsonStr);
 var parsed2=JSON.parse(repaired);
-if(Array.isArray(parsed2)&&parsed2.length>0){newsItems=dedupeNewsItems(parsed2);renderNewsCards(container);return;}
+if(Array.isArray(parsed2)&&parsed2.length>0){newsItems=dedupeNewsItems(parsed2);renderNewsAndVerify(container);return;}
 }catch(e2){}
 }
 }
@@ -10773,19 +10850,19 @@ if(Array.isArray(parsed2)&&parsed2.length>0){newsItems=dedupeNewsItems(parsed2);
 var extracted=extractJSONObjects(cleaned);
 if(extracted.length>0){
 newsItems=dedupeNewsItems(extracted);
-renderNewsCards(container);
+renderNewsAndVerify(container);
 return;
 }
 try{
 var singleObj=JSON.parse(cleaned);
 if(singleObj&&typeof singleObj==='object'&&!Array.isArray(singleObj)&&(singleObj.headline||singleObj.summary)){
-newsItems=dedupeNewsItems([singleObj]);renderNewsCards(container);return;
+newsItems=dedupeNewsItems([singleObj]);renderNewsAndVerify(container);return;
 }
 }catch(e){}
 var mdItems=parseMarkdownNews(raw);
 if(mdItems.length>0){
 newsItems=dedupeNewsItems(mdItems);
-renderNewsCards(container);
+renderNewsAndVerify(container);
 return;
 }
 // FALLBACK: Extract citation links from the raw response
@@ -10796,7 +10873,7 @@ newsItems=citationItems;
 container.innerHTML='<div style="padding:10px 16px 6px;font-family:\'Bitter\',serif;font-size:0.78rem;color:var(--gold-dim);"><i class="fas fa-info-circle" style="margin-right:5px;"></i>The model refused to format its results as JSON, but it DID find <strong>'+citationItems.length+'</strong> real articles via web search. Showing those citation links below -- all have verified URLs.</div>';
 var citGrid=document.createElement('div');
 container.appendChild(citGrid);
-renderNewsCards(citGrid);
+renderNewsAndVerify(citGrid);
 return;
 }
 var lowerRaw=raw.toLowerCase();
@@ -10827,8 +10904,14 @@ html+='<div class="news-verify-row">';
 html+='<a class="news-verify-btn" href="'+escapeAttr(searchUrl)+'" target="_blank" rel="noopener noreferrer"><i class="fas fa-search"></i> Verify on Google</a>';
 if(item.source_url){
 var urlDomain='';try{urlDomain=new URL(item.source_url).hostname.replace(/^www\./,'');}catch(e){urlDomain='';}
-html+='<a class="news-direct-link" href="'+escapeAttr(item.source_url)+'" target="_blank" rel="noopener noreferrer" title="Direct link (bot-provided, may be inaccurate)"><i class="fas fa-link"></i>'+escapeHtml(urlDomain||'direct link')+'</a>';
+html+='<a class="news-direct-link" href="'+escapeAttr(item.source_url)+'" target="_blank" rel="noopener noreferrer" title="Direct link (bot-provided — checked below)"><i class="fas fa-link"></i>'+escapeHtml(urlDomain||'direct link')+'</a>';
 }
+var _ls=item.linkStatus||'';
+if(_ls==='ok'){html+='<span class="news-link-badge" style="border-color:rgba(45,139,122,0.5);color:#2D8B7A;"><i class="fas fa-circle-check"></i> link verified</span>';}
+else if(_ls==='dead'){html+='<span class="news-link-badge" style="border-color:rgba(196,30,58,0.5);color:#C41E3A;"><i class="fas fa-circle-exclamation"></i> link dead'+(item.linkHttpStatus?' ('+item.linkHttpStatus+')':'')+'</span>';}
+else if(_ls==='checking'){html+='<span class="news-link-badge" style="border-color:var(--border);color:var(--text-dim);"><i class="fas fa-spinner fa-spin"></i> checking link</span>';}
+else if(_ls==='none'||!_ls){html+='<span class="news-link-badge" style="border-color:rgba(212,160,23,0.5);color:var(--gold);"><i class="fas fa-triangle-exclamation"></i> no link — verify manually</span>';}
+else{html+='<span class="news-link-badge" style="border-color:var(--border);color:var(--text-dim);"><i class="fas fa-question-circle"></i> link unchecked</span>';}
 html+='</div>';
 if(item.prophetic_angle){html+='<div class="news-card-angle"><i class="fas fa-fire" style="margin-right:5px;"></i>'+escapeHtml(item.prophetic_angle)+'</div>';}
 html+='<div class="news-card-summary">'+escapeHtml(item.summary||'')+'</div>';
