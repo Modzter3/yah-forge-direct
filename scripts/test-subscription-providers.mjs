@@ -76,7 +76,12 @@ try {
     assert.equal(payload.model, c.modelId);
     assert.equal(payload.web_search, undefined);
 
-    assert.equal((await handler(req({ web_search: true }))).status, 400);
+    // web_search is dropped for these providers rather than rejecting the whole request
+    res = await handler(req({ web_search: true }));
+    assert.equal(res.status, 200, c.provider + ' must still answer without retrieval');
+    const wsPayload = JSON.parse(calls.at(-1).init.body);
+    assert.equal(wsPayload.web_search, undefined, c.provider + ' must not forward web_search');
+    assert.equal(wsPayload.plugins, undefined, c.provider + ' must not forward the web plugin');
 
     delete process.env[c.key];
     res = await handler(req());

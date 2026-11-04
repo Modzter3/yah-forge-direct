@@ -149,11 +149,6 @@ export default async function handler(req) {
     return jsonError(`Missing API key. Set AI_API_KEY or ${provider.keyEnv}.`, 500);
   }
 
-  if (NO_WEB_SEARCH_PROVIDERS.has(providerName) && parameters.web_search === true) {
-    const label = providerName === 'nanogpt' ? 'NanoGPT' : providerName === 'opencode_go' ? 'OpenCode Go' : providerName === 'clinepass' ? 'ClinePass' : 'Refuseless';
-    return jsonError(`${label} web search is not configured in this integration. Disable web research or select OpenRouter for retrieval.`, 400);
-  }
-
   if (useKie) {
     return handleKieRequest({
       bot,

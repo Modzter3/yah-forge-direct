@@ -269,6 +269,7 @@
       })
       .catch(function (err) {
         console.warn('[openrouter-models]', err.message || err);
+        if (typeof window.updateNewsSearchNote === 'function') window.updateNewsSearchNote();
         if (typeof window.getForgeLlmProvider === 'function' && window.getForgeLlmProvider() !== provider) return;
         if (usesServerCatalog) {
           for (var i = 0; i < SELECT_IDS.length; i++) {
