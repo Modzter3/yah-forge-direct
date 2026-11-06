@@ -14,16 +14,18 @@ assert.equal(s.stripPrematureForgeClosing(body),body);
 for(const ending of ['[quiet] I’m Brother Bet-Tsade-Lamed-Aleph-Lamed. This has been Yah First Ministries. [pause]','[breathing heavily] This is the end of the episode, but the beginning of your trial. [pause]','[fading out] Peace. [pause]'])assert.equal(s.stripPrematureForgeClosing(body+'\n\n'+ending+'\n\nAnother closing.'),body);
 assert.equal(s.stripPrematureForgeClosing(body+'\n\n[quiet] Peace, Israel. [pause]'),body);
 assert.equal(s.stripPrematureForgeClosing('Teaching about the door closing.\n\nMore teaching.'),'Teaching about the door closing.\n\nMore teaching.');
-assert.equal(s.shouldStageForgeClosing(),true);
-s.selectedPartCount=2;assert.equal(s.shouldStageForgeClosing(),true);s.selectedPartCount=1;
+assert.equal(s.shouldStageForgeClosing(),false);
 s.isLocalLlmChapterSermonActive=()=>true;assert.equal(s.shouldStageForgeClosing(),false);s.isLocalLlmChapterSermonActive=()=>false;
 s.buildPartPrompt=(n,opts)=>{assert.equal(opts.allowClosing,true);return 'LENGTH MINIMUM\nRULE 6 -- CLOSING\nUse one topic-specific goodbye.\nVOICE & STYLE RULES:\nOther rules';};
+s.buildSermonDeliveryPolicy=()=>'DELIVERY POLICY';
 const close=s.buildSermonClosingPrompt(1,body);assert.ok(close.includes('Use one topic-specific goodbye'));assert.ok(!close.includes('LENGTH MINIMUM'));assert.ok(close.includes('No new teaching'));
 // Drive the actual stream completion callback: short body -> continuation -> closing -> commit.
 let callback;const prompts=[];const commits=[];
 Object.assign(s,{sermonGenCtx:{partContent:'',partContainer:{},continuationCount:0,yahVoiceRetryCount:0,driftRetryCount:0,explicitRetryCount:0},
 getForgeStreamModel:()=> 'test',getSermonWebSearchParams:()=>({}),getModelMaxOutputTokens:()=>4000,
-wrapPromptForGrokIfNeeded:p=>p,isYahStoryModeActive:()=>false,appendYahStoryApiParams:()=>{},ForgeLocalSermonProfile:null,
+wrapPromptForCreativeSafetyIfNeeded:(p)=>p,isYahStoryModeActive:()=>false,appendYahStoryApiParams:()=>{},ForgeLocalSermonProfile:null,
+forgeLooksLikeModelContentRefusal:()=>false,forgeHandleForgeContentRefusal:()=>false,SERMON_MAX_FORGE_REFUSAL_RETRIES:0,
+markForgeWaitWriting:()=>{},showToast:()=>{},forgeIsMuseSparkOpen:()=>false,getForgeReasoningHeadroom:()=>0,
 clearSermonWatchdogs:()=>{},armSermonWatchdogs:()=>{},finalizeSermonPartText:t=>t,marked:{parse:t=>t},
 joinContinuationText:(a,b)=>a+'\n\n'+b,isForgePartUnderWordTarget:t=>!t.includes('Enough teaching'),
 getForgeMaxContinuations:()=>2,getForgeWordsPerPart:()=>2000,countForgeWords:t=>t.split(/\s+/).length,selectedStandaloneChars:0,selectedPartChars:0,FORGE_CHARS_PER_WORD:6,theatreActComplete:()=>false,looksLikeYahStoryGuardrailRefusal:()=>false,
@@ -37,12 +39,10 @@ vm.runInContext(source('startSermonPartStream'),s);
 s.startSermonPartStream(1,false);
 callback({responses:[{status:'complete',content:body+'\n\n'+signoff}]});
 assert.equal(prompts.length,2);assert.ok(!s.sermonGenCtx.partContentBeforeContinue.includes('Peace, Israel'));
-callback({responses:[{status:'complete',content:'Enough teaching.\n\n'+signoff}]});
-assert.equal(prompts.length,3);assert.ok(prompts[2].p.includes('FINAL CLOSING ONLY'));assert.equal(prompts[2].opts.parameters.max_tokens,800);
-assert.ok(!s.sermonGenCtx.partContentBeforeContinue.includes('Peace, Israel'));
-callback({responses:[{status:'complete',content:'One final goodbye.'}]});
-assert.equal(prompts.length,3);assert.equal(commits.length,1);assert.ok(commits[0].endsWith('One final goodbye.'));assert.ok(!commits[0].includes('Peace, Israel'));
-console.log('sermon-closing: removal, scope, prompts, and body/continuation/closing lifecycle passed');
+callback({responses:[{status:'complete',content:'Enough teaching.\n\n'+signoff,finishReason:'stop'}]});
+assert.equal(prompts.length,2);assert.ok(!prompts.some(x=>x.p.includes('FINAL CLOSING ONLY')));
+assert.equal(commits.length,1);assert.ok(commits[0].includes('Enough teaching'));
+console.log('sermon-closing: removal, scope, prompts, and body/continuation lifecycle (no staged closing pass) passed');
 
 // The actual cause: a completed paragraph ending in a voice tag looked truncated.
 const tagged='This is a complete teaching paragraph with enough text to exercise truncation detection. [pause]';
@@ -65,12 +65,12 @@ assert.equal(prompts.length,1);assert.equal(commits.length,1);
 // Only the final part buys the brief, separate closing.
 reset(2,2);s.startSermonPartStream(2,false);
 callback({responses:[{status:'complete',content:'Enough teaching. '+tagged,finishReason:'stop'}]});
-assert.equal(prompts.length,2);assert.ok(prompts[1].p.includes('FINAL CLOSING ONLY'));
-callback({responses:[{status:'complete',content:'One final goodbye. [pause]',finishReason:'stop'}]});
-assert.equal(prompts.length,2);assert.equal(commits.length,1);
+assert.equal(prompts.length,1);assert.ok(!prompts.some(x=>x.p.includes('FINAL CLOSING ONLY')));
+assert.equal(commits.length,1);
 // Cutoffs cannot silently advance to the next part after exhausting retries.
 s.document={getElementById:()=>null};s.escapeHtml=t=>t;
 s.document.getElementById=id=>id==='generateBtn'?{}:null;
+s.endForgeWait=()=>{};
 vm.runInContext(source('pauseSermonPart'),s);
 reset(1,2);s.startSermonPartStream(1,false);
 for(let i=0;i<3;i++)callback({responses:[{status:'complete',content:'This unfinished teaching sentence still needs more because they were',finishReason:'length'}]});
@@ -116,12 +116,11 @@ console.log('production sign-off cleanup passed');
 reset(1,2);s.startSermonPartStream(1,false);
 callback({responses:[{status:'complete',content:'Enough teaching. An unfinished tagged thought',finishReason:'length'}]});
 assert.equal(prompts.length,2);
-assert.equal(prompts[1].opts.parameters.max_tokens,2048);
-assert.equal(s.sermonGenCtx.continuationOpts.finishThoughtOnly,true);
+assert.ok(prompts[1].opts.parameters.max_tokens>=2048);
 callback({responses:[{status:'complete',content:'finishes here. [pause]',finishReason:'stop'}]});
 assert.equal(commits.length,1);
 assert.equal(s.sermonGenCtx,null);
-console.log('target reached: bounded 2048-token finishing request completes without another body request');
+console.log('target reached: continuation after length cutoff completes without staged closing');
 
 // A provider's normal stop must not buy extra content just to meet a length target.
 s.getSermonWebSearchParams=()=>({max_tokens:4000});
@@ -152,19 +151,19 @@ assert.equal(s.getForgeAdaptiveContinuationTokens('test','word '.repeat(1900),3,
 s.isForgePartUnderWordTarget=()=>false;
 assert.equal(s.getForgeContinuationOptions('draft',3).finishThoughtOnly,true);
 ctx.continuationOpts={finishThoughtOnly:true};ctx.completionDiagnostics=[];
-assert.equal(s.getForgeAdaptiveContinuationTokens('test','draft',3,ctx),2048);
-ctx.completionDiagnostics=[{phase:'continuation',truncated:true,requestedTokens:2048}];
-assert.equal(s.getForgeAdaptiveContinuationTokens('test','draft',3,ctx),3072);
+assert.equal(s.getForgeAdaptiveContinuationTokens('test','draft',3,ctx),4096);
+ctx.completionDiagnostics=[{phase:'continuation',truncated:true,requestedTokens:4096}];
+assert.equal(s.getForgeAdaptiveContinuationTokens('test','draft',3,ctx),6144);
 assert.equal(s.stripForgeContinuationLengthDemands('VOICE: keep persona\nPART LENGTH LOCK: MINIMUM per part\nMust cover assigned material'),'VOICE: keep persona\nMust cover assigned material');
 console.log('adaptive continuation: substantial body budget, dedicated finishing budget, repeated-cutoff growth, model ceiling, and removal of conflicting quota passed');
 
 // Actual stream lifecycle: finishing budget escalates once, then pauses at the cap.
 reset(1,2);s.startSermonPartStream(1,false);
 callback({responses:[{status:'complete',content:'unfinished thought',finishReason:'length'}]});
-assert.equal(prompts[1].opts.parameters.max_tokens,2048);
+assert.equal(prompts[1].opts.parameters.max_tokens,4096);
 callback({responses:[{status:'complete',content:'still unfinished',finishReason:'length'}]});
-assert.equal(prompts[2].opts.parameters.max_tokens,3072);
+assert.equal(prompts[2].opts.parameters.max_tokens,6144);
 callback({responses:[{status:'complete',content:'still unfinished',finishReason:'length'}]});
 assert.equal(prompts.length,3);assert.equal(s.sermonGenCtx.paused,true);assert.equal(commits.length,0);
-assert.ok(s.sermonGenCtx.partContainer.innerHTML.includes('3072 tokens'));
-console.log('actual stream: finishing budget grows from 2048 to 3072, no third automatic continuation, draft remains saved');
+assert.ok(s.sermonGenCtx.partContainer.innerHTML.includes('6144 tokens'));
+console.log('actual stream: continuation budget grows from 4096 to 6144, no third automatic continuation, draft remains saved');

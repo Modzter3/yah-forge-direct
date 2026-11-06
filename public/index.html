@@ -6426,7 +6426,9 @@ while(paras.length>1&&looksLikeForgeClosingParagraph(paras[paras.length-1]))para
 return paras.join('\n\n');
 }
 function shouldStageForgeClosing(){
-return !isTheatreModeActive()&&!isLocalLlmChapterSermonActive();
+// Off: a second "closing only" call burns frontier reasoning budget and often stops at length,
+// which pauses the run after the sermon body is already done. Closes stay in the main part prompt (RULE 6).
+return false;
 }
 function buildSermonClosingPrompt(partNum,existing){
 var assignment=buildPartPrompt(partNum,{allowClosing:true});
@@ -7465,7 +7467,11 @@ return;
 }
 if(streamOpts.closingOnly){
 if(isSermonResponseTruncated(msg,finalized)){
-pauseSermonPart(ctx,partNum,'The closing was cut off. Your draft is preserved.');
+var bodyOnly=ctx.partContentBeforeContinue||(ctx.partContent?stripPrematureForgeClosing(ctx.partContent):'')||ctx.partContent;
+showToast('Extra closing pass ran out of tokens — finishing with your body draft.');
+commitSermonPart(partNum,bodyOnly);
+sermonGenCtx=null;
+generatePart(partNum+1);
 return;
 }
 commitSermonPart(partNum,ctx.partContent);
