@@ -7835,6 +7835,41 @@ if(brief.tone)parts.push('Tone: '+brief.tone);
 if(parts.length)return parts.join(' · ');
 return 'Custom sermon topic: '+(brief.brief||brief.headline||'');
 }
+function topicSourceHaystack(topic){
+if(!topic)return '';
+return String([topic.title,topic.desc,topic.briefingText,topic.customBrief,topic.subjectHint,topic.headline].filter(Boolean).join('\n'));
+}
+function looksLikeOutsideTheologyBook(topic){
+var hay=topicSourceHaystack(topic);
+if(!hay||hay.length<200)return false;
+if(/\b(A\.?\s*W\.?\s*Pink|Arthur\s+W\.?\s*Pink|The\s+Sovereignty\s+of\s+God|Sovereignty\s+of\s+God|Institutes\s+of\s+the\s+Christian\s+Religion|John\s+Calvin|Charles\s+H\.?\s*Spurgeon|Matthew\s+Henry|Louis\s+Berkhof|Way of Life Encyclopedia|Way\s+of\s+Life)\b/i.test(hay))return true;
+if(/\b(Pink|Calvin|Spurgeon|Henry)\s+(says|said|argues|argued|teaches|taught|opens|opened|closes|closed|left off|forces|forced|drags|dragged|asks|asked|stacks|stacked|lifts|lifted|notes|noted|is right)\b/i.test(hay))return true;
+if(/\bTHE\s+SOVEREIGNTY\s+OF\s+GOD\b/i.test(hay))return true;
+if(/\b(for\s+thy\s+pleasure\s+they\s+are|absolute\s+Sovereign|vessels\s+of\s+(wrath|honor)|Jacob\s+have\s+I\s+loved)\b/i.test(hay)&&hay.length>=900)return true;
+return false;
+}
+function buildOutsideTheologyBookCrossExamBlock(topic){
+if(!topic)return '';
+var src=String(topic.briefingText||topic.customBrief||'').trim();
+if(!src)src=topicSourceHaystack(topic);
+var p='*** OUTSIDE THEOLOGY BOOK — CROSS-EXAM MODE (MANDATORY — OVERRIDES BRIEFING / NEWS DECODE) ***\n';
+p+='The user pasted a church book, commentary, or seminary chapter (e.g. A. W. Pink, Calvin, Spurgeon). This is SOURCE MATERIAL ON TRIAL. The forge framework and KJV Torah judge the author — the author does NOT judge Israel.\n\n';
+p+='FORBIDDEN (automatic fail):\n';
+p+='- Using the author as the sermon spine: "Pink opens", "Pink says", "Pink closes", "Pink is right", "Pink left off", "as Pink argues", mirroring the book\'s section headers as your outline without verdicts.\n';
+p+='- Preaching the author\'s theology as yours; "both sides" on sovereignty, Israel, Messiah, or Torah.\n';
+p+='- News-style prophetic decode that ignores theological claims in the paste.\n';
+p+='- Echoing false framework items the author assumes: Trinity, eternal torture, rapture escape, gentile church replacing Israel, equal free-will altar calls, literal angel bureaucracies (archangel / seraph / cherub ranks as separate beings), "the Lord" or "Jesus" as separate gods from Yah without correction.\n\n';
+p+='REQUIRED on every major claim or paragraph cluster from the source (walk source ORDER):\n';
+p+='1) Author claim — one or two sentences, tight paraphrase.\n';
+p+='2) Verdict in plain speech: ALIGNED | NEEDS CORRECTION | FALSE DOCTRINE.\n';
+p+='3) If not ALIGNED: name the lie, cite KJV Torah or prophet witness (book chapter verse in words), teach framework truth.\n';
+p+='4) Then Israel application for scattered Israel in the current age — without re‑anointing the author as authority.\n';
+p+='Where sovereignty language ALIGNS with Torah, say ALIGNED and credit Yah\'s word — never "the commentator is right."\n';
+p+='Pink / Reformed traps: gradated "angel hosts" and ranks = challenge per framework (no separate angel chain of command). Calvinist universals aimed at the gentile church = NEEDS CORRECTION for bloodline Israel. Author\'s comfort with "the Lord" = NEEDS CORRECTION — restore Yah / Yahusha identity from Torah.\n\n';
+p+='HEADLINE: '+(topic.title||'Outside theology book')+'\n';
+p+='SOURCE TEXT (cross-examine in order — do not adopt as co-pastor):\n'+src+'\n\n';
+return p;
+}
 function buildChapterSourceTheologyGateBlock(chapterSrc){
 if(!chapterSrc||chapterSrc.type==='sealed')return '';
 var t=chapterSrc.type;
@@ -7842,6 +7877,7 @@ var p='*** BOOK FORGE — THEOLOGY GATE (MANDATORY) ***\n';
 p+='The text below is SOURCE MATERIAL to walk in order — NOT automatic truth. The forge theological framework and KJV Torah are the supreme judges. Cross-examine the book while preaching Israel.\n\n';
 p+='FORBIDDEN:\n';
 p+='- Fair-minded summaries that adopt the author\'s theology as yours.\n';
+p+='- Narrating the author as sermon spine ("Pink says", "Pink closes", "Pink is right", section titles copied from the book without ALIGNED / NEEDS CORRECTION / FALSE DOCTRINE verdicts).\n';
 p+='- Teaching a commentator\'s conclusion (Pink, Calvin, dispensationalists, seminary, novels, philosophy) when it conflicts with this framework.\n';
 p+='- "Both sides" neutrality on sovereignty, Israel identity, Torah, Messiah, or creation.\n';
 p+='- Agreeing with Trinity, eternal torture, rapture escape, equal free-will choice, replacement theology, dispensational church-over-Israel, literal angel bureaucracies, or Yod-He-Waw-Shin-Ayin as a separate person from Yah.\n\n';
@@ -7927,6 +7963,7 @@ return p;
 }
 function buildPastedBriefingSermonBlock(topic){
 if(!topic||!topic.briefingText)return '';
+if(looksLikeOutsideTheologyBook(topic))return buildOutsideTheologyBookCrossExamBlock(topic);
 var p='*** PASTED BRIEFING — NOT A QUESTION (HIGHEST PRIORITY — OVERRIDES DIRECT QUESTION MODE) ***\n';
 p+='The user pasted source material — a news brief, caption, or article chunk. This is TOPIC FUEL for prophetic decode, NOT something Israel asked you to explain literally.\n\n';
 p+='FORBIDDEN:\n';
@@ -8452,6 +8489,7 @@ p+='VERSE COVERAGE: Walk every assigned verse in exact order. Miss nothing. Each
 }
 }
 if(topic&&topic.briefingText)p+=buildPastedBriefingSermonBlock(topic);
+else if(topic&&topic.id===-1&&looksLikeOutsideTheologyBook(topic))p+=buildOutsideTheologyBookCrossExamBlock(topic);
 else if(directQuestion)p+=buildDirectQuestionSermonBlock(topic,partNum,totalParts);
 if(topic&&topic.id===-1){
 if(chapterSrc&&chapterSrc.type==='custom')p+=buildCustomTopicDirectiveBlock(topic,{scriptureOnlyTone:true});
