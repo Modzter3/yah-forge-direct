@@ -36,7 +36,7 @@ Use **Sealed Scroll** and paste into the manual paste area when the work fits th
 
 If you paste **normal prose** into Custom with **no** verse-numbered structure, the app may classify it as a **briefing** (`briefingText`). The pasted-briefing block explicitly says **not** to make the sermon a line-by-line response to the paste — so that path is wrong for “explicate every line in order.”
 
-**Exception — outside theology books (Pink, Calvin, etc.):** When the paste or subject looks like a commentator or church book chapter (`looksLikeOutsideTheologyBook`), the forge switches to **OUTSIDE THEOLOGY BOOK — CROSS-EXAM MODE** instead of news/decode briefing. The author is on trial: each major claim needs ALIGNED / NEEDS CORRECTION / FALSE DOCTRINE — not “Pink says…” as the sermon spine. For the strictest walk, still prefer Option A (header + numbered lines) so `THEOLOGY GATE` runs on every line.
+**Exception — outside theology books (Pink, Calvin, etc.):** When the paste looks like a commentator chapter (`looksLikeOutsideTheologyBook`), the forge uses **OUTSIDE THEOLOGY BOOK — STORY FORGE** instead of news/decode briefing: walk the chapter in story voice, use the author as a foil, challenge lies in prose — **no** “Author claim:” / “Verdict:” rubric blocks. For the strictest walk, still prefer Option A (header + numbered lines) so `THEOLOGY GATE` runs on every line in the same story voice.
 
 ## Quick checklist
 
