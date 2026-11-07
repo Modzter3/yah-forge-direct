@@ -24,6 +24,8 @@ The same **“verse-by-verse only this text”** machinery is tied to **`current
 3. Forge from **Custom** so `currentChapterSource.type === 'custom'` and the strict **line-by-line in order** block applies.
 4. **Cross Refs OFF** if you do not want mandatory citations from other books.
 
+The forge also runs a **THEOLOGY GATE** on custom, apocrypha, and KJV chapter forges (not sealed — those already have the five-layer filter): walk the text in order, but **challenge** each line that contradicts the forge framework (verdict + Torah/prophet citation). Commentators and outside authors are cross-examined, not echoed.
+
 The UI may still say “scripture” in places; you are reusing the **same technical pipeline** for any text that matches the parser.
 
 ### Option B — Sealed scroll + manual paste

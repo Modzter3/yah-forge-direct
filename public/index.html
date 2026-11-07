@@ -4975,7 +4975,7 @@ p+='Quote each assigned verse inside the room, then dramatize the decode through
 if(chapterSrc.type==='sealed'){
 p+='SEALED SCROLL: filter corruption against Torah inside the scene — call out serpent-seed poison in plain speech when a verse is contaminated.\n';
 }else if(chapterSrc.type==='apocrypha'){
-p+='Apocryphal text — treat with full authority; cross-reference KJV canon when a speaker tries to dismiss it.\n';
+p+='Apocryphal text — filter through Torah; challenge lines that violate the framework. Cross-reference KJV when a speaker tries to dismiss truth or smuggle lies.\n';
 }
 if(currentChapterText){
 p+='\n=======================================\n';
@@ -7835,6 +7835,26 @@ if(brief.tone)parts.push('Tone: '+brief.tone);
 if(parts.length)return parts.join(' · ');
 return 'Custom sermon topic: '+(brief.brief||brief.headline||'');
 }
+function buildChapterSourceTheologyGateBlock(chapterSrc){
+if(!chapterSrc||chapterSrc.type==='sealed')return '';
+var t=chapterSrc.type;
+var p='*** BOOK FORGE — THEOLOGY GATE (MANDATORY) ***\n';
+p+='The text below is SOURCE MATERIAL to walk in order — NOT automatic truth. The forge theological framework and KJV Torah are the supreme judges. Cross-examine the book while preaching Israel.\n\n';
+p+='FORBIDDEN:\n';
+p+='- Fair-minded summaries that adopt the author\'s theology as yours.\n';
+p+='- Teaching a commentator\'s conclusion (Pink, Calvin, dispensationalists, seminary, novels, philosophy) when it conflicts with this framework.\n';
+p+='- "Both sides" neutrality on sovereignty, Israel identity, Torah, Messiah, or creation.\n';
+p+='- Agreeing with Trinity, eternal torture, rapture escape, equal free-will choice, replacement theology, dispensational church-over-Israel, literal angel bureaucracies, or Yod-He-Waw-Shin-Ayin as a separate person from Yah.\n\n';
+p+='REQUIRED on EVERY line, verse, or paragraph in your assignment:\n';
+p+='- Anchor the source (quote or tight paraphrase).\n';
+p+='- Verdict in plain speech: ALIGNED | NEEDS CORRECTION | FALSE DOCTRINE.\n';
+p+='- If not ALIGNED: name the lie, cite specific KJV Torah or prophet witness (book chapter verse in words), teach the framework truth, then move to the NEXT source line in order.\n';
+p+='- Source authors are witnesses under cross-examination — not co-pastors.\n\n';
+if(t==='custom')p+='Custom pasted book: numbered lines are the spine; challenge false theology ON THAT LINE before advancing.\n\n';
+if(t==='apocrypha')p+='Apocrypha: treasure Torah-aligned passages; contradicting lines get challenged like sealed corruption (in voice — no five-layer lecture headers).\n\n';
+if(t==='bible')p+='KJV: the English stands; challenge false traditions people layer onto the verse.\n\n';
+return p;
+}
 function buildCustomTopicDirectiveBlock(topic,opts){
 opts=opts||{};
 if(!topic||topic.id!==-1)return '';
@@ -7916,7 +7936,8 @@ p+='- Treating "you may be thinking..." or "sorry to say..." lines as prompts to
 p+='- Treating numbers in the paste (1 dollar, 20%, 10%, wage caps) as Bible verses or scripture breakdown.\n\n';
 p+='REQUIRED:\n';
 p+='- Prophetic decode for scattered Israel — beast-system angle, who runs the narrative, what it means for Israel in twenty twenty-six, Yah\'s sovereignty over the event.\n';
-p+='- Use the briefing as evidence — do not make the sermon a line-by-line response to the paste.\n\n';
+p+='- Use the briefing as evidence — do not make the sermon a line-by-line response to the paste.\n';
+p+='- When the briefing asserts theology (sovereignty, election, Israel, Messiah, judgment), CHALLENGE claims that violate the forge framework — do not preach the author\'s theology as yours.\n\n';
 p+='HEADLINE: '+topic.title+'\n';
 p+='SOURCE BRIEFING (context — do not copy verbatim as the sermon body):\n'+topic.briefingText+'\n\n';
 return p;
@@ -8439,6 +8460,7 @@ else if(!topic.briefingText)p+=buildCustomTopicDirectiveBlock(topic);
 p+=''+(wantRoughBez?(totalParts===1?'SERMON':'PART '+partNum):(totalParts===1?'EPISODE':'PART '+partNum))+' FOCUS:\n'+partFocus+'\n\n';
 if(chapterSrc){
 p+='SOURCE: '+chapterSrc.book+' Chapter '+chapterSrc.chapter+'.\n';
+p+=buildChapterSourceTheologyGateBlock(chapterSrc);
 if(chapterSrc.type==='custom'){
 p+='THIS IS PASTED SCRIPTURE from the custom topic field. The FULL text is provided below. You MUST walk it LINE BY LINE, VERSE BY VERSE, in EXACT ORDER from first to last. Do NOT skip verses. Do NOT jump from verse 1 to verse 10. Do NOT cherry-pick highlights. Every numbered verse in your assignment gets covered before you move to the next one.\n\n';
 }else if(chapterSrc.type==='sealed'){
@@ -8515,7 +8537,7 @@ p+='The voice of Yah does NOT bow to these texts -- Yah JUDGES them. Extract the
 p+='Note: Sealed texts may use sections, paragraphs, or fragments instead of traditional verse numbers. Adapt your verse-by-verse breakdown to match the text structure (section-by-section if needed).\n';
 }
 }else if(chapterSrc.type==='apocrypha'){
-p+=wantCrossRefs?'This is an apocryphal text. Treat with full scriptural authority. MANDATORY: cross-reference it with KJV canon (and other permitted texts) where they confirm, expand, or sharpen the point -- name the book, chapter, and verse in spoken words and deliver them, do not hold them in reserve.\n':'This is an apocryphal text. Stay on THIS chapter -- do not sprinkle cross-references to other books.\n';
+p+=wantCrossRefs?'This is an apocryphal text. FILTER through Torah (see THEOLOGY GATE above). Cross-reference KJV canon where it confirms or exposes the passage — name book, chapter, and verse in spoken words.\n':'This is an apocryphal text. FILTER through Torah (see THEOLOGY GATE above). Stay on THIS chapter — do not sprinkle cross-references to other books.\n';
 }
 // Inject the actual scripture text if we fetched it
 if(currentChapterText){
@@ -8599,11 +8621,11 @@ p+='*** DEEP-DIVE VERSE BREAKDOWN PROTOCOL -- MANDATORY FOR EVERY VERSE ***\n';
 p+='For EACH verse, you MUST complete ALL of the following internal analysis steps. DO NOT OUTPUT THE STEP HEADERS OR LABELS -- just deliver the content smoothly without section titles.\n\n';
 p+='INTERNAL STEP 1 -- QUOTE THE VERSE:\n';
 p+='   - Quote the FULL verse using Hebrew names (Yah, Yod-He-Waw-Shin-Ayin, Elohiym, Mosheh, Yisrael, etc.).\n';
-p+='   - If this is a sealed scroll and the verse contains obvious corruption (trinitarian language, angel worship, mysticism), note it in brackets immediately: "[CORRUPTION DETECTED]" or "[CONTAMINATED -- TO BE FILTERED]".\n\n';
-p+='INTERNAL STEP 2 -- CORRUPTION DETECTION (SEALED SCROLLS ONLY) -- OUTPUT WITHOUT LABEL:\n';
-p+='   - If this is a sealed scroll verse, identify whether it contains serpent seed corruption.\n';
-p+='   - Call it out explicitly: is this verse BURIED TRUTH or CONTAMINATED LIES?\n';
-p+='   - Explain HOW it was corrupted and what the REAL truth is underneath.\n';
+p+='   - If the source verse or line contains obvious corruption or false doctrine (trinitarian language, angel worship, mysticism, free-will equal choice, eternal torture, replacement theology), note it in brackets immediately: "[CORRUPTION DETECTED]" or "[CONTAMINATED -- TO BE FILTERED]" or "[FALSE DOCTRINE]".\n\n';
+p+='INTERNAL STEP 2 -- THEOLOGY GATE / CORRUPTION DETECTION -- OUTPUT WITHOUT LABEL:\n';
+p+='   - Run the BOOK FORGE THEOLOGY GATE on this verse or line (sealed, apocrypha, custom outside book, or parasite tradition on KJV).\n';
+p+='   - Call it out explicitly: ALIGNED truth, NEEDS CORRECTION, or FALSE DOCTRINE / contaminated lies.\n';
+p+='   - If wrong: cite Torah or prophets that refute it, then teach the framework truth before advancing.\n';
 p+='   - BUT DO NOT OUTPUT A "**CORRUPTION DETECTION:**" HEADER -- just deliver the analysis directly.\n\n';
 if(wantRoughBez){
 p+='INTERNAL STEP 3 -- SYMBOLIC LANGUAGE DECODING -- OUTPUT WITHOUT LABEL:\n';
