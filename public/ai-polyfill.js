@@ -145,9 +145,13 @@
     if (signal) fetchOpts.signal = signal;
     const res = await fetch(API_ROUTE, fetchOpts);
     if (!res.ok) {
-      let msg;
-      try { msg = (await res.json()).error; } catch { msg = await res.text(); }
-      const errText = msg || `HTTP ${res.status}`;
+      const raw = await res.text();
+      let msg = raw;
+      try {
+        const j = JSON.parse(raw);
+        if (j && j.error) msg = typeof j.error === 'string' ? j.error : (j.error.message || raw);
+      } catch (_) {}
+      const errText = (msg && String(msg).trim()) || `HTTP ${res.status}`;
       if ((provider === 'local' || provider === 'bonsai') && !/OrcaRouter Local offline/i.test(errText)) {
         throw new Error('OrcaRouter Local offline: ' + errText);
       }
