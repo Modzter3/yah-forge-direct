@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import handler from '../api/ai.js';
-import { searchWeb, searchWebDeep, formatWebSearchContext, filterSearchResults } from '../api/web-search.js';
+import { searchWeb, searchWebBatch, formatWebSearchContext, filterSearchResults } from '../api/web-search.js';
 
 const previous = { ...process.env };
 const originalFetch = globalThis.fetch;
@@ -159,7 +159,8 @@ try {
   assert.match(html, /forge_search_news=true/, 'the news scan must request news-shaped retrieval');
   assert.match(html, /forge_search_max=resultTarget/, 'the news scan must pass the requested article count to the server');
   assert.doesNotMatch(html, /Do NOT pad the array to hit the requested count/, 'prompt must not tell the model to return fewer than requested');
-  assert.match(html, /HARD COUNT:/, 'prompt must require exact article count');
+  assert.doesNotMatch(html, /finishNewsScanFromState/, 'scan must use the original parse path, not async top-up rounds');
+  assert.match(html, /COUNT: Return a JSON array of exactly/, 'prompt must require exact article count');
   assert.match(html, /window\.__forgeWebSearchMode/, 'the results banner must read the server mode');
   assert.match(html, /server-side web search/, 'the provider note must describe server-side search');
   assert.match(fs.readFileSync('public/ai-polyfill.js', 'utf8'), /X-AI-Web-Search/, 'the polyfill must stash the mode header');

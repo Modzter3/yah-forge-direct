@@ -281,21 +281,18 @@ function dedupeSearchRows(rows) {
   return out;
 }
 
-/** Run follow-up queries until we have up to `max` distinct URLs (news scans). */
-export async function searchWebDeep(query, opts = {}) {
+/** Merge two parallel news searches (one round-trip) for larger scan quotas without serial timeouts. */
+export async function searchWebBatch(query, opts = {}) {
   const desired = Math.min(FORGE_SEARCH_MAX_CAP, Math.max(1, Number(opts.max) || MAX_RESULTS));
   const news = opts.news === true;
-  let merged = dedupeSearchRows(await searchWeb(query, { max: desired, news }));
-  if (merged.length >= desired) return merged.slice(0, desired);
-  const tail = query.replace(/\s+/g, ' ').trim();
-  const variants = [`${tail} latest headlines`, `${tail} breaking`];
-  for (const v of variants) {
-    if (merged.length >= desired) break;
-    const need = desired - merged.length;
-    const more = await searchWeb(v, { max: need, news });
-    merged = dedupeSearchRows(merged.concat(more));
-  }
-  return merged.slice(0, desired);
+  if (desired <= 8) return searchWeb(query, { max: desired, news });
+  const alt = `${String(query || '').replace(/\s+/g, ' ').trim()} latest`;
+  const perQuery = Math.min(desired, 12);
+  const [primary, extra] = await Promise.all([
+    searchWeb(query, { max: perQuery, news }),
+    searchWeb(alt, { max: perQuery, news }),
+  ]);
+  return dedupeSearchRows(primary.concat(extra)).slice(0, desired);
 }
 
 /** Compact context block the model can treat as the factual spine. */
@@ -310,7 +307,7 @@ export function formatWebSearchContext(results, opts = {}) {
     quota > 0
       ? [
           '',
-          `SCAN QUOTA: The user asked for exactly ${quota} articles in JSON. Use each numbered result above as at least one article when possible. If fewer than ${quota} distinct stories appear above, run MORE web searches until your JSON array length equals exactly ${quota}. Every object must map to a real story you found (live results or follow-up search) -- never invent URLs or headlines.`,
+          `SCAN QUOTA: The user asked for exactly ${quota} articles in JSON. Turn each numbered live result above into one article when it is a distinct story. If you see fewer than ${quota} stories above, run additional web searches and keep going until the JSON array has exactly ${quota} real articles. Never invent URLs or headlines.`,
           '',
         ].join('\n')
       : '';
