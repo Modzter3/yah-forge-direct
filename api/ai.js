@@ -1,4 +1,4 @@
-import { searchWeb, formatWebSearchContext } from './web-search.js';
+import { searchWeb, searchWebDeep, formatWebSearchContext } from './web-search.js';
 import {
   KIE_BASE_URL,
   buildKieChatCompletionsPayload,
@@ -162,17 +162,20 @@ export default async function handler(req) {
   // Flows that need the model to READ a specific page do not send one and keep the plugin.
   const searchQuery = String(parameters.forge_search_query || '').trim();
   const searchNews = parameters.forge_search_news === true;
+  const searchMax = Math.min(25, Math.max(1, Number(parameters.forge_search_max) || 8));
   delete parameters.forge_search_query;
   delete parameters.forge_search_news;
+  delete parameters.forge_search_max;
   if (parameters.web_search === true && process.env.FORGE_SERVER_WEB_SEARCH !== 'off') {
     if (searchQuery) {
       let results = [];
       try {
-        results = await searchWeb(searchQuery, { max: 8, news: searchNews });
+        const runSearch = searchMax > 8 ? searchWebDeep : searchWeb;
+        results = await runSearch(searchQuery, { max: searchMax, news: searchNews });
       } catch {
         results = [];
       }
-      const context = formatWebSearchContext(results, { label: 'WEB SEARCH' });
+      const context = formatWebSearchContext(results, { label: 'WEB SEARCH', articleTarget: searchMax });
       if (context) {
         effectiveQuery = context + query;
         webSearchMode = 'live';
