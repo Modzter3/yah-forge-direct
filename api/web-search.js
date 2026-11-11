@@ -15,6 +15,8 @@ const USER_AGENT =
   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 const FETCH_TIMEOUT_MS = 9000;
 const MAX_RESULTS = 8;
+/** Upper bound for news-scan injection (matches #newsResultCount max in the UI). */
+export const FORGE_SEARCH_MAX_CAP = 25;
 const SNIPPET_CAP = 320;
 
 async function getText(url, init = {}) {
@@ -241,7 +243,7 @@ async function bingNewsScrape(query, max) {
 export async function searchWeb(query, opts = {}) {
   const q = String(query || '').trim().slice(0, 400);
   if (!q) return [];
-  const max = Math.min(10, Math.max(1, Number(opts.max) || MAX_RESULTS));
+  const max = Math.min(FORGE_SEARCH_MAX_CAP, Math.max(1, Number(opts.max) || MAX_RESULTS));
   const newsMode = opts.news === true;
   const strategies = newsMode
     ? [braveSearch, tavilySearch, serperNewsSearch, bingNewsScrape, bingScrape]
@@ -267,6 +269,35 @@ export async function searchWeb(query, opts = {}) {
   return results;
 }
 
+function dedupeSearchRows(rows) {
+  const seen = new Set();
+  const out = [];
+  for (const r of rows) {
+    const u = String(r.url || '').trim().toLowerCase();
+    if (!u || seen.has(u)) continue;
+    seen.add(u);
+    out.push(r);
+  }
+  return out;
+}
+
+/** Run follow-up queries until we have up to `max` distinct URLs (news scans). */
+export async function searchWebDeep(query, opts = {}) {
+  const desired = Math.min(FORGE_SEARCH_MAX_CAP, Math.max(1, Number(opts.max) || MAX_RESULTS));
+  const news = opts.news === true;
+  let merged = dedupeSearchRows(await searchWeb(query, { max: desired, news }));
+  if (merged.length >= desired) return merged.slice(0, desired);
+  const tail = query.replace(/\s+/g, ' ').trim();
+  const variants = [`${tail} latest headlines`, `${tail} breaking`];
+  for (const v of variants) {
+    if (merged.length >= desired) break;
+    const need = desired - merged.length;
+    const more = await searchWeb(v, { max: need, news });
+    merged = dedupeSearchRows(merged.concat(more));
+  }
+  return merged.slice(0, desired);
+}
+
 /** Compact context block the model can treat as the factual spine. */
 export function formatWebSearchContext(results, opts = {}) {
   const rows = Array.isArray(results) ? results : [];
@@ -274,12 +305,21 @@ export function formatWebSearchContext(results, opts = {}) {
   const label = opts.label || 'SEARCH';
   const when = opts.when || new Date().toISOString().slice(0, 10);
   const lines = rows.map((r, i) => `${i + 1}. ${r.title} -- ${hostOf(r.url)} -- ${r.url}${r.snippet ? '\n   ' + r.snippet : ''}`);
+  const quota = Math.min(FORGE_SEARCH_MAX_CAP, Math.max(0, Number(opts.articleTarget) || 0));
+  const quotaBlock =
+    quota > 0
+      ? [
+          '',
+          `SCAN QUOTA: The user asked for exactly ${quota} articles in JSON. Use each numbered result above as at least one article when possible. If fewer than ${quota} distinct stories appear above, run MORE web searches until your JSON array length equals exactly ${quota}. Every object must map to a real story you found (live results or follow-up search) -- never invent URLs or headlines.`,
+          '',
+        ].join('\n')
+      : '';
   return [
     `LIVE ${label} RESULTS (retrieved ${when} from a real web search -- treat these as the factual spine; do not invent headlines, dates, or figures beyond them, and say so if they do not cover the question):`,
     ...lines,
     '',
     `RECENCY LOCK: today is ${when}. Items in these results are current; anything you remember from training data is NOT. If a result falls outside the requested date window, give its REAL date or drop it -- never present stale or remembered stories as recent news.`,
-    '',
+    quotaBlock,
     'END LIVE RESULTS.',
     '',
     'USER REQUEST:',

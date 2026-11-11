@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import handler from '../api/ai.js';
-import { searchWeb, formatWebSearchContext, filterSearchResults } from '../api/web-search.js';
+import { searchWeb, searchWebDeep, formatWebSearchContext, filterSearchResults } from '../api/web-search.js';
 
 const previous = { ...process.env };
 const originalFetch = globalThis.fetch;
@@ -81,7 +81,7 @@ try {
     return new Response('', { status: 404 });
   };
 
-  let res = await handler(req('refuseless', 'glm-5.3-abliterated', { web_search: true, forge_search_query: 'credit card late fee cap', forge_search_news: true, max_tokens: 4000 }));
+  let res = await handler(req('refuseless', 'glm-5.3-abliterated', { web_search: true, forge_search_query: 'credit card late fee cap', forge_search_news: true, forge_search_max: 15, max_tokens: 4000 }));
   assert.equal(res.status, 200, 'subscription providers must answer instead of 400');
   assert.equal(res.headers.get('X-AI-Web-Search'), 'live', 'mode must be reported to the client');
   const chatCall = calls.filter((c) => c.url.includes('refuseless.com')).at(-1);
@@ -89,6 +89,7 @@ try {
   assert.match(body.messages[0].content, /^LIVE WEB SEARCH RESULTS/);
   assert.match(body.messages[0].content, /macworld\.com/);
   assert.match(body.messages[0].content, /biggest headlines this week$/, 'the user query must still be at the end');
+  assert.match(body.messages[0].content, /exactly 15 articles/, 'injected block must echo the scan quota');
   assert.equal(body.web_search, undefined, 'the flag must not be forwarded upstream');
   assert.equal(body.plugins, undefined);
   assert.equal(body.forge_search_query, undefined, 'the search hint must not reach the upstream body');
@@ -156,6 +157,9 @@ try {
   const html = fs.readFileSync('public/index.html', 'utf8');
   assert.match(html, /var params=\{web_search:true\};/, 'the news scan must request retrieval');
   assert.match(html, /forge_search_news=true/, 'the news scan must request news-shaped retrieval');
+  assert.match(html, /forge_search_max=resultTarget/, 'the news scan must pass the requested article count to the server');
+  assert.doesNotMatch(html, /Do NOT pad the array to hit the requested count/, 'prompt must not tell the model to return fewer than requested');
+  assert.match(html, /HARD COUNT:/, 'prompt must require exact article count');
   assert.match(html, /window\.__forgeWebSearchMode/, 'the results banner must read the server mode');
   assert.match(html, /server-side web search/, 'the provider note must describe server-side search');
   assert.match(fs.readFileSync('public/ai-polyfill.js', 'utf8'), /X-AI-Web-Search/, 'the polyfill must stash the mode header');
