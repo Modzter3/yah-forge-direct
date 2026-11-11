@@ -10642,8 +10642,8 @@ p+='NO-FABRICATION LOCK (the app probes every link you return):\n';
 p+='- Every headline MUST be a story you actually saw in THIS scan\'s search results. If you did not see it, do not write it.\n';
 p+='- Copy source_url EXACTLY as the search result returned it. Never rebuild, shorten, clean up, or invent a URL to satisfy the schema.\n';
 p+='- If you have a real headline but no URL, return source_url as an empty string. The app marks those "no link, verify manually" -- that is honest. A made-up URL is a lie and shows up as a dead link.\n';
-p+='- If a LIVE WEB SEARCH RESULTS block appears above, treat it as the authoritative spine for what is real -- but the user still requires exactly '+resultCount+' articles.\n';
-p+='- HARD COUNT: Your JSON array length MUST equal '+resultCount+'. Returning '+Math.max(1,resultCount-1)+' or fewer is FAILURE. Run extra web searches until you have '+resultCount+' distinct real stories. Never invent URLs or headlines to fill slots.\n\n';
+p+='- If a LIVE WEB SEARCH RESULTS block appears above, treat it as the authoritative spine for what is real -- format those stories first.\n';
+p+='- COUNT: Return a JSON array of exactly '+resultCount+' articles. Run as many web searches as you need to reach '+resultCount+' distinct real stories. Never invent URLs or headlines.\n\n';
 p+='RULES:\n';
 p+='- ONLY real articles from your web search results. The headline, source, date, and URL must all come from articles you actually found.\n';
 p+='- TARGET: Return exactly '+resultCount+' articles -- not approximately, not "best effort." Search aggressively with multiple queries. Broaden your search terms if initial queries are too narrow. You have web search -- use it thoroughly.\n';
@@ -10658,94 +10658,12 @@ p+='- Spell out ALL numbers in verse references as words.\n';
 p+='- CRITICAL OUTPUT RULE: Your ENTIRE response must be ONLY a valid JSON array of articles. Start with [ and end with ]. No preamble text, no markdown code fences (no ```), no explanation before or after, no apologies about not finding results. Just the raw JSON array with the articles you found via web search.\n';
 return p;
 }
-var NEWS_SCAN_TOPUP_MAX=2;
-function buildNewsScanTopUpPrompt(existing,needMore,category,customQuery){
-var heads=existing.slice(0,40).map(function(it){return (it.headline||'').slice(0,120);}).filter(Boolean);
-var block=heads.length?('\nDo NOT duplicate these headlines already returned:\n- '+heads.join('\n- ')+'\n'):'';
-return 'TOP-UP NEWS SCAN (same theological lens and JSON schema as the main scan).\n'
-+'You must return ONLY a JSON array of exactly '+needMore+' MORE news articles -- distinct stories not in the list below.'
-+block+'\n\n'
-+'Use web search. Same keys: category, headline, source_url, prophetic_angle, source, date, summary, verse, connection, weaves_with.\n'
-+'HARD COUNT: array length MUST be '+needMore+'. No markdown, no preamble -- raw JSON array only.\n'
-+'Topic hint: '+(customQuery&&customQuery.trim()?customQuery.trim():(category||'wars and rumors'))+'.\n';
-}
-function extractNewsItemsFromRaw(raw){
-if(!raw)return [];
-var cleaned=raw.replace(/```json\s*/gi,'').replace(/```\s*/gi,'').trim();
-cleaned=stripThinking(cleaned);
-var firstBracket=cleaned.indexOf('[');
-if(firstBracket!==-1){
-var lastBracket=cleaned.lastIndexOf(']');
-if(lastBracket>firstBracket){
-var jsonStr=cleaned.substring(firstBracket,lastBracket+1);
-try{
-var parsed=JSON.parse(jsonStr);
-if(Array.isArray(parsed)&&parsed.length>0)return parsed;
-}catch(e){
-try{
-var repaired=repairJSON(jsonStr);
-var parsed2=JSON.parse(repaired);
-if(Array.isArray(parsed2)&&parsed2.length>0)return parsed2;
-}catch(e2){}
-}
-}
-}
-var extracted=extractJSONObjects(cleaned);
-if(extracted.length>0)return extracted;
-try{
-var singleObj=JSON.parse(cleaned);
-if(singleObj&&typeof singleObj==='object'&&!Array.isArray(singleObj)&&(singleObj.headline||singleObj.summary))return [singleObj];
-}catch(e){}
-var mdItems=parseMarkdownNews(raw);
-if(mdItems.length>0)return mdItems;
-return dedupeNewsItems(extractCitationLinks(raw));
-}
-function finishNewsScanFromState(raw,container,scanCtx,onDone){
-if(!scanCtx)return;
-var parsed=extractNewsItemsFromRaw(raw);
-if(parsed.length)scanCtx.collected=dedupeNewsItems(scanCtx.collected.concat(parsed));
-var have=scanCtx.collected.length;
-var need=scanCtx.target-have;
-if(need>0&&scanCtx.round<NEWS_SCAN_TOPUP_MAX&&parsed.length>0){
-scanCtx.round++;
-var topHandler='news-scan-topup-'+Date.now();
-var topPrompt=buildNewsScanTopUpPrompt(scanCtx.collected,need,scanCtx.category,scanCtx.customQuery);
-var el=document.getElementById('newsLoadingText');
-if(el){el.innerHTML=scanCtx.loadingMsg+'<br><span style="font-size:0.72rem;color:var(--gold-dim);">Found '+have+' of '+scanCtx.target+' — fetching '+need+' more...</span>';}
-var topHandled=false;
-window.Poe.registerHandler(topHandler,function(topRes){
-var tm=topRes.responses[0];
-if(!tm)return;
-if(tm.status==='error'||tm.status==='complete'){
-if(topHandled)return;
-topHandled=true;
-finishNewsScanFromState(tm.content||'',container,scanCtx,onDone);
-}
-});
-var topParams={web_search:true,forge_search_news:true,forge_search_max:need,max_tokens:Math.min(12000,600+need*520)};
-topParams.forge_search_query=buildNewsSearchQuery(scanCtx.customQuery)+(scanCtx.category==='wars'?' conflict headlines':' latest');
-window.Poe.sendUserMessage('@'+scanCtx.model+' '+topPrompt,{handler:topHandler,stream:true,openChat:false,parameters:topParams}).catch(function(){
-if(!topHandled){topHandled=true;renderNewsScanCollected(container,scanCtx);if(onDone)onDone();}
-});
-return;
-}
-renderNewsScanCollected(container,scanCtx);
-if(onDone)onDone();
-}
-function renderNewsScanCollected(container,scanCtx){
-if(!scanCtx.collected.length){
-container.innerHTML='<div class="news-empty"><i class="fas fa-exclamation-triangle"></i><p>Could not parse any articles. Try another model or scan again.</p></div>';
-return;
-}
-newsItems=scanCtx.collected.slice(0,scanCtx.target);
-if(scanCtx.collected.length<scanCtx.target){
-var short=document.createElement('div');
-short.style.cssText='padding:10px 16px 6px;font-family:\'Bitter\',serif;font-size:0.78rem;color:var(--gold-dim);';
-short.innerHTML='<i class="fas fa-info-circle" style="margin-right:5px;"></i>Only <strong>'+newsItems.length+'</strong> of <strong>'+scanCtx.target+'</strong> requested articles were verified from this scan. Try again or broaden the topic.';
-container.innerHTML='';
-container.appendChild(short);
-}else{container.innerHTML='';}
-renderNewsAndVerify(container);
+function maybeNewsScanCountBanner(container,requested,got){
+if(!container||!requested||got>=requested)return;
+var note=document.createElement('div');
+note.style.cssText='padding:10px 16px 6px;font-family:\'Bitter\',serif;font-size:0.78rem;color:var(--gold-dim);';
+note.innerHTML='<i class="fas fa-info-circle" style="margin-right:5px;"></i>Returned <strong>'+got+'</strong> of <strong>'+requested+'</strong> requested. Scan again or try another browse-capable model if you need the full count.';
+container.insertBefore(note,container.firstChild);
 }
 function scanProphecyNews(){
 if(newsIsScanning)return;
@@ -10796,7 +10714,6 @@ var params={web_search:true};
 params.forge_search_query=buildNewsSearchQuery(customQuery);
 params.forge_search_news=true;
 params.forge_search_max=resultTarget;
-params.max_tokens=Math.min(16384,800+resultTarget*520);
 if(forgeIsClaude(model)){
 params.thinking_budget=0;
 }else if(forgeIsOpenAI(model)){
@@ -10805,13 +10722,6 @@ params.reasoning_effort='low';
 params.thinking_level='low';
 }
 var scanHandled=false;
-var scanCtx={target:resultTarget,collected:[],round:0,category:selectedNewsCat,customQuery:customQuery,model:model,loadingMsg:loadingMsg};
-var afterScanComplete=function(){
-var wsMode=(typeof window!=='undefined'&&window.__forgeWebSearchMode)||'';
-if(wsMode==='empty'){var noRet=document.createElement('div');noRet.className='news-empty';noRet.innerHTML='<i class="fas fa-exclamation-triangle"></i><p><strong>No live results.</strong> The server search came back empty for this scan, so these headlines come from the model\'s own knowledge and may be out of date. Verify before you use them, or try again.</p>';results.insertBefore(noRet,results.firstChild);}
-else if(wsMode==='live'){var liveTag=document.createElement('div');liveTag.className='news-empty';liveTag.innerHTML='<i class="fas fa-satellite-dish"></i><p><strong>Live web results</strong> were pulled on the server and fed to the model for this scan.</p>';results.insertBefore(liveTag,results.firstChild);}
-resetNewsScanBtn();
-};
 window.Poe.registerHandler(handlerName,function(result){
 var msg=result.responses[0];
 if(!msg){
@@ -10837,18 +10747,10 @@ el.innerHTML=loadingMsg+'<br><span style="font-size:0.72rem;color:var(--accent-t
 }
 }else if(msg.status==='complete'){
 clearInterval(elapsedTimer);clearTimeout(scanTimeout);
-if(!scanHandled){
-var raw=msg.content||'';
-var quick=extractNewsItemsFromRaw(raw);
-if(!quick.length){
-scanHandled=true;
-parseNewsResults(raw,results);
-afterScanComplete();
-}else{
-scanHandled=true;
-finishNewsScanFromState(raw,results,scanCtx,function(){afterScanComplete();});
-}
-}
+if(!scanHandled){scanHandled=true;parseNewsResults(msg.content||'',results);
+maybeNewsScanCountBanner(results,resultTarget,(newsItems&&newsItems.length)||0);
+var wsMode=(typeof window!=='undefined'&&window.__forgeWebSearchMode)||'';if(wsMode==='empty'){var noRet=document.createElement('div');noRet.className='news-empty';noRet.innerHTML='<i class="fas fa-exclamation-triangle"></i><p><strong>No live results.</strong> The server search came back empty for this scan, so these headlines come from the model\'s own knowledge and may be out of date. Verify before you use them, or try again.</p>';results.insertBefore(noRet,results.firstChild);}else if(wsMode==='live'){var liveTag=document.createElement('div');liveTag.className='news-empty';liveTag.innerHTML='<i class="fas fa-satellite-dish"></i><p><strong>Live web results</strong> were pulled on the server and fed to the model for this scan.</p>';results.insertBefore(liveTag,results.firstChild);}
+resetNewsScanBtn();}
 }
 });
 window.Poe.sendUserMessage('@'+model+' '+prompt,{handler:handlerName,stream:true,openChat:false,parameters:params}).catch(function(err){

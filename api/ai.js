@@ -1,4 +1,4 @@
-import { searchWeb, searchWebDeep, formatWebSearchContext } from './web-search.js';
+import { searchWeb, searchWebBatch, formatWebSearchContext } from './web-search.js';
 import {
   KIE_BASE_URL,
   buildKieChatCompletionsPayload,
@@ -170,7 +170,7 @@ export default async function handler(req) {
     if (searchQuery) {
       let results = [];
       try {
-        const runSearch = searchMax > 8 ? searchWebDeep : searchWeb;
+        const runSearch = searchMax > 8 ? searchWebBatch : searchWeb;
         results = await runSearch(searchQuery, { max: searchMax, news: searchNews });
       } catch {
         results = [];
