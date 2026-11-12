@@ -6391,8 +6391,9 @@ return String(prompt||'').split('\n').filter(function(line){return !/(?:LENGTH L
 }
 function isSermonResponseTruncated(msg,text){
 if(msg.finishReason==='length'||msg.finishReason==='max_tokens')return true;
+if(detectTruncation(text))return true;
 if(msg.finishReason==='stop'||msg.finishReason==='end_turn')return false;
-return detectTruncation(text);
+return false;
 }
 
 function recordForgeCompletionDiagnostic(ctx,partNum,model,msg,closingOnly){
@@ -7481,12 +7482,12 @@ return;
 }
 if(isLocalLlmChapterSermonActive()&&!finalizeLocalLlmPartIfValid(ctx,partNum,streamOpts,finalized))return;
 var truncated=isSermonResponseTruncated(msg,finalized);
-// A normal provider stop is complete even when shorter than the requested target.
-// Do not spend more tokens solely to pad an already completed response.
 var normalStop=msg.finishReason==='stop'||msg.finishReason==='end_turn';
-var underWords=isLocalLlmChapterSermonActive()||normalStop?false:isForgePartUnderWordTarget(finalized,selectedPartCount);
+var underTarget=!isLocalLlmChapterSermonActive()&&!normalStop&&isForgePartUnderWordTarget(finalized,selectedPartCount);
 var maxCont=isLocalLlmChapterSermonActive()&&ForgeLocalSermonProfile?ForgeLocalSermonProfile.maxTruncationContinuations():getForgeMaxContinuations(model,selectedPartCount,ctx,partNum);
 var actDone=theatreActComplete(finalized,partNum,selectedPartCount);
+var theatreFinalNeedsClose=isTheatreModeActive()&&partNum===selectedPartCount&&!actDone;
+var needsBodyContinuation=truncated||underTarget||theatreFinalNeedsClose;
 if(isYahStoryModeActive()&&!ctx.bezFallbackActive&&looksLikeYahStoryGuardrailRefusal(finalized)){
 if(forgeHandleYahStoryGuardrailRefusal(ctx,partNum,streamOpts,startSermonPartStream))return;
 }
@@ -7543,10 +7544,10 @@ showToast('Theatre validated v6 nay-sayers — redoing Act '+partNum+'...');
 startSermonPartStream(partNum,false,{theatreAgreementCorrection:true,badSample:finalized});
 return;
 }
-if((truncated||underWords)&&!looksLikeYahStoryGuardrailRefusal(finalized)&&!actDone&&ctx.continuationCount<maxCont){
+if(needsBodyContinuation&&!looksLikeYahStoryGuardrailRefusal(finalized)&&(!actDone||theatreFinalNeedsClose)&&ctx.continuationCount<maxCont){
 if(isLocalLlmChapterSermonActive()&&!truncated)return;
 ctx.continuationCount++;
-if(!isTheatreModeActive()&&(underWords||shouldStageForgeClosing()))ctx.partContent=stripPrematureForgeClosing(ctx.partContent);
+if(!isTheatreModeActive()&&(underTarget||shouldStageForgeClosing()))ctx.partContent=stripPrematureForgeClosing(ctx.partContent);
 ctx.partContentBeforeContinue=ctx.partContent;
 ctx.continuationOpts=getForgeContinuationOptions(finalized,selectedPartCount);
 startSermonPartStream(partNum,true);

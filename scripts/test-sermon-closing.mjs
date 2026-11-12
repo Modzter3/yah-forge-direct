@@ -49,7 +49,8 @@ const tagged='This is a complete teaching paragraph with enough text to exercise
 assert.equal(s.detectTruncation(tagged),false);
 assert.equal(s.detectTruncation(tagged+' [low, tight]'),false);
 assert.equal(s.detectTruncation('This is an unfinished paragraph with enough words to be evaluated and they were [pause]'),true);
-assert.equal(s.isSermonResponseTruncated({finishReason:'stop'},'A model-approved ending'),false);
+assert.equal(s.isSermonResponseTruncated({finishReason:'stop'},'A model-approved ending.'),false);
+assert.equal(s.isSermonResponseTruncated({finishReason:'stop'},'This unfinished teaching sentence still needs more because they were'),true);
 assert.equal(s.isSermonResponseTruncated({finishReason:'length'},tagged),true);
 assert.equal(s.isSermonResponseTruncated({},tagged),false);
 // A complete tagged middle part must advance without buying another request.
@@ -137,6 +138,27 @@ assert.ok(s.sermonGenCtx.partContainer.innerHTML.includes('Continuations used: 2
 assert.equal(s.window.__forgeLastCompletionDiagnostics.length,3);
 assert.ok(!JSON.stringify(s.window.__forgeLastCompletionDiagnostics).includes('unfinished text'));
 console.log('completion diagnostics: actual budget/reason/count, no draft disclosure, genuine cutoff pause, and no length padding after normal stop passed');
+
+// Behind the Veil / theatre: final act without [SCENE END] or mid-sentence stop must auto-continue.
+s.currentTopic='';s.currentNewsContext='';
+s.isTheatreModeActive=()=>true;
+s.theatreActComplete=(text)=>/\[SCENE\s+END\]/i.test(text);
+s.theatreLooksLikeTechEnclosureThread=()=>false;
+s.looksLikeTheatreAgreementSlop=()=>false;
+s.isForgePartUnderWordTarget=()=>false;
+reset(3,3);
+s.startSermonPartStream(3,false);
+callback({responses:[{status:'complete',content:'LISA SU: We are not done yet.\n\nJENSEN HUANG: Do not hide behind that. You are not a consultant in this room',finishReason:'stop'}]});
+assert.equal(prompts.length,2,'theatre final act mid-thought stop must request continuation');
+assert.equal(commits.length,0);
+reset(3,3);
+s.startSermonPartStream(3,false);
+callback({responses:[{status:'complete',content:'SATYA NADELLA: Close the door.\n\n[SCENE END]',finishReason:'stop'}]});
+assert.equal(prompts.length,1,'theatre final act with SCENE END must not continue');
+assert.equal(commits.length,1);
+s.isTheatreModeActive=()=>false;
+s.theatreActComplete=()=>false;
+console.log('theatre final-act completion and mid-cutoff continuation passed');
 
 // Adaptive budgets grow after repeated cutoffs, stay bounded, and separate finishing.
 s.getModelMaxOutputTokens=()=>16000;
