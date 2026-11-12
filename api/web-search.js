@@ -113,6 +113,30 @@ function parseBingNewsHtml(html) {
 
 const JUNK_URL_RX =
   /(?:account\.apple\.com|asw\.apple\.com|support\.apple\.com|\/sign-?in|\bsign in\b|\/login(?:\/|$)|\/log-?in|manage your .* account)/i;
+/** Encyclopedias, dictionaries, and research indexes -- not dated news. */
+const REFERENCE_HOST_RX =
+  /(?:^|\.)wikipedia\.org$|(?:^|\.)britannica\.com$|(?:^|\.)merriam-webster\.com$|(?:^|\.)dictionary\.com$|(?:^|\.)vocabulary\.com$|hirr\.hartfordinternational\.edu$/i;
+const REFERENCE_TITLE_RX =
+  /\b(definition(?:\s*&\s*meaning)?|meaning of|what is a |what is an |what is the |list of megachurches|megachurch database|megachurch research)\b/i;
+const REFERENCE_PATH_RX = /\/wiki\/|\/dictionary\/|\/definition\/|\/word\/|\/meaning\b/i;
+
+function isReferenceSearchResult(url, title) {
+  const t = String(title || '');
+  const u = String(url || '');
+  if (!u) return false;
+  if (REFERENCE_TITLE_RX.test(t)) return true;
+  if (REFERENCE_PATH_RX.test(u)) return true;
+  let host = '';
+  try {
+    host = new URL(u).hostname.replace(/^www\./, '').toLowerCase();
+  } catch {
+    return REFERENCE_PATH_RX.test(u);
+  }
+  if (REFERENCE_HOST_RX.test(host)) return true;
+  if (/\bwikipedia\b/i.test(t) && /\/wiki\//i.test(u)) return true;
+  return false;
+}
+
 const CORP_ROOT_HOSTS = new Set([
   'apple.com',
   'samsung.com',
@@ -144,6 +168,7 @@ export function filterSearchResults(rows, opts = {}) {
       if (CORP_ROOT_HOSTS.has(host)) return false;
     }
     if (title.length < 12) return false;
+    if (isReferenceSearchResult(url, title)) return false;
     return true;
   });
 }
@@ -286,7 +311,8 @@ export async function searchWebBatch(query, opts = {}) {
   const desired = Math.min(FORGE_SEARCH_MAX_CAP, Math.max(1, Number(opts.max) || MAX_RESULTS));
   const news = opts.news === true;
   if (desired <= 8) return searchWeb(query, { max: desired, news });
-  const alt = `${String(query || '').replace(/\s+/g, ' ').trim()} latest`;
+  const altRaw = String(opts.altQuery || '').trim();
+  const alt = altRaw || `${String(query || '').replace(/\s+/g, ' ').trim()} latest`;
   const perQuery = Math.min(desired, 12);
   const [primary, extra] = await Promise.all([
     searchWeb(query, { max: perQuery, news }),
