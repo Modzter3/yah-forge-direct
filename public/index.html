@@ -5860,7 +5860,7 @@ noteEl.innerHTML='<i class="fas fa-question-circle" style="color:var(--gold);mar
 }else if(noWeb){
 noteEl.innerHTML='<i class="fas fa-info-circle" style="color:#38bdb0;margin-right:4px;"></i>'+providerLabel+' has no browsing of its own — the scan runs a <strong>server-side web search</strong> and feeds those results to the model. If the search comes back empty it falls back to the model\'s own knowledge, and the results get flagged. <button type="button" class="vc-btn" style="margin-left:6px;font-size:0.7rem;padding:2px 8px;" onclick="setForgeLlmProvider(\'openrouter\')">Use OpenRouter</button>';
 }else{
-noteEl.innerHTML='<i class="fas fa-info-circle" style="color:#38bdb0;margin-right:4px;"></i>Scan requests web search from your API when supported. Prefer Gemini, Claude, or OpenAI models for reliable browsing.';
+noteEl.innerHTML='<i class="fas fa-info-circle" style="color:#38bdb0;margin-right:4px;"></i>OpenRouter scans use the <strong>OpenRouter web plugin</strong> (not server Bing). Pick a browse-capable Gemini, Claude, or GPT model for reliable headlines.';
 }
 }
 /* ==========================================
@@ -10770,7 +10770,7 @@ el.innerHTML=loadingMsg+'<br><span style="font-size:0.72rem;color:var(--accent-t
 clearInterval(elapsedTimer);clearTimeout(scanTimeout);
 if(!scanHandled){scanHandled=true;parseNewsResults(msg.content||'',results);
 maybeNewsScanCountBanner(results,resultTarget,(newsItems&&newsItems.length)||0);
-var wsMode=(typeof window!=='undefined'&&window.__forgeWebSearchMode)||'';if(wsMode==='empty'){var noRet=document.createElement('div');noRet.className='news-empty';noRet.innerHTML='<i class="fas fa-exclamation-triangle"></i><p><strong>No live results.</strong> The server search came back empty for this scan, so these headlines come from the model\'s own knowledge and may be out of date. Verify before you use them, or try again.</p>';results.insertBefore(noRet,results.firstChild);}else if(wsMode==='live'){var liveTag=document.createElement('div');liveTag.className='news-empty';liveTag.innerHTML='<i class="fas fa-satellite-dish"></i><p><strong>Live web results</strong> were pulled on the server and fed to the model for this scan.</p>';results.insertBefore(liveTag,results.firstChild);}
+var wsMode=(typeof window!=='undefined'&&window.__forgeWebSearchMode)||'';if(wsMode==='empty'){var noRet=document.createElement('div');noRet.className='news-empty';noRet.innerHTML='<i class="fas fa-exclamation-triangle"></i><p><strong>No live results.</strong> The server search came back empty for this scan, so these headlines come from the model\'s own knowledge and may be out of date. Verify before you use them, or try again.</p>';results.insertBefore(noRet,results.firstChild);}else if(wsMode==='live'){var liveTag=document.createElement('div');liveTag.className='news-empty';liveTag.innerHTML='<i class="fas fa-satellite-dish"></i><p><strong>Live web results</strong> were pulled on the server (Brave/Tavily/Serper) and fed to the model for this scan.</p>';results.insertBefore(liveTag,results.firstChild);}else if(wsMode==='plugin'){var plugTag=document.createElement('div');plugTag.className='news-empty';plugTag.innerHTML='<i class="fas fa-globe"></i><p><strong>OpenRouter web search</strong> is handling retrieval for this scan (not server Bing).</p>';results.insertBefore(plugTag,results.firstChild);}
 resetNewsScanBtn();}
 }
 });
