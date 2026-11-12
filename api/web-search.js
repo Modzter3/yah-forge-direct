@@ -6,9 +6,8 @@ export const config = { runtime: 'edge' };
  * completions -- there is no "web search switch" to flip -- so this module runs
  * the search and the caller injects the results into the prompt.
  *
- * Strategy: use a real search API when a key is configured (best quality), else
- * fall back to the keyless Bing HTML scrape this repo already uses for film
- * research. Returns [] on any failure so callers can degrade quietly.
+ * Strategy: Brave, Tavily, or Serper when a key is configured. No HTML scraper fallback
+ * here (OpenRouter news scans use the provider web plugin). Returns [] on any failure.
  */
 
 const USER_AGENT =
@@ -271,8 +270,8 @@ export async function searchWeb(query, opts = {}) {
   const max = Math.min(FORGE_SEARCH_MAX_CAP, Math.max(1, Number(opts.max) || MAX_RESULTS));
   const newsMode = opts.news === true;
   const strategies = newsMode
-    ? [braveSearch, tavilySearch, serperNewsSearch, bingNewsScrape, bingScrape]
-    : [braveSearch, tavilySearch, serperSearch, bingScrape];
+    ? [braveSearch, tavilySearch, serperNewsSearch]
+    : [braveSearch, tavilySearch, serperSearch];
   const tryStrategies = async (query) => {
     for (const run of strategies) {
       try {

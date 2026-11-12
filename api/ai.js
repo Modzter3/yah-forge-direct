@@ -150,26 +150,28 @@ export default async function handler(req) {
     return jsonError(`Missing API key. Set AI_API_KEY or ${provider.keyEnv}.`, 500);
   }
 
-  // Providers without their own retrieval (NanoGPT, OpenCode Go, ClinePass, Refuseless,
-  // Kie) get a real server-side search, injected into the prompt as the factual spine.
-  // Server-side retrieval for EVERY provider. OpenRouter's web plugin is not reliable --
-  // models happily answer from training data when it returns nothing (a flash model will
-  // hand you 2024 headlines for a 2026 window). So we search ourselves, inject the dated
-  // results, and only fall back to the plugin when our own search comes back empty.
+  // OpenRouter: native web plugin (pre–Bing-injection behavior for news).
+  // Other providers: server injection only when Brave/Tavily/Serper keys exist.
   let effectiveQuery = query;
   let webSearchMode = 'off';
-  // The client sends a short, dated query for search-shaped flows (news scans, breakdowns).
-  // Flows that need the model to READ a specific page do not send one and keep the plugin.
   const searchQuery = String(parameters.forge_search_query || '').trim();
   const searchQueryAlt = String(parameters.forge_search_query_alt || '').trim();
   const searchNews = parameters.forge_search_news === true;
-  const searchMax = Math.min(25, Math.max(1, Number(parameters.forge_search_max) || 8));
+  const forgeSearchMaxRaw = Number(parameters.forge_search_max);
+  const hasForgeSearchMax = Number.isFinite(forgeSearchMaxRaw) && forgeSearchMaxRaw > 0;
+  const searchMax = hasForgeSearchMax ? Math.min(25, Math.max(1, forgeSearchMaxRaw)) : 8;
   delete parameters.forge_search_query;
   delete parameters.forge_search_query_alt;
   delete parameters.forge_search_news;
   delete parameters.forge_search_max;
   if (parameters.web_search === true && process.env.FORGE_SERVER_WEB_SEARCH !== 'off') {
-    if (searchQuery) {
+    if (providerName === 'openrouter') {
+      webSearchMode = 'plugin';
+      const pluginMax = hasForgeSearchMax
+        ? searchMax
+        : Math.min(25, Math.max(1, parseInt(process.env.OPENROUTER_WEB_MAX_RESULTS || '10', 10) || 10));
+      parameters.plugins = [{ id: 'web', max_results: pluginMax }];
+    } else if (searchQuery) {
       let results = [];
       try {
         const runSearch = searchMax > 8 ? searchWebBatch : searchWeb;
@@ -185,16 +187,11 @@ export default async function handler(req) {
       if (context) {
         effectiveQuery = context + query;
         webSearchMode = 'live';
-        // Our results are in the prompt now -- do not also pay for the plugin.
         delete parameters.web_search;
         delete parameters.plugins;
-      } else if (providerName === 'openrouter') {
-        webSearchMode = 'plugin';
       } else {
         webSearchMode = 'empty';
       }
-    } else if (providerName === 'openrouter') {
-      webSearchMode = 'plugin';
     } else {
       webSearchMode = 'empty';
     }
