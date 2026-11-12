@@ -10670,7 +10670,7 @@ p+='- The "headline" field MUST be the REAL, EXACT headline from the article. Co
 p+='- The "source_url" field MUST contain the URL from your web search citations. You have these URLs -- copy them directly.\n';
 p+='- Put your prophetic interpretation in the "prophetic_angle" field -- that is where your fire goes, NOT in the headline.\n';
 p+='- NEVER return an empty array. If you searched the web, you found articles. Use them.\n';
-p+='- NEVER repeat the same article twice. Each item in the array must be a DIFFERENT article with a DIFFERENT headline from a DIFFERENT URL. If you find the same story covered by multiple outlets, pick the BEST source and move on. No duplicates.\n';
+p+='- ZERO DUPLICATE STORIES: Each array slot must be a DIFFERENT NEWS EVENT. Same event from Reuters + AP + BBC = pick ONE outlet only. Do not rephrase the same story with a new headline. The app strips duplicate URLs and same-story matches -- duplicates do NOT count toward your '+resultCount+' count.\n';
 p+='- Each item must have a genuine scripture connection -- do not force it.\n';
 p+='- weaves_with: when returning 2+ articles, EVERY item MUST have a non-empty weaves_with that explicitly names other headlines in the batch (by substring). No generic filler like "these stories all matter" -- name HOW they interlock.\n';
 p+='- Spell out ALL numbers in verse references as words.\n';
@@ -10683,6 +10683,20 @@ var note=document.createElement('div');
 note.style.cssText='padding:10px 16px 6px;font-family:\'Bitter\',serif;font-size:0.78rem;color:var(--gold-dim);';
 note.innerHTML='<i class="fas fa-info-circle" style="margin-right:5px;"></i>Returned <strong>'+got+'</strong> of <strong>'+requested+'</strong> requested. Scan again or try another browse-capable model if you need the full count.';
 container.insertBefore(note,container.firstChild);
+}
+function maybeNewsScanDupeBanner(container,rawCount,dedupedCount){
+if(!container||!rawCount||dedupedCount>=rawCount)return;
+var removed=rawCount-dedupedCount;
+var note=document.createElement('div');
+note.style.cssText='padding:10px 16px 6px;font-family:\'Bitter\',serif;font-size:0.78rem;color:var(--gold-dim);';
+note.innerHTML='<i class="fas fa-clone" style="margin-right:5px;"></i>Removed <strong>'+removed+'</strong> duplicate stor'+(removed===1?'y':'ies')+' (same URL or same event from multiple outlets).';
+container.insertBefore(note,container.firstChild);
+}
+function assignDedupedNewsItems(parsed,container){
+var raw=Array.isArray(parsed)?parsed:[];
+var deduped=dedupeNewsItems(raw);
+maybeNewsScanDupeBanner(container,raw.length,deduped.length);
+newsItems=deduped;
 }
 function scanProphecyNews(){
 if(newsIsScanning)return;
@@ -10928,26 +10942,73 @@ newsItems=prevItems;
 container.innerHTML=prevHtml;
 showToast('Could not parse. Use a JSON array like scan output, or one object with headline/summary.');
 }
-function dedupeNewsItems(items){
-var seen={};
-var out=[];
-for(var i=0;i<items.length;i++){
-var item=items[i];
-// Normalize headline for comparison: lowercase, strip punctuation, collapse whitespace
-var key=(item.headline||'').toLowerCase().replace(/[^a-z0-9\s]/g,'').replace(/\s+/g,' ').trim();
-if(!key||key.length<10){out.push(item);continue;}
-// Also create a shorter key from first 60 chars to catch near-duplicates
-var shortKey=key.substring(0,60);
-if(seen[key]||seen[shortKey]){continue;}
-seen[key]=true;
-seen[shortKey]=true;
-// Check URL duplication too
-if(item.source_url){
-var urlKey=item.source_url.replace(/\/$/,'').toLowerCase();
-if(seen[urlKey]){continue;}
-seen[urlKey]=true;
+function normalizeNewsItemUrl(url){
+if(!url)return '';
+try{
+var u=new URL(String(url).trim());
+u.hash='';
+var sp=u.searchParams;
+var toDrop=[];
+sp.forEach(function(v,k){
+if(/^utm_/i.test(k)||k==='fbclid'||k==='gclid'||k==='ref'||k==='mc_cid'||k==='mc_eid')toDrop.push(k);
+});
+for(var di=0;di<toDrop.length;di++)sp.delete(toDrop[di]);
+u.hostname=u.hostname.replace(/^www\./i,'').toLowerCase();
+var path=u.pathname.replace(/\/+$/,'')||'/';
+return u.protocol+'//'+u.hostname+path+(sp.toString()?'?'+sp.toString():'');
+}catch(e){
+return String(url).replace(/\/$/,'').split('?')[0].toLowerCase();
 }
-out.push(item);
+}
+function newsHeadlineTokenList(headline){
+var t=String(headline||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+if(!t)return [];
+var stop={the:1,and:1,for:1,with:1,from:1,that:1,this:1,after:1,says:1,said:1,over:1,into:1,about:1,their:1,will:1,have:1,has:1,been:1,were:1,are:1,was:1,not:1,its:1,it:1,all:1,out:1,new:1};
+return t.split(' ').filter(function(w){return w.length>2&&!stop[w];});
+}
+function newsHeadlineSignature(headline){
+var words=newsHeadlineTokenList(headline);
+words.sort();
+if(words.length>=4)return words.slice(0,14).join('|');
+return String(headline||'').toLowerCase().replace(/[^a-z0-9\s]/g,'').replace(/\s+/g,' ').trim();
+}
+function newsHeadlinesLikelySameStory(a,b){
+if(!a||!b)return false;
+var ua=normalizeNewsItemUrl(a.source_url||'');
+var ub=normalizeNewsItemUrl(b.source_url||'');
+if(ua&&ub&&ua===ub)return true;
+var sa=newsHeadlineSignature(a.headline||'');
+var sb=newsHeadlineSignature(b.headline||'');
+if(sa&&sb&&sa===sb)return true;
+var ta=newsHeadlineTokenList(a.headline||'');
+var tb=newsHeadlineTokenList(b.headline||'');
+if(ta.length<3||tb.length<3)return false;
+var setB={};
+for(var i=0;i<tb.length;i++)setB[tb[i]]=1;
+var inter=0;
+for(var j=0;j<ta.length;j++){if(setB[ta[j]])inter++;}
+var union=ta.length+tb.length-inter;
+if(union>0&&inter/union>=0.62)return true;
+var na=String(a.headline||'').toLowerCase().replace(/\s+/g,' ').trim();
+var nb=String(b.headline||'').toLowerCase().replace(/\s+/g,' ').trim();
+if(na.length>28&&nb.length>28){
+var chunkA=na.slice(0,32);
+var chunkB=nb.slice(0,32);
+if(na.indexOf(chunkB)!==-1||nb.indexOf(chunkA)!==-1)return true;
+}
+return false;
+}
+function dedupeNewsItems(items){
+var list=Array.isArray(items)?items:[];
+var out=[];
+for(var i=0;i<list.length;i++){
+var item=list[i];
+if(!item)continue;
+var dup=false;
+for(var k=0;k<out.length;k++){
+if(newsHeadlinesLikelySameStory(item,out[k])){dup=true;break;}
+}
+if(!dup)out.push(item);
 }
 return out;
 }
@@ -11032,40 +11093,42 @@ if(lastBracket>firstBracket){
 var jsonStr=cleaned.substring(firstBracket,lastBracket+1);
 try{
 var parsed=JSON.parse(jsonStr);
-if(Array.isArray(parsed)&&parsed.length>0){newsItems=dedupeNewsItems(parsed);renderNewsAndVerify(container);return;}
+if(Array.isArray(parsed)&&parsed.length>0){assignDedupedNewsItems(parsed,container);renderNewsAndVerify(container);return;}
 // Empty array [] -- fall through to citation extraction
 }catch(e){
 try{
 var repaired=repairJSON(jsonStr);
 var parsed2=JSON.parse(repaired);
-if(Array.isArray(parsed2)&&parsed2.length>0){newsItems=dedupeNewsItems(parsed2);renderNewsAndVerify(container);return;}
+if(Array.isArray(parsed2)&&parsed2.length>0){assignDedupedNewsItems(parsed2,container);renderNewsAndVerify(container);return;}
 }catch(e2){}
 }
 }
 }
 var extracted=extractJSONObjects(cleaned);
 if(extracted.length>0){
-newsItems=dedupeNewsItems(extracted);
+assignDedupedNewsItems(extracted,container);
 renderNewsAndVerify(container);
 return;
 }
 try{
 var singleObj=JSON.parse(cleaned);
 if(singleObj&&typeof singleObj==='object'&&!Array.isArray(singleObj)&&(singleObj.headline||singleObj.summary)){
-newsItems=dedupeNewsItems([singleObj]);renderNewsAndVerify(container);return;
+assignDedupedNewsItems([singleObj],container);renderNewsAndVerify(container);return;
 }
 }catch(e){}
 var mdItems=parseMarkdownNews(raw);
 if(mdItems.length>0){
-newsItems=dedupeNewsItems(mdItems);
+assignDedupedNewsItems(mdItems,container);
 renderNewsAndVerify(container);
 return;
 }
 // FALLBACK: Extract citation links from the raw response
 // Models like Claude often return [] but include real article links in their "Learn more" citations
-var citationItems=dedupeNewsItems(extractCitationLinks(raw));
+var citationRaw=extractCitationLinks(raw);
+var citationItems=dedupeNewsItems(citationRaw);
 if(citationItems.length>0){
 newsItems=citationItems;
+if(citationRaw.length>citationItems.length)maybeNewsScanDupeBanner(container,citationRaw.length,citationItems.length);
 container.innerHTML='<div style="padding:10px 16px 6px;font-family:\'Bitter\',serif;font-size:0.78rem;color:var(--gold-dim);"><i class="fas fa-info-circle" style="margin-right:5px;"></i>The model refused to format its results as JSON, but it DID find <strong>'+citationItems.length+'</strong> real articles via web search. Showing those citation links below -- all have verified URLs.</div>';
 var citGrid=document.createElement('div');
 container.appendChild(citGrid);
