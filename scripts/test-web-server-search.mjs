@@ -60,6 +60,16 @@ try {
     { news: true },
   );
   assert.equal(junk.length, 0, 'account portals must be filtered out');
+  const reference = filterSearchResults(
+    [
+      { title: 'Megachurch - Wikipedia', url: 'https://en.wikipedia.org/wiki/Megachurch', snippet: '' },
+      { title: 'MEGACHURCH Definition & Meaning - Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/megachurch', snippet: '' },
+      { title: 'Pastor charged in $3M church embezzlement scheme', url: 'https://www.reuters.com/world/us/pastor-charged-2026', snippet: '' },
+    ],
+    { news: true },
+  );
+  assert.equal(reference.length, 1, 'encyclopedia/dictionary hits must be filtered in news mode');
+  assert.match(reference[0].url, /reuters/);
   console.log('web-server-search: news mode uses Bing News and filters junk');
 
   // 2. A provider without retrieval gets the search results injected before its prompt.
@@ -161,6 +171,8 @@ try {
   assert.doesNotMatch(html, /Do NOT pad the array to hit the requested count/, 'prompt must not tell the model to return fewer than requested');
   assert.doesNotMatch(html, /finishNewsScanFromState/, 'scan must use the original parse path, not async top-up rounds');
   assert.match(html, /COUNT: Return a JSON array of exactly/, 'prompt must require exact article count');
+  assert.match(html, /churchScandalNewsPromptBlock/, 'church category must demand scandal news not reference pages');
+  assert.match(html, /forge_search_query_alt/, 'church scans must pass a scandal-shaped alt query');
   assert.match(html, /window\.__forgeWebSearchMode/, 'the results banner must read the server mode');
   assert.match(html, /server-side web search/, 'the provider note must describe server-side search');
   assert.match(fs.readFileSync('public/ai-polyfill.js', 'utf8'), /X-AI-Web-Search/, 'the polyfill must stash the mode header');

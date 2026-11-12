@@ -10477,7 +10477,19 @@ return el?parseInt(el.value)||10:10;
 // Short, dated query for the server-side search. The scan prompt itself is thousands of
 // characters of instruction -- searching with it would return garbage, so the server gets
 // a compact query like 'AI technology news November 2026'.
-var NEWS_SEARCH_LABELS={all:'world news headlines',wars:'war conflict news',famine:'famine drought news',israel:'Black diaspora discrimination news',nature:'earthquake hurricane news',deception:'media propaganda news',economy:'economy inflation news',tech:'AI technology news',law:'civil liberties law news',race:'Black America news',health:'pharma health news',education:'schools education news',police:'police brutality news',church:'megachurch scandal news',land:'housing land news',military:'military buildup news',caribbean:'Caribbean news',latam:'Latin America news',africa:'Africa news',europe:'Europe news',mideast:'Middle East news',asia:'Asia news',northamerica:'United States Canada news',gaming:'video game industry news',entertain:'entertainment industry news',electronics:'Apple Samsung smartphone consumer electronics news'};
+var NEWS_SEARCH_LABELS={all:'world news headlines',wars:'war conflict news',famine:'famine drought news',israel:'Black diaspora discrimination news',nature:'earthquake hurricane news',deception:'media propaganda news',economy:'economy inflation news',tech:'AI technology news',law:'civil liberties law news',race:'Black America news',health:'pharma health news',education:'schools education news',police:'police brutality news',church:'pastor scandal megachurch embezzlement fraud investigation',land:'housing land news',military:'military buildup news',caribbean:'Caribbean news',latam:'Latin America news',africa:'Africa news',europe:'Europe news',mideast:'Middle East news',asia:'Asia news',northamerica:'United States Canada news',gaming:'video game industry news',entertain:'entertainment industry news',electronics:'Apple Samsung smartphone consumer electronics news'};
+// Second parallel server query for categories where the primary label drags reference pages.
+var NEWS_SEARCH_QUERY_ALT={church:'Vatican pope statement priest abuse settlement pastor arrested church fraud',deception:'false teacher exposed cult leader arrested propaganda scandal'};
+function buildNewsSearchQueryAlt(customQuery){
+if(String(customQuery||'').trim())return '';
+var cat=selectedNewsCat||'all';
+var alt=NEWS_SEARCH_QUERY_ALT[cat];
+if(!alt)return '';
+if(!/\bnews\b/i.test(alt))alt+=' news';
+var stamp=newsSearchMonthYear();
+if(stamp)alt+=' '+stamp;
+return alt.replace(/\s+/g,' ').trim().slice(0,120);
+}
 function newsSearchMonthYear(){
 var dr=getNewsDateFilter();
 var dateStr=dr?dr.end:(document.getElementById('newsDateEnd')||{}).value;
@@ -10495,6 +10507,12 @@ if(!/\bnews\b/i.test(q))q+=' news';
 var stamp=newsSearchMonthYear();
 if(stamp)q+=' '+stamp;
 return q.replace(/\s+/g,' ').trim().slice(0,120);
+}
+function churchScandalNewsPromptBlock(){
+return '*** CHURCH & RELIGION -- SCANDALS ONLY (NOT REFERENCE) ***\n'
++'The user wants BREAKING church/religion NEWS -- pastor falls, arrests, embezzlement, sex-abuse cover-ups, prosperity-gospel exposure, Vatican/Pope/denomination statements, financial fraud, denomination splits, celebrity pastors exposed.\n'
++'FORBIDDEN as articles: Wikipedia, Britannica, Merriam-Webster, dictionary/"definition" pages, "What is a megachurch" explainers, Hartford Institute databases/lists, static encyclopedia history, explainers older than the date window.\n'
++'If LIVE WEB SEARCH RESULTS are only definitions or lists, IGNORE them and run NEW searches for scandal headlines dated in the window. Never turn a definitional page into a "news" card.\n\n';
 }
 function buildNewsScanPrompt(category,customQuery){
 var catMap={
@@ -10564,6 +10582,7 @@ p+='You have web search enabled. You MUST use it to find CURRENT news articles b
 p+='The user\'s selected publication window (date range or "last N days" below) is authoritative -- web search exists so you are NOT limited by your training cutoff. Find pages that were actually PUBLISHED in that window; do not substitute "recent" stories from memory that fall outside it unless the instructions below explicitly allow a small spillover.\n';
 p+='SEARCH THE WEB FIRST. Do not respond from memory. Do not discuss your training data, knowledge cutoff, or what date you think it is. Your ONLY job is to search the web, find real articles, and format them as JSON.\n';
 p+='If you respond with ANYTHING other than a JSON array of articles -- any refusal, any explanation about dates, any mention of training data -- you have FAILED. Just search and return results.\n\n';
+if(category==='church')p+=churchScandalNewsPromptBlock();
 if(isCustom){
 p+='TASK: Search the web RIGHT NOW for REAL, CURRENTLY PUBLISHED news articles '+dateRangeText+' about this specific topic: "'+focus+'"\n';
 p+='Find '+resultCount+' real stories about "'+focus+'" that have prophetic biblical significance. You MUST try to return exactly '+resultCount+' articles -- search broadly and thoroughly until you have enough results.\n\n';
@@ -10712,6 +10731,8 @@ var handlerName='news-scan-'+Date.now();
 // Build model-specific params -- the server runs a short dated search for this scan
 var params={web_search:true};
 params.forge_search_query=buildNewsSearchQuery(customQuery);
+var searchAlt=buildNewsSearchQueryAlt(customQuery);
+if(searchAlt)params.forge_search_query_alt=searchAlt;
 params.forge_search_news=true;
 params.forge_search_max=resultTarget;
 if(forgeIsClaude(model)){

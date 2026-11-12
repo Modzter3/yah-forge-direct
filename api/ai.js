@@ -161,9 +161,11 @@ export default async function handler(req) {
   // The client sends a short, dated query for search-shaped flows (news scans, breakdowns).
   // Flows that need the model to READ a specific page do not send one and keep the plugin.
   const searchQuery = String(parameters.forge_search_query || '').trim();
+  const searchQueryAlt = String(parameters.forge_search_query_alt || '').trim();
   const searchNews = parameters.forge_search_news === true;
   const searchMax = Math.min(25, Math.max(1, Number(parameters.forge_search_max) || 8));
   delete parameters.forge_search_query;
+  delete parameters.forge_search_query_alt;
   delete parameters.forge_search_news;
   delete parameters.forge_search_max;
   if (parameters.web_search === true && process.env.FORGE_SERVER_WEB_SEARCH !== 'off') {
@@ -171,7 +173,11 @@ export default async function handler(req) {
       let results = [];
       try {
         const runSearch = searchMax > 8 ? searchWebBatch : searchWeb;
-        results = await runSearch(searchQuery, { max: searchMax, news: searchNews });
+        results = await runSearch(searchQuery, {
+          max: searchMax,
+          news: searchNews,
+          altQuery: searchQueryAlt,
+        });
       } catch {
         results = [];
       }
