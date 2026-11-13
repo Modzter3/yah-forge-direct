@@ -14,6 +14,13 @@ const smart=JSON.stringify(rows).replace(/"/g,'\u201c');
 assert.equal(F.normalize(smart).length,5);
 const preamble='Analysis complete.\n\n'+JSON.stringify(rows);
 assert.equal(F.normalize(preamble).length,5);
+const museLike=rows.map(function(r,i){
+ return {lesson_title:'Muse lesson '+i,central_question:r.question,focus:r.focus.join('\n'),why:r.why,avenue:r.avenue,references:r.references[0],prior_coverage:r.priorCoverage[0]};
+});
+assert.equal(F.normalize(JSON.stringify(museLike)).length,5);
+assert.throws(()=>F.normalize('[{"title":"Only one","question":"One?","focus":"a\\nb\\nc"}]'));
+assert.equal(F.normalize('[{"title":"One","question":"One?","focus":"a\\nb\\nc"},{"title":"Two","question":"Two?","focus":"d\\ne\\nf"},{"title":"Three","question":"Three?","focus":"g\\nh\\ni"}]').length,3);
+assert.match(F.buildRepairPrompt({title:'Src',desc:'',combined:'x'},'not json'),/could not be parsed/i);
 const source={title:'Timeline study',combined:'UNIQUE DETAIL FROM THE COMPLETED SERMON',desc:'A chronology study'};
 const prompt=F.buildPrompt(source);assert.match(prompt,/UNIQUE DETAIL FROM THE COMPLETED SERMON/);assert.match(prompt,/unestablished claims as questions/);
 const brief=F.buildBrief(items[0],source);for(const word of ['Subject:','Read the passage in context.','Starting passages','previous lesson','NEW point','voice, tone, and delivery options'])assert.ok(brief.includes(word),word);
