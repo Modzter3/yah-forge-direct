@@ -3,10 +3,94 @@
 'use strict';
 function str(value,max){return typeof value==='string'?value.trim().slice(0,max):'';}
 function list(value,max){return Array.isArray(value)?value.filter(function(v){return typeof v==='string'&&v.trim();}).slice(0,max).map(function(v){return str(v,500);}):[];}
+function cleanModelText(raw){
+ return String(raw||'').replace(/\uFEFF/g,'').replace(/```(?:json)?\s*/gi,'').replace(/```/g,'')
+  .replace(/[\u201c\u201d\u201e\u201f]/g,'"').replace(/[\u2018\u2019\u201a\u201b]/g,"'").trim();
+}
+function repairJSON(str){
+ str=str.replace(/,\s*([\]}])/g,'$1');
+ if(str.indexOf('"')===-1)str=str.replace(/'/g,'"');
+ str=str.replace(/(\{|,)\s*([a-zA-Z_]\w*)\s*:/g,'$1"$2":');
+ str=str.replace(/:\s*"([^"]*)"/g,function(m,v){return ':"'+v.replace(/\n/g,'\\n')+'"';});
+ return str;
+}
+function tryParseJSON(chunk){
+ try{return JSON.parse(chunk);}catch(e1){try{return JSON.parse(repairJSON(chunk));}catch(e2){return null;}}
+}
+function sliceBalanced(text,openCh,closeCh){
+ var start=text.indexOf(openCh);if(start<0)return null;
+ var depth=0,inStr=false,esc=false;
+ for(var i=start;i<text.length;i++){
+  var c=text[i];
+  if(inStr){
+   if(esc)esc=false;
+   else if(c==='\\')esc=true;
+   else if(c==='"')inStr=false;
+   continue;
+  }
+  if(c==='"'){inStr=true;continue;}
+  if(c===openCh)depth++;
+  else if(c===closeCh){
+   depth--;
+   if(depth===0)return text.slice(start,i+1);
+  }
+ }
+ return null;
+}
+function unwrapRows(data){
+ if(Array.isArray(data))return data;
+ if(!data||typeof data!=='object')return null;
+ var keys=['avenues','items','followups','follow_ups','choices','lessons','results','threads'];
+ for(var i=0;i<keys.length;i++){var v=data[keys[i]];if(Array.isArray(v))return v;}
+ return null;
+}
+function extractFollowupObjects(text){
+ var items=[],depth=0,start=-1,inStr=false,esc=false;
+ for(var i=0;i<text.length;i++){
+  var c=text[i];
+  if(inStr){
+   if(esc)esc=false;
+   else if(c==='\\')esc=true;
+   else if(c==='"')inStr=false;
+   continue;
+  }
+  if(c==='"'){inStr=true;continue;}
+  if(c==='{'){if(depth===0)start=i;depth++;}
+  else if(c==='}'){
+   depth--;
+   if(depth===0&&start!==-1){
+    var obj=tryParseJSON(text.slice(start,i+1));
+    if(obj&&typeof obj==='object'&&(obj.title||obj.question))items.push(obj);
+    start=-1;
+   }
+  }
+ }
+ return items;
+}
+function parseFollowupPayload(raw){
+ var text=cleanModelText(raw);
+ var data=tryParseJSON(text),rows=unwrapRows(data);
+ if(!rows){
+  var arr=sliceBalanced(text,'[',']');
+  if(arr)rows=unwrapRows(tryParseJSON(arr));
+ }
+ if(!rows){
+  var obj=sliceBalanced(text,'{','}');
+  if(obj)rows=unwrapRows(tryParseJSON(obj));
+ }
+ if(!rows){
+  var start=text.indexOf('['),end=text.lastIndexOf(']');
+  if(start>=0&&end>start)rows=unwrapRows(tryParseJSON(text.slice(start,end+1)));
+ }
+ if(!rows){
+  var extracted=extractFollowupObjects(text);
+  if(extracted.length)rows=extracted;
+ }
+ if(!Array.isArray(rows))throw new Error('Follow-up choices were not valid JSON.');
+ return rows;
+}
 function normalize(raw){
- var text=String(raw||'').replace(/```(?:json)?\s*/gi,'').replace(/```/g,'').trim();var data;
- try{data=JSON.parse(text);}catch(e){var start=text.indexOf('['),end=text.lastIndexOf(']');if(start<0||end<=start)throw new Error('Follow-up choices were not valid JSON.');data=JSON.parse(text.slice(start,end+1));}
- var rows=Array.isArray(data)?data:data.avenues;if(!Array.isArray(rows))throw new Error('No follow-up choices returned.');
+ var rows=parseFollowupPayload(raw);
  var seen=new Set();var result=[];
  rows.slice(0,8).forEach(function(row){if(!row||typeof row!=='object')return;
   var title=str(row.title,160),question=str(row.question,600),focus=list(row.focus,5);
@@ -25,7 +109,8 @@ function buildPrompt(source){
  'Different avenues may pursue an unresolved question, examine a key passage in context, unpack a symbol or word, reconcile an apparent contradiction, compare sources, or develop practical application. Choose what fits this sermon; do not force a fixed checklist or a technical, street, prophetic, or personal voice. Never propose biography or personal testimony.\n'+
  'Each avenue must advance one clear inquiry and identify material not already developed. Where the sermon makes chronological, historical, linguistic, or scientific claims, frame unestablished claims as questions to examine. Do not invent citations, dates, definitions, suppressed evidence, or guarantees. If passages are uncertain, name the source generally and require verification. Suggestions are research leads, not verified conclusions. Respect the selected subject and doctrinal context while distinguishing quoted text, interpretation, and application.\n'+
  'Give each avenue 3–5 specific questions or objectives in focus. priorCoverage summarizes only relevant points already addressed, so the next lesson can briefly bridge and then advance. references contains promising passages or sources to verify, not fabricated quotations. Keep each avenue under 200 words.\n'+
- 'Return ONLY a JSON array: [{"title":"Short lesson title","avenue":"Type of inquiry","question":"Precise central question","why":"What new understanding this opens","focus":["Specific question to investigate"],"references":["Source or passage to verify"],"priorCoverage":["Relevant point already addressed"]}].\n'+
+ 'RESPOND WITH ONLY A JSON ARRAY. No explanation, no markdown, no code fences. Just raw JSON.\n'+
+ 'Schema: [{"title":"Short lesson title","avenue":"Type of inquiry","question":"Precise central question","why":"What new understanding this opens","focus":["Specific question to investigate"],"references":["Source or passage to verify"],"priorCoverage":["Relevant point already addressed"]}].\n'+
  'COMPLETED LESSON DATA:\n'+JSON.stringify({title:source.title,description:source.desc||'',source:source.source||'',sermon:sourceText(source.combined)});
 }
 function buildBrief(item,source){
@@ -40,5 +125,6 @@ function buildBrief(item,source){
  'Completion: Give the selected question sustained attention across the chosen parts. Each part advances new material. Finish with a clear answer and useful application or remaining study questions, without padding or unsupported certainty.');
  return lines.join('\n');
 }
-global.ForgeSermonFollowups={normalize:normalize,buildPrompt:buildPrompt,buildBrief:buildBrief};
+var api={normalize:normalize,buildPrompt:buildPrompt,buildBrief:buildBrief,parseFollowupPayload:parseFollowupPayload};
+global.ForgeSermonFollowups=api;
 })(typeof window!=='undefined'?window:globalThis);
