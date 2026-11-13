@@ -19,10 +19,12 @@ const result=await page.evaluate(()=>{
  requestSermonFollowups({title:'New source',combined:'New sermon'},'hiddenThreadsBody');const fresh=requests.at(-1);deliver(old);
  ok(sermonFollowupViews.hiddenThreadsBody.loading,'Stale source response ignored');deliver(fresh);
  const before=requests.length;requestSermonFollowups({title:'New source',combined:'New sermon'},'hiddenThreadsBody');ok(requests.length===before,'Existing choices reused without another request');
- refreshSermonFollowups('hiddenThreadsBody');const bad=requests.at(-1);deliver(bad,{});ok(document.getElementById('hiddenThreadsBody').textContent.includes('Try Again'),'Malformed model response offers retry');
+ refreshSermonFollowups('hiddenThreadsBody');const bad=requests.at(-1);deliver(bad,'not json at all');const repair=requests.at(-1);ok(repair&&repair!==bad,'Malformed JSON triggers one repair attempt');deliver(repair,'still not json');ok(document.getElementById('hiddenThreadsBody').textContent.includes('Try Again'),'Malformed model response offers retry');
  requestSermonFollowups({title:'Repaired JSON',combined:'Messy model output'},'hiddenThreadsBody');const messy=requests.at(-1);
  deliver(messy,'Preamble from the model.\n```json\n'+JSON.stringify(rows).replace(/\}\]$/,'},]')+'\n```');ok(document.querySelectorAll('#hiddenThreadsBody .ht-card').length===5,'Repaired noisy JSON still renders follow-up choices');
  sermonLibrary=[{id:'saved',title:'Saved source',desc:'Saved description',combined:'SAVED SERMON DETAIL',parts:['SAVED SERMON DETAIL'],date:new Date().toISOString(),category:'doctrine',model:'test',wordCount:3}];openLibraryEntry(0);showLibraryFollowups();const saved=requests.at(-1);ok(saved.prompt.includes('SAVED SERMON DETAIL'),'Saved sermon supports follow-up planning');deliver(saved);chooseSermonFollowup('libraryFollowupsBody',1);
  ok(document.getElementById('customTopicInput').value.includes('Follow-up to: Saved source'),'Library choice stages correct source topic');
+ document.getElementById('customTopicInput').value='Subject: Who are the two witnesses?\n\nDevelop a complete, scripture-grounded lesson centered on this question: Who are the two witnesses?\nInvestigate thoroughly:\n1. Compare the texts.';
+ forgeCustomTopic();ok(currentTopic.title==='Who are the two witnesses?'&&currentTopic.lessonTitle==='Who are the two witnesses?','Long topic brief uses Subject line as display title not the whole paste');
  return checks;
 });console.log(result.join('\n'));}finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});
