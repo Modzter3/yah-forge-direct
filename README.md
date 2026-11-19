@@ -180,9 +180,9 @@ Run `npm run test:reading-sections` to verify lossless section coverage. With `p
 
 After a finished sermon, **Lesson Podcast** writes a two-host episode from that sermon and the source it was built from. Ezra talks through what the lesson actually argued. Miriam quotes the attached source and presses into what the passage still holds. If a saved sermon has no stored source text, the episode stays inside quotations that appear in the sermon.
 
-**Make Podcast** uses one request on the selected model. **Play two voices** speaks each turn with the ElevenLabs voices chosen for Ezra and Miriam. **One voice** reads the whole script. **New episode** asks for another cut. Library sermons can do the same. New saves keep the source label and source text with the sermon so a later podcast can still open it. Playback is on demand and is not started by finishing a sermon.
+**Make Podcast** uses one request on the selected model. **Play two voices** speaks each turn through OpenRouter TTS (`/api/tts`) with the voices chosen for Ezra and Miriam (default **HeyGen free**; with **Eleven Tags** on, expressive playback uses **Eleven v3** via OpenRouter). **One voice** reads the whole script. **New episode** asks for another cut. Library sermons can do the same. New saves keep the source label and source text with the sermon so a later podcast can still open it. Playback is on demand and is not started by finishing a sermon. Read Aloud uses the same proxy (no Poe). Meta Muse on OpenRouter is text-only — there is no Muse TTS in the speech catalog.
 
-Run `npm run test:sermon-podcast` for script parsing. With `public` served locally, `npm run test:sermon-podcast-browser` checks the prompt, rendering, repair, and two-voice requests. Browser options are `CHROMIUM_PATH` and `FORGE_TEST_URL`.
+Run `npm run test:sermon-podcast` for script parsing. With `public` served locally, `npm run test:sermon-podcast-browser` checks the prompt, rendering, repair, and two-voice requests. Run `npm run test:forge-tts` for default model and voice mapping. Browser options are `CHROMIUM_PATH` and `FORGE_TEST_URL`.
 
 ## Follow-up lessons
 

@@ -28,6 +28,7 @@
     "test:sermon-followups-browser": "node tests/sermon-followups-browser.cjs",
     "test:sermon-podcast": "node tests/sermon-podcast.cjs",
     "test:sermon-podcast-browser": "node tests/sermon-podcast-browser.cjs",
+    "test:forge-tts": "node tests/forge-tts.cjs",
     "test:nanogpt-provider": "node scripts/test-nanogpt-provider.mjs",
     "test:subscription-providers": "node scripts/test-subscription-providers.mjs",
     "test:yah-chat-nanogpt": "node tests/yah-chat-nanogpt.cjs",
