@@ -17,6 +17,7 @@
 <script src="/apoc-local-corpus.js?v=2"></script>
 <script src="/reading-sections.js"></script>
 <script src="/sermon-followups.js"></script>
+<script src="/sermon-podcast.js"></script>
 <script src="/vendor/purify.min.js"></script>
 <script src="/sermon-files.js?v=2"></script>
 <style>
@@ -445,6 +446,17 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .tts-audio-wrap{flex:1 1 100%;margin-top:4px;}
 .tts-audio-wrap audio{width:100%;border-radius:8px;}
 .tts-status{font-size:0.72rem;color:var(--accent-blue);font-family:'Fira Code',monospace;padding:8px 0;}
+.podcast-panel{margin:8px 16px 18px;padding:14px 14px 10px;border:1px solid rgba(74,124,155,0.35);border-radius:12px;background:linear-gradient(180deg,rgba(74,124,155,0.08),rgba(10,10,15,0.2));}
+.podcast-kicker{font-family:'Cinzel Decorative',serif;font-size:0.92rem;color:var(--accent-blue);display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.podcast-note{font-size:0.78rem;color:var(--text-muted);line-height:1.45;margin:0 0 10px;}
+.podcast-title{font-family:'Bitter',serif;font-size:1rem;color:var(--text-primary);margin:0 0 8px;}
+.podcast-script{max-height:480px;overflow:auto;margin-top:8px;padding-right:4px;}
+.podcast-turn{margin:8px 0;padding:10px 12px;border-radius:10px;background:var(--bg-card);border-left:3px solid var(--accent-blue);}
+.podcast-turn.host-b{margin-left:14px;border-left-color:var(--accent-teal);}
+.podcast-turn.active{box-shadow:0 0 0 1px var(--gold-dim);background:#1a1a24;}
+.podcast-speaker{font-family:'Fira Code',monospace;font-size:0.66rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent-blue);margin-bottom:4px;}
+.podcast-turn.host-b .podcast-speaker{color:var(--accent-teal);}
+.podcast-turn p{margin:0;font-size:0.84rem;line-height:1.5;color:var(--text-primary);}
 
 /* MEDIA FORGE */
 .media-forge{border-top:1px solid var(--border);}
@@ -1203,8 +1215,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     </div>
     <div class="sermon-output" id="libModalBody"></div>
     <div id="libraryFollowupsBody" style="padding:16px;" aria-live="polite"></div>
+    <div id="libraryPodcastBody" style="padding:0 8px 8px;" aria-live="polite"></div>
     <div class="sermon-actions" style="display:flex;">
       <button class="sermon-action-btn" onclick="showLibraryFollowups()">Explore Follow-up Lessons</button>
+      <button class="sermon-action-btn" onclick="forgeSermonPodcast('library')"><i class="fas fa-podcast"></i> Make Podcast</button>
       <button class="sermon-action-btn copy-all" onclick="copyLibrarySermon()"><i class="fas fa-copy"></i> Copy All</button>
       <button class="sermon-action-btn copy-all" onclick="copyLibrarySermonPlain()" style="border-color:var(--gold-dim);color:var(--gold-dim);background:transparent;"><i class="fas fa-align-left"></i> Copy Plain</button>
       <select id="librarySermonExportFormat" class="model-select" aria-label="Saved sermon export format"><option value="txt">Plain text (.txt)</option><option value="md">Markdown (.md)</option><option value="pdf">PDF (.pdf)</option><option value="docx">Word (.docx)</option><option value="json">Sermon backup (.json)</option></select>
@@ -1223,7 +1237,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         </select>
         <span class="tts-label">Part:</span>
         <select class="tts-part-select" id="libTtsPartSelect"></select>
-        <button class="sermon-action-btn tts-btn" onclick="readLibrarySermonAloud()"><i class="fas fa-headphones"></i> Read Aloud</button>
+        <button class="sermon-action-btn tts-btn" id="libReadAloudBtn" onclick="readLibrarySermonAloud()"><i class="fas fa-headphones"></i> Read Aloud</button>
       </div>
       <div class="tts-audio-wrap" id="libTtsAudioWrap" style="display:none;"></div>
     </div>
@@ -1419,6 +1433,13 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <button class="sermon-action-btn tts-btn" onclick="readSermonAloud()"><i class="fas fa-headphones"></i> Read Aloud</button>
       </div>
       <div class="tts-audio-wrap" id="ttsAudioWrap" style="display:none;"></div>
+    </div>
+
+    <div class="podcast-panel" id="sermonPodcastPanel">
+      <div class="podcast-kicker"><i class="fas fa-podcast"></i> Lesson Podcast</div>
+      <p class="podcast-note">Two hosts discuss this finished sermon, then open the source it was built from. Ezra walks what was written. Miriam presses into the source text. Nothing is requested until you ask.</p>
+      <button type="button" class="ht-forge-btn forge-selected" onclick="forgeSermonPodcast('live')"><i class="fas fa-microphone-lines"></i> Make Podcast</button>
+      <div id="sermonPodcastBody" aria-live="polite"></div>
     </div>
 
     <!-- === HIDDEN THREADS === -->
@@ -5743,6 +5764,7 @@ sermonPartsTitles
 );
 sermonSavedThisSession=true;
 }
+stopSermonPodcast();
 document.getElementById('sermonModal').classList.remove('open');
 document.body.style.overflow='';
 currentNewsVeilFromUrl=false;
@@ -6102,6 +6124,7 @@ return;
 isGenerating=true;
 sermonSavedThisSession=false;
 sermonPartsRaw=[];
+resetLiveSermonPodcast();
 forgeSermonOutline=null;
 forgeIsraeliteOpeningMove=null;
 sermonPartsTitles=[];
@@ -10176,6 +10199,11 @@ combined:combinedRaw,
 date:new Date().toISOString(),
 wordCount:combinedRaw.split(/\s+/).length
 };
+if(parts===sermonPartsRaw&&currentTopic){
+entry.sourceLabel=currentChapterSource?(currentChapterSource.book+' '+(currentChapterSource.readingLabel||('Chapter '+currentChapterSource.chapter))):'';
+entry.sourceText=String(currentChapterText||currentTopic.sourceText||currentTopic.scriptText||'').slice(0,100000);
+entry.customBrief=currentTopic.customBrief?String(currentTopic.customBrief).slice(0,20000):'';
+}
 sermonLibrary.unshift(entry);
 persistLibrary();
 updateLibBadge();
@@ -10235,6 +10263,9 @@ function openLibraryEntry(idx){
 activeLibIndex=idx;
 delete sermonFollowupViews.libraryFollowupsBody;
 document.getElementById('libraryFollowupsBody').innerHTML='';
+delete sermonPodcastViews.libraryPodcastBody;
+var libraryPodcast=document.getElementById('libraryPodcastBody');
+if(libraryPodcast)libraryPodcast.innerHTML='';
 var entry=sermonLibrary[idx];
 if(!entry)return;
 document.getElementById('libModalTitle').textContent=entry.title;
@@ -10253,10 +10284,15 @@ document.getElementById('libModalBody').innerHTML=DOMPurify.sanitize(bodyHtml);
 populateTtsPartSelect('libTtsPartSelect',entry.parts.length);
 document.getElementById('libTtsAudioWrap').style.display='none';
 document.getElementById('libTtsAudioWrap').innerHTML='';
+if(entry.podcast&&entry.podcast.turns&&entry.podcast.turns.length){
+sermonPodcastViews.libraryPodcastBody={id:++sermonPodcastCounter,pack:podcastPackFromEntry(entry),packKey:podcastPackKey(podcastPackFromEntry(entry)),podcast:entry.podcast,loading:false};
+renderSermonPodcast('libraryPodcastBody');
+}
 document.getElementById('libraryModal').classList.add('open');
 document.body.style.overflow='hidden';
 }
 function closeLibraryModal(){
+stopSermonPodcast();
 document.getElementById('libraryModal').classList.remove('open');
 document.body.style.overflow='';
 activeLibIndex=-1;
@@ -10412,6 +10448,187 @@ btn.disabled=false;
 btn.innerHTML=originalBtn;
 });
 }
+var sermonPodcastViews={};
+var sermonPodcastCounter=0;
+var sermonPodcastPlayToken=0;
+function podcastVoiceOptions(selected){
+var voices=[['Brian','Brian -- Deep Male'],['George','George -- Authoritative'],['Will','Will -- Strong Male'],['Jessica','Jessica -- Female'],['Lily','Lily -- Soft Female'],['River','River -- Calm']];
+return voices.map(function(v){return '<option value="'+v[0]+'"'+(v[0]===selected?' selected':'')+'>'+escapeHtml(v[1])+'</option>';}).join('');
+}
+function podcastVoice(bodyId,speaker){
+var el=document.getElementById('podcastVoice'+speaker+'_'+bodyId);
+if(el&&el.value)return el.value;
+return speaker==='B'?'Jessica':'Brian';
+}
+function podcastPackKey(pack){
+var s=String(pack&&pack.sermon||'');
+return s.length+'|'+s.slice(0,48)+'|'+s.slice(-48)+'|'+String(pack&&pack.sourceText||'').length;
+}
+function podcastPackFromLive(){
+var sourceLabel=currentChapterSource?(currentChapterSource.book+' '+(currentChapterSource.readingLabel||('Chapter '+currentChapterSource.chapter))):'';
+return {title:resolveLessonSaveTitle(),sermon:sermonPartsCombined||sermonPartsRaw.join('\n\n'),source:sourceLabel,sourceText:String(currentChapterText||(currentTopic&&(currentTopic.sourceText||currentTopic.scriptText))||''),brief:String((currentTopic&&(currentTopic.customBrief||currentTopic.desc))||'')};
+}
+function podcastPackFromEntry(entry){
+entry=entry||{};
+return {title:entry.seriesTitle||entry.title||'Sermon',sermon:entry.combined||((entry.parts||[]).join('\n\n')),source:entry.sourceLabel||'',sourceText:entry.sourceText||'',brief:entry.customBrief||entry.desc||''};
+}
+function rememberPodcast(pack,podcast){
+for(var i=0;i<sermonLibrary.length;i++){
+if(sermonLibrary[i].combined&&sermonLibrary[i].combined===pack.sermon){
+sermonLibrary[i].podcast=podcast;
+if(!sermonLibrary[i].sourceText&&pack.sourceText){sermonLibrary[i].sourceText=String(pack.sourceText).slice(0,100000);sermonLibrary[i].sourceLabel=pack.source||'';}
+persistLibrary();
+return;
+}
+}
+}
+function resetLiveSermonPodcast(){
+if(typeof stopSermonPodcast==='function')stopSermonPodcast();
+if(typeof sermonPodcastViews==='undefined')return;
+delete sermonPodcastViews.sermonPodcastBody;
+var body=document.getElementById('sermonPodcastBody');
+if(body)body.innerHTML='';
+}
+function forgeSermonPodcast(kind,refresh){
+var bodyId=kind==='library'?'libraryPodcastBody':'sermonPodcastBody';
+var body=document.getElementById(bodyId);
+if(!body||typeof ForgeSermonPodcast==='undefined')return;
+var pack=kind==='library'?(activeLibIndex>=0&&sermonLibrary[activeLibIndex]?podcastPackFromEntry(sermonLibrary[activeLibIndex]):null):podcastPackFromLive();
+if(!pack||!String(pack.sermon||'').trim()){showToast('Finish or open a sermon before making a podcast.');return;}
+var key=podcastPackKey(pack);
+var existing=sermonPodcastViews[bodyId];
+if(!refresh&&existing&&existing.podcast&&existing.packKey===key){renderSermonPodcast(bodyId);return;}
+if(!refresh&&kind==='library'&&sermonLibrary[activeLibIndex]&&sermonLibrary[activeLibIndex].podcast&&sermonLibrary[activeLibIndex].podcast.turns){
+sermonPodcastViews[bodyId]={id:++sermonPodcastCounter,pack:pack,packKey:key,podcast:sermonLibrary[activeLibIndex].podcast,loading:false};
+renderSermonPodcast(bodyId);return;
+}
+stopSermonPodcast();
+var state={id:++sermonPodcastCounter,pack:pack,packKey:key,podcast:null,loading:true};
+sermonPodcastViews[bodyId]=state;
+body.innerHTML='<div class="ht-loading"><div class="ht-loading-anim"></div><div class="ht-loading-text">Writing the two-host episode from this sermon and its source...</div></div>';
+var handler='sermon-podcast-'+state.id;
+var attempt=0;
+var lastRaw='';
+function fail(message){if(sermonPodcastViews[bodyId]!==state)return;state.loading=false;body.innerHTML='<div class="ht-error">'+escapeHtml(message)+'</div><button type="button" class="ht-refresh-btn" onclick="forgeSermonPodcast(\''+kind+'\',true)">Try Again</button>';}
+function send(prompt){
+window.Poe.sendUserMessage('@'+getSelectedModel()+' '+prompt,{handler:handler,stream:false,openChat:false,parameters:{max_tokens:7000,temperature:attempt?0.3:0.7}}).catch(function(error){if(state.loading)fail(String(error));});
+}
+function complete(content){
+lastRaw=String(content||'');
+try{state.podcast=ForgeSermonPodcast.normalize(stripThinking(content||''));state.loading=false;rememberPodcast(pack,state.podcast);renderSermonPodcast(bodyId);}
+catch(error){
+if(attempt<1){attempt++;body.innerHTML='<div class="ht-loading"><div class="ht-loading-anim"></div><div class="ht-loading-text">Repairing the podcast script...</div></div>';send(ForgeSermonPodcast.buildRepairPrompt(pack,lastRaw));return;}
+fail(error.message||'Could not read the podcast script.');
+}
+}
+window.Poe.registerHandler(handler,function(result){
+if(sermonPodcastViews[bodyId]!==state||!state.loading)return;
+var msg=result.responses&&result.responses[0];if(!msg)return;
+if(msg.status==='error'){fail(msg.statusText||'Could not write the podcast.');return;}
+if(msg.status==='complete')complete(msg.content||'');
+});
+send(ForgeSermonPodcast.buildPrompt(pack));
+body.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function renderSermonPodcast(bodyId){
+var state=sermonPodcastViews[bodyId],body=document.getElementById(bodyId);
+if(!state||!state.podcast||!body)return;
+var voiceA=podcastVoice(bodyId,'A'),voiceB=podcastVoice(bodyId,'B'),pod=state.podcast;
+var kind=bodyId==='libraryPodcastBody'?'library':'live';
+var html='<h3 class="podcast-title">'+escapeHtml(pod.title)+'</h3><div class="tts-bar">';
+html+='<span class="tts-label">Ezra</span><select class="tts-voice-select" id="podcastVoiceA_'+bodyId+'">'+podcastVoiceOptions(voiceA)+'</select>';
+html+='<span class="tts-label">Miriam</span><select class="tts-voice-select" id="podcastVoiceB_'+bodyId+'">'+podcastVoiceOptions(voiceB)+'</select>';
+html+='<button type="button" class="sermon-action-btn tts-btn" onclick="playSermonPodcast(\''+bodyId+'\')"><i class="fas fa-play"></i> Play two voices</button>';
+html+='<button type="button" class="sermon-action-btn" onclick="stopSermonPodcast()"><i class="fas fa-stop"></i> Stop</button>';
+html+='<button type="button" class="sermon-action-btn tts-btn" onclick="readPodcastOneVoice(\''+bodyId+'\')"><i class="fas fa-headphones"></i> One voice</button>';
+html+='<button type="button" class="sermon-action-btn" onclick="copySermonPodcast(\''+bodyId+'\')"><i class="fas fa-copy"></i> Copy script</button>';
+html+='<button type="button" class="ht-refresh-btn" onclick="forgeSermonPodcast(\''+kind+'\',true)">New episode</button></div>';
+html+='<div class="tts-audio-wrap" id="podcastAudio_'+bodyId+'"></div><div class="podcast-script">';
+pod.turns.forEach(function(turn,i){
+html+='<div class="podcast-turn host-'+turn.speaker.toLowerCase()+'" id="podcastTurn_'+bodyId+'_'+i+'"><div class="podcast-speaker">'+escapeHtml(turn.name)+'</div><p>'+escapeHtml(turn.text)+'</p></div>';
+});
+html+='</div>';
+body.innerHTML=html;
+}
+function copySermonPodcast(bodyId){
+var state=sermonPodcastViews[bodyId];
+if(!state||!state.podcast)return;
+rawCopy(ForgeSermonPodcast.toSpokenScript(state.podcast),null);
+showToast('Podcast script copied.');
+}
+function readPodcastOneVoice(bodyId){
+var state=sermonPodcastViews[bodyId];
+if(!state||!state.podcast)return;
+var btn=document.querySelector('#'+bodyId+' .tts-btn');
+if(!btn)return;
+doTTS(ForgeSermonPodcast.toSpokenScript(state.podcast),podcastVoice(bodyId,'A'),'podcastAudio_'+bodyId,btn);
+}
+function requestTtsAudio(text,voice){
+return new Promise(function(resolve,reject){
+var clean=stripMarkdownForTTS(text);
+if(!clean){reject(new Error('Empty turn'));return;}
+var ttsBot=getElevenLabsTtsBotId(clean);
+var limit=ttsBot===ELEVEN_TAGGED_TTS_BOT?ELEVEN_TAGGED_TTS_CHAR_LIMIT:40000;
+if(clean.length>limit)clean=clean.slice(0,limit);
+var handler='podcast-tts-'+Date.now()+'-'+Math.floor(Math.random()*10000);
+window.Poe.registerHandler(handler,function(result){
+var msg=result.responses&&result.responses[0];if(!msg)return;
+if(msg.status==='error')reject(new Error(msg.statusText||'TTS error'));
+else if(msg.status==='complete'){
+var url=msg.attachments&&msg.attachments[0]&&msg.attachments[0].url;
+if(url)resolve(url);else reject(new Error('No audio returned'));
+}
+});
+window.Poe.sendUserMessage('@'+ttsBot+' '+clean,{handler:handler,stream:false,openChat:false,parameters:{voice:voice}}).catch(reject);
+});
+}
+function stopSermonPodcast(){
+sermonPodcastPlayToken++;
+Object.keys(sermonPodcastViews).forEach(function(id){
+var state=sermonPodcastViews[id];
+if(state&&state.audio){try{state.audio.pause();}catch(e){}state.audio=null;}
+});
+}
+function playSermonPodcast(bodyId){
+var state=sermonPodcastViews[bodyId];
+if(!state||!state.podcast)return;
+stopSermonPodcast();
+var token=sermonPodcastPlayToken;
+var status=document.getElementById('podcastAudio_'+bodyId);
+if(status)status.innerHTML='<audio id="podcastPlayer_'+bodyId+'" controls style="width:100%;border-radius:8px;"></audio><div class="tts-status" id="podcastStatus_'+bodyId+'"></div>';
+var audio=document.getElementById('podcastPlayer_'+bodyId);
+if(!audio)return;
+state.audio=audio;
+try{audio.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';var unlock=audio.play();if(unlock&&unlock.catch)unlock.catch(function(){});audio.pause();}catch(e){}
+var turns=state.podcast.turns,i=0,upcoming=null;
+function mark(index){
+var nodes=document.querySelectorAll('#'+bodyId+' .podcast-turn');
+for(var n=0;n<nodes.length;n++)nodes[n].classList.remove('active');
+var el=document.getElementById('podcastTurn_'+bodyId+'_'+index);
+if(el){el.classList.add('active');if(el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:'nearest'});}
+}
+function say(text){var line=document.getElementById('podcastStatus_'+bodyId);if(line)line.textContent=text;}
+function fail(err){if(token!==sermonPodcastPlayToken)return;say(String(err&&err.message?err.message:err));}
+function pump(){
+if(token!==sermonPodcastPlayToken)return;
+if(i>=turns.length){say('Episode finished.');return;}
+mark(i);
+var turn=turns[i];
+say(turn.name+' · turn '+(i+1)+' of '+turns.length);
+var req=upcoming||requestTtsAudio(turn.text,podcastVoice(bodyId,turn.speaker));
+var next=turns[i+1];
+upcoming=next?requestTtsAudio(next.text,podcastVoice(bodyId,next.speaker)):null;
+req.then(function(url){
+if(token!==sermonPodcastPlayToken)return;
+audio.src=url;
+audio.onended=function(){if(token!==sermonPodcastPlayToken)return;i++;pump();};
+audio.onerror=function(){fail(new Error('Audio failed to play'));};
+var played=audio.play();
+if(played&&played.catch)played.catch(function(){say('Press play to start '+turn.name+'.');});
+}).catch(fail);
+}
+pump();
+}
 function readSermonAloud(){
 var voice=document.getElementById('ttsVoice').value;
 var partVal=document.getElementById('ttsPartSelect').value;
@@ -10438,7 +10655,7 @@ text=entry.combined;
 var idx=parseInt(partVal)-1;
 if(entry.parts[idx])text=entry.parts[idx];
 }
-var btn=document.querySelector('#libraryModal .tts-btn');
+var btn=document.getElementById('libReadAloudBtn');
 doTTS(text,voice,'libTtsAudioWrap',btn);
 }
 var selectedNewsCat='all';
