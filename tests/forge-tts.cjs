@@ -12,11 +12,13 @@ assert.ok(ForgeTts, 'ForgeTts loads');
 assert.equal(ForgeTts.museTtsAvailable, false, 'Muse has no OpenRouter speech model');
 assert.equal(ForgeTts.pickModel(false), ForgeTts.DEFAULT_MODEL);
 assert.equal(ForgeTts.pickModel(true), ForgeTts.EXPRESSIVE_MODEL);
-assert.match(ForgeTts.describeModel(ForgeTts.DEFAULT_MODEL), /free/i);
+assert.match(ForgeTts.describeModel(ForgeTts.DEFAULT_MODEL), /fish audio/i);
 const long = 'A'.repeat(900);
-const chunks = ForgeTts.chunkTextForTts(long, ForgeTts.chunkTargetForModel(ForgeTts.DEFAULT_MODEL));
-assert.ok(chunks.length >= 2, 'Long HeyGen input is split client-side');
-assert.equal(chunks.join('').length, 900);
+const heygenChunks = ForgeTts.chunkTextForTts(long, ForgeTts.chunkTargetForModel('heygen/heygen-voice-1-turbo:free'));
+assert.ok(heygenChunks.length >= 2, 'Long HeyGen input is split client-side');
+assert.equal(heygenChunks.join('').length, 900);
+const fishChunks = ForgeTts.chunkTextForTts('B'.repeat(4000), ForgeTts.chunkTargetForModel(ForgeTts.DEFAULT_MODEL));
+assert.ok(fishChunks.length >= 2, 'Long Fish input is split client-side');
 
 (async () => {
   const { resolveVoice, wrapPcm16LeMonoWav } = await import('../api/tts.js');
