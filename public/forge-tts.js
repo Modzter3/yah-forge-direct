@@ -2,13 +2,15 @@
 (function (global) {
   'use strict';
 
-  var DEFAULT_MODEL = 'heygen/heygen-voice-1-turbo:free';
+  var DEFAULT_MODEL = 'fish-audio/s2.1-pro-free:free';
+  var LEGACY_SLOW_MODEL = 'heygen/heygen-voice-1-turbo:free';
   var EXPRESSIVE_MODEL = 'elevenlabs/eleven-v3';
   var STORAGE_MODEL = 'yahForgeTtsModel';
   var STORAGE_EXPRESSIVE = 'yahForgeTtsExpressiveModel';
   var CHAR_LIMIT_EXPRESSIVE = 5000;
   var CHAR_LIMIT_STANDARD = 40000;
   var CHUNK_HEYGEN = 750;
+  var CHUNK_FISH = 3500;
   var CHUNK_ELEVEN = 3500;
 
   function getConfiguredModels() {
@@ -16,7 +18,13 @@
     var expressive = EXPRESSIVE_MODEL;
     try {
       var saved = localStorage.getItem(STORAGE_MODEL);
-      if (saved && saved.trim()) base = saved.trim();
+      if (saved && saved.trim()) {
+        saved = saved.trim();
+        if (saved === LEGACY_SLOW_MODEL || saved.indexOf('heygen/heygen-voice') === 0) {
+          try { localStorage.setItem(STORAGE_MODEL, DEFAULT_MODEL); } catch (_) { /* ignore */ }
+          base = DEFAULT_MODEL;
+        } else base = saved;
+      }
       var savedEx = localStorage.getItem(STORAGE_EXPRESSIVE);
       if (savedEx && savedEx.trim()) expressive = savedEx.trim();
     } catch (_) { /* ignore */ }
@@ -30,6 +38,7 @@
 
   function describeModel(model) {
     if (!model) return 'OpenRouter TTS';
+    if (model.indexOf('fish-audio/') === 0) return 'OpenRouter Fish Audio (MP3)';
     if (model.indexOf(':free') !== -1) return 'OpenRouter free TTS';
     if (model.indexOf('elevenlabs/') === 0) return 'OpenRouter ElevenLabs TTS';
     return model.split('/').pop() || 'OpenRouter TTS';
@@ -37,6 +46,7 @@
 
   function chunkTargetForModel(model) {
     var id = String(model || '').toLowerCase();
+    if (id.indexOf('fish-audio/') >= 0) return CHUNK_FISH;
     if (id.indexOf('heygen/') >= 0) return CHUNK_HEYGEN;
     if (id.indexOf('elevenlabs/') >= 0) return CHUNK_ELEVEN;
     return CHUNK_ELEVEN;

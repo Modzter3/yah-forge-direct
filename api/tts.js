@@ -6,7 +6,7 @@
 export const config = { maxDuration: 60 };
 
 const SPEECH_URL = 'https://openrouter.ai/api/v1/audio/speech';
-const DEFAULT_MODEL = process.env.FORGE_TTS_MODEL || 'heygen/heygen-voice-1-turbo:free';
+const DEFAULT_MODEL = process.env.FORGE_TTS_MODEL || 'fish-audio/s2.1-pro-free:free';
 const EXPRESSIVE_MODEL = process.env.FORGE_TTS_EXPRESSIVE_MODEL || 'elevenlabs/eleven-v3';
 const UPSTREAM_TIMEOUT_MS = 55_000;
 
@@ -15,6 +15,14 @@ const HEYGEN = {
 };
 const ELEVEN = {
   Brian: 'brian', George: 'george', Will: 'will', Jessica: 'jessica', Lily: 'lily', River: 'river',
+};
+const FISH_INSTRUCTIONS = {
+  Brian: 'Speak in a deep, steady male voice.',
+  George: 'Speak in an authoritative male voice.',
+  Will: 'Speak in a strong, direct male voice.',
+  Jessica: 'Speak in a clear, warm female voice.',
+  Lily: 'Speak in a soft, gentle female voice.',
+  River: 'Speak in a calm, measured voice.',
 };
 
 export default async function handler(req) {
@@ -47,6 +55,14 @@ export default async function handler(req) {
   const maxChars = maxCharsForModel(model);
   const input = text.length > maxChars ? text.slice(0, maxChars) : text;
   const responseFormat = pickResponseFormat(model, body.response_format);
+  const speechBody = buildSpeechBody({
+    model,
+    input,
+    voice,
+    uiVoice,
+    responseFormat,
+    bodyInstructions: body.instructions,
+  });
 
   const upstreamController = new AbortController();
   const upstreamTimer = setTimeout(() => upstreamController.abort(), UPSTREAM_TIMEOUT_MS);
@@ -62,13 +78,7 @@ export default async function handler(req) {
         'HTTP-Referer': process.env.FORGE_APP_URL || 'https://yah-forge-direct.vercel.app',
         'X-Title': "YAH's Word Forge",
       },
-      body: JSON.stringify({
-        model,
-        input,
-        voice,
-        response_format: responseFormat,
-        ...(body.instructions ? { instructions: String(body.instructions).slice(0, 500) } : {}),
-      }),
+      body: JSON.stringify(speechBody),
     });
   } catch (err) {
     clearTimeout(upstreamTimer);
@@ -107,7 +117,7 @@ export default async function handler(req) {
       'Content-Type': contentType,
       ...(generationId ? { 'X-Generation-Id': generationId } : {}),
       'X-TTS-Model': model,
-      'X-TTS-Voice': voice,
+      'X-TTS-Voice': voice || uiVoice,
     },
   });
 }
@@ -116,7 +126,23 @@ function maxCharsForModel(model) {
   const id = String(model || '').toLowerCase();
   if (id.includes('heygen/')) return 5000;
   if (id.includes('elevenlabs/')) return 5000;
+  if (id.includes('fish-audio/')) return 5000;
   return 12000;
+}
+
+function buildSpeechBody({ model, input, voice, uiVoice, responseFormat, bodyInstructions }) {
+  const id = String(model || '').toLowerCase();
+  const payload = { model, input, response_format: responseFormat };
+  if (id.includes('fish-audio/')) {
+    const hint = bodyInstructions
+      ? String(bodyInstructions).slice(0, 500)
+      : (FISH_INSTRUCTIONS[uiVoice] || FISH_INSTRUCTIONS.Brian);
+    payload.instructions = hint;
+    return payload;
+  }
+  if (voice) payload.voice = voice;
+  if (bodyInstructions) payload.instructions = String(bodyInstructions).slice(0, 500);
+  return payload;
 }
 
 function pickResponseFormat(model, requested) {
@@ -168,6 +194,9 @@ export function resolveVoice(model, uiVoice) {
   }
   if (id.includes('heygen/')) {
     return HEYGEN[uiVoice] || 'gareth';
+  }
+  if (id.includes('fish-audio/')) {
+    return '';
   }
   return (HEYGEN[uiVoice] || ELEVEN[uiVoice] || uiVoice).toLowerCase();
 }
