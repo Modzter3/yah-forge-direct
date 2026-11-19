@@ -5,7 +5,10 @@ const result=await page.evaluate(()=>{
  const checks=[];function ok(v,label){if(!v)throw Error(label);checks.push(label);}
  const turns=Array.from({length:16},(_,i)=>({speaker:i%2?'B':'A',text:'Turn '+(i+1)+' stays on the written sermon and then reads a phrase that is actually in the source.'}));
  const episode={title:'Waters Above',turns};
- const handlers={},requests=[];window.Poe={registerHandler:(id,cb)=>handlers[id]=cb,sendUserMessage:(prompt,options)=>{requests.push({prompt,options});return Promise.resolve();}};
+ const handlers={},requests=[],ttsCalls=[];
+ const realFetch=window.fetch.bind(window);
+ window.fetch=(url,opts)=>{const u=String(url||'');if(u.includes('/api/tts')){const body=JSON.parse(opts.body);ttsCalls.push(body);return Promise.resolve({ok:true,blob:()=>Promise.resolve(new Blob(['fake'],{type:'audio/mpeg'}))});}return realFetch(url,opts);};
+ window.Poe={registerHandler:(id,cb)=>handlers[id]=cb,sendUserMessage:(prompt,options)=>{requests.push({prompt,options});return Promise.resolve();}};
  const deliver=(request,data)=>handlers[request.options.handler]({responses:[{status:'complete',content:typeof data==='string'?data:JSON.stringify(data)}]});
  currentTopic={id:-1,title:'Firmament',desc:'A lesson on the waters above',cat:'doctrine'};
  sermonPartsRaw=['SERMON_BODY_UNIQUE'];sermonPartsCombined=sermonPartsRaw[0];sermonSeriesTitle='Waters Above the Expanse';
@@ -20,10 +23,9 @@ const result=await page.evaluate(()=>{
  ok(document.getElementById('sermonPodcastBody').textContent.includes('Repairing'),'Broken reply asks for a repair');
  const repair=requests.at(-1);ok(repair!==bad&&repair.prompt.includes('not a usable two-host'),'Repair prompt is sent once');
  deliver(repair,episode);ok(document.querySelectorAll('#sermonPodcastBody .podcast-turn').length===16,'Repaired script renders');
- const ttsBefore=requests.length;playSermonPodcast('sermonPodcastBody');
- const tts=requests.slice(ttsBefore);
- ok(tts.length>=2&&tts[0].options.parameters.voice==='Brian'&&tts[1].options.parameters.voice==='Jessica','Two-voice playback requests Ezra then Miriam');
- ok(tts[0].prompt.includes('ElevenLabs'),'Playback uses the sermon TTS bot');
+ playSermonPodcast('sermonPodcastBody');
+ ok(ttsCalls.length>=2&&ttsCalls[0].voice==='Brian'&&ttsCalls[1].voice==='Jessica','Two-voice playback requests Ezra then Miriam via /api/tts');
+ ok(ttsCalls[0].text.includes('Turn 1'),'TTS sends spoken turn text to OpenRouter proxy');
  sermonLibrary=[{id:'saved',title:'Saved lesson',desc:'Saved',combined:'SAVED_SERMON_ONLY',parts:['SAVED_SERMON_ONLY'],date:new Date().toISOString(),category:'doctrine',model:'test',wordCount:2}];
  activeLibIndex=0;forgeSermonPodcast('library');
  ok(requests.at(-1).prompt.includes('SAVED_SERMON_ONLY')&&requests.at(-1).prompt.includes('No separate source text was stored'),'Saved sermon without a source stays inside the sermon');

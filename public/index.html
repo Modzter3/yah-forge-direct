@@ -17,6 +17,7 @@
 <script src="/apoc-local-corpus.js?v=2"></script>
 <script src="/reading-sections.js"></script>
 <script src="/sermon-followups.js"></script>
+<script src="/forge-tts.js"></script>
 <script src="/sermon-podcast.js"></script>
 <script src="/vendor/purify.min.js"></script>
 <script src="/sermon-files.js?v=2"></script>
@@ -10378,12 +10379,7 @@ sel.appendChild(o);
 function sermonTextHasElevenPerformanceTags(text){
 return getElevenBracketTags(text).length>0;
 }
-var ELEVEN_TAGGED_TTS_BOT='ElevenLabs-v3';
 var ELEVEN_TAGGED_TTS_CHAR_LIMIT=5000;
-function getElevenLabsTtsBotId(text){
-if(isElevenLabsTagsEnabled()||sermonTextHasElevenPerformanceTags(text))return ELEVEN_TAGGED_TTS_BOT;
-return 'ElevenLabs-v2.5-Turbo';
-}
 function stripMarkdownForTTS(text){
 if(!text)return '';
 text=text.replace(/^#{1,6}\s+/gm,'');
@@ -10403,47 +10399,28 @@ return text.trim();
 }
 function doTTS(text,voice,audioWrapId,btn){
 if(!text||!text.trim()){showToast('No text to read.');return;}
+if(typeof ForgeTts==='undefined'){showToast('TTS module failed to load.');return;}
 var wrap=document.getElementById(audioWrapId);
 var originalBtn=btn.innerHTML;
 var cleanText=stripMarkdownForTTS(text);
-if(isElevenLabsTagsEnabled()||sermonTextHasElevenPerformanceTags(cleanText))cleanText=polishElevenLabsTaggedText(cleanText);
-var ttsBot=getElevenLabsTtsBotId(cleanText);
-var ttsCharLimit=ttsBot===ELEVEN_TAGGED_TTS_BOT?ELEVEN_TAGGED_TTS_CHAR_LIMIT:40000;
+var expressive=isElevenLabsTagsEnabled()||sermonTextHasElevenPerformanceTags(cleanText);
+if(expressive)cleanText=polishElevenLabsTaggedText(cleanText);
+var ttsCharLimit=expressive?ELEVEN_TAGGED_TTS_CHAR_LIMIT:40000;
 if(cleanText.length>ttsCharLimit){
 cleanText=cleanText.substring(0,ttsCharLimit);
-showToast('Text trimmed to '+ttsCharLimit.toLocaleString()+' characters for '+ttsBot+' (use one part at a time for tagged expressive TTS).');
+showToast('Text trimmed to '+ttsCharLimit.toLocaleString()+' characters for expressive TTS (try one part at a time).');
 }
+var ttsLabel=ForgeTts.describeModel(ForgeTts.pickModel(expressive));
 btn.disabled=true;
 btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Generating Audio...';
 wrap.style.display='block';
-wrap.innerHTML='<div class="tts-status"><i class="fas fa-waveform-lines fa-beat-fade"></i> Sending to '+escapeHtml(ttsBot)+'... this may take a minute for long sermons.</div>';
-var handlerName='tts-'+Date.now();
-window.Poe.registerHandler(handlerName,function(result){
-var msg=result.responses[0];
-if(!msg)return;
-if(msg.status==='error'){
-wrap.innerHTML='<div class="tts-status" style="color:var(--explicit-red);"><i class="fas fa-exclamation-triangle"></i> TTS Error: '+escapeHtml(msg.statusText||'Unknown error')+'</div>';
+wrap.innerHTML='<div class="tts-status"><i class="fas fa-waveform-lines fa-beat-fade"></i> Generating via '+escapeHtml(ttsLabel)+'... this may take a minute for long sermons.</div>';
+ForgeTts.synthesize({text:cleanText,uiVoice:voice||'Brian',expressive:expressive}).then(function(result){
+wrap.innerHTML='<audio controls autoplay src="'+escapeAttr(result.url)+'" style="width:100%;border-radius:8px;margin-top:6px;"></audio>';
 btn.disabled=false;
 btn.innerHTML=originalBtn;
-}else if(msg.status==='incomplete'){
-}else if(msg.status==='complete'){
-if(msg.attachments&&msg.attachments.length>0){
-var audioUrl=msg.attachments[0].url;
-wrap.innerHTML='<audio controls autoplay src="'+escapeAttr(audioUrl)+'" style="width:100%;border-radius:8px;margin-top:6px;"></audio>';
-}else{
-wrap.innerHTML='<div class="tts-status" style="color:var(--explicit-red);"><i class="fas fa-exclamation-triangle"></i> No audio returned. The text may be too long -- try a single part.</div>';
-}
-btn.disabled=false;
-btn.innerHTML=originalBtn;
-}
-});
-window.Poe.sendUserMessage('@'+ttsBot+' '+cleanText,{
-handler:handlerName,
-stream:false,
-openChat:false,
-parameters:{voice:voice}
 }).catch(function(err){
-wrap.innerHTML='<div class="tts-status" style="color:var(--explicit-red);"><i class="fas fa-exclamation-triangle"></i> '+escapeHtml(String(err))+'</div>';
+wrap.innerHTML='<div class="tts-status" style="color:var(--explicit-red);"><i class="fas fa-exclamation-triangle"></i> TTS Error: '+escapeHtml(err&&err.message?err.message:String(err))+'</div>';
 btn.disabled=false;
 btn.innerHTML=originalBtn;
 });
@@ -10564,23 +10541,12 @@ if(!btn)return;
 doTTS(ForgeSermonPodcast.toSpokenScript(state.podcast),podcastVoice(bodyId,'A'),'podcastAudio_'+bodyId,btn);
 }
 function requestTtsAudio(text,voice){
-return new Promise(function(resolve,reject){
 var clean=stripMarkdownForTTS(text);
-if(!clean){reject(new Error('Empty turn'));return;}
-var ttsBot=getElevenLabsTtsBotId(clean);
-var limit=ttsBot===ELEVEN_TAGGED_TTS_BOT?ELEVEN_TAGGED_TTS_CHAR_LIMIT:40000;
-if(clean.length>limit)clean=clean.slice(0,limit);
-var handler='podcast-tts-'+Date.now()+'-'+Math.floor(Math.random()*10000);
-window.Poe.registerHandler(handler,function(result){
-var msg=result.responses&&result.responses[0];if(!msg)return;
-if(msg.status==='error')reject(new Error(msg.statusText||'TTS error'));
-else if(msg.status==='complete'){
-var url=msg.attachments&&msg.attachments[0]&&msg.attachments[0].url;
-if(url)resolve(url);else reject(new Error('No audio returned'));
-}
-});
-window.Poe.sendUserMessage('@'+ttsBot+' '+clean,{handler:handler,stream:false,openChat:false,parameters:{voice:voice}}).catch(reject);
-});
+if(!clean)return Promise.reject(new Error('Empty turn'));
+if(typeof ForgeTts==='undefined')return Promise.reject(new Error('TTS module not loaded'));
+var expressive=isElevenLabsTagsEnabled()||sermonTextHasElevenPerformanceTags(clean);
+if(expressive)clean=polishElevenLabsTaggedText(clean);
+return ForgeTts.synthesize({text:clean,uiVoice:voice||'Brian',expressive:expressive}).then(function(r){return r.url;});
 }
 function stopSermonPodcast(){
 sermonPodcastPlayToken++;
