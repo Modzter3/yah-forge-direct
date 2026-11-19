@@ -51,7 +51,6 @@
         voice: opts.uiVoice || opts.voice || 'Brian',
         expressive: expressive,
         model: model,
-        response_format: 'mp3',
         instructions: opts.instructions || '',
       }),
     }).then(function (res) {
