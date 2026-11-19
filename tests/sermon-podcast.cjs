@@ -1,0 +1,23 @@
+const assert=require('node:assert/strict');require('../public/sermon-podcast.js');const P=global.ForgeSermonPodcast;
+function turns(n){return Array.from({length:n},(_,i)=>({speaker:i%2?'B':'A',text:'Turn '+(i+1)+' discusses a specific line from the sermon and the source wording around it in enough detail to stand as speech.'}));}
+const episode={title:'The Firmament Study',turns:turns(16)};
+const parsed=P.normalize('```json\n'+JSON.stringify(episode)+'\n```');
+assert.equal(parsed.turns.length,16);
+assert.equal(parsed.turns[0].name,'Ezra');
+assert.equal(parsed.turns[1].name,'Miriam');
+assert.match(P.toSpokenScript(parsed),/^The Firmament Study\n\nEzra: /);
+const messy='Here is the episode:\n'+JSON.stringify(episode).replace(/\}\]$/,'},]');
+assert.equal(P.normalize(messy).turns.length,16);
+const spoken=episode.turns.map(function(t){return (t.speaker==='A'?'Ezra: ':'Miriam: ')+t.text;}).join('\n');
+assert.equal(P.normalize(spoken).turns.length,16);
+assert.throws(()=>P.normalize(JSON.stringify({title:'One host',turns:turns(4).map(function(t){return Object.assign({},t,{speaker:'A'});})})));
+const pack={title:'Firmament',sermon:'SERMON_SENTINEL about the waters above',source:'Genesis 1',sourceText:'SOURCE_SENTINEL In the beginning',brief:'Subject: the firmament'};
+const prompt=P.buildPrompt(pack);
+assert.match(prompt,/SERMON_SENTINEL/);
+assert.match(prompt,/SOURCE_SENTINEL/);
+assert.match(prompt,/\{"speaker":"A"/);
+assert.match(P.buildPrompt({title:'Only sermon',sermon:'QUOTED_LINE inside the sermon',source:'',sourceText:'',brief:''}),/No separate source text was stored/);
+assert.match(P.buildPrompt({...pack,sermon:'x'.repeat(40000)+'TAIL_SENTINEL',sourceText:'y'.repeat(20000)+'SOURCE_TAIL'}),/TAIL_SENTINEL/);
+assert.match(P.buildPrompt({...pack,sermon:'x'.repeat(40000)+'TAIL_SENTINEL',sourceText:'y'.repeat(20000)+'SOURCE_TAIL'}),/SOURCE_TAIL/);
+assert.match(P.buildRepairPrompt(pack,'not json'),/not a usable two-host/i);
+console.log('Sermon podcast JSON, spoken-script fallback, source clipping, and two-host rules passed');
