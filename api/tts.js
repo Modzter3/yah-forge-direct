@@ -2,12 +2,13 @@
  * OpenRouter text-to-speech proxy (no Poe).
  * POST /api/tts  { text, voice, expressive?, model?, response_format? }
  */
-export const config = { runtime: 'edge' };
+/** Node serverless: HeyGen synthesis can exceed Edge's 30s cap on long podcast turns. */
+export const config = { maxDuration: 60 };
 
 const SPEECH_URL = 'https://openrouter.ai/api/v1/audio/speech';
 const DEFAULT_MODEL = process.env.FORGE_TTS_MODEL || 'heygen/heygen-voice-1-turbo:free';
 const EXPRESSIVE_MODEL = process.env.FORGE_TTS_EXPRESSIVE_MODEL || 'elevenlabs/eleven-v3';
-const MAX_CHARS = 12000;
+const UPSTREAM_TIMEOUT_MS = 55_000;
 
 const HEYGEN = {
   Brian: 'gareth', George: 'bram', Will: 'vincent', Jessica: 'nadine', Lily: 'tabitha', River: 'weston',
@@ -43,13 +44,18 @@ export default async function handler(req) {
   const model = String(body.model || '').trim() || (expressive ? EXPRESSIVE_MODEL : DEFAULT_MODEL);
   const uiVoice = String(body.voice || body.uiVoice || 'Brian').trim();
   const voice = resolveVoice(model, uiVoice);
-  const input = text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) : text;
+  const maxChars = maxCharsForModel(model);
+  const input = text.length > maxChars ? text.slice(0, maxChars) : text;
   const responseFormat = pickResponseFormat(model, body.response_format);
+
+  const upstreamController = new AbortController();
+  const upstreamTimer = setTimeout(() => upstreamController.abort(), UPSTREAM_TIMEOUT_MS);
 
   let upstream;
   try {
     upstream = await fetch(SPEECH_URL, {
       method: 'POST',
+      signal: upstreamController.signal,
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
@@ -65,8 +71,13 @@ export default async function handler(req) {
       }),
     });
   } catch (err) {
+    clearTimeout(upstreamTimer);
+    if (err && err.name === 'AbortError') {
+      return jsonError('TTS took too long for one clip. Try a shorter passage or split the part.', 504);
+    }
     return jsonError(`Network error reaching OpenRouter TTS: ${err.message}`, 502);
   }
+  clearTimeout(upstreamTimer);
 
   if (!upstream.ok) {
     const raw = await safeReadText(upstream);
@@ -99,6 +110,13 @@ export default async function handler(req) {
       'X-TTS-Voice': voice,
     },
   });
+}
+
+function maxCharsForModel(model) {
+  const id = String(model || '').toLowerCase();
+  if (id.includes('heygen/')) return 5000;
+  if (id.includes('elevenlabs/')) return 5000;
+  return 12000;
 }
 
 function pickResponseFormat(model, requested) {
