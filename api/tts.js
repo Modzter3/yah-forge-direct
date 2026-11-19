@@ -44,7 +44,7 @@ export default async function handler(req) {
   const uiVoice = String(body.voice || body.uiVoice || 'Brian').trim();
   const voice = resolveVoice(model, uiVoice);
   const input = text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) : text;
-  const responseFormat = body.response_format === 'pcm' ? 'pcm' : 'mp3';
+  const responseFormat = pickResponseFormat(model, body.response_format);
 
   let upstream;
   try {
@@ -78,10 +78,16 @@ export default async function handler(req) {
     return jsonError(message || `OpenRouter TTS ${upstream.status}`, upstream.status >= 400 ? upstream.status : 502);
   }
 
-  const bytes = await upstream.arrayBuffer();
-  const contentType = upstream.headers.get('content-type')
+  let bytes = await upstream.arrayBuffer();
+  let contentType = upstream.headers.get('content-type')
     || (responseFormat === 'pcm' ? 'audio/pcm' : 'audio/mpeg');
   const generationId = upstream.headers.get('x-generation-id') || '';
+
+  if (responseFormat === 'pcm') {
+    const sampleRate = parseSampleRateFromHeaders(upstream.headers) || 44100;
+    bytes = wrapPcm16LeMonoWav(bytes, sampleRate);
+    contentType = 'audio/wav';
+  }
 
   return new Response(bytes, {
     status: 200,
@@ -93,6 +99,48 @@ export default async function handler(req) {
       'X-TTS-Voice': voice,
     },
   });
+}
+
+function pickResponseFormat(model, requested) {
+  const r = String(requested || '').toLowerCase();
+  if (r === 'pcm' || r === 'mp3') return r;
+  const id = String(model || '').toLowerCase();
+  if (id.includes('heygen/') || id.includes('google/') || id.includes('gemini')) return 'pcm';
+  return 'mp3';
+}
+
+function parseSampleRateFromHeaders(headers) {
+  const raw = headers.get('x-audio-sample-rate') || headers.get('X-Audio-Sample-Rate');
+  const n = raw ? parseInt(raw, 10) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+/** HeyGen / OpenRouter PCM: 16-bit LE mono, no header — wrap for <audio> playback. */
+export function wrapPcm16LeMonoWav(pcmBytes, sampleRate = 44100) {
+  const pcm = new Uint8Array(pcmBytes);
+  const dataSize = pcm.length;
+  const header = new ArrayBuffer(44);
+  const view = new DataView(header);
+  const writeStr = (off, s) => {
+    for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i));
+  };
+  writeStr(0, 'RIFF');
+  view.setUint32(4, 36 + dataSize, true);
+  writeStr(8, 'WAVE');
+  writeStr(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeStr(36, 'data');
+  view.setUint32(40, dataSize, true);
+  const out = new Uint8Array(44 + dataSize);
+  out.set(new Uint8Array(header), 0);
+  out.set(pcm, 44);
+  return out.buffer;
 }
 
 export function resolveVoice(model, uiVoice) {
