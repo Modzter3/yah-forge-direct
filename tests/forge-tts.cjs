@@ -13,6 +13,10 @@ assert.equal(ForgeTts.museTtsAvailable, false, 'Muse has no OpenRouter speech mo
 assert.equal(ForgeTts.pickModel(false), ForgeTts.DEFAULT_MODEL);
 assert.equal(ForgeTts.pickModel(true), ForgeTts.EXPRESSIVE_MODEL);
 assert.match(ForgeTts.describeModel(ForgeTts.DEFAULT_MODEL), /free/i);
+const long = 'A'.repeat(900);
+const chunks = ForgeTts.chunkTextForTts(long, ForgeTts.chunkTargetForModel(ForgeTts.DEFAULT_MODEL));
+assert.ok(chunks.length >= 2, 'Long HeyGen input is split client-side');
+assert.equal(chunks.join('').length, 900);
 
 (async () => {
   const { resolveVoice, wrapPcm16LeMonoWav } = await import('../api/tts.js');
