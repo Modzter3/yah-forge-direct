@@ -186,6 +186,8 @@ Run `npm run test:sermon-podcast` for script parsing. With `public` served local
 
 ## Follow-up lessons
 
+After a multi-part lesson finishes, use **Redo: Part N → Redo this part** in the action bar to regenerate a single broken or refused part while keeping the rest. The same topic and forge settings must still be in the session.
+
 After a completed sermon, **Where to Go Deeper** offers five different follow-up paths based on the completed text. Choose **Use This for Next Lesson** to fill the Topics field with a detailed study brief: central question, investigation objectives, sources to verify, and continuity guidance. Review or edit it, press **Forge** to configure the next lesson, then generate when ready. Selecting a path does not start a sermon request.
 
 Saved sermons offer **Explore Follow-up Lessons** in the Library reader. Planning uses one request through the selected model; repeated views reuse choices during the session, and **Explore Different Avenues** requests alternatives. Research leads and earlier sermon claims still need verification. These choices replace the former topic-only Hidden Threads suggestions.

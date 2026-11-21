@@ -1417,6 +1417,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <button class="sermon-action-btn copy-all" onclick="copyAllSermonPlain()" style="border-color:var(--gold-dim);color:var(--gold-dim);background:transparent;"><i class="fas fa-align-left"></i> Copy Plain</button>
       <select id="sermonExportFormat" class="model-select" aria-label="Sermon export format"><option value="txt">Plain text (.txt)</option><option value="md">Markdown (.md)</option><option value="pdf">PDF (.pdf)</option><option value="docx">Word (.docx)</option><option value="json">Sermon backup (.json)</option></select>
       <button class="sermon-action-btn export-btn" onclick="exportSermon()"><i class="fas fa-download"></i> Export to File</button>
+      <div class="tts-bar" style="margin-top:6px;" title="Regenerate one part of a finished lesson — other parts stay unchanged">
+        <span class="tts-label"><i class="fas fa-rotate-right"></i> Redo:</span>
+        <select class="tts-part-select" id="reforgePartSelect"></select>
+        <button type="button" class="sermon-action-btn" id="reforgePartBtn" onclick="reforgeSermonPart()"><i class="fas fa-hammer"></i> Redo this part</button>
+      </div>
       <button class="sermon-action-btn" id="elevenTagBtn" onclick="elevenTagCurrentSermon()" style="border-color:#7ec8a0;color:#7ec8a0;background:rgba(126,200,160,0.08);" title="Add Eleven v4-style [bracket] tags to existing sermon — no rewrite"><i class="fas fa-waveform-lines"></i> Eleven Tag</button>
       <button class="sermon-action-btn" id="elevenPolishBtn" onclick="polishElevenCurrentSermon()" style="border-color:#5a9a78;color:#9ed4b8;background:rgba(90,154,120,0.1);" title="Fix tag typos, film directions, and sparse climax paragraphs — no LLM"><i class="fas fa-wand-magic-sparkles"></i> Eleven Polish</button>
       <div class="tts-bar">
@@ -4036,6 +4041,95 @@ sermonPartsCombined=buildCombinedTextFromParts(sermonPartsRaw,sermonPartsTitles)
 var actions=document.getElementById('sermonActions');
 if(actions)actions.style.display='flex';
 populateTtsPartSelect('ttsPartSelect',sermonPartsRaw.length);
+populateReforgePartSelect(sermonPartsRaw.length);
+}
+function populateReforgePartSelect(partCount){
+var sel=document.getElementById('reforgePartSelect');
+if(!sel)return;
+sel.innerHTML='';
+for(var i=1;i<=partCount;i++){
+var o=document.createElement('option');
+o.value=String(i);
+o.textContent=getForgePartLabel(i,false)+(sermonPartsTitles[i-1]?(' — '+String(sermonPartsTitles[i-1]).slice(0,42)):(''));
+sel.appendChild(o);
+}
+}
+function buildReforgePartOnlyBlock(partNum){
+var total=sermonPartsRaw.length||selectedPartCount||partNum;
+var p='REDO PART '+partNum+' ONLY — the other '+(total-1)+' part(s) are LOCKED and already approved.\n';
+p+='Your output replaces ONLY Part '+partNum+'. Match the voice, tags, and depth of the neighboring parts. Do NOT output a neutral essay, study guide, bullet summary, or assistant declination.\n';
+p+='Do NOT write "these verses highlight themes", "if you would like a respectful study", or similar meta commentary. Preach the assigned scripture in the forged voice.\n';
+var prev=partNum>1?String(sermonPartsRaw[partNum-2]||'').trim():'';
+var next=partNum<total?String(sermonPartsRaw[partNum]||'').trim():'';
+if(prev)p+='\nEND OF PART '+(partNum-1)+' (continue from here):\n'+prev.slice(-1400)+'\n';
+if(next)p+='\nSTART OF PART '+(partNum+1)+' (do not overlap into this material):\n'+next.slice(0,1100)+'\n';
+return p+'\n';
+}
+function reforgeSermonPart(partNum){
+if(isGenerating){showToast('Wait for the current forge to finish.');return;}
+var sel=document.getElementById('reforgePartSelect');
+partNum=parseInt(partNum||0,10)||(sel?parseInt(sel.value,10):0);
+if(!partNum||partNum<1||partNum>sermonPartsRaw.length){showToast('Choose a part to redo.');return;}
+if(!currentTopic){showToast('Lesson context is missing. Re-open the same topic from Topics, or edit Part '+partNum+' manually via Copy All.');return;}
+sermonReforgeReplacePart=partNum;
+selectedPartCount=Math.max(selectedPartCount||0,sermonPartsRaw.length);
+isGenerating=true;
+document.getElementById('generateBtn').disabled=true;
+var partContainer=document.getElementById('sermonPart'+partNum);
+if(!partContainer){showToast('Part '+partNum+' not found — refresh the page.');return;}
+partContainer.innerHTML='';
+var oldLoader=document.getElementById('loader'+partNum);
+if(oldLoader)oldLoader.remove();
+var output=document.getElementById('sermonOutput');
+var loader=document.createElement('div');
+loader.className='loading-state';
+loader.id='loader'+partNum;
+loader.innerHTML='<div class="loading-pulse"></div><div class="loading-text">Re-forging '+escapeHtml(getForgePartLabel(partNum,true))+'...</div>';
+output.appendChild(loader);
+loader.scrollIntoView({behavior:'smooth',block:'nearest'});
+sermonGenCtx={
+partNum:partNum,
+partContent:'',
+partContentBeforeContinue:'',
+continuationCount:0,
+forgeRefusalRetryCount:0,
+forgeRefusalRetryPromptPrefix:null,
+localSermonState:localSermonSessionState,
+localSermonRetryCount:0,
+localContextShrinkTried:false,
+localDegenerationHit:null,
+localLastGoodContent:'',
+localAbortController:null,
+localStreamAborted:false,
+localStreamHandled:false,
+driftRetryCount:0,
+explicitRetryCount:0,
+yahVoiceRetryCount:0,
+theatreAgreementRetryCount:0,
+yahLiteTried:false,
+bezFallbackActive:false,
+modelOverride:null,
+modelFallbackTried:false,
+promptMode:'normal',
+gotFirstToken:false,
+firstTokenTimer:null,
+chunkTimer:null,
+partContainer:partContainer,
+finishing:false,
+reforgeOnly:true
+};
+startSermonPartStream(partNum,false,{reforgeOnly:true});
+}
+function advanceAfterSermonPart(partNum,ctx){
+if(ctx&&ctx.reforgeOnly){
+sermonGenCtx=null;
+isGenerating=false;
+document.getElementById('generateBtn').disabled=false;
+renderSermonFromParts();
+showToast(getForgePartLabel(partNum,false)+' replaced. Re-save to library if this lesson is stored there.');
+return;
+}
+generatePart(partNum+1);
 }
 var elevenTagRunning=false;
 function runElevenTagOnParts(parts,persona,onPartDone,onComplete){
@@ -6082,6 +6176,7 @@ var SERIES_PARTS=[
 var sermonPartsRaw=[];
 var sermonPartsTitles=[];
 var sermonPartsCombined='';
+var sermonReforgeReplacePart=0;
 var sermonSeriesTitle=null;
 var lessonSeriesTitleReqId=0;
 var localSermonSessionState=null;
@@ -7047,6 +7142,8 @@ var head=String(text).slice(0,5000);
 if(/\b(hate-based|supremacist content|hate speech|extremist content)\b/i.test(head)&&/\bviolat(?:e|es|ing).{0,60}(?:policy|guidelines|terms)\b/i.test(head))return true;
 if(/\b(?:this request|your request).{0,120}(?:violat|against (?:our |the )?polic)\b/i.test(head)&&/\b(?:will not|cannot|unable to|must decline|I must decline|I can(?:not| not) (?:fulfill|provide|generate|comply))\b/i.test(head))return true;
 if(/\bI can provide a neutral (?:summary|analysis|overview)\b/i.test(head)&&/\b(?:violat|policy|cannot comply|decline|instead)\b/i.test(head.slice(0,1500)))return true;
+if(/\b(describes a moment of doubt|these verses highlight themes|shared leadership and empowerment)\b/i.test(head)&&/\b(trust in divine|verse-by-verse study|if you would like)\b/i.test(head))return true;
+if(/\b(if you would like, a respectful)\b/i.test(head)&&/\b(verse-by-verse study|continued focusing)\b/i.test(head))return true;
 return false;
 }
 function buildForgeCreativeSafetyRefusalRetryPrefix(){
@@ -7311,8 +7408,14 @@ function commitSermonPart(partNum,partContent){
 var finalized=finalizeSermonPartText(partContent,partNum);
 if(isElevenLabsTagsEnabled()&&!isTheatreModeActive())finalized=polishElevenLabsTaggedText(finalized);
 var extractedTitle=extractPartTitle(finalized,partNum);
+if(sermonReforgeReplacePart===partNum){
+sermonPartsTitles[partNum-1]=extractedTitle;
+sermonPartsRaw[partNum-1]=finalized;
+sermonReforgeReplacePart=0;
+}else{
 sermonPartsTitles.push(extractedTitle);
 sermonPartsRaw.push(finalized);
+}
 var angle=sermonNewsAnglePlan&&sermonNewsAnglePlan[partNum-1]?sermonNewsAnglePlan[partNum-1]:null;
 recordSermonNewsLedger(partNum,finalized,angle);
 var ldr=document.getElementById('loader'+partNum);
@@ -7363,6 +7466,13 @@ if(ctx.localAbortController)ctx.localAbortController.abort();
 if(window.__forgeStreamAbortRegistry)delete window.__forgeStreamAbortRegistry[ctx.handlerName];
 ctx.finishing=false;
 sermonGenCtx=null;
+if(ctx.reforgeOnly){
+isGenerating=false;
+document.getElementById('generateBtn').disabled=false;
+renderSermonFromParts();
+showToast(getForgePartLabel(partNum,false)+' replaced.');
+return;
+}
 generatePart(partNum+1);
 }
 function forceNextSermonPart(){
@@ -7406,6 +7516,9 @@ prompt=ForgeLocalSermonProfile.buildRetryPrompt(bMeta,streamOpts.localRetryReaso
 prompt=buildSermonContinuationPrompt(partNum,ctx.partContent,ctx.continuationOpts||{});
 }else{
 prompt=buildPartPrompt(partNum);
+}
+if(ctx.reforgeOnly&&!isContinuation&&!streamOpts.closingOnly){
+prompt=buildReforgePartOnlyBlock(partNum)+prompt;
 }
 if(!streamOpts.localVerseRetry&&ctx.localSermonState&&ForgeLocalSermonProfile){
 prompt=ForgeLocalSermonProfile.augmentPartPrompt(prompt,partNum,ctx.localSermonState);
@@ -7540,13 +7653,11 @@ if(isSermonResponseTruncated(msg,finalized)){
 var bodyOnly=ctx.partContentBeforeContinue||(ctx.partContent?stripPrematureForgeClosing(ctx.partContent):'')||ctx.partContent;
 showToast('Extra closing pass ran out of tokens — finishing with your body draft.');
 commitSermonPart(partNum,bodyOnly);
-sermonGenCtx=null;
-generatePart(partNum+1);
+advanceAfterSermonPart(partNum,ctx);
 return;
 }
 commitSermonPart(partNum,ctx.partContent);
-sermonGenCtx=null;
-generatePart(partNum+1);
+advanceAfterSermonPart(partNum,ctx);
 return;
 }
 if(isLocalLlmChapterSermonActive()&&!finalizeLocalLlmPartIfValid(ctx,partNum,streamOpts,finalized))return;
@@ -7634,8 +7745,7 @@ startSermonPartStream(partNum,true,{closingOnly:true});
 return;
 }
 commitSermonPart(partNum,ctx.partContent);
-sermonGenCtx=null;
-generatePart(partNum+1);
+advanceAfterSermonPart(partNum,ctx);
 }
 }
 });
@@ -7819,6 +7929,7 @@ isGenerating=false;
 document.getElementById('generateBtn').disabled=false;
 document.getElementById('sermonActions').style.display='flex';
 populateTtsPartSelect('ttsPartSelect',selectedPartCount);
+populateReforgePartSelect(selectedPartCount);
 document.getElementById('ttsAudioWrap').style.display='none';
 document.getElementById('ttsAudioWrap').innerHTML='';
 sermonPartsCombined='';
