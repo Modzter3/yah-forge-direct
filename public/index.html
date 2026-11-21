@@ -4127,6 +4127,123 @@ o.textContent=getForgePartLabel(i,false)+(sermonPartsTitles[i-1]?(' — '+String
 sel.appendChild(o);
 }
 }
+function cloneChapterSourceForLibrary(src){
+if(!src||typeof src!=='object')return null;
+var out={book:src.book||'',chapter:src.chapter,type:src.type||'bible',readingLabel:src.readingLabel||''};
+if(src.readingSelection)out.readingSelection={from:src.readingSelection.from,to:src.readingSelection.to};
+if(src.readingVerseIds&&src.readingVerseIds.length)out.readingVerseIds=src.readingVerseIds.slice();
+return out;
+}
+function inferChapterSourceFromLabel(label,mode){
+var sl=String(label||'').trim();
+if(!sl)return null;
+var m=sl.match(/^(.+?)\s+(?:Chapter\s+)?(\d+)\b/i);
+if(!m)return null;
+var typ=mode==='apocrypha'?'apocrypha':(mode==='sealed'?'sealed':'bible');
+return {book:m[1].trim(),chapter:parseInt(m[2],10),type:typ};
+}
+function ensureChapterContextFromLibraryEntry(entry){
+if(!entry)return;
+if(entry.chapterSource)currentChapterSource=cloneChapterSourceForLibrary(entry.chapterSource);
+else if(entry.sourceLabel)currentChapterSource=inferChapterSourceFromLabel(entry.sourceLabel,entry.mode);
+if(entry.sourceText)currentChapterText=entry.sourceText;
+if(entry.chapterVerseCount>0)currentChapterVerseCount=entry.chapterVerseCount;
+else if(currentChapterText)currentChapterVerseCount=countVersesInText(currentChapterText);
+else currentChapterVerseCount=0;
+}
+function forgeSpokenNumberToken(tok){
+var w=String(tok||'').toLowerCase().replace(/[^a-z]/g,'');
+if(/^\d+$/.test(w))return parseInt(w,10);
+var map={one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20,thirty:30,forty:40,fifty:50};
+if(map[w]!=null)return map[w];
+var m=w.match(/^twenty(.+)$/);if(m&&map[m[1]]!=null)return 20+map[m[1]];
+m=w.match(/^thirty(.+)$/);if(m&&map[m[1]]!=null)return 30+map[m[1]];
+m=w.match(/^forty(.+)$/);if(m&&map[m[1]]!=null)return 40+map[m[1]];
+return 0;
+}
+function extractChapterVerseMentions(text,book,chapter){
+var found=[],ch=parseInt(chapter,10)||0;
+if(!text)return found;
+var bookEsc=String(book||'').trim().replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+var m;
+if(bookEsc&&ch){
+var reColon=new RegExp(bookEsc+'\\s+'+ch+'\\s*:\\s*(\\d{1,3})','gi');
+while((m=reColon.exec(text)))found.push(parseInt(m[1],10));
+var reSpoken=new RegExp(bookEsc+'\\s+chapter\\s+[\\w\\s-]{1,40}?verse[s]?\\s+([\\w\\s-]{1,24})','gi');
+while((m=reSpoken.exec(text))){
+var parts=String(m[1]).trim().split(/[\s-]+/);
+var n=0;
+for(var pi=0;pi<parts.length;pi++){var v=forgeSpokenNumberToken(parts[pi]);if(v)n=n&&pi?n+v:v;}
+if(n)found.push(n);
+}
+var reShort=new RegExp('\\b'+ch+':(\\d{1,3})\\b','g');
+while((m=reShort.exec(text)))found.push(parseInt(m[1],10));
+}
+var re3=/\bverse[s]?\s+(\d{1,3})\b/gi;
+while((m=re3.exec(text)))found.push(parseInt(m[1],10));
+var seen={},out=[];
+for(var i=0;i<found.length;i++){var n=found[i];if(n>0&&n<200&&!seen[n]){seen[n]=true;out.push(n);}}
+return out;
+}
+function describeReforgeVerseBand(partNum){
+var total=sermonPartsRaw.length||selectedPartCount||partNum;
+if(currentChapterVerseCount>0&&total>1){
+var range=getVerseRangeForPart(partNum,total,currentChapterVerseCount);
+var src=currentChapterSource;
+var label=src?(src.readingLabel||(src.book+' '+src.chapter)):'Chapter';
+return label+' verses '+range.start+'–'+range.end;
+}
+var src=currentChapterSource;
+if(src&&src.book&&total>1){
+var prev=partNum>1?extractChapterVerseMentions(String(sermonPartsRaw[partNum-2]||'').slice(-3000),src.book,src.chapter):[];
+var next=partNum<total?extractChapterVerseMentions(String(sermonPartsRaw[partNum]||'').slice(0,2500),src.book,src.chapter):[];
+if(prev.length||next.length){
+var start=prev.length?Math.max.apply(null,prev)+1:'?';
+var end=next.length?Math.min.apply(null,next)-1:'?';
+return src.book+' ch '+src.chapter+' ~v'+start+'–'+end+' (from neighboring parts)';
+}
+}
+return '';
+}
+function buildReforgeVerseAssignmentBlock(partNum){
+var total=sermonPartsRaw.length||selectedPartCount||partNum;
+var src=currentChapterSource;
+var book=src&&src.book?src.book:'';
+var chapter=src&&src.chapter!=null?src.chapter:'';
+var p='';
+if(currentChapterVerseCount>0&&total>1){
+var range=getVerseRangeForPart(partNum,total,currentChapterVerseCount);
+p+='SCRIPTURE SPINE FOR THIS REDO (NON-NEGOTIABLE):\n';
+if(book)p+=(src.readingLabel||book+' Chapter '+chapter)+' — exactly '+currentChapterVerseCount+' verses split across '+total+' parts.\n';
+p+='VERSE ASSIGNMENT MAP:\n';
+for(var pi=1;pi<=total;pi++){
+var pr=getVerseRangeForPart(pi,total,currentChapterVerseCount);
+p+='  Part '+pi+': verses '+pr.start+' through '+pr.end+(pi===partNum?'  <<<< REDO THIS BAND ONLY':' (locked)')+'\n';
+}
+p+='YOUR REDO: preach ONLY verses '+range.start+' through '+range.end+'. START at verse '+range.start+'. STOP at verse '+range.end+'.\n';
+if(partNum>1){
+var prevV=extractChapterVerseMentions(String(sermonPartsRaw[partNum-2]||'').slice(-2800),book,chapter);
+if(prevV.length)p+='Neighbor check: Part '+(partNum-1)+' already reached verse '+Math.max.apply(null,prevV)+' — pick up at verse '+range.start+', do not re-teach earlier verses.\n';
+}
+if(partNum<total){
+var nextV=extractChapterVerseMentions(String(sermonPartsRaw[partNum]||'').slice(0,2200),book,chapter);
+if(nextV.length)p+='Neighbor check: Part '+(partNum+1)+' opens around verse '+Math.min.apply(null,nextV)+' — do NOT preach that verse or anything after verse '+range.end+'.\n';
+}
+return p+'\n';
+}
+if(total>1&&book){
+var prev=partNum>1?String(sermonPartsRaw[partNum-2]||'').slice(-3200):'';
+var next=partNum<total?String(sermonPartsRaw[partNum]||'').slice(0,2800):'';
+var pv=extractChapterVerseMentions(prev,book,chapter);
+var nv=extractChapterVerseMentions(next,book,chapter);
+p+='SCRIPTURE SPINE FROM LOCKED NEIGHBORS:\n';
+if(pv.length)p+='Part '+(partNum-1)+' ended in verse '+Math.max.apply(null,pv)+' territory — your redo continues with the NEXT verse in '+book+' chapter '+chapter+'.\n';
+if(nv.length)p+='Part '+(partNum+1)+' begins near verse '+Math.min.apply(null,nv)+' — stop this redo BEFORE that verse.\n';
+if(!pv.length&&!nv.length)p+='No numeric map saved — use the part excerpts below: continue verse-by-verse exactly where Part '+(partNum-1)+' stopped and stop before Part '+(partNum+1)+' material.\n';
+return p+'\n';
+}
+return '';
+}
 function buildReforgePartOnlyBlock(partNum){
 var total=sermonPartsRaw.length||selectedPartCount||partNum;
 var prev=partNum>1?String(sermonPartsRaw[partNum-2]||'').trim():'';
@@ -4140,6 +4257,7 @@ p+='Your output replaces ONLY Part '+partNum+'. Match the voice, tags, and depth
 p+='Do NOT write "these verses highlight themes", "if you would like a respectful study", or similar meta commentary. Preach the assigned scripture in the forged voice.\n';
 if(prev)p+='\nEND OF PART '+(partNum-1)+' (continue from here):\n'+prev.slice(-1400)+'\n';
 if(next)p+='\nSTART OF PART '+(partNum+1)+' (do not overlap into this material):\n'+next.slice(0,1100)+'\n';
+p+=buildReforgeVerseAssignmentBlock(partNum);
 return p+'\n';
 }
 function reforgeSermonPart(partNum){
@@ -4148,7 +4266,8 @@ var sel=document.getElementById('reforgePartSelect');
 partNum=parseInt(partNum||0,10)||(sel?parseInt(sel.value,10):0);
 if(!partNum||partNum<1||partNum>sermonPartsRaw.length){showToast('Choose a part to redo.');return;}
 if(!currentTopic){showToast('Lesson context is missing. Re-open the same topic from Topics, or edit Part '+partNum+' manually via Copy All.');return;}
-showToast('Redo uses Forge toggles + model below (not Read Aloud voice): '+describeForgeVoiceForToast());
+var verseHint=describeReforgeVerseBand(partNum);
+showToast('Redo: '+describeForgeVoiceForToast()+(verseHint?(' · '+verseHint):' · set chapter text in library if verse map is missing'));
 sermonReforgeReplacePart=partNum;
 selectedPartCount=Math.max(selectedPartCount||0,sermonPartsRaw.length);
 isGenerating=true;
@@ -10400,6 +10519,8 @@ entry.sourceLabel=currentChapterSource?(currentChapterSource.book+' '+(currentCh
 entry.sourceText=String(currentChapterText||currentTopic.sourceText||currentTopic.scriptText||'').slice(0,100000);
 entry.customBrief=currentTopic.customBrief?String(currentTopic.customBrief).slice(0,20000):'';
 entry.forgeProfile=captureForgeGenerationProfile();
+entry.chapterSource=cloneChapterSourceForLibrary(currentChapterSource);
+entry.chapterVerseCount=currentChapterVerseCount>0?currentChapterVerseCount:0;
 }
 sermonLibrary.unshift(entry);
 persistLibrary();
@@ -10505,7 +10626,7 @@ for(var i=0;i<sermonPartsRaw.length;i++){
 sermonPartsTitles.push(extractPartTitle(sermonPartsRaw[i],i+1)||('Part '+(i+1)));
 }
 }
-if(entry.sourceText)currentChapterText=entry.sourceText;
+ensureChapterContextFromLibraryEntry(entry);
 sermonSeriesTitle=entry.seriesTitle||null;
 if(!sermonSeriesTitle&&sermonPartsRaw.length>1){
 var comb=entry.combined||'';
@@ -10530,6 +10651,9 @@ entry.parts[partNum-1]=sermonPartsRaw[partNum-1];
 if(sermonPartsTitles[partNum-1])entry.partTitles[partNum-1]=sermonPartsTitles[partNum-1];
 entry.combined=buildCombinedTextFromParts(sermonPartsRaw,sermonPartsTitles);
 entry.wordCount=String(entry.combined||'').split(/\s+/).length;
+if(currentChapterVerseCount>0)entry.chapterVerseCount=currentChapterVerseCount;
+if(currentChapterSource&&!entry.chapterSource)entry.chapterSource=cloneChapterSourceForLibrary(currentChapterSource);
+if(currentChapterText&&!entry.sourceText)entry.sourceText=String(currentChapterText).slice(0,100000);
 persistLibrary();
 }
 function loadLibraryEntryIntoForgeForReforge(){
