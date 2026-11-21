@@ -3986,18 +3986,90 @@ p+='EXPLICIT MODE TAG BALANCE: Profanity stays in the WORDS. The direction descr
 p+='OUTPUT LOCK: Full sermon WITH voice direction in every paragraph — medium density. Every tag is 5 words or fewer (long tags glitch TTS). At least two out of three tags are SHORT DESCRIBED phrases (2–5 words) that say how the voice sounds. A part built from [angry] [bitter] [scoffs] [furious] one-word tags FAILED. Any body paragraph with zero voice tags or no closing [pause] also FAILED.\n\n';
 return p;
 }
+function detectSermonVoicePersona(text){
+var sample=String(text||'').slice(0,24000);
+var bezSignals=0,yahSignals=0;
+if(/\bbrother\b|\bpeep this\b|\bcousin of mine\b|\byah showed you\b|\bblock\b|\bstreet\b|\bpunk-ass preachers\b|\bmotherfucker\b|\bnigga please\b/i.test(sample))bezSignals+=3;
+if(/\bi am yah\b|\bfrom the throne\b|\bmy people israel\b|\bi have called thee\b|\bthus saith yah\b|\bi, yah\b/i.test(sample))yahSignals+=4;
+if(/\byah showed me\b|\bclock in tomorrow\b|\bisraelite brother\b/i.test(sample))bezSignals+=2;
+if(/\bi am yah\b/i.test(sample))yahSignals+=5;
+return bezSignals>=yahSignals?'bez':'yah';
+}
 function detectElevenTagPersona(text){
 var roughBez=document.getElementById('toggleRoughBez')&&document.getElementById('toggleRoughBez').checked;
 var bezStory=document.getElementById('toggleBezStoryMode')&&document.getElementById('toggleBezStoryMode').checked;
 if(roughBez||bezStory)return 'bez';
 var yahStory=document.getElementById('toggleStoryMode')&&document.getElementById('toggleStoryMode').checked;
 if(yahStory)return 'yah';
-var sample=String(text||'').slice(0,12000);
-var bezSignals=0,yahSignals=0;
-if(/\bbrother\b|\bpeep this\b|\bcousin of mine\b|\byah showed you\b|\bblock\b|\bstreet\b|\bpunk-ass preachers\b/i.test(sample))bezSignals+=3;
-if(/\bi am yah\b|\bfrom the throne\b|\bmy people\b|\bi have called thee\b|\bfirst person.*\bi, my, me\b/i.test(sample))yahSignals+=3;
-if(/\byah showed me\b|\bclock in tomorrow\b|\bisraelite brother\b/i.test(sample))bezSignals+=2;
-return bezSignals>=yahSignals?'bez':'yah';
+return detectSermonVoicePersona(text);
+}
+function captureForgeGenerationProfile(){
+function on(id){var el=document.getElementById(id);return !!(el&&el.checked);}
+return {
+model:getSelectedModel(),
+roughBez:on('toggleRoughBez'),
+bezStory:on('toggleBezStoryMode'),
+yahStory:on('toggleStoryMode'),
+israelite:on('toggleIsraelite'),
+explicit:on('toggleExplicit'),
+elevenTags:on('toggleElevenLabsTags'),
+breakdown:on('toggleBreakdown'),
+fastStart:on('toggleFastStart'),
+webResearch:on('toggleWebResearch'),
+newsWeave:on('toggleNewsWeave')
+};
+}
+function applyForgeModelSelection(modelId){
+if(!modelId)return;
+var sel=document.getElementById('modelSelect');
+var custom=document.getElementById('customModelInput');
+var found=false;
+if(sel){
+for(var i=0;i<sel.options.length;i++){
+if(sel.options[i].value===modelId){sel.value=modelId;found=true;break;
+}
+}
+}
+if(custom){
+if(found){custom.value='';custom.classList.remove('active-override');}
+else{custom.value=modelId;custom.classList.add('active-override');}
+}
+}
+function applyForgeGenerationProfile(prof){
+if(!prof||typeof prof!=='object')return false;
+applyForgeModelSelection(prof.model);
+setForgeToggleChecked('toggleRoughBez',!!prof.roughBez);
+setForgeToggleChecked('toggleBezStoryMode',!!prof.bezStory);
+setForgeToggleChecked('toggleStoryMode',!!prof.yahStory);
+setForgeToggleChecked('toggleIsraelite',!!prof.israelite);
+setForgeToggleChecked('toggleExplicit',!!prof.explicit);
+setForgeToggleChecked('toggleElevenLabsTags',!!prof.elevenTags);
+setForgeToggleChecked('toggleBreakdown',prof.breakdown!==false);
+setForgeToggleChecked('toggleFastStart',!!prof.fastStart);
+setForgeToggleChecked('toggleWebResearch',!!prof.webResearch);
+setForgeToggleChecked('toggleNewsWeave',!!prof.newsWeave);
+return true;
+}
+function applyInferredVoiceTogglesFromSermon(text){
+var persona=detectSermonVoicePersona(text);
+if(persona==='bez'){
+setForgeToggleChecked('toggleRoughBez',true);
+setForgeToggleChecked('toggleBezStoryMode',true);
+setForgeToggleChecked('toggleStoryMode',false);
+}else{
+setForgeToggleChecked('toggleStoryMode',true);
+setForgeToggleChecked('toggleRoughBez',false);
+setForgeToggleChecked('toggleBezStoryMode',false);
+}
+return persona;
+}
+function describeForgeVoiceForToast(){
+var parts=[];
+if(isRoughBezForgeActive()|| (document.getElementById('toggleBezStoryMode')&&document.getElementById('toggleBezStoryMode').checked))parts.push('Bez');
+else if(isYahStoryModeActive())parts.push('Yah Story');
+else if(document.getElementById('toggleIsraelite')&&document.getElementById('toggleIsraelite').checked)parts.push('Israelite');
+else parts.push('Standard');
+return parts.join(' / ')+' · '+getSelectedModel().split('/').pop();
 }
 function buildElevenLabsRetrofitPrompt(persona,text,partNum,totalParts){
 var p='ELEVEN v4 AUDIO TAG RETROFIT — EXISTING SERMON (TAGS ONLY):\n';
@@ -4057,11 +4129,15 @@ sel.appendChild(o);
 }
 function buildReforgePartOnlyBlock(partNum){
 var total=sermonPartsRaw.length||selectedPartCount||partNum;
-var p='REDO PART '+partNum+' ONLY — the other '+(total-1)+' part(s) are LOCKED and already approved.\n';
-p+='Your output replaces ONLY Part '+partNum+'. Match the voice, tags, and depth of the neighboring parts. Do NOT output a neutral essay, study guide, bullet summary, or assistant declination.\n';
-p+='Do NOT write "these verses highlight themes", "if you would like a respectful study", or similar meta commentary. Preach the assigned scripture in the forged voice.\n';
 var prev=partNum>1?String(sermonPartsRaw[partNum-2]||'').trim():'';
 var next=partNum<total?String(sermonPartsRaw[partNum]||'').trim():'';
+var persona=detectSermonVoicePersona(prev+'\n'+next);
+var p='REDO PART '+partNum+' ONLY — the other '+(total-1)+' part(s) are LOCKED and already approved.\n';
+p+='VOICE LOCK — '+persona.toUpperCase()+': ';
+p+=(persona==='bez'?'BEZ street-preacher cadence (third-person Israelite brother, NOT first-person "I am Yah" throne voice). ':'Yah first-person throne revelation cadence (NOT Bez street voice). ');
+p+='Match neighboring parts exactly.\n';
+p+='Your output replaces ONLY Part '+partNum+'. Match the voice, tags, and depth of the neighboring parts. Do NOT output a neutral essay, study guide, bullet summary, or assistant declination.\n';
+p+='Do NOT write "these verses highlight themes", "if you would like a respectful study", or similar meta commentary. Preach the assigned scripture in the forged voice.\n';
 if(prev)p+='\nEND OF PART '+(partNum-1)+' (continue from here):\n'+prev.slice(-1400)+'\n';
 if(next)p+='\nSTART OF PART '+(partNum+1)+' (do not overlap into this material):\n'+next.slice(0,1100)+'\n';
 return p+'\n';
@@ -4072,6 +4148,7 @@ var sel=document.getElementById('reforgePartSelect');
 partNum=parseInt(partNum||0,10)||(sel?parseInt(sel.value,10):0);
 if(!partNum||partNum<1||partNum>sermonPartsRaw.length){showToast('Choose a part to redo.');return;}
 if(!currentTopic){showToast('Lesson context is missing. Re-open the same topic from Topics, or edit Part '+partNum+' manually via Copy All.');return;}
+showToast('Redo uses Forge toggles + model below (not Read Aloud voice): '+describeForgeVoiceForToast());
 sermonReforgeReplacePart=partNum;
 selectedPartCount=Math.max(selectedPartCount||0,sermonPartsRaw.length);
 isGenerating=true;
@@ -10322,6 +10399,7 @@ if(parts===sermonPartsRaw&&currentTopic){
 entry.sourceLabel=currentChapterSource?(currentChapterSource.book+' '+(currentChapterSource.readingLabel||('Chapter '+currentChapterSource.chapter))):'';
 entry.sourceText=String(currentChapterText||currentTopic.sourceText||currentTopic.scriptText||'').slice(0,100000);
 entry.customBrief=currentTopic.customBrief?String(currentTopic.customBrief).slice(0,20000):'';
+entry.forgeProfile=captureForgeGenerationProfile();
 }
 sermonLibrary.unshift(entry);
 persistLibrary();
@@ -10437,6 +10515,11 @@ if(seriesM)sermonSeriesTitle=seriesM[1].trim();
 selectedPartCount=sermonPartsRaw.length;
 sermonSavedThisSession=true;
 sermonPartsCombined=buildCombinedTextFromParts(sermonPartsRaw,sermonPartsTitles);
+if(entry.forgeProfile)applyForgeGenerationProfile(entry.forgeProfile);
+else{
+applyForgeModelSelection(entry.model);
+applyInferredVoiceTogglesFromSermon(entry.combined||entry.parts.join('\n\n'));
+}
 return true;
 }
 function syncReforgedPartToLibrary(partNum,libIdx){
