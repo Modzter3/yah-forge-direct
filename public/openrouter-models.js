@@ -237,47 +237,43 @@
     return provider;
   }
 
-  function hydrateOpenRouterCatalog() {
-    var provider = typeof window.getForgeLlmProvider === 'function' ? window.getForgeLlmProvider() : 'openrouter';
+  function hydrateCatalogForProvider(provider, targetSelectIds, shouldStillApply) {
     var url = SERVER_CATALOG_URLS[provider] || MODELS_URL;
     var usesServerCatalog = !!SERVER_CATALOG_URLS[provider];
+  var ids = targetSelectIds && targetSelectIds.length ? targetSelectIds : SELECT_IDS.slice();
     return fetch(url)
       .then(function (r) {
         if (!r.ok) return r.json().catch(function(){return {};}).then(function(body){throw new Error(body.error || 'HTTP ' + r.status);});
         return r.json();
       })
       .then(function (data) {
-        if (typeof window.getForgeLlmProvider === 'function' && window.getForgeLlmProvider() !== provider) return;
+        if (shouldStillApply && !shouldStillApply()) return;
         var models = (data.data || []).slice();
         for (var k = 0; !usesServerCatalog && k < KIE_MODELS.length; k++) models.unshift(KIE_MODELS[k]);
         if (!models.length) throw new Error('empty catalog');
 
-        reasoningIds = {};
-        for (var ri = 0; ri < models.length; ri++) {
-          var sp = models[ri] && models[ri].supported_parameters;
-          if (sp && typeof sp.indexOf === 'function' && sp.indexOf('reasoning') !== -1) {
-            reasoningIds[String(models[ri].id || '').toLowerCase()] = true;
+        if (ids === SELECT_IDS || !targetSelectIds || !targetSelectIds.length) {
+          reasoningIds = {};
+          for (var ri = 0; ri < models.length; ri++) {
+            var sp = models[ri] && models[ri].supported_parameters;
+            if (sp && typeof sp.indexOf === 'function' && sp.indexOf('reasoning') !== -1) {
+              reasoningIds[String(models[ri].id || '').toLowerCase()] = true;
+            }
           }
         }
 
-        for (var s = 0; s < SELECT_IDS.length; s++) {
-          var id = SELECT_IDS[s];
+        for (var s = 0; s < ids.length; s++) {
+          var id = ids[s];
           var flash = id === 'scriptureFetchModel' || id === 'apocFetchModel' || id === 'sealedFetchModel';
           fillSelect(id, models, flash, usesServerCatalog ? provider : null);
         }
-
-        if (typeof window.updateNewsSearchNote === 'function') window.updateNewsSearchNote();
-        if (typeof window.updateVeilArticleSearchNote === 'function') window.updateVeilArticleSearchNote();
-        if (typeof window.hydrateKieMediaSelects === 'function') window.hydrateKieMediaSelects();
       })
       .catch(function (err) {
-        console.warn('[openrouter-models]', err.message || err);
-        if (typeof window.updateNewsSearchNote === 'function') window.updateNewsSearchNote();
-        if (typeof window.updateVeilArticleSearchNote === 'function') window.updateVeilArticleSearchNote();
-        if (typeof window.getForgeLlmProvider === 'function' && window.getForgeLlmProvider() !== provider) return;
+        console.warn('[openrouter-models]', provider, err.message || err);
+        if (shouldStillApply && !shouldStillApply()) return;
         if (usesServerCatalog) {
-          for (var i = 0; i < SELECT_IDS.length; i++) {
-            var el = document.getElementById(SELECT_IDS[i]);
+          for (var i = 0; i < ids.length; i++) {
+            var el = document.getElementById(ids[i]);
             if (el) {
               el.innerHTML = '';
               var opt = document.createElement('option');
@@ -291,11 +287,36 @@
           }
           return;
         }
-        fillSelectsWithKieOnly();
+        if (ids === SELECT_IDS) fillSelectsWithKieOnly();
       });
   }
 
+  function hydrateOpenRouterCatalog() {
+    var provider = typeof window.getForgeLlmProvider === 'function' ? window.getForgeLlmProvider() : 'openrouter';
+    return hydrateCatalogForProvider(provider, SELECT_IDS, function () {
+      return typeof window.getForgeLlmProvider !== 'function' || window.getForgeLlmProvider() === provider;
+    }).then(function () {
+      if (typeof window.updateNewsSearchNote === 'function') window.updateNewsSearchNote();
+      if (typeof window.refreshVeilArticleModelCatalog === 'function') window.refreshVeilArticleModelCatalog();
+      else if (typeof window.updateVeilArticleSearchNote === 'function') window.updateVeilArticleSearchNote();
+      if (typeof window.hydrateKieMediaSelects === 'function') window.hydrateKieMediaSelects();
+    }).catch(function () {
+      if (typeof window.updateNewsSearchNote === 'function') window.updateNewsSearchNote();
+      if (typeof window.updateVeilArticleSearchNote === 'function') window.updateVeilArticleSearchNote();
+    });
+  }
+
   window.hydrateForgeModelSelects = hydrateOpenRouterCatalog;
+  window.hydrateForgeModelSelectsForProvider = function (provider, selectIds) {
+    return hydrateCatalogForProvider(provider, selectIds, function () {
+      if (typeof window.getVeilArticleLlmProvider === 'function') {
+        return window.getVeilArticleLlmProvider() === provider;
+      }
+      return true;
+    }).then(function () {
+      if (typeof window.updateVeilArticleSearchNote === 'function') window.updateVeilArticleSearchNote();
+    });
+  };
 
   function fillSelectsWithKieOnly() {
     for (var s = 0; s < SELECT_IDS.length; s++) {

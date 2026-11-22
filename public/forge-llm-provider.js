@@ -4,6 +4,8 @@
  */
 (function (global) {
   var STORAGE_KEY = 'yahForgeLlmProvider';
+  var VEIL_PROVIDER_STORAGE_KEY = 'yahForgeVeilArticleLlmProvider';
+  var VEIL_ARTICLE_MODEL_SELECT_IDS = ['veilArticleModel', 'newsVeilArticleModel'];
   var LOCAL_MODEL_ID = 'local/orcarouter';
   var HEALTH_URL = '/api/local-llm-health';
   var lastHealth = { checkedAt: 0, ok: null, message: '' };
@@ -65,6 +67,92 @@
     return 'openrouter';
   }
 
+  function getVeilArticleLlmProvider() {
+    try {
+      var v = localStorage.getItem(VEIL_PROVIDER_STORAGE_KEY);
+      if (v) return normalizeProviderId(v);
+    } catch (e) {}
+    return getForgeLlmProvider();
+  }
+
+  function fillVeilArticleSelectsWithLocalLlm() {
+    var entry = localLlmCatalogEntry();
+    for (var i = 0; i < VEIL_ARTICLE_MODEL_SELECT_IDS.length; i++) {
+      var el = document.getElementById(VEIL_ARTICLE_MODEL_SELECT_IDS[i]);
+      if (!el || el.tagName !== 'SELECT') continue;
+      el.innerHTML = '';
+      var opt = document.createElement('option');
+      opt.value = entry.id;
+      opt.textContent = entry.name + ' (65536 ctx)';
+      opt.selected = true;
+      el.appendChild(opt);
+    }
+    if (typeof global.updateVeilArticleSearchNote === 'function') global.updateVeilArticleSearchNote();
+  }
+
+  function syncVeilArticleProviderUi(sourceKey) {
+    var provider = getVeilArticleLlmProvider();
+    var a = document.getElementById('veilArticleProvider');
+    var b = document.getElementById('newsVeilArticleProvider');
+    if (a && sourceKey !== 'newsVeilArticleProvider') a.value = provider;
+    if (b && sourceKey !== 'veilArticleProvider') b.value = provider;
+    var meta = CATALOG_PROVIDERS[provider] || CATALOG_PROVIDERS.openrouter;
+    var customInputs = ['customVeilArticleModel', 'customNewsVeilArticleModel'];
+    for (var ci = 0; ci < customInputs.length; ci++) {
+      var input = document.getElementById(customInputs[ci]);
+      if (!input) continue;
+      input.placeholder = meta.customPlaceholder || CATALOG_PROVIDERS.openrouter.customPlaceholder;
+      if (input.parentElement) input.parentElement.style.display = provider === 'local' ? 'none' : '';
+    }
+    var hints = ['veilArticleProviderHint', 'newsVeilArticleProviderHint'];
+    for (var hi = 0; hi < hints.length; hi++) {
+      var hintEl = document.getElementById(hints[hi]);
+      if (!hintEl) continue;
+      hintEl.textContent = meta.hint || CATALOG_PROVIDERS.openrouter.hint;
+    }
+  }
+
+  function refreshVeilArticleModelCatalog() {
+    syncVeilArticleProviderUi();
+    var provider = getVeilArticleLlmProvider();
+    if (provider === 'local') {
+      fillVeilArticleSelectsWithLocalLlm();
+      return Promise.resolve();
+    }
+    if (typeof global.hydrateForgeModelSelectsForProvider === 'function') {
+      return global.hydrateForgeModelSelectsForProvider(provider, VEIL_ARTICLE_MODEL_SELECT_IDS);
+    }
+    return Promise.resolve();
+  }
+
+  function setVeilArticleLlmProvider(id, sourceKey) {
+    var previous = getVeilArticleLlmProvider();
+    var next = normalizeProviderId(id);
+    if (next !== previous) {
+      ['customVeilArticleModel', 'customNewsVeilArticleModel'].forEach(function (inputId) {
+        var input = document.getElementById(inputId);
+        if (input) {
+          input.value = '';
+          input.classList.remove('active-override');
+        }
+      });
+      VEIL_ARTICLE_MODEL_SELECT_IDS.forEach(function (selectId) {
+        var el = document.getElementById(selectId);
+        if (el) el.style.opacity = '1';
+      });
+    }
+    try {
+      localStorage.setItem(VEIL_PROVIDER_STORAGE_KEY, next);
+    } catch (e) {}
+    syncVeilArticleProviderUi(sourceKey);
+    return refreshVeilArticleModelCatalog();
+  }
+
+  function onVeilArticleProviderChange(sourceKey) {
+    var sel = document.getElementById(sourceKey || 'veilArticleProvider');
+    setVeilArticleLlmProvider(sel ? sel.value : 'openrouter', sourceKey);
+  }
+
   function setForgeLlmProvider(id) {
     var previous = getForgeLlmProvider();
     var next = normalizeProviderId(id);
@@ -86,7 +174,9 @@
       localStorage.setItem(STORAGE_KEY, next);
     } catch (e) {}
     syncProviderUi();
-    refreshModelCatalogForProvider();
+    refreshModelCatalogForProvider().then(function () {
+      if (typeof refreshVeilArticleModelCatalog === 'function') refreshVeilArticleModelCatalog();
+    });
     if (next === 'local') checkLocalLlmHealth(true);
     if (typeof global.updatePartRecommendation === 'function') global.updatePartRecommendation();
   }
@@ -310,7 +400,10 @@
   function initForgeLlmProvider() {
     patchOpenRouterHydrate();
     syncProviderUi();
-    refreshModelCatalogForProvider();
+    syncVeilArticleProviderUi();
+    refreshModelCatalogForProvider().then(function () {
+      refreshVeilArticleModelCatalog();
+    });
     if (getForgeLlmProvider() === 'local') checkLocalLlmHealth(false);
     setInterval(function () {
       if (getForgeLlmProvider() === 'local') checkLocalLlmHealth(false);
@@ -318,6 +411,10 @@
   }
 
   global.getForgeLlmProvider = getForgeLlmProvider;
+  global.getVeilArticleLlmProvider = getVeilArticleLlmProvider;
+  global.setVeilArticleLlmProvider = setVeilArticleLlmProvider;
+  global.onVeilArticleProviderChange = onVeilArticleProviderChange;
+  global.refreshVeilArticleModelCatalog = refreshVeilArticleModelCatalog;
   global.setForgeLlmProvider = setForgeLlmProvider;
   global.isForgeCatalogLlmProvider = isForgeCatalogLlmProvider;
   global.getLocalLlmModelId = getLocalLlmModelId;
