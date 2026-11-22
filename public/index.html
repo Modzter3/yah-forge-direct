@@ -122,6 +122,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .veil-cast-options label input[type=checkbox]{accent-color:#c9a227;}
 .veil-cast-hint{flex:1;min-width:160px;padding:7px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-family:'Bitter',serif;font-size:0.78rem;outline:none;}
 .veil-cast-hint:focus{border-color:rgba(201,162,39,0.5);}
+.veil-model-row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 12px;padding:0 16px 12px;margin-top:-4px;}
+.veil-model-row label{display:block;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);width:100%;}
+.veil-model-row .model-select{flex:1 1 220px;min-width:180px;max-width:480px;font-size:13px;}
+.veil-model-row .custom-model-input{flex:1 1 160px;min-width:140px;max-width:300px;font-size:13px;}
+.veil-article-model-note{font-size:0.68rem;color:var(--text-muted);width:100%;margin:0;font-family:'Bitter',serif;line-height:1.4;}
 
 /* DISMANTLE PANEL */
 .dismantle-wrap{padding:16px;}
@@ -607,7 +612,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     </div>
     <div class="custom-forge-inner veil-url-inner">
       <i class="fas fa-door-closed custom-forge-icon"></i>
-      <input type="url" id="veilNewsUrlInput" placeholder="Paste news article URL → load cast for Behind the Veil (pick model, then Generate)..." class="custom-forge-input" style="min-height:42px;resize:none;" onkeydown="if(event.key==='Enter'){event.preventDefault();forgeNewsUrlBehindTheVeil();}">
+      <input type="url" id="veilNewsUrlInput" placeholder="Paste article URL — choose Load article model below, then Load Article (Generate uses the forge model)" class="custom-forge-input" style="min-height:42px;resize:none;" onkeydown="if(event.key==='Enter'){event.preventDefault();forgeNewsUrlBehindTheVeil();}">
       <button class="custom-forge-btn veil-forge-btn" id="veilForgeBtn" onclick="forgeNewsUrlBehindTheVeil()"><i class="fas fa-mask"></i> Load Article</button>
     </div>
     <div class="veil-cast-options">
@@ -615,6 +620,14 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label title="Elites' private POV on scripture — how they read verses that expose them and view scattered Israel"><input type="checkbox" id="toggleVeilScripturePerch" onchange="syncVeilScripturePerchToggles()"> Scripture perch</label>
       <label title="Elites speak in plain layman's terms — no corporate jargon in their dialogue"><input type="checkbox" id="toggleVeilLaymanTerms" onchange="syncVeilLaymanTermsToggles()"> Layman's terms</label>
       <input type="text" id="veilCastHint" class="veil-cast-hint" placeholder="Optional cast note: ultra elite, cream of the crop, old money…">
+    </div>
+    <div class="veil-model-row">
+      <label><i class="fas fa-robot" style="margin-right:3px;"></i>Load article model <span style="text-transform:none;letter-spacing:0;font-size:0.62rem;opacity:0.85;">(reads URL + cast JSON — separate from Generate model)</span></label>
+      <select class="model-select" id="veilArticleModel" onchange="onVeilArticleModelDropdown()">
+        <option value="google/gemini-3-flash-preview">Loading model catalog...</option>
+      </select>
+      <input type="text" class="custom-model-input" id="customVeilArticleModel" placeholder="Custom model ID for article load" oninput="onVeilArticleCustomModel(this)" onfocus="this.select()">
+      <p class="veil-article-model-note" id="veilArticleSearchNote"><i class="fas fa-circle-notch fa-spin" style="margin-right:4px;"></i>Checking web-search support...</p>
     </div>
   </div>
   <div class="controls-bar">
@@ -1035,7 +1048,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="news-search-bar">
       <div class="search-box" style="flex:1 1 100%;">
         <i class="fas fa-link"></i>
-        <input type="url" id="newsVeilUrlInput" placeholder="Paste article URL → load Behind the Veil cast (pick model, then Generate)..." onkeydown="if(event.key==='Enter'){event.preventDefault();forgeNewsUrlBehindTheVeil(document.getElementById('newsVeilUrlInput').value);}">
+        <input type="url" id="newsVeilUrlInput" placeholder="Paste article URL — pick Load article model below, then Load for Veil" onkeydown="if(event.key==='Enter'){event.preventDefault();forgeNewsUrlBehindTheVeil(document.getElementById('newsVeilUrlInput').value);}">
       </div>
       <button class="news-scan-btn veil-forge-btn" id="newsVeilForgeBtn" onclick="forgeNewsUrlBehindTheVeil(document.getElementById('newsVeilUrlInput').value)" style="flex:0 0 auto;white-space:nowrap;"><i class="fas fa-door-closed"></i> Load for Veil</button>
     </div>
@@ -1044,6 +1057,14 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <label title="Elites' private POV on scripture — how they read verses that expose them and view scattered Israel"><input type="checkbox" id="toggleNewsVeilScripturePerch" onchange="syncVeilScripturePerchToggles()"> Scripture perch</label>
       <label title="Elites speak in plain layman's terms — no corporate jargon in their dialogue"><input type="checkbox" id="toggleNewsVeilLaymanTerms" onchange="syncVeilLaymanTermsToggles()"> Layman's terms</label>
       <input type="text" id="newsVeilCastHint" class="veil-cast-hint" placeholder="Optional: ultra elite, cream of the crop, old money…" oninput="syncVeilUltraEliteToggles()">
+    </div>
+    <div class="veil-model-row" style="padding-left:0;padding-right:0;">
+      <label><i class="fas fa-robot" style="margin-right:3px;"></i>Load article model <span style="text-transform:none;letter-spacing:0;font-size:0.62rem;opacity:0.85;">(Behind the Veil URL fetch only)</span></label>
+      <select class="model-select" id="newsVeilArticleModel" onchange="onVeilArticleModelDropdown('newsVeilArticleModel')">
+        <option value="google/gemini-3-flash-preview">Loading model catalog...</option>
+      </select>
+      <input type="text" class="custom-model-input" id="customNewsVeilArticleModel" placeholder="Custom model ID" oninput="onVeilArticleCustomModel(this)" onfocus="this.select()">
+      <p class="veil-article-model-note" id="newsVeilArticleSearchNote"><i class="fas fa-circle-notch fa-spin" style="margin-right:4px;"></i>Checking web-search support...</p>
     </div>
     <div class="news-search-bar">
       <div class="search-box" style="flex:1 1 100%;">
@@ -6111,6 +6132,70 @@ function getNewsModel(){
 var custom=(document.getElementById('customNewsModel').value||'').trim();
 if(custom)return custom;
 return document.getElementById('newsModel').value||(typeof getForgeDefaultTextModel==='function'?getForgeDefaultTextModel():'google/gemini-3-flash-preview');
+}
+function syncVeilArticleModelSelects(sourceId){
+var a=document.getElementById('veilArticleModel');
+var b=document.getElementById('newsVeilArticleModel');
+if(!a||!b)return;
+if(sourceId==='newsVeilArticleModel')a.value=b.value;
+else b.value=a.value;
+}
+function onVeilArticleModelDropdown(sourceId){
+var customIds=['customVeilArticleModel','customNewsVeilArticleModel'];
+for(var i=0;i<customIds.length;i++){
+var ci=document.getElementById(customIds[i]);
+if(ci){ci.value='';ci.classList.remove('active-override');}
+}
+var selects=['veilArticleModel','newsVeilArticleModel'];
+for(var j=0;j<selects.length;j++){
+var el=document.getElementById(selects[j]);
+if(el)el.style.opacity='1';
+}
+syncVeilArticleModelSelects(sourceId||'veilArticleModel');
+updateVeilArticleSearchNote();
+}
+function onVeilArticleCustomModel(el){
+var val=(el&&el.value?el.value:'').trim();
+var ids=['customVeilArticleModel','customNewsVeilArticleModel'];
+for(var i=0;i<ids.length;i++){
+var box=document.getElementById(ids[i]);
+if(!box)continue;
+if(box!==el)box.value=val;
+if(val){box.classList.add('active-override');}else{box.classList.remove('active-override');}
+}
+var selects=['veilArticleModel','newsVeilArticleModel'];
+for(var j=0;j<selects.length;j++){
+var sel=document.getElementById(selects[j]);
+if(sel)sel.style.opacity=val?'0.4':'1';
+}
+updateVeilArticleSearchNote();
+}
+function getVeilArticleModel(){
+var custom=(document.getElementById('customVeilArticleModel')||{}).value||'';
+custom=custom.trim();
+if(!custom){
+var c2=document.getElementById('customNewsVeilArticleModel');
+if(c2&&(c2.value||'').trim())custom=c2.value.trim();
+}
+if(custom)return custom;
+var sel=document.getElementById('veilArticleModel');
+var val=sel&&sel.value;
+if(!val){
+var sel2=document.getElementById('newsVeilArticleModel');
+val=sel2&&sel2.value;
+}
+return val||getNewsModel();
+}
+function updateVeilArticleSearchNote(){
+var model=getVeilArticleModel();
+var ok=typeof forgeSupportsWebBrowse==='function'&&forgeSupportsWebBrowse(model);
+var html=ok
+?'<i class="fas fa-check-circle" style="color:#38bdb0;margin-right:4px;"></i><strong>'+escapeHtml(model.split('/').pop())+'</strong> — web search enabled for reading the article URL'
+:'<i class="fas fa-exclamation-triangle" style="color:var(--gold);margin-right:4px;"></i><strong>'+escapeHtml(model.split('/').pop())+'</strong> may not browse URLs — use Gemini Pro, GPT with search, or Prophecy Watch news model';
+['veilArticleSearchNote','newsVeilArticleSearchNote'].forEach(function(id){
+var el=document.getElementById(id);
+if(el)el.innerHTML=html;
+});
 }
 function getDismantleModel(){
 var custom=(document.getElementById('customDismantleModel').value||'').trim();
@@ -11837,7 +11922,7 @@ switchTab('topics',document.querySelector('.tab-btn'));
 openModal();
 }
 function fetchNewsArticleForVeil(url,callback){
-var model=getNewsModel();
+var model=getVeilArticleModel();
 var ultraElite=isVeilUltraEliteCastRequested();
 var params={};
 if(forgeSupportsWebBrowse(model))params.web_search=true;
@@ -11908,7 +11993,7 @@ output.innerHTML='<div class="verse-confirm-box">'
 +'<div class="vc-count">'+escapeHtml(article.headline)+'</div>'
 +'<div class="vc-detail">'+(article.source?escapeHtml(article.source)+' · ':'')+playerCount+' player'+(playerCount!==1?'s':'')+' mapped'+(ultraElite?' (ultra elite mode)':'')+'.'
 +castLines
-+'<br><br>Behind the Veil is ON. Optional: check <strong>Layman\'s terms</strong> (on the article row or in toggles above) so elites speak plain English. Pick your <strong>model</strong> and part count, then hit <strong>Generate Series</strong> when you are ready.</div>'
++'<br><br>Behind the Veil is ON. Optional: <strong>Layman\'s terms</strong> for plain elite dialogue. Article was loaded with your <strong>Load article model</strong>; pick the <strong>forge model</strong> above for the script, set part count, then <strong>Generate Series</strong>.</div>'
 +'<div class="vc-actions">'
 +'<button class="vc-btn cancel" onclick="dismissVeilArticleConfirm()"><i class="fas fa-times" style="margin-right:4px;"></i>Dismiss</button>'
 +'</div></div>';
@@ -11945,8 +12030,9 @@ syncTheatreToggles();
 setPartCount(3);
 openModal({skipPartRec:true,preserveOutput:true,disableGenerateBtn:true});
 isFetchingVeilArticle=true;
-var modelName=getNewsModel();
-document.getElementById('sermonOutput').innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text"><i class="fas fa-door-closed" style="margin-right:6px;"></i>Reading article'+(isVeilUltraEliteCastRequested()?' &amp; mapping dynastic elite':'')+' — deep web dossiers on every player, verifying titles via <strong>'+escapeHtml(modelName)+'</strong>...</div></div>';
+var modelName=getVeilArticleModel();
+if(typeof forgeSupportsWebBrowse==='function'&&!forgeSupportsWebBrowse(modelName))showToast('Load article model may not browse URLs — consider Gemini Pro or GPT with web search.');
+document.getElementById('sermonOutput').innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text"><i class="fas fa-door-closed" style="margin-right:6px;"></i>Reading article'+(isVeilUltraEliteCastRequested()?' &amp; mapping dynastic elite':'')+' — load model <strong>'+escapeHtml(modelName)+'</strong> (cast JSON only; Generate uses your forge model)...</div></div>';
 setTimeout(function(){
 var gb=document.getElementById('generateBtn');
 if(gb)gb.blur();
