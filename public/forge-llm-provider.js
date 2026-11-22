@@ -122,6 +122,8 @@
         'destroyModel',
         'yahChatModel',
         'newsModel',
+        'veilArticleModel',
+        'newsVeilArticleModel',
         'imagePromptModel',
         'visualBeatModel',
       ];
