@@ -74,8 +74,20 @@
       .slice(0, 4);
   }
 
-  function resolveLlmProvider() {
+  function resolveLlmProvider(parameters) {
     try {
+      if (parameters && parameters.forge_llm_provider) {
+        var override = String(parameters.forge_llm_provider).trim().toLowerCase();
+        if (override === 'bonsai') return 'local';
+        if (
+          override === 'openrouter'
+          || override === 'nanogpt'
+          || override === 'opencode_go'
+          || override === 'clinepass'
+          || override === 'refuseless'
+          || override === 'local'
+        ) return override;
+      }
       if (typeof window.getForgeLlmProvider === 'function') {
         return window.getForgeLlmProvider();
       }
@@ -124,7 +136,7 @@
   }
 
   async function openStream(bot, prompt, parameters, images) {
-    const provider = resolveLlmProvider();
+    const provider = resolveLlmProvider(parameters);
     parameters = attachReasoningSupport(attachOpenCodeSession(parameters, provider), bot);
     const payload = { bot, query: prompt, parameters };
     if (images && images.length) payload.images = images;
