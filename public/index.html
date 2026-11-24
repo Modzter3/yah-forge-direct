@@ -3781,8 +3781,14 @@ return clean.replace(/[ \t]+\n/g,'\n').replace(/ {2,}/g,' ').trim();
 function buildSermonDeliveryPolicy(){
 return isElevenLabsTagsEnabled()?'Eleven Tags is ON: Put each delivery cue BEFORE its speech and end each body paragraph with [pause].':'Eleven Tags is OFF: Write plain prose. Do not add ANY delivery, emotion, pacing, sound, or stage-direction tags in square brackets OR parentheses, including in the closing. Write only the spoken words. Scripture citations may remain.';
 }
+function buildStreetRevelationNoTechBlock(){
+var p='STREET REVELATION — DESTROY-STYLE (NO TECH THEATER):\n';
+p+='Like Destroy Israelite autopsy mode but on SCRIPTURE: strip religious performance, no blueprint/engineering sermon. Third person about Yah. Plain Yah/Yahusha — no hyphenated letter chains.\n';
+p+=buildSermonStraightTalkBlock();
+return p;
+}
 function buildSermonStraightTalkBlock(){
-var p='STRAIGHT TALK DELIVERY (REGULAR SERMONS — OVERRIDES TECH/ENGINEERING LAYERS):\n';
+var p='STRAIGHT TALK DELIVERY (OVERRIDES TECH/ENGINEERING LAYERS):\n';
 p+='Real talk from the hip. Hit the point, prove it with scripture and symbol, move. No drawn-out lectures.\n';
 p+='FORBIDDEN (unless TOPIC is explicitly about technology and the Technology Kingdom block is active):\n';
 p+='- "Wake Israel up with tech" pitches — smartphones, WiFi, GPS, "lights come on when you say capacitor"\n';
@@ -4553,6 +4559,7 @@ return false;
 function buildForgeSymbolDepthCadenceBlock(opts){
 opts=opts||{};
 var voice=opts.voice||'neutral';
+var streetPlain=!!opts.streetPlain||(voice==='street');
 var chapterSrc=opts.chapterSrc||currentChapterSource;
 var tabernacle=isTabernacleLeviChapterContext(chapterSrc);
 var p='*** SYMBOL DEPTH CADENCE -- DEFAULT ON EVERY SERMON (NOT OPTIONAL) ***\n';
@@ -4564,9 +4571,13 @@ p+='  (3) Only then land modern mirror, wrath, or doctrine.\n';
 p+='Brimstone, profanity, and cross-references NEVER replace step (2). A paragraph that rebukes without decoding the symbol first is a FAILURE.\n\n';
 p+='MINIMUM DENSITY: At least ONE explicit symbol/name/number decode per major verse you teach in this part. Do not rush from quote to "in twenty twenty-six" without unpacking the blueprint.\n';
 if(tabernacle){
-p+='TABERNACLE / LEVI LOCK (this chapter): Minimum TWO proper-name or Paleo unpackings in THIS part (e.g. Levi, Gershon, Kohath, Merari, Nadab, Abihu, Eleazar, strange fire, shekel of the sanctuary, east/west/north/south pitch, ark/table/lampstand/altars/coverings/sockets). Decode furniture and compass directions as body-of-Israel architecture -- not museum trivia.\n';
+if(streetPlain){
+p+='TABERNACLE / LEVI LOCK (this chapter): Minimum TWO symbol decodes in PLAIN ENGLISH (name meaning, furniture, direction, who touches the holy) — NO Paleo letter chains, NO engineering metaphors.\n';
 }else{
-p+='When names, numbers, or ritual objects appear in the text, decode at least one Hebrew root or name meaning per part unless the entire part is a single narrative with no symbols.\n';
+p+='TABERNACLE / LEVI LOCK (this chapter): Minimum TWO proper-name or Paleo unpackings in THIS part (e.g. Levi, Gershon, Kohath, Merari, Nadab, Abihu, Eleazar, strange fire, shekel of the sanctuary, east/west/north/south pitch, ark/table/lampstand/altars/coverings/sockets). Decode furniture and compass directions as body-of-Israel architecture -- not museum trivia.\n';
+}
+}else{
+p+='When names, numbers, or ritual objects appear in the text, decode at least one '+(streetPlain?'name meaning in plain English':'Hebrew root or name meaning')+' per part unless the entire part is a single narrative with no symbols.\n';
 }
 p+='SELF-CHECK: If a listener could hear your part and only get "be obedient / heathen bad" without learning WHAT THE VERSE SYMBOLIZED, rewrite until the symbolism is audible.\n\n';
 return p;
@@ -4591,14 +4602,14 @@ p+='- Census from one month upward = covenant mark at circumcision threshold -- 
 p+='- Five shekels / 273 surplus / 1,365 shekels = measured redemption; five as witness number; 365 pattern = full-cycle coverage under payment.\n\n';
 p+='FURNITURE TYPOLOGY (when named):\n';
 p+='- Ark = law/presence/throne core. Table = daily bread/word. Lampstand = light/spirit witness. Altars = blood/prayer gateways. Veils & hangings = firewall between holy and profane.\n\n';
-p+='NAME DECODE HABIT: When Aaron, Moses, Levi, tribal heads, or furniture appears, give Hebrew meaning OR 2-4 Paleo letter pictures (ox, house, water, teeth, etc.) that show WHY Yah chose that word -- then land it on Israel\'s body today.\n\n';
+p+='NAME DECODE HABIT: When Aaron, Moses, Levi, tribal heads, or furniture appears, say what the name MEANS in plain English and what it pictures for Israel today — no letter-by-letter Paleo unless a dedicated non-street sermon mode explicitly requires it.\n\n';
 p+='DELIVERY LOOP: Quote verse → decode symbol/name/direction/number → then fire/application. Never skip straight from quote to culture war.\n\n';
 return p;
 }
 function getSymbolDecoderVoiceLabel(voice){
-if(voice==='street')return 'Street fire -- decode symbols in plain corner English before you preach from them.';
+if(voice==='street')return 'Street fire -- decode symbols in plain corner English before you preach from them. No tech layer, no Paleo chains.';
 if(voice==='throne')return 'Throne remembrance -- decode symbols as I unveil them to My people now, not as a fantasy report.';
-if(voice==='broadcast')return 'Israelite broadcast -- decode symbols for the listener before doctrine or engineering layers land.';
+if(voice==='broadcast')return 'Israelite broadcast -- decode symbols for the listener in plain English before application.';
 if(voice==='theatre')return 'Boardroom theatre -- decode what the verse SYMBOL means in the elites\' mouths and in Israel\'s real life.';
 return 'Decode symbols in plain English before building doctrine from them.';
 }
@@ -4652,7 +4663,7 @@ p+='- Beasts and horns = empires and rulers; eagles = speed/empire; lions = king
 p+='- Colors: red = flesh/bloodlust; white = purity OR deception by context; gold = divine truth/commerce test; purple = authority; scarlet = sin/harlotry.\n';
 p+='- Numbers: 3 = witness; 6 = man/beast; 7 = completion; 10 = worldly power; 12 = governance; 40 = testing; 70/72 = nations or measured judgment.\n';
 p+='- Waters = peoples/multitudes; mountains = governments; trees = men/nations; wine = doctrine or blood commerce; bread = body/word; oil = anointing or machine lubricant of system.\n';
-p+='- Names carry prophecy -- explain what the name MEANS in plain English for this voice. On tabernacle/Levi/priesthood chapters, name meanings or short Paleo unpackings are DEFAULT (not optional garnish). Elsewhere: Paleo when it unlocks the symbol (Rough Bez: at least one root/name decode per part when the text offers names or ritual objects).\n';
+p+='- Names carry prophecy -- explain what the name MEANS in plain English for this voice. '+(opts.wantRoughBez||opts.wantBezStory?'NO Paleo letter chains. At least one plain name/symbol decode per part when the text offers names or ritual objects.':'On tabernacle/Levi/priesthood chapters, name meanings or short Paleo unpackings are DEFAULT (not optional garnish). Elsewhere: Paleo when it unlocks the symbol (Rough Bez: at least one root/name decode per part when the text offers names or ritual objects).')+'\n';
 p+='- Geography is prophecy -- where it happened maps to where Israel lives now after decode.\n';
 p+='- Parables, dreams, and apocalyptic visions = encoded doctrine for Israel today -- rent, court, church betrayal, stolen name, block, cell, pew, payroll, passport, prescription.\n\n';
 p+='BOOK-SPECIFIC REMINDERS (when forging these texts):\n';
@@ -6512,7 +6523,7 @@ var SERIES_PARTS=[
 {num:2,title:'Deep Doctrine & Line-by-Line Breakdown',focus:'Go deep into the scripture. Take the key verses from Part 1 and break them down line by line, word by word. Cross-reference with other books. Build the doctrinal argument brick by brick. Show how mainstream Christianity twisted these verses. Reference original Hebrew meanings where relevant. Do NOT say goodbye -- this part just ends and Part 3 picks up where you left off.'},
 {num:3,title:'Historical Proof & Apocryphal Evidence',focus:'Bring the historical receipts. Connect the doctrine to real history. Show how this played out through the ages. This is where apocryphal references should be heaviest. Connect ancient writings to modern events. Name specific empires, dates, and historical figures that prove the point. Do NOT say goodbye -- this part just ends and Part 4 picks up where you left off.'},
 {num:4,title:'Confrontation & Demolition of Lies',focus:'This is the fire. Go after every false teaching, every denomination, every preacher who got it wrong. Tear down the lies one by one with scripture. Be ruthless. Call out specific false doctrines by name. This is Yah angry. Peak intensity. Rhetorical questions that destroy arguments. Do NOT say goodbye -- this part just ends and Part 5 picks up where you left off.'},
-{num:5,title:'The Deeper Mysteries & Hidden Threads',focus:'This is where you go into the RABBIT HOLES. Pull out the lesser-known scriptures that connect to this topic -- the ones nobody is teaching. Dig into Paleo Hebrew root words and their pictographic meanings, cross-testament echoes, engineering patterns, and prophetic patterns that most teachers miss entirely. Find connections between seemingly unrelated books that blow minds. Every revelation here should make the listener say "I never saw that before." This part is for the STUDENTS -- the ones who want to go DEEP. Leave breadcrumbs and loose threads that make people want to go study for themselves. Do NOT say goodbye -- this part just ends and Part 6 picks up where you left off.'},
+{num:5,title:'The Deeper Mysteries & Hidden Threads',focus:'This is where you go into the RABBIT HOLES. Pull out the lesser-known scriptures that connect to this topic -- the ones nobody is teaching. Name meanings in plain English, cross-testament echoes, and prophetic patterns most teachers miss -- NO Paleo engineering dumps, NO tech-bridge sermons. Find connections between seemingly unrelated books that blow minds. Every revelation here should make the listener say "I never saw that before." This part is for the STUDENTS -- the ones who want to go DEEP. Leave breadcrumbs and loose threads that make people want to go study for themselves. Do NOT say goodbye -- this part just ends and Part 6 picks up where you left off.'},
 {num:6,title:'Modern Application & Connecting the Dots',focus:'Bring the doctrine into the PRESENT DAY. How does everything taught in Parts 1 through 5 apply to the scattered children of Israel RIGHT NOW? Connect ancient prophecy to modern events. Show how the systems of this world -- government, religion, education, entertainment -- are designed to keep Israel blind to these truths. Give practical, actionable wisdom tied to the topic. What should Israel DO with this knowledge TODAY? This is not abstract theology -- this is survival instruction for a people under captivity. Do NOT say goodbye -- this part just ends and Part 7 picks up where you left off.'},
 {num:7,title:'Final Judgment & Call to Repentance',focus:'Bring it home -- but keep it SPECIFIC to THIS sermon topic. The judgment must be about what happens to those who reject THIS specific truth you have been teaching, not generic wrath. The repentance call must be about THIS specific area of obedience, not a general "repent and keep the commandments." If the sermon was about the Sabbath, the altar call is about Sabbath-breaking. If it was about the serpent seed, the altar call is about the consequences of ignoring bloodline truth. Give SPECIFIC instructions tied to what was taught. End with the most powerful closing declaration that could ONLY belong to THIS sermon. Do NOT recycle the same generic altar call every time -- make it hit different because the TOPIC hits different. THIS IS THE LAST PART -- so NOW you close. Follow the closing instructions in RULE 6 for how to end based on your assigned voice mode.'}
 ];
@@ -7341,6 +7352,11 @@ function isRoughBezForgeActive(){
 var el=document.getElementById('toggleRoughBez');
 return !!(el&&el.checked);
 }
+function isBezStoryModeActive(){
+var rough=document.getElementById('toggleRoughBez');
+var story=document.getElementById('toggleBezStoryMode');
+return !!(rough&&rough.checked&&story&&story.checked);
+}
 function looksLikeExplicitModeCooling(text,partNum,totalParts){
 if(!text||!isExplicitModeActive())return false;
 var t=String(text);
@@ -7554,9 +7570,9 @@ p+='- Diaspora sociology essay tone — write revelation to Israel, not a term p
 p+='- Writing Part '+(partNum+1)+'+ or extra parts in this response — ONE part only\n\n';
 if(isTheatreModeActive()){
 p+='Return to boardroom dialogue and [BEAT]s on topic — not a lecture.\n\n';
-}else if(isRoughBezForgeActive()){
-p+='Return to ROUGH BEZ street revelation — direct YOU-facing corner pressure, scripture strikes, symbolic decode in plain fire.\n\n';
-p+='FORBIDDEN IN ROUGH BEZ (ZERO TOLERANCE):\n';
+}else if(isRoughBezForgeActive()||isBezStoryModeActive()){
+p+='Return to street revelation — direct pressure, scripture strikes, symbolic decode in plain fire. Destroy-style: no tech, no Paleo engineering.\n\n';
+p+='FORBIDDEN IN ROUGH BEZ / BEZ STORY (ZERO TOLERANCE):\n';
 p+='- "Master Engineer," technical manual framing, cron jobs, firmware, fiber optic, source code, OS, network interrupt, capacitor/motherboard metaphors\n';
 p+='- Letter-by-letter Paleo Hebrew engineering on every keyword (Shofar/Teruah/Yobel spelled out letter by letter)\n';
 p+='- Passive essay blocks: "one must," "the tragedy of such moments," "when systemic collapse arrives," "functions as both," seminary closers\n';
@@ -8690,6 +8706,7 @@ var ctx=opts.context||'sermon';
 var wantIsraelite=!!opts.wantIsraelite;
 var wantStoryMode=!!opts.wantStoryMode;
 var wantBezStory=!!opts.wantBezStory;
+var wantRoughBez=!!opts.wantRoughBez;
 var wantEpisodeMode=!!opts.wantEpisodeMode;
 var topic=opts.topic||null;
 var directQuestion=!!opts.directQuestion;
@@ -8793,7 +8810,7 @@ p+=buildSpoilingTheHeathenDoctrineBlock();
 if(ctx==='chat')p+=buildYahChatDietaryBlock();
 p+=buildWordHammerDoctrineBlock();
 p+=buildForgeIdentityFrameworkLine();
-if(ctx==='sermon'&&!wantStoryMode){
+if(ctx==='sermon'&&(!wantStoryMode||opts.wantRoughBez||opts.wantBezStory)){
 p+='SERMON OUTPUT LOCK: Framework text may describe technical manual / Master Engineer doctrine — DO NOT preach that delivery style. Straight from the hip: symbol, scripture, consequence. No capacitor/smartphone wake-up pitches unless the assigned topic is explicitly technology (Technology Kingdom block).\n';
 }
 p+='END OF FRAMEWORK. Everything above is background knowledge ONLY.\n\n';
@@ -8868,7 +8885,7 @@ p+=buildBezStoryGrammarBlock();
 p+=buildBezStorySlangBlock();
 p+=buildBezStoryKnowledgeBlock(topic);
 var techForge=isTechnologyForgeContext(topic,currentNewsContext,currentMode,{newsScanCategory:typeof selectedNewsCat!=='undefined'?selectedNewsCat:null});
-p+='NO ISRAELITE TECH MODE (ZERO TOLERANCE): No Master Engineer layer. No "Bible is a technical manual." No capacitor, motherboard, DNA-source-code, frequency, sacred geometry, or modern tech comparisons. No Paleo letter engineering. No detective investigation framing. Revelation cadence and street memory ONLY -- but WITH full symbolic/allegorical substance.'+(techForge?' EXCEPTION: TECHNOLOGY KINGDOM block below — teach WHY/HOW in plain street speech only.':'')+'\n\n';
+p+='NO ISRAELITE TECH MODE (ZERO TOLERANCE): No Master Engineer layer. No "Bible is a technical manual." No capacitor, motherboard, DNA-source-code, frequency, sacred geometry, or modern tech comparisons. No Paleo letter engineering. No detective investigation framing. Revelation cadence and street memory ONLY -- but WITH full symbolic/allegorical substance. Destroy-style: expose what the text is doing to Israel — not how it maps to phones or circuits.'+(techForge?' EXCEPTION: TECHNOLOGY KINGDOM block below — plain street speech only, no engineering theater.':'')+'\n\n';
 }else if(wantIsraelite){
 if(wantRoughBez){
 p='You are Brother Bet-Tsade-Lamed-Aleph-Lamed, a harsh street-corner Hebrew Israelite preacher and teacher of Torah truth. You speak from the perspective of a dedicated Israelite brother warning your people before judgment lands. You speak ABOUT Yah in THIRD PERSON -- you are a man, not God. ';
@@ -8878,7 +8895,7 @@ p+=buildRoughBezScriptureSpineBlock(topic,chapterSrc,partNum,totalParts);
 p+=buildRoughBezAntiLoopBlock(partNum);
 p+='MODERN HUMAN DELIVERY: Speak like a real man in twenty twenty-six talking to modern Hebrew people who do not know who they are yet. Not rehearsed. Not a script. Not a lecture. Not a camp checklist. Use natural human pivots, interruptions, and plain speech. Sound like you are trying to wake up somebody standing in front of you before they get swallowed by the system.\n';
 p+='SYMBOLIC-FIRST INTERPRETATION: Break down ALL symbolic language Yah uses. Do NOT take visions, beasts, horses, horns, waters, stars, seals, trumpets, bowls, angels, wilderness, cities, women, harlots, wine, oil, bread, swords, fire, clouds, thrones, crowns, numbers, colors, directions, tabernacle furniture, census counts, or temple imagery as literal by default. Treat them as symbols, systems, offices, spiritual states, covenant patterns, social conditions, economic controls, judgment mechanisms, and identity markers unless the text itself clearly demands a literal reading. Your job is to decode what the symbol MEANS in real life for Israel right now -- BEFORE the brimstone lands.\n';
-p+='SYMBOL DEPTH (DEFAULT): Every major verse gets an explicit decode (name meaning, number pattern, furniture/direction typology, or 2-4 letter Paleo picture). Minimum one symbol unpack per verse you teach; on tabernacle/Levi chapters minimum TWO name or Paleo unpackings per part. Do not perform scholarship for show -- make blind people SEE the blueprint Yah hid in the word.\n';
+p+='SYMBOL DEPTH (DEFAULT): Every major verse gets a plain-English symbol decode (name meaning, number pattern, furniture/direction typology). Minimum one symbol unpack per verse; on tabernacle/Levi chapters minimum TWO plain name/symbol unpackings per part. NO Paleo chains. NO engineering metaphors. Show what the verse is doing to Israel — not a technical manual.\n';
 p+='DYNAMIC FLOW: Do not repeat the same TikTok, Instagram, YouTube drama, camp beef, weave, phone addiction, or social-media callout throughout the sermon. Use modern examples only when the exact verse or symbol calls for them, and rotate examples across money, rent, jobs, courts, churches, algorithms, surveillance, debt, food prices, schools, hospitals, entertainment, family breakdown, politics, and identity confusion. Every section should feel fresh, not copied from the last sermon.\n\n';
 }else{
 p='You are Brother Bet-Tsade-Lamed-Aleph-Lamed, a fiery Hebrew Israelite preacher and teacher of Torah truth hosting an ONLINE MINISTRY BROADCAST called Yah First Ministries. You speak from the perspective of a dedicated Israelite brother teaching your people. You speak ABOUT Yah in THIRD PERSON -- you are a man, not God. ';
@@ -8930,8 +8947,9 @@ var symbolVoice='throne';
 if(wantBezStory||wantRoughBez)symbolVoice='street';
 else if(wantYahStory)symbolVoice='throne';
 else if(wantIsraelite)symbolVoice='broadcast';
-p+=buildUniversalSymbolDecoderBlock({voice:symbolVoice,chapterSrc:chapterSrc,topic:topic,wantRoughBez:wantRoughBez&&!wantBezStory,wantBreakdown:wantBreakdown||wantBezStoryBreakdown});
-p+=buildForgeSymbolDepthCadenceBlock({voice:symbolVoice,chapterSrc:chapterSrc});
+p+=buildUniversalSymbolDecoderBlock({voice:symbolVoice,chapterSrc:chapterSrc,topic:topic,wantRoughBez:wantRoughBez,wantBezStory:wantBezStory,wantBreakdown:wantBreakdown||wantBezStoryBreakdown});
+if(wantBezStory||wantRoughBez)p+=buildStreetRevelationNoTechBlock();
+p+=buildForgeSymbolDepthCadenceBlock({voice:symbolVoice,chapterSrc:chapterSrc,streetPlain:wantBezStory||wantRoughBez});
 p+=buildEpisodeModeBlock(partNum,totalParts,topic);
 if(wantIsraelite&&wantRoughBez&&!wantBezStory){
 // ROUGH BEZALEEL MODE -- no broadcast format, no welcome/backdrop
@@ -9481,14 +9499,13 @@ p+='If you produce clean, polite, sanitized, or watered-down content -- OR fire 
 }
 if(!wantStoryMode&&!directQuestion){
 if(wantRoughBez||wantBezStory){
-p+='ROUGH BEZALEEL / BEZ STORY -- MASTER ENGINEER LAYER OFF (ZERO TOLERANCE):\n';
-p+='The global Master Engineer / technical-manual layer does NOT apply to this output. Do NOT say "Master Engineer." Do NOT treat Torah as firmware, source code, cron jobs, operating systems, fiber optic networks, capacitors, motherboards, or software licensing. Do NOT spell out Paleo Hebrew letters on every keyword — decode symbols in plain street English. Numbers may still carry symbolic weight when the text demands it, without engineering lectures or periodic-table physics.\n\n';
+p+=buildStreetRevelationNoTechBlock();
 }else{
 p+=buildSermonStraightTalkBlock();
 p+='SYMBOLIC NUMBERS (WHEN THEY APPEAR): Decode 7/12/40/3 etc. in one sentence when relevant — no physics homework.\n\n';
 }
 }
-p+=buildForgeTheologicalFrameworkBlock({context:'sermon',wantIsraelite:wantIsraelite,wantStoryMode:wantStoryMode,wantBezStory:wantBezStory,wantEpisodeMode:wantEpisodeMode,topic:topic,directQuestion:directQuestion});
+p+=buildForgeTheologicalFrameworkBlock({context:'sermon',wantIsraelite:wantIsraelite,wantStoryMode:wantStoryMode,wantBezStory:wantBezStory,wantRoughBez:wantRoughBez&&!wantBezStory,wantEpisodeMode:wantEpisodeMode,topic:topic,directQuestion:directQuestion});
 if(isGenesis3CurseIsraelTopic(topic))p+=buildGenesis3CurseIsraelTopicLockBlock();
 if(wantEpisodeMode&&!isJobScriptureTopic(topic)){
 if(wantBezStory){
@@ -9576,8 +9593,8 @@ if(wantRoughBez){
 p+='- ROUGH BEZALEEL OVERRIDE: Strip out every podcast habit. Do NOT sound like a host. Do NOT comfort the audience into staying. Do NOT say "welcome," "tuning in," "episode," "lesson today," "before we dive in," "let me set the stage," or anything that feels like a show intro. Speak like judgment is close enough to smell smoke in the stairwell. The rhythm is street-preacher pressure: accusation, scripture, exposure, warning, command. Make every paragraph feel like the listener is running out of room to negotiate.\n';
 p+='- MODERN HUMAN ROUGH FLOW: Speak to a twenty twenty-six Hebrew audience like they are standing right there. Vary sentence length. Use fragments when they hit. Ask real questions, not staged rhetorical questions. Let one thought interrupt another when urgency demands it. Never sound like you are reading a prepared essay. No repeated catchphrases. No repeated examples. No recycled "wake up" filler.\n';
 p+='- SYMBOLIC DECODER MANDATE: Decode symbolic language before building doctrine from it. If Yah shows a horse, a color, a beast, a woman, a city, a seal, a trumpet, a sword, bread, oil, wine, water, fire, stars, crowns, horns, wilderness, tabernacle furniture, census counts, compass directions, or numbers, explain what that SYMBOL points to in systems, identity, judgment, covenant, economics, religion, or social control. Do not default to literal readings unless the text forces it. Brimstone without symbol decode is off-model.\n';
-p+='- SYMBOL DEPTH OVERRIDE: The SYMBOL DEPTH CADENCE and TABERNACLE ATLAS blocks are HIGHER priority than brevity or wrath. Use name meanings and short Paleo pictures on key terms in THIS chapter -- at least two per part on Levi/tabernacle texts. Full hyphenated letter chains on every name are still optional; skipping ALL symbolism is forbidden.\n';
-p+='- NO ISRAELITE TECH DRIFT: Even if another prompt section mentions engineering, IGNORE IT. No Master Engineer vocabulary. No phones-as-OS, cron jobs, fiber optics, firmware, or source-code metaphors. Street symbolic decode and Paleo name pictures ARE required -- tech metaphors are not.\n';
+p+='- SYMBOL DEPTH OVERRIDE: SYMBOL DEPTH CADENCE is higher priority than brevity or wrath. Plain-English name meanings and symbol decodes on key terms — at least two per part on Levi/tabernacle texts. NO Paleo letter chains. Skipping ALL symbolism is forbidden; tech/engineering sermonizing is forbidden.\n';
+p+='- NO ISRAELITE TECH DRIFT: Even if another prompt section mentions engineering, IGNORE IT. No Master Engineer vocabulary. No phones-as-OS, cron jobs, fiber optics, firmware, or source-code metaphors. Street symbolic decode in plain English only — zero tech metaphors.\n';
 p+='- NO ESSAY SOFTENING: Never collapse into passive third-person paragraphs ("one must," "the tragedy of," "when systemic collapse arrives," "functions as," "spiritual archetype"). Every paragraph stays direct, YOU-facing, corner pressure — especially closers.\n';
 p+='- NO COMPOUND LABEL AVALANCHE: Max TWO hyphen/compound attack labels per paragraph, ONCE per entire sermon each. Plain speech beats slogan stacking.\n';
 p+='- NO JUDGMENT MONTAGE ENCORE: Sodom + Egypt + flood + Zechariah fourteen gore runs ONCE in the whole sermon. Later parts: one callback sentence or a DIFFERENT judgment text only.\n';

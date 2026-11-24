@@ -9,4 +9,7 @@ assert.doesNotMatch(html, /MODERN TECH COMPARISONS -- MANDATORY FOR ISRAELITE BR
 assert.doesNotMatch(html, /MASTER ENGINEER LAYER -- MANDATORY IN ALL SERMONS/);
 assert.doesNotMatch(html, /Drop at least 2-3 strong tech comparisons per sermon/);
 assert.match(html, /SERMON OUTPUT LOCK/);
+assert.match(html, /function buildStreetRevelationNoTechBlock\(/);
+assert.match(html, /buildStreetRevelationNoTechBlock\(\)/);
+assert.doesNotMatch(html, /Paleo name pictures ARE required/);
 console.log('sermon-straight-talk.cjs OK');
