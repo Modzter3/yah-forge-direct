@@ -977,8 +977,18 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         </div>
         <div class="custom-model-hint">Type any OpenRouter model id (e.g. google/gemini-2.5-pro) to override the dropdown</div>
       </div>
-      <div class="destroy-one-shot-note" style="flex:1 1 220px;min-width:200px;font-size:0.72rem;color:var(--text-muted);line-height:1.45;font-family:'Bitter',serif;border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:rgba(231,76,60,0.06);">
-        <strong style="color:#e74c3c;">One forge</strong> — one API response (long models like Haiku often fill it in one shot). Use <strong>Continue</strong> if you want another pass on your credits. No auto follow-ups.
+      <div class="part-count-wrap" style="flex:1 1 100%;min-width:240px;">
+        <span class="pc-label"><i class="fas fa-layer-group"></i> Parts:</span>
+        <div class="part-count-btns" id="destroyPartBtns">
+          <button type="button" class="part-count-btn" data-count="1" onclick="setDestroyPartCount(1)">1</button>
+          <button type="button" class="part-count-btn" data-count="2" onclick="setDestroyPartCount(2)">2</button>
+          <button type="button" class="part-count-btn active" data-count="3" onclick="setDestroyPartCount(3)">3</button>
+          <button type="button" class="part-count-btn" data-count="4" onclick="setDestroyPartCount(4)">4</button>
+          <button type="button" class="part-count-btn" data-count="5" onclick="setDestroyPartCount(5)">5</button>
+          <button type="button" class="part-count-btn" data-count="6" onclick="setDestroyPartCount(6)">6</button>
+          <button type="button" class="part-count-btn" data-count="7" onclick="setDestroyPartCount(7)">7</button>
+        </div>
+        <span class="pc-words" id="destroyPartWordEst">~6,000 words (~2,000/part) — each part extracts more symbolism &amp; scripture</span>
       </div>
       <div class="destroy-action-btns">
         <button class="dismantle-btn destroy-btn" id="destroyBtn" onclick="startDestroy()"><i class="fas fa-skull-crossbones"></i> Destroy</button>
@@ -986,6 +996,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <button type="button" class="sermon-action-btn copy-all" id="destroyCopyQuickBtn" onclick="copyDestroyResult()" disabled title="Copy forged sermon"><i class="fas fa-copy"></i> Copy</button>
         <button type="button" class="sermon-action-btn export-btn" id="destroySaveLibBtn" onclick="saveDestroyToLibrary()" disabled title="Save to Library"><i class="fas fa-book-bookmark"></i> Save</button>
       </div>
+    </div>
+    <div class="series-progress" id="destroyProgress" style="display:none;">
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="destroyProgressFill"></div></div>
+      <span class="progress-label" id="destroyProgressLabel">Part 0 / 3</span>
     </div>
     <div class="dismantle-output" id="destroyOutput">
       <div class="sermon-body" id="destroyBody"></div>
@@ -14750,10 +14764,88 @@ doTTS(text,voice,'transcriptTtsAudioWrap',btn);
 /* ==========================================
    DESTROY -- MEDIA DESTROYER
    ========================================== */
-var selectedDestroyRounds=1;
+var selectedDestroyRounds=3;
 var destroyRawResult='';
+var destroyPartsRaw=[];
 var destroyBusy=false;
 var destroySessionCtx=null;
+function setDestroyPartCount(n){
+n=parseInt(n,10)||1;
+if(n<1)n=1;
+if(n>7)n=7;
+selectedDestroyRounds=n;
+var btns=document.querySelectorAll('#destroyPartBtns .part-count-btn');
+for(var i=0;i<btns.length;i++){
+var c=parseInt(btns[i].getAttribute('data-count'),10);
+if(c===n)btns[i].classList.add('active');
+else btns[i].classList.remove('active');
+}
+var est=document.getElementById('destroyPartWordEst');
+if(est){
+var total=n*2000;
+est.textContent='~'+total.toLocaleString()+' words (~2,000/part)'+(n>1?' — plot/seasons split across parts':' — one deep pass; use Continue or raise parts for more');
+}
+}
+function updateDestroyProgress(partNum){
+var prog=document.getElementById('destroyProgress');
+var fill=document.getElementById('destroyProgressFill');
+var label=document.getElementById('destroyProgressLabel');
+if(!prog||!fill||!label)return;
+if(selectedDestroyRounds<2){prog.style.display='none';return;}
+prog.style.display='flex';
+var pct=Math.round((partNum/selectedDestroyRounds)*100);
+fill.style.width=pct+'%';
+label.textContent='Part '+partNum+' / '+selectedDestroyRounds;
+}
+function rebuildDestroyRawFromParts(){
+destroyRawResult=destroyPartsRaw.filter(Boolean).join('\n\n');
+}
+function destroySeriesComplete(){
+destroyBusy=false;
+var btn=document.getElementById('destroyBtn');
+if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-skull-crossbones"></i> Destroy';}
+setDestroyQuickActionsEnabled(true);
+var actions=document.getElementById('destroyActions');
+if(actions)actions.style.display='flex';
+showToast('Destroy complete ('+selectedDestroyRounds+' part'+(selectedDestroyRounds!==1?'s':'')+').');
+}
+function commitDestroyPart(partNum,partContent){
+var finalized=stripDestroyUrlsAndSources(stripDestroySermonPreamble(partContent||''));
+destroyPartsRaw[partNum-1]=finalized;
+rebuildDestroyRawFromParts();
+updateDestroyProgress(partNum);
+}
+function generateDestroyPart(partNum){
+if(partNum>selectedDestroyRounds){destroySeriesComplete();return;}
+var ctx=destroySessionCtx;
+if(!ctx)return;
+var title=ctx.title,mediaType=ctx.mediaType,explicit=ctx.explicit,israelite=ctx.israelite;
+var body=ctx.body;
+if(selectedDestroyRounds>1){
+var divider=document.createElement('div');
+divider.className='part-divider destroy-part-divider';
+divider.id='destroyPartDivider'+partNum;
+divider.innerHTML='<i class="fas fa-skull-crossbones" style="margin-right:6px;font-size:0.65rem;"></i>Part '+partNum+' of '+selectedDestroyRounds;
+body.appendChild(divider);
+var loader=document.createElement('div');
+loader.className='loading-state';
+loader.id='destroyLoader'+partNum;
+loader.innerHTML='<div class="loading-pulse"></div><div class="loading-text">Part '+partNum+' — researching &amp; extracting wisdom from this band...</div>';
+body.appendChild(loader);
+loader.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+updateDestroyProgress(partNum);
+var prompt=buildDestroyPrompt(title,mediaType,explicit,israelite,selectedDestroyRounds,partNum);
+if(partNum>1){
+var prior=destroyPartsRaw.slice(0,partNum-1).filter(Boolean).join('\n\n');
+if(prior){
+prompt+='\n\nPRIOR PARTS ALREADY LOCKED (do not repeat — bridge forward only):\n'+prior.slice(-3500)+'\n';
+}
+}
+ctx.partNum=partNum;
+ctx.manualContinuation=false;
+sendDestroyMsg(prompt,false);
+}
 function countWordsDestroy(s){
 if(!s||!String(s).trim())return 0;
 return String(s).trim().split(/\s+/).filter(Boolean).length;
@@ -14779,10 +14871,13 @@ destroyBusy=true;
 if(btn){btn.disabled=true;}
 setDestroyQuickActionsEnabled(false);
 var handlerName='destroy-'+Date.now();
+var multiPartSeries=selectedDestroyRounds>1&&!ctx.manualContinuation;
+var partNum=ctx.partNum||(multiPartSeries?1:1);
 window.Poe.registerHandler(handlerName,function(result){
 var msg=result.responses[0];
 if(!msg)return;
-var fullText;
+var partContent=stripDestroyUrlsAndSources(msg.content||'');
+var ldr=document.getElementById('destroyLoader'+partNum);
 if(msg.status==='error'){
 if(destroyRawResult){
 body.innerHTML=renderDestroyBodyHtml(destroyRawResult);
@@ -14794,11 +14889,33 @@ body.innerHTML='<div style="color:var(--explicit-red);padding:20px;text-align:ce
 destroyBusy=false;
 if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-skull-crossbones"></i> Destroy';}
 }else if(msg.status==='incomplete'){
-fullText=isContinuation?(destroyRawResult+'\n\n'+msg.content):msg.content;
-body.innerHTML=renderDestroyBodyHtml(stripDestroyUrlsAndSources(fullText));
+if(multiPartSeries){
+if(ldr){
+var lt=ldr.querySelector('.loading-text');
+if(lt)lt.textContent='Part '+partNum+' streaming...';
+}
+body.innerHTML=renderDestroyBodyHtml((destroyPartsRaw.slice(0,partNum-1).filter(Boolean).join('\n\n')+'\n\n'+partContent).trim());
+}else{
+var fullText=isContinuation?(destroyRawResult+'\n\n'+partContent):partContent;
+body.innerHTML=renderDestroyBodyHtml(fullText);
+}
 }else if(msg.status==='complete'){
-fullText=isContinuation?(destroyRawResult+'\n\n'+msg.content):msg.content;
+if(multiPartSeries){
+if(ldr)ldr.remove();
+commitDestroyPart(partNum,partContent);
+body.innerHTML=renderDestroyBodyHtml(destroyRawResult);
+if(partNum<selectedDestroyRounds){
+showToast('Part '+partNum+' done — forging part '+(partNum+1)+'...');
+generateDestroyPart(partNum+1);
+return;
+}
+destroySeriesComplete();
+return;
+}
+var fullText=isContinuation?(destroyRawResult+'\n\n'+partContent):partContent;
 destroyRawResult=stripDestroyUrlsAndSources(fullText);
+destroyPartsRaw=splitDestroyTextIntoParts(destroyRawResult);
+if(!destroyPartsRaw.length&&destroyRawResult)destroyPartsRaw=[destroyRawResult];
 body.innerHTML=renderDestroyBodyHtml(destroyRawResult);
 actions.style.display='flex';
 setDestroyQuickActionsEnabled(true);
@@ -14833,7 +14950,7 @@ var body=document.getElementById('destroyBody');
 var btn=document.getElementById('destroyBtn');
 var actions=document.getElementById('destroyActions');
 var output=document.getElementById('destroyOutput');
-destroySessionCtx={body:body,btn:btn,actions:actions,output:output};
+destroySessionCtx={body:body,btn:btn,actions:actions,output:output,partNum:1,manualContinuation:true};
 var mediaType=document.getElementById('destroyMediaType').value;
 var israelite=document.getElementById('destroyIsraelite').checked;
 var wc=countWordsDestroy(destroyRawResult);
@@ -14911,7 +15028,7 @@ var titleInput=(document.getElementById('destroyTitleInput').value||'').trim();
 var title=titleInput||'Media sermon';
 var mediaType=document.getElementById('destroyMediaType').value;
 var typeLab=mediaType==='tv'?'TV':mediaType==='game'?'Game':'Film';
-var desc='Media Destroyer — '+typeLab+' — one deep installment (five-part depth)';
+var desc='Media Destroyer — '+typeLab+' — '+parts.length+' part'+(parts.length!==1?'s':'');
 var model=getDestroyModel();
 var titles=[];
 for(var i=0;i<parts.length;i++){titles.push('Part '+(i+1));}
@@ -15083,13 +15200,12 @@ p+='- LANGUAGE RULE: NEVER use the word "destroy" or "destroying" in your output
 return p;
 }
 function startDestroy(){
+if(destroyBusy){showToast('Already working — wait for the current part to finish.');return;}
 var title=document.getElementById('destroyTitleInput').value.trim();
 if(!title){showToast('Enter a movie, TV show, or game title first.');return;}
 var mediaType=document.getElementById('destroyMediaType').value;
-var model=getDestroyModel();
 var explicit=document.getElementById('destroyExplicit').checked;
 var israelite=document.getElementById('destroyIsraelite').checked;
-var prompt=buildDestroyPrompt(title,mediaType,explicit,israelite,selectedDestroyRounds,1);
 var btn=document.getElementById('destroyBtn');
 var output=document.getElementById('destroyOutput');
 var body=document.getElementById('destroyBody');
@@ -15100,10 +15216,20 @@ output.classList.add('visible');
 actions.style.display='none';
 setDestroyQuickActionsEnabled(false);
 destroyRawResult='';
-destroySessionCtx={body:body,btn:btn,actions:actions,output:output};
+destroyPartsRaw=[];
+destroySessionCtx={body:body,btn:btn,actions:actions,output:output,title:title,mediaType:mediaType,explicit:explicit,israelite:israelite,partNum:1,manualContinuation:false};
 var typeLabel=mediaType==='tv'?'TV show':mediaType==='game'?'video game':'movie';
+if(selectedDestroyRounds>1){
+body.innerHTML='';
+updateDestroyProgress(0);
+showToast('Forging '+selectedDestroyRounds+' parts on this '+typeLabel+'...');
+generateDestroyPart(1);
+}else{
 body.innerHTML='<div class="loading-state"><div class="loading-pulse"></div><div class="loading-text">Yah is researching and tearing this '+escapeHtml(typeLabel)+' apart...</div></div>';
+updateDestroyProgress(0);
+var prompt=buildDestroyPrompt(title,mediaType,explicit,israelite,1,1);
 sendDestroyMsg(prompt,false);
+}
 }
 function copyDestroyResult(){
 if(!destroyRawResult){showToast('Nothing to copy.');return;}
@@ -15238,6 +15364,7 @@ if(breakdownToggle)breakdownToggle.checked=false;
 }
 }
 document.addEventListener('DOMContentLoaded',function(){
+setDestroyPartCount(selectedDestroyRounds||3);
 updatePartWordEstDisplay();
 syncDismantleLayoutUi();
 syncEpisodeModeToggles();
