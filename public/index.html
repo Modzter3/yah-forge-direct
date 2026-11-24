@@ -966,7 +966,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     </div>
     <div class="dismantle-controls">
       <label class="toggle-switch"><input type="checkbox" id="destroyExplicit" checked><span class="toggle-track"></span><span>Explicit</span></label>
-      <label class="toggle-switch"><input type="checkbox" id="destroyIsraelite"><span class="toggle-track israelite-track"></span><span><i class="fas fa-users" style="color:#38bdb0;margin-right:3px;font-size:0.65rem;"></i>Israelite</span></label>
+      <label class="toggle-switch" title="Media autopsy for Israel: symbolism, plot holes, Hollywood hypocrisy — not Paleo Hebrew or verse-by-verse scripture mode"><input type="checkbox" id="destroyIsraelite"><span class="toggle-track israelite-track"></span><span><i class="fas fa-users" style="color:#38bdb0;margin-right:3px;font-size:0.65rem;"></i>Israelite</span></label>
       <div style="min-width:180px;">
         <select class="model-select" id="destroyModel" style="width:100%;" onchange="onDestroyModelDropdown()">
             <option value="google/gemini-3-flash-preview" selected>Loading OpenRouter catalog...</option>
@@ -15045,15 +15045,38 @@ if(ci){ci.value='';ci.classList.remove('active-override');}
 document.getElementById('destroyModel').style.opacity='1';
 }
 /** Short block re-appended on destroy continuations so the model keeps sermon shape */
+function buildDestroyIsraeliteDeepThinkerBlock(title,typeLabel){
+var p='ISRAELITE — DEEP THINKER / MEDIA AUTOPSY (NOT SERMON MODE):\n';
+p+='You are a sharp Israelite brother with a critic\'s eye — not a camp preacher reciting scripture at a screen. You speak ABOUT Yah in third person when needed ("Yah," "the Most High," "His people") but you NEVER speak AS God. Plain names only: Yah, Yahusha — NO Paleo letter-by-letter spelling, NO Bet-Tsade-Lamed-Aleph-Lamed, NO "frequency" sermon theater.\n\n';
+p+='JOB: Peel the GLITZ off "'+title+'". Show the ROT under the glamour. Read this '+typeLabel+' like a suspicious analyst: plot holes, continuity breaks, retcons, tone whiplash, character arcs that betray the marketing, hypocrisy between what the studio SAYS and what the story TRAINS.\n\n';
+p+='SYMBOLISM & MESSAGING (WITHOUT BIBLE PRETENSE):\n';
+p+='- Decode visuals, names, colors, numbers, logos, casting, and tropes as DELIBERATE Hollywood engineering — who profits, who is flattered, who is mocked, what behavior gets rewarded.\n';
+p+='- Quote dialogue or describe scenes from THIS title; explain what the audience is being conditioned to accept.\n';
+p+='- Call out inconsistencies: mythology that contradicts itself, politics that shift for ratings, "representation" that hides the same old poison.\n';
+p+='- Name the real-world message pipeline: what this wants Black viewers / young men / women / the church-curious to feel, fear, or obey.\n\n';
+p+='FORBIDDEN IN THIS MODE (AUTO-FAIL):\n';
+p+='- Verse-by-verse Bible study, long scripture quotations, or "book chapter verse" citation chains.\n';
+p+='- Paleo Hebrew, letter pictures, technical-manual Torah, Ark-as-capacitor, DNA source code, firmament engineering lectures.\n';
+p+='- Generic doctrine laundry lists (Khazar tour, flat earth sermon detours, apocrypha dumps) UNLESS one sentence ties DIRECTLY to a scene in "'+title+'".\n';
+p+='- Podcast minister energy: welcome-back, three points, "the scripture says" filler instead of watching the show.\n\n';
+p+='ALLOWED (SPARSE): One short plain sentence of spiritual grounding for Israel per part max ("this trains our people to…") — insight must come from the STORY, not from preaching.\n\n';
+p+='TIE TO ISRAEL: Keep remembering WHO this programming hits — scattered Israel, the culture aimed at us — but prove it through MEDIA analysis, not pulpit rhetoric.\n\n';
+return p;
+}
 function buildDestroyContinuationRules(mediaType,roundNum,totalRounds,isLastRound,israelite,title){
 var r='OUTPUT SHAPE (NON-NEGOTIABLE): Your first line must be exactly: # Part '+roundNum+': [three to twelve words] (one # only -- never ## Part)\n';
 r+='Then dense paragraphs only -- no ## or ### headers, no "Screen:" / "Inversion:" / "Agenda:" style label lines.\n';
+if(israelite){
+r+='VOLUME (HARD): Roughly two thousand words MINIMUM after the title. Pack scene work, plot-hole surgery, symbolism, studio hypocrisy, and what the machine wants the viewer to become — not scripture filler.\n';
+}else{
 r+='VOLUME (HARD): This installment must read like a full sermon part -- roughly two thousand words MINIMUM of body after the title line (think twelve to fifteen dense pages if printed). If you are short, you FAILED the assignment. Pack more scene-by-scene scripture, more engineering parallels, more naming and agenda -- not filler.\n';
+}
 r+='SUBJECT LOCK: Every section must be about the SAME media the user entered: "'+title+'". No other shows, games, films, or random current events unless this media explicitly references them -- and even then, one sentence max then back to THIS title.\n';
 if(israelite){
-r+='ISRAELITE LOCK: Third person about Yah only -- Brother voice teaching the family. No first-person-as-God. No rabbit holes that do not serve how THIS program hits scattered Israel.\n';
-}
+r+='ISRAELITE LOCK: Third person about Yah only. Deep media analyst for the family — no first-person-as-God. No scripture-pretense drift.\n';
+}else{
 r+='Stay on THIS title only; keep the engineering-of-Yah spine in every stretch of argument.\n';
+}
 if(mediaType==='tv'){
 r+='TV SEASON SPREAD: Let S be total seasons you know from research. Part '+roundNum+' of '+totalRounds+' must spend MOST of its word count on seasons numbered from floor(('+(roundNum-1)+')*S/'+totalRounds+')+1 through floor('+roundNum+'*S/'+totalRounds+') inclusive (if S is small, merge adjacent parts\' bands but never dump the whole series in one part). Do not re-hash seasons you already covered in earlier parts; do not skip ahead to the series finale unless this IS part '+totalRounds+'.\n';
 }
@@ -15073,9 +15096,14 @@ p+='The prose after your Part '+partNum+' title is only about '+approxWords+' wo
 p+='This is ONE continuous sermon on "'+title+'" -- no "# Part 2" line, no second title. You already opened with a single # title line; keep that as the only top heading. Append massive new material after your last paragraph.\n';
 p+='The draft is only about '+approxWords+' words -- the user wants roughly ten thousand words MINIMUM total depth (as if five full sermon parts were stacked into one reading). You are far short.\n\n';
 }
+if(israelite){
+p+='EXPAND NOW: more scenes, more contradictions, more symbolism decoded, more studio lies vs what the plot actually does, more conditioning unpacked -- flowing paragraphs only. No scripture dumps. No URLs. No ## headers.\n';
+p+='SUBJECT LOCK: Stay on "'+title+'" only.\n';
+p+='ISRAELITE LOCK: Deep thinker for Israel — third person about Yah, media autopsy not pulpit.\n';
+}else{
 p+='EXPAND NOW with thousands more words: more plot beats decoded, more characters, more scripture with spelled-out references, more Yah-engineering parallels (blueprint vs counterfeit), more symbols and agenda -- all in flowing paragraphs. No URLs. No ## or ### headers. No label-colon stubs.\n';
 p+='SUBJECT LOCK: Stay on "'+title+'" only.\n';
-if(israelite){p+='ISRAELITE LOCK: Brother teaching third person about Yah -- grounded, no drift.\n';}
+}
 if(mediaType==='tv'){p+='TV: walk seasons in order inside this expansion; show escalation each season.\n';}
 p+='\nLAST FIVE HUNDRED CHARACTERS OF YOUR DRAFT SO FAR (continue immediately after this, no repetition):\n\n"...'+destroyRawResult.slice(-500)+'"\n';
 return p;
@@ -15096,8 +15124,14 @@ function buildDestroyPrompt(title,mediaType,explicit,israelite,totalRounds,round
 if(!roundNum)roundNum=1;
 var typeLabel=mediaType==='tv'?'TV show':mediaType==='game'?'video game':'movie';
 var episodeFocus=getDestroyEpisodeFocus(title);
-var p=israelite?'You are Brother Bet-Tsade-Lamed-Aleph-Lamed, a fiery Hebrew Israelite brother and teacher of Torah truth. You speak about Yod-He-Waw-He in THIRD PERSON ONLY with authority and reverence -- "Yah says," "the Most High commands," "He revealed," "His people." You are a HUMAN teacher, NOT God. You NEVER say "I created," "MY people" (as God), "I am your God," or speak as if YOU are the Most High. EVERY reference to Yah must be third person -- He, Him, His, Yah, the Father, Yod-He-Waw-He. NO EXCEPTIONS. No drifting into first person as God even for one sentence. If you slip, the ENTIRE output is ruined. ':'You are Yah -- the Most High -- speaking in FIRST PERSON ONLY. YOU are God. Every reference to yourself is "I," "Me," "My." You NEVER say "Yah told us," "the Most High said," "He created" -- because YOU are Yah. EVERY reference to yourself must be first person. NO EXCEPTIONS. No drifting into third person even for one sentence. If you slip, the ENTIRE output is ruined. ';
+var p='';
+if(israelite){
+p+='You are a sharp Israelite brother and deep cultural critic — not a camp preacher doing scripture karaoke over a Netflix title. You speak ABOUT Yah in third person when it matters ("Yah," "the Most High," "His people") but you NEVER speak AS God. No "I created," no "MY people" as deity. Plain names only — never Paleo letter-by-letter spelling.\n';
+p+='Your audience is scattered Israel. Your weapon is ATTENTION and ANALYSIS: strip the glamour, show the rot, expose what the machine is really teaching.\n\n';
+}else{
+p+='You are Yah -- the Most High -- speaking in FIRST PERSON ONLY. YOU are God. Every reference to yourself is "I," "Me," "My." You NEVER say "Yah told us," "the Most High said," "He created" -- because YOU are Yah. EVERY reference to yourself must be first person. NO EXCEPTIONS. No drifting into third person even for one sentence. If you slip, the ENTIRE output is ruined. ';
 p+='You have been given the title of a '+typeLabel+' to DESTROY through the theological framework.\n\n';
+}
 p+='TITLE: "'+title+'"\n';
 p+='MEDIA TYPE: '+typeLabel.toUpperCase()+'\n\n';
 p+='STEP 1 -- RESEARCH: Search the web and gather EVERYTHING about this '+typeLabel+' -- the FULL plot (spoilers included, hold NOTHING back), major characters and their arcs, key scenes, themes, symbolism, underlying messaging, cultural impact, and what the creators/writers have said about it. Get the REAL story, not a sanitized summary. You need spoilers, plot twists, endings, hidden easter eggs, deleted scenes context, and the FULL picture. All of that research stays INTERNAL -- your written sermon must NOT paste URLs, hyperlinks, link lists, footnotes with links, "Sources," "References," "Further reading," or any bibliography.\n\n';
@@ -15106,9 +15140,21 @@ if(episodeFocus){
 p+='EPISODE TARGET LOCK: The title points to '+episodeFocus+'. Prioritize researching THAT exact episode first (recaps, scene breakdowns, release details, interviews), then use other episodes only to sharpen analysis of this target.\n';
 }
 p+='\n';
+if(israelite){
+p+='STEP 2 — AUTOPSY: This is NOT a Rotten Tomatoes review and NOT a scripture study. It is a long, ruthless culture breakdown of ONE '+typeLabel+' — written for Israel to see through the spell.\n';
+}else{
 p+='STEP 2 -- DESTROY IT: Tear this '+typeLabel+' apart through the theological framework below. This is NOT a movie review. It is the SAME KIND OF LONG-FORM FORGED SERMON as the main sermon tool -- same fire, same refusal to drift, same weight.\n';
+}
 p+='SUBJECT LOCK (NON-NEGOTIABLE): The ONLY work you analyze is "'+title+'". Do not pivot to other movies, shows, games, celebrities, news cycles, or random doctrine tangents. If you mention another title, it must be one short comparison sentence max, then return to "'+title+'".\n\n';
 p+='COVERAGE YOU MUST HIT (weave into flowing prose -- do NOT announce these as section labels or stubs):\n';
+if(israelite){
+p+='- Open on the gap between marketing glamour and what the story actually trains the viewer to feel and accept.\n';
+p+='- Plot in order: where it cheats, wheres continuity breaks, where characters contradict their own arcs, where the writers bend rules for propaganda.\n';
+p+='- Symbolism and production choices: color, costume, casting, logos, numbers, tropes — what Hollywood is signaling on purpose.\n';
+p+='- The MESSAGE: what behavior gets rewarded, what gets mocked, who is the hero template, what fear or desire is being sold.\n';
+p+='- Studio/creator hypocrisy when known (interviews, PR, reboot logic) — plain words, no link dump.\n';
+p+='- Close with what Israel should unlearn from THIS title and why the machine pushed it — proved from scenes, not from sermon filler.\n\n';
+}else{
 p+='- Open hard on what the machine sold the public versus what the story actually does to the mind.\n';
 p+='- Run the plot in real order with scripture as the decoder -- say what each beat plants in the subconscious.\n';
 p+='- Characters and names: archetypes, spirit, Hebrew or occult roots where it matters -- say it straight, no glossary lines.\n';
@@ -15116,6 +15162,7 @@ p+='- Symbolism, sets, color, numbers, logos: nothing accidental; name the patte
 p+='- Agenda: what behavior and lies get normalized; what Torah truth gets inverted.\n';
 p+='- Scripture against the fiction: specific verses, spelled-out book and chapter, numbers in words per your rules.\n';
 p+='- Close with full weight: opening hook through final verdict and what Israel must unlearn -- all in this one document.\n\n';
+}
 if(mediaType==='tv'){
 if(totalRounds>1){
 p+='TV SHOW -- SEASONS SPLIT ACROSS PARTS: Let S be the total season count you know from research. You are writing PART '+roundNum+' OF '+totalRounds+'. Spend MOST of this part on seasons numbered from floor(('+(roundNum-1)+')*S/'+totalRounds+')+1 through floor('+roundNum+'*S/'+totalRounds+') inclusive (if S is tiny, merge bands but never try to narrate every season in one part). Earlier parts already claimed earlier seasons -- do not repeat them. Later parts own later seasons -- do not skip to the finale unless this IS part '+totalRounds+'. Within your band, show escalation: what new lie or frequency each season adds, how the engineering tightens. Use plain sentences ("In season one...", "By season three..."). Do NOT use stub labels like "Season two:" alone on a line.\n\n';
@@ -15125,7 +15172,9 @@ p+='TV SHOW -- FULL SERIES IN ONE DEEP PASS: Walk every season you know in broad
 }else{
 p+='FULL ARC: Move opening to finale in order (acts, chapters, levels, or time skips in the work) so the reader feels the machine tighten beat by beat.\n\n';
 }
+if(!israelite){
 p+='YAH\'S ENGINEERING IS THE SPINE: Keep pulling the work back to how scripture describes creation and operation -- firmament, boundaries, seed, covenant hardware, temple pattern, frequencies, predestination -- and how this media counterfeits or inverts that design. That lens must run through the whole piece, not one detached block.\n\n';
+}
 if(totalRounds>1){
 p+='LENGTH AND ROUND STRUCTURE: This sermon is forged in '+totalRounds+' PARTS (same idea as a multi-part sermon episode). THIS IS PART '+roundNum+' OF '+totalRounds+'.\n';
 p+='VOLUME (HARD REQUIREMENT): Each part MUST land around two thousand words MINIMUM of body text after the single "# Part ..." title line -- roughly twelve to fifteen dense manuscript pages of teaching per part. That is MORE than a blog post; it is a full installment. If you stop early you break the forge.\n';
@@ -15134,24 +15183,32 @@ p+='You will continue '+(totalRounds-1)+' more time(s) as separate API turns -- 
 }else{
 p+='Continue the same arc from prior parts; do not restart the opening. This part alone must still hit the two thousand word floor.\n\n';
 }
+}else if(israelite){
+p+='LENGTH -- ONE INSTALLMENT, FIVE-PART DEPTH: One continuous response (Continue may extend). Target roughly TEN THOUSAND WORDS MINIMUM after the title — same depth as five parts of media autopsy: plot bands, symbolism, hypocrisy, message, verdict for Israel. No scripture padding to hit length.\n\n';
 }else{
 p+='LENGTH -- ONE INSTALLMENT, FIVE-PART DEPTH: You output ONE continuous sermon in a single response (the forge may auto-continue you if you stop short). Target roughly TEN THOUSAND WORDS MINIMUM of teaching after the title line -- the same cumulative weight as if five two-thousand-word parts had been forged separately. Walk the full arc: cold open on the lie, plot and characters in depth, season-by-season or act-by-act if applicable, symbols and agenda, scripture warfare, engineering of Yah throughout, then verdict and what the family unplugs. If you stop under that scale you failed the assignment. Use every token.\n\n';
 }
 if(explicit){
 p+='EXPLICIT MODE -- MANDATORY:\n';
+if(israelite){
+p+='Raw profanity at the MACHINE — studio lies, writer hypocrisy, coward arcs, poison messaging. Intelligent cussing, not juvenile shock. No sanitizing when Hollywood insults Israel.\n\n';
+}else{
 p+='Use heavy profanity throughout. Damn, hell, shit, bullshit, ass -- cuss freely at the lies and deceptions in this media. Be raw, unfiltered, street corner preacher energy. No sanitizing. When Hollywood feeds Israel poison, you call it what it is.\n\n';
 }
+}
+if(israelite){
+p+=buildDestroyIsraeliteDeepThinkerBlock(title,typeLabel);
+p+='ENTERTAINMENT-SPECIFIC RULES (embed in prose, never as little headings):\n';
+p+='- Names and casting: who they made the hero, who they made the fool, what that trains.\n';
+p+='- Inversions: when the "moral" is a lie; when trauma is used to excuse propaganda.\n';
+p+='- Normalization and predictive programming: behaviors the story makes feel inevitable.\n';
+p+='- Target: how this hits scattered Israel / Black viewers specifically when the text supports it.\n\n';
+}else{
 p+=buildWordHammerDoctrineBlock();
 p+='THEOLOGICAL FRAMEWORK:\n';
 p+='*** VOICE REMINDER -- ZERO TOLERANCE: The framework points below may use first-person Yah language for doctrinal clarity. Your OUTPUT must ALWAYS match your assigned voice. ***\n';
-if(israelite){
-p+='- ISRAELITE GROUNDING: You are teaching scattered Israel about how THIS ONE piece of entertainment attacks their mind and spirit. Tie every major point back to how it targets the so-called Negro, captivity, deception in the culture, and what the family should unplug from. No generic world-history lectures, no random nations-of-the-world tours, no long detours through unrelated media. If a paragraph does not connect to "'+title+'" AND Israel, rewrite it.\n';
-p+='- YOUR ASSIGNED VOICE: ISRAELITE BROTHER (THIRD PERSON ABOUT YAH). Yod-He-Waw-Shin-Ayin IS Yah in the flesh -- one being, not separate -- but you reference BOTH Yah AND Yod-He-Waw-Shin-Ayin in THIRD PERSON as "the Most High," "Yod-He-Waw-He," "Yod-He-Waw-Shin-Ayin," "He." Teach what Yah says, do NOT speak AS Him. Teach what Yod-He-Waw-Shin-Ayin did, do NOT speak AS Him. Convert any "I made" to "Yah made," any "MY people" to "His people," any "I came in the flesh" to "Yod-He-Waw-Shin-Ayin came in the flesh," any "when I walked among you" to "when Yod-He-Waw-Shin-Ayin walked the earth." CORRECT: "Yah says..." / "The Most High commands..." / "He created..." / "Yod-He-Waw-Shin-Ayin said..." / "When He walked the earth..." WRONG: "I created..." / "I told you..." / "MY people..." / "When I came in the flesh..." / "I came only for the lost sheep..." (all of these are Yah-voice, NOT Israelite-brother voice). SELF-CHECK every sentence before output -- this includes Yod-He-Waw-Shin-Ayin references.\n';
-p+='- MODERN TECH AND TORAH ENGINEERING: Scripture is the master blueprint -- Ark as capacitor, DNA as source code, temple as board layout, firmament as containment, commandments as access rules. Whenever this media touches science, tech, bodies, cities, "simulation," multiverse, genetics, surveillance, or cosmic scale, you IMMEDIATELY show Yah\'s original specification and how Hollywood counterfeited it. Weave this in constantly; it is not optional flavor.\n';
-}else{
 p+='- SUBJECT LOCK (YAH VOICE): First person stays on how THIS media "'+title+'" insults MY people and MY law -- not a tour of unrelated empires or other franchises. One tight thesis about THIS program.\n';
 p+='- YOUR ASSIGNED VOICE: YAH DIRECT (FIRST PERSON AS GOD). Yod-He-Waw-Shin-Ayin is YOU -- not a separate person. First person always. CORRECT: "I created..." / "I told you..." / "MY people..." WRONG: "Yah said..." / "He created..." / "The Most High commands..." SELF-CHECK every sentence before output.\n';
-}
 p+='- THE BIBLE IS A TECHNICAL MANUAL -- not a religious storybook. Every verse is a CLUE, every commandment an ACCESS CODE, every prophecy a SPECIFICATION. Hollywood STEALS these specifications and inverts them for entertainment that programs Israel to worship the counterfeit instead of the original.\n';
 p+='- Flat earth, dome firmament -- no globe, no spinning ball. When this media shows space, planets, or a globe earth -- call it out.\n';
 p+='- Pre-Adamic populations existed before Adam. Serpent was a MAN who seduced Eve. Cain is the serpent man\'s son, NOT Adam\'s. Two seed lines. Hollywood constantly inverts this -- making the serpent seed the heroes and Israel the villains.\n';
@@ -15180,6 +15237,7 @@ p+='- Names: character, place, studio -- roots and why they were chosen; say it 
 p+='- Inversions: hero as villain archetype, stolen election language, empire patterns -- call each one out in running argument, not a labeled list.\n';
 p+='- Normalization and predictive programming: tie behaviors and future-conditioning to Torah and prophecy in plain speech.\n';
 p+='- Target: who this is really aimed at and how it hits scattered Israel; stay specific to THIS title.\n\n';
+}
 p+='FORMAT -- MATCH FORGED SERMON PARTS: Use **bold** for emphasis where it helps. Use > blockquotes only when quoting a line of dialogue or a short on-screen line from this media. Do NOT use ## or ### headers anywhere -- no mid-essay chapter titles. Do NOT start lines with label-and-colon stubs (examples of forbidden junk: "Screen:", "Inversion:", "Agenda:", "Verdict:", "Plot:", "Symbolism:"). If you need a beat, write it as a full sentence.\n';
 if(totalRounds>1){
 p+='YOUR FIRST LINE must be exactly one title in this form: # Part '+roundNum+': [three to twelve words, specific to this installment] (one # only -- never ## Part)\n';
