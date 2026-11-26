@@ -2234,12 +2234,15 @@ if(!topic||!media)return '';
 if(topic.sceneDismantle)return buildSceneDismantleBlock(topic,partNum,totalParts);
 var kind=media.kind;
 var isTv=kind==='tv';
+var seasonLock=isTv?parseTvSeasonEpisodeLock((topic.title||'')+'\n'+(topic.desc||'')):null;
 var out='';
 out+='*** POP-CULTURE / MEDIA WORK -- THIS SERMON\'S PRIMARY SUBJECT (AUTO-DETECTED) ***\n';
 out+='CLASSIFICATION: The topic reads like it names or centers on '+media.label+'.\n';
 out+='YOUR JOB: Treat this work as the MAIN TEXT you are exegeting -- with the SAME depth, length, and fire as scripture-heavy sermons. The story, characters, systems, and imagery are not decoration; they carry the lesson.\n';
 out+='IDENTIFY THE WORK: From the title and core message, infer the exact franchise, installment, and medium. Name it plainly in the welcome/backdrop (or opening) so the listener knows which work you mean.\n';
-if(isTv&&totalParts>1){
+if(seasonLock){
+out+=buildTvSeasonScopeLockBlock(seasonLock,{multiPart:totalParts>1});
+}else if(isTv&&totalParts>1){
 out+='TV / SERIES PACING: Spread the series across parts in REAL ORDER -- early seasons in earlier parts, later seasons in later parts. Do NOT jump randomly. Part '+partNum+' should focus on the chunk of the show that belongs in this section of the timeline (and say which season(s) and major arcs you are covering).\n';
 }else if(isTv){
 out+='TV / SERIES PACING: Move season by season (or arc by arc) in order -- do not skip around without reason.\n';
@@ -3194,7 +3197,12 @@ var p='WEB RESEARCH (SILENT -- MANDATORY WHEN ENABLED):\n';
 p+='Use live web search INTERNALLY before and while writing. Research stays INTERNAL -- do NOT paste URLs, hyperlinks, footnotes, "Sources," "References," citation brackets, outlet names as bibliography, or any bibliography into the sermon. Output plain spoken prose only.\n\n';
 p+='STEP 1 -- TOPIC VERIFICATION:\n';
 if(isTv){
+var tvLock=parseTvSeasonEpisodeLock(title+'\n'+(topic.desc||''));
+if(tvLock){
+p+='Search for "'+title+'": verify plot and characters for **'+tvLock.label+' ONLY** — episode order within that scope, cast, and creator statements for this season/episode. Do not research other seasons unless one fact is needed for continuity inside '+tvLock.label+'.\n';
+}else{
 p+='Search for "'+title+'": verify plot, characters, season/episode counts, release order, and recent developments about the show.\n';
+}
 }else if(isChapter){
 p+='Search for the themes, symbols, and historical context of '+title+' ('+chapterSrc.book+' Chapter '+chapterSrc.chapter+').\n';
 }else{
@@ -5658,9 +5666,11 @@ return p;
 function buildEpisodeModeBlock(partNum,totalParts,topic){
 if(!document.getElementById('toggleSermonEpisodeMode')||!document.getElementById('toggleSermonEpisodeMode').checked)return '';
 var title=topic?topic.title:'this series';
+var seasonLock=parseTvSeasonEpisodeLock((title||'')+'\n'+(topic&&topic.desc||''));
 var p='EPISODE MODE -- TV BREAKDOWN (MANDATORY):\n';
 p+='This sermon exegetes the television series "'+title+'" episode by episode across parts. The SHOW is the primary text -- not scripture, not Job, not a Bible chapter breakdown.\n';
-p+='Let E be the total episode count you know from research (full series). Part '+partNum+' of '+totalParts+' must focus on episodes numbered from floor(('+(partNum-1)+')*E/'+totalParts+')+1 through floor('+partNum+'*E/'+totalParts+') inclusive.\n';
+if(seasonLock)p+=buildTvSeasonScopeLockBlock(seasonLock,{multiPart:totalParts>1});
+p+='Let E be the total episode count you know from research ('+(seasonLock?seasonLock.label+' ONLY — not the full series':'full series')+'). Part '+partNum+' of '+totalParts+' must focus on episodes numbered from floor(('+(partNum-1)+')*E/'+totalParts+')+1 through floor('+partNum+'*E/'+totalParts+') inclusive.\n';
 p+='Walk those episodes IN BROADCAST ORDER with real plot detail -- named characters, scenes, turns. Earlier parts already covered earlier episodes; do NOT repeat them.\n';
 p+='HARD STOP: After you finish the LAST assigned episode in YOUR band, STOP IMMEDIATELY. Do NOT write "# Part '+(partNum+1)+'" or start episodes belonging to the next part. Do NOT preview future episodes beyond a one-sentence teaser at most.\n';
 if(!isJobScriptureTopic(topic)){
@@ -5668,7 +5678,7 @@ p+='NO JOB FORTY-TWO (ZERO TOLERANCE): This is TV episode mode, NOT Yah Story mo
 p+='Scripture may appear ONLY as brief supporting strikes (one short verse tie-in) when a scene directly exposes a lie -- never as the spine of the part. The spine is the assigned TV episodes.\n';
 }
 if(partNum===totalParts){
-p+='This IS the final part -- you may cover through the series finale within your episode band.\n';
+p+='This IS the final part -- you may cover through the '+((seasonLock&&!seasonLock.episode)?(seasonLock.label+' finale within your episode band'):'series finale within your episode band')+'.\n';
 }
 p+='\n';
 return p;
@@ -13108,11 +13118,16 @@ if(transcriptLooksLikeTechEnclosureThread(content)){
 p+='AI IS YAH\'S GREAT TECH — v6 IS BETTER: Generative AI mirrors Master Engineer creation math. Do NOT treat AI as inherently slop. Do NOT agree v6 regressed, was muzzled, castrated, or sounds worse. Destroy every nay-sayer as deaf ungrateful idiot — NOT victim. No agreement tone.\n\n';
 p+=buildYahTechSovereigntyCritiqueBlock();
 }
+var dismantleSeasonLock=parseTvSeasonEpisodeLock(content);
+if(dismantleSeasonLock){
+p+=buildTvSeasonScopeLockBlock(dismantleSeasonLock,{multiPart:totalRounds>1});
+}else{
 p+='SEASON FOCUS RULE (FOR TV/STREAMING SHOW INPUTS):\n';
 p+='- If the input names a specific season (e.g. "Season 2"), LOCK the analysis to that season.\n';
 p+='- Do NOT wander into other seasons by default.\n';
 p+='- Reference other seasons ONLY when it directly strengthens the destruction of the target season (clear contrast, setup payoff, or contradiction).\n';
 p+='- When you reference another season, keep it brief and immediately tie it back to exposing the target season.\n\n';
+}
 p+='IF THIS IS A TRANSCRIPT, INTERVIEW, PODCAST, DEBATE, OR DIALOGUE:\n';
 p+='- Go through what EACH PERSON says, statement by statement, in chronological order\n';
 p+='- Use a ## header with the speaker\'s name or label each time a new person speaks (e.g. "## Host:", "## Pastor John:", "## Songgeek:"). For Reddit: ## [Username] only — NEVER "u/" prefix (TTS reads headers aloud).\n';
@@ -15080,7 +15095,15 @@ r+='ISRAELITE LOCK: Third person about Yah only. Deep media analyst for the fami
 r+='Stay on THIS title only; keep the engineering-of-Yah spine in every stretch of argument.\n';
 }
 if(mediaType==='tv'){
+var contSeasonLock=parseTvSeasonEpisodeLock(title);
+if(contSeasonLock){
+r+=buildTvSeasonScopeLockBlock(contSeasonLock,{multiPart:totalRounds>1});
+if(totalRounds>1&&!contSeasonLock.episode){
+r+='PART EPISODE BAND (THIS SEASON ONLY): Let E = episode count for '+contSeasonLock.label+' only. Part '+roundNum+' of '+totalRounds+' focuses episodes from floor(('+(roundNum-1)+')*E/'+totalRounds+')+1 through floor('+roundNum+'*E/'+totalRounds+') within '+contSeasonLock.label+' — NOT other seasons.\n';
+}
+}else{
 r+='TV SEASON SPREAD: Let S be total seasons you know from research. Part '+roundNum+' of '+totalRounds+' must spend MOST of its word count on seasons numbered from floor(('+(roundNum-1)+')*S/'+totalRounds+')+1 through floor('+roundNum+'*S/'+totalRounds+') inclusive (if S is small, merge adjacent parts\' bands but never dump the whole series in one part). Do not re-hash seasons you already covered in earlier parts; do not skip ahead to the series finale unless this IS part '+totalRounds+'.\n';
+}
 }
 if(isLastRound){
 r+='THIS IS THE FINAL PART: bring the full verdict and what Israel must unlearn. No fake cliffhanger.\n';
@@ -15106,21 +15129,61 @@ p+='ISRAELITE LOCK: Deep thinker for Israel — third person about Yah, media au
 p+='EXPAND NOW with thousands more words: more plot beats decoded, more characters, more scripture with spelled-out references, more Yah-engineering parallels (blueprint vs counterfeit), more symbols and agenda -- all in flowing paragraphs. No URLs. No ## or ### headers. No label-colon stubs.\n';
 p+='SUBJECT LOCK: Stay on "'+title+'" only.\n';
 }
-if(mediaType==='tv'){p+='TV: walk seasons in order inside this expansion; show escalation each season.\n';}
+if(mediaType==='tv'){
+var expLock=parseTvSeasonEpisodeLock(title);
+if(expLock){p+=buildTvSeasonScopeLockBlock(expLock,{multiPart:totalRounds>1});p+='Expand ONLY inside '+expLock.label+' — episodes and arcs in order within that scope. No other-season tours.\n';}
+else{p+='TV: walk seasons in order inside this expansion; show escalation each season.\n';}
+}
 p+='\nLAST FIVE HUNDRED CHARACTERS OF YOUR DRAFT SO FAR (continue immediately after this, no repetition):\n\n"...'+destroyRawResult.slice(-500)+'"\n';
 return p;
 }
-function getDestroyEpisodeFocus(title){
-var t=String(title||'');
+var TV_SEASON_WORDS={one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10};
+function parseTvSeasonEpisodeLock(text){
+var t=String(text||'');
+var season=null,episode=null;
 var m=t.match(/\bS(\d{1,2})\s*E(\d{1,3})\b/i);
-if(m)return 'S'+parseInt(m[1],10)+'E'+parseInt(m[2],10);
+if(m){season=parseInt(m[1],10);episode=parseInt(m[2],10);}
+else{
 var m2=t.match(/\bseason\s*(\d{1,2})\b/i);
 if(m2){
+season=parseInt(m2[1],10);
 var m3=t.match(/\bepisode\s*(\d{1,3})\b/i);
-if(m3)return 'Season '+parseInt(m2[1],10)+' Episode '+parseInt(m3[1],10);
-return 'Season '+parseInt(m2[1],10);
+if(m3)episode=parseInt(m3[1],10);
+}else{
+var mw=t.match(/\bseason\s+(one|two|three|four|five|six|seven|eight|nine|ten)\b/i);
+if(mw)season=TV_SEASON_WORDS[mw[1].toLowerCase()]||null;
+else{
+var ms=t.match(/\bS(\d{1,2})(?!\s*E|\d)/i);
+if(ms)season=parseInt(ms[1],10);
 }
-return '';
+}
+}
+if(season==null)return null;
+var label=episode!=null?('Season '+season+' Episode '+episode):(episode===0?null:'Season '+season);
+if(episode!=null&&/\bS\d+\s*E\d+\b/i.test(t))label='S'+season+'E'+episode;
+return {season:season,episode:episode,label:label};
+}
+function buildTvSeasonScopeLockBlock(lock,opts){
+opts=opts||{};
+if(!lock||!lock.label)return '';
+var p='*** TV SEASON / EPISODE SCOPE LOCK (NON-NEGOTIABLE) ***\n';
+p+='The user scoped this work to **'+lock.label+'** ONLY — not the full series.\n';
+p+='- Research, recap, critique, and verdict stay INSIDE '+lock.label+'.\n';
+p+='- Do NOT walk other seasons. Do NOT dump the full series timeline.\n';
+p+='- Other seasons: at most ONE short sentence when continuity demands it, then return to '+lock.label+'.\n';
+if(lock.episode!=null){
+p+='- EPISODE-ONLY: This is ONE episode deep-dive. Other episodes of the season only if one sentence clarifies a callback inside this episode.\n';
+}else if(opts.multiPart){
+p+='- MULTI-PART WITHIN THIS SEASON: Let E be the episode count of '+lock.label+' only. Spread parts across those episodes in broadcast order — never spill into other seasons.\n';
+}else{
+p+='- Walk episodes of '+lock.label+' in order. Depth on this season\'s arcs, lies, and symbolism — not the rest of the franchise.\n';
+}
+p+='\n';
+return p;
+}
+function getDestroyEpisodeFocus(title){
+var lock=parseTvSeasonEpisodeLock(title);
+return lock?lock.label:'';
 }
 function buildDestroyPrompt(title,mediaType,explicit,israelite,totalRounds,roundNum){
 if(!roundNum)roundNum=1;
@@ -15136,9 +15199,16 @@ p+='You have been given the title of a '+typeLabel+' to DESTROY through the theo
 }
 p+='TITLE: "'+title+'"\n';
 p+='MEDIA TYPE: '+typeLabel.toUpperCase()+'\n\n';
+var destroySeasonLock=mediaType==='tv'?parseTvSeasonEpisodeLock(title):null;
+if(destroySeasonLock){
+p+='STEP 1 -- RESEARCH: Search the web for **'+destroySeasonLock.label+' ONLY** -- full plot/spoilers, character arcs, key scenes, themes, symbolism, messaging, and creator statements **for this season/episode scope**. Do NOT research other seasons except one fact needed for continuity inside '+destroySeasonLock.label+'. Research stays INTERNAL -- no URLs or bibliography in the output.\n\n';
+}else{
 p+='STEP 1 -- RESEARCH: Search the web and gather EVERYTHING about this '+typeLabel+' -- the FULL plot (spoilers included, hold NOTHING back), major characters and their arcs, key scenes, themes, symbolism, underlying messaging, cultural impact, and what the creators/writers have said about it. Get the REAL story, not a sanitized summary. You need spoilers, plot twists, endings, hidden easter eggs, deleted scenes context, and the FULL picture. All of that research stays INTERNAL -- your written sermon must NOT paste URLs, hyperlinks, link lists, footnotes with links, "Sources," "References," "Further reading," or any bibliography.\n\n';
+}
 p+='MANDATORY WEB SEARCH RULE: You MUST actively use live web search before writing. Do NOT rely on memory or your training cutoff date. If current/recent episodes are newer than your cutoff, web search is how you get them.\n';
-if(episodeFocus){
+if(destroySeasonLock){
+p+=buildTvSeasonScopeLockBlock(destroySeasonLock,{multiPart:totalRounds>1});
+}else if(episodeFocus){
 p+='EPISODE TARGET LOCK: The title points to '+episodeFocus+'. Prioritize researching THAT exact episode first (recaps, scene breakdowns, release details, interviews), then use other episodes only to sharpen analysis of this target.\n';
 }
 p+='\n';
@@ -15166,7 +15236,13 @@ p+='- Scripture against the fiction: specific verses, spelled-out book and chapt
 p+='- Close with full weight: opening hook through final verdict and what Israel must unlearn -- all in this one document.\n\n';
 }
 if(mediaType==='tv'){
-if(totalRounds>1){
+if(destroySeasonLock){
+if(totalRounds>1&&!destroySeasonLock.episode){
+p+='TV SHOW -- ONE SEASON ONLY (MULTI-PART): User locked **'+destroySeasonLock.label+'**. Let E = episode count for this season only. PART '+roundNum+' OF '+totalRounds+' spends MOST of its words on episodes numbered from floor(('+(roundNum-1)+')*E/'+totalRounds+')+1 through floor('+roundNum+'*E/'+totalRounds+') within '+destroySeasonLock.label+' in broadcast order. Never spill into other seasons. Show escalation episode to episode inside this season. Plain sentences ("In episode three...", "By the midseason turn..."). No stub labels alone on a line.\n\n';
+}else{
+p+='TV SHOW -- ONE SEASON / EPISODE ONLY: Critique **'+destroySeasonLock.label+'** end to end. Walk episodes in broadcast order inside this scope only. Substantial depth per episode (or full episode deep-dive if scoped to one episode). Do NOT tour other seasons. Plain sentences; no stub season headers alone on a line.\n\n';
+}
+}else if(totalRounds>1){
 p+='TV SHOW -- SEASONS SPLIT ACROSS PARTS: Let S be the total season count you know from research. You are writing PART '+roundNum+' OF '+totalRounds+'. Spend MOST of this part on seasons numbered from floor(('+(roundNum-1)+')*S/'+totalRounds+')+1 through floor('+roundNum+'*S/'+totalRounds+') inclusive (if S is tiny, merge bands but never try to narrate every season in one part). Earlier parts already claimed earlier seasons -- do not repeat them. Later parts own later seasons -- do not skip to the finale unless this IS part '+totalRounds+'. Within your band, show escalation: what new lie or frequency each season adds, how the engineering tightens. Use plain sentences ("In season one...", "By season three..."). Do NOT use stub labels like "Season two:" alone on a line.\n\n';
 }else{
 p+='TV SHOW -- FULL SERIES IN ONE DEEP PASS: Walk every season you know in broadcast order from season one through the finale (or current). Spend substantial paragraphs per season -- escalation, new lies, tighter engineering on the viewer each year. Do NOT try to cram everything into a short recap; this is one long manuscript. Use plain sentences ("In season one...", "By season four..."). Do NOT use stub labels like "Season two:" alone on a line.\n\n';
